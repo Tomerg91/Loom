@@ -115,8 +115,8 @@ export const createDynamicImport = <T>(
   }
 ) => {
   const defaultOptions = {
-    loading: () => <div>Loading...</div>,
-    error: ({ error }: { error: Error }) => <div>Error: {error.message}</div>,
+    loading: () => React.createElement('div', null, 'Loading...'),
+    error: ({ error }: { error: Error }) => React.createElement('div', null, `Error: ${error.message}`),
     ssr: true,
   };
 

@@ -18,8 +18,8 @@ export const mockUser: User = {
   emailVerified: true,
   isActive: true,
   avatarUrl: null,
-  phoneNumber: null,
-  dateOfBirth: null,
+  phoneNumber: undefined,
+  dateOfBirth: undefined,
   preferences: {
     language: 'en',
     notifications: {

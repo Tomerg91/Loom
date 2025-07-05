@@ -144,3 +144,6 @@ export const trackWebVitals = (metric: any) => {
     },
   });
 };
+
+// Export collectWebVitals function
+export { collectWebVitals } from '@/lib/performance/web-vitals';

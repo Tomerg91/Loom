@@ -5,7 +5,6 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   experimental: {
     typedRoutes: true,
     optimizeCss: true,
@@ -217,8 +216,7 @@ const nextConfig = {
   
   // Dev indicators
   devIndicators: {
-    buildActivity: true,
-    buildActivityPosition: 'bottom-right',
+    position: 'bottom-right',
   },
   
   // Generate ETags

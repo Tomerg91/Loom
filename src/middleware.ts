@@ -106,7 +106,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Apply intl middleware
-  const response = intlMiddleware(request);
+  const intlResponse = intlMiddleware(request);
   
   try {
     // Create supabase client

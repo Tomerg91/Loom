@@ -1,10 +1,10 @@
-import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals';
+import { onCLS, onINP, onFCP, onLCP, onTTFB } from 'web-vitals';
 import { trackWebVitals } from '@/lib/monitoring/analytics';
 
 // Web Vitals thresholds
 const VITALS_THRESHOLDS = {
   CLS: { good: 0.1, poor: 0.25 },
-  FID: { good: 100, poor: 300 },
+  INP: { good: 200, poor: 500 },
   FCP: { good: 1800, poor: 3000 },
   LCP: { good: 2500, poor: 4000 },
   TTFB: { good: 800, poor: 1800 },
@@ -58,11 +58,11 @@ export const collectWebVitals = (callback?: (metric: WebVital) => void) => {
   };
 
   // Collect all Core Web Vitals
-  getCLS(reportMetric);
-  getFID(reportMetric);
-  getFCP(reportMetric);
-  getLCP(reportMetric);
-  getTTFB(reportMetric);
+  onCLS(reportMetric);
+  onINP(reportMetric);
+  onFCP(reportMetric);
+  onLCP(reportMetric);
+  onTTFB(reportMetric);
 };
 
 // Performance observer for custom metrics
@@ -206,7 +206,7 @@ export const usePerformanceMonitor = () => {
 export const checkPerformanceBudget = (metrics: Record<string, number>) => {
   const budgets = {
     LCP: 2500,
-    FID: 100,
+    INP: 200,
     CLS: 0.1,
     FCP: 1800,
     TTFB: 800,
