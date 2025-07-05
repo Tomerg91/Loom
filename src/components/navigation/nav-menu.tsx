@@ -23,7 +23,6 @@ import {
   MessageSquare, 
   BarChart3, 
   Settings, 
-  Bell,
   User,
   LogOut,
   Shield,
@@ -33,6 +32,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { createAuthService } from '@/lib/auth/auth';
+import { NotificationCenter } from '@/components/notifications/notification-center';
 
 interface NavItem {
   label: string;
@@ -61,7 +61,6 @@ export function NavMenu() {
   const commonItems: NavItem[] = [
     { label: t('dashboard'), href: '/dashboard', icon: Home, exact: true },
     { label: t('sessions'), href: '/sessions', icon: Calendar },
-    { label: t('notifications'), href: '/notifications', icon: Bell },
   ];
 
   // Role-specific navigation items
@@ -184,6 +183,9 @@ export function NavMenu() {
 
           {/* Right side - User menu */}
           <div className="flex items-center space-x-4">
+            {/* Notifications */}
+            <NotificationCenter />
+
             {/* Role badge */}
             <Badge 
               variant={

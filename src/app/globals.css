@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Import accessibility styles */
+@import '../styles/accessibility.css';
+
 /* CSS Variables for Design System */
 :root {
   --background: 0 0% 100%;
@@ -105,6 +108,27 @@ body {
   animation-name: enter;
   animation-duration: var(--animation-duration, 200ms);
   --animation-duration: 200ms;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  .animate-out,
+  .fade-in,
+  .fade-out,
+  .zoom-in,
+  .zoom-out,
+  .slide-in-from-top,
+  .slide-in-from-bottom,
+  .slide-in-from-left,
+  .slide-in-from-right,
+  .slide-out-to-top,
+  .slide-out-to-bottom,
+  .slide-out-to-left,
+  .slide-out-to-right {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 .animate-out {

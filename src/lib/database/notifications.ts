@@ -3,6 +3,34 @@ import { createClient } from '@/lib/supabase/client';
 import type { Notification, NotificationType } from '@/types';
 import type { Database } from '@/types/supabase';
 
+// API-specific interfaces
+interface GetNotificationsOptions {
+  userId: string;
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  isRead?: boolean;
+  isArchived?: boolean;
+  type?: string;
+}
+
+interface GetNotificationsCountOptions {
+  userId: string;
+  isRead?: boolean;
+  isArchived?: boolean;
+  type?: string;
+}
+
+interface CreateNotificationData {
+  userId: string;
+  type: 'session_reminder' | 'new_message' | 'session_confirmation' | 'system_update';
+  title: string;
+  content: string;
+  scheduledFor?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export class NotificationService {
   private supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
 
@@ -332,4 +360,111 @@ export class NotificationService {
       updatedAt: dbNotification.updated_at,
     };
   }
+
+  /**
+   * Get notifications with pagination and filtering (for API)
+   */
+  async getNotificationsPaginated(options: GetNotificationsOptions): Promise<Notification[]> {
+    let query = this.supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', options.userId);
+
+    // Apply filters
+    if (options.isRead !== undefined) {
+      if (options.isRead) {
+        query = query.not('read_at', 'is', null);
+      } else {
+        query = query.is('read_at', null);
+      }
+    }
+    if (options.type) {
+      query = query.eq('type', options.type as 'session_reminder' | 'new_message' | 'session_confirmation' | 'system_update');
+    }
+
+    // Apply sorting
+    const sortBy = options.sortBy || 'created_at';
+    const sortOrder = options.sortOrder || 'desc';
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+    // Apply pagination
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    if (options.offset) {
+      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching notifications with pagination:', error);
+      return [];
+    }
+
+    return data.map(this.mapDatabaseNotificationToNotification);
+  }
+
+  /**
+   * Get total count of notifications (for API pagination)
+   */
+  async getNotificationsCount(options: GetNotificationsCountOptions): Promise<number> {
+    let query = this.supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', options.userId);
+
+    // Apply filters
+    if (options.isRead !== undefined) {
+      if (options.isRead) {
+        query = query.not('read_at', 'is', null);
+      } else {
+        query = query.is('read_at', null);
+      }
+    }
+    if (options.type) {
+      query = query.eq('type', options.type as 'session_reminder' | 'new_message' | 'session_confirmation' | 'system_update');
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      console.error('Error counting notifications:', error);
+      return 0;
+    }
+
+    return count || 0;
+  }
+
+  /**
+   * Create notification (for API)
+   */
+  async createNotificationFromApi(notificationData: CreateNotificationData): Promise<Notification | null> {
+    const { data, error } = await this.supabase
+      .from('notifications')
+      .insert({
+        user_id: notificationData.userId,
+        type: notificationData.type,
+        title: notificationData.title,
+        message: notificationData.content,
+        data: JSON.parse(JSON.stringify(notificationData.metadata || {})),
+        scheduled_for: notificationData.scheduledFor,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating notification:', error);
+      return null;
+    }
+
+    return this.mapDatabaseNotificationToNotification(data);
+  }
 }
+
+// Export individual functions for API usage
+const notificationService = new NotificationService(true);
+
+export const getNotificationsPaginated = (options: GetNotificationsOptions) => notificationService.getNotificationsPaginated(options);
+export const getNotificationsCount = (options: GetNotificationsCountOptions) => notificationService.getNotificationsCount(options);
+export const createNotification = (notificationData: CreateNotificationData) => notificationService.createNotificationFromApi(notificationData);

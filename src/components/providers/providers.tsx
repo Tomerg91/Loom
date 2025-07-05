@@ -4,6 +4,8 @@ import { NextIntlClientProvider } from 'next-intl';
 import { QueryProvider } from './query-provider';
 import { StoreProvider } from './store-provider';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { RealtimeProvider } from './realtime-provider';
+import { AnalyticsProvider } from './analytics-provider';
 import type { AuthUser } from '@/lib/auth/auth';
 
 interface ProvidersProps {
@@ -19,7 +21,11 @@ export function Providers({ children, locale, messages, initialUser }: Providers
       <QueryProvider>
         <StoreProvider initialUser={initialUser}>
           <AuthProvider initialUser={initialUser}>
-            {children}
+            <RealtimeProvider>
+              <AnalyticsProvider>
+                {children}
+              </AnalyticsProvider>
+            </RealtimeProvider>
           </AuthProvider>
         </StoreProvider>
       </QueryProvider>

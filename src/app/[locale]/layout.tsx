@@ -2,9 +2,12 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { Providers } from '@/components/providers';
+import { Providers } from '@/components/providers/providers';
 import { getServerUser } from '@/lib/auth/auth';
 import { locales } from '@/i18n/config';
+import { PerformanceMonitorComponent } from '@/components/monitoring/performance-monitor';
+import { collectWebVitals } from '@/lib/performance/web-vitals';
+import { initSentry } from '@/lib/monitoring/sentry';
 import '../globals.css';
 
 const inter = Inter({
@@ -49,6 +52,22 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} dir={locale === 'he' ? 'rtl' : 'ltr'}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Initialize Sentry as early as possible
+              window.addEventListener('load', function() {
+                if (typeof window !== 'undefined') {
+                  // Initialize monitoring
+                  ${initSentry.toString()}
+                  initSentry();
+                }
+              });
+            `,
+          }}
+        />
+      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <Providers 
           locale={locale} 
@@ -56,6 +75,7 @@ export default async function LocaleLayout({
           initialUser={initialUser}
         >
           {children}
+          <PerformanceMonitorComponent />
         </Providers>
       </body>
     </html>

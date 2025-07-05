@@ -37,17 +37,45 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   loading?: boolean;
+  loadingText?: string;
+  iconOnly?: boolean;
+  'aria-label'?: string;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading = false, disabled, children, ...props }, ref) => {
+  ({ 
+    className, 
+    variant, 
+    size, 
+    asChild = false, 
+    loading = false, 
+    loadingText = 'Loading...', 
+    iconOnly = false,
+    disabled, 
+    children, 
+    'aria-label': ariaLabel,
+    ...props 
+  }, ref) => {
     const Comp = asChild ? Slot : 'button';
+    
+    // Ensure icon-only buttons have proper aria-label
+    const shouldHaveAriaLabel = iconOnly && !ariaLabel && !children;
+    if (shouldHaveAriaLabel && process.env.NODE_ENV === 'development') {
+      console.warn('Icon-only buttons should have an aria-label for accessibility');
+    }
     
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(
+          buttonVariants({ variant, size, className }),
+          // Ensure minimum touch target size for mobile
+          size === 'icon' && 'min-w-[44px] min-h-[44px]'
+        )}
         ref={ref}
         disabled={disabled || loading}
+        aria-disabled={disabled || loading}
+        aria-busy={loading}
+        aria-label={loading ? loadingText : ariaLabel}
         {...props}
       >
         {loading && (
@@ -56,6 +84,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <circle
               className="opacity-25"
@@ -72,7 +101,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             />
           </svg>
         )}
-        {children}
+        <span className={loading ? 'sr-only' : undefined}>
+          {children}
+        </span>
+        {loading && (
+          <span aria-live="polite" className="sr-only">
+            {loadingText}
+          </span>
+        )}
       </Comp>
     );
   }

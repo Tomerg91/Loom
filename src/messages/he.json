@@ -205,7 +205,20 @@
     "selectTime": "בחר שעה",
     "minutes": "דקות",
     "hour": "שעה",
-    "hours": "שעות"
+    "hours": "שעות",
+    "sessionsDescription": "נהל את פגישות הקואצ'ינג שלך",
+    "bookNewSession": "הזמן פגישה חדשה",
+    "confirmCancel": "האם אתה בטוח שברצונך לבטל את הפגישה?",
+    "manageSessions": "נהל פגישות",
+    "manageSessionsDescription": "צפה ונהל את כל פגישות הקואצ'ינג שלך",
+    "viewAndBookSessions": "צפה והזמן פגישות קואצ'ינג עם המאמנים שלך",
+    "in_progress": "בתהליך",
+    "coach": "מאמן",
+    "client": "לקוח",
+    "selectCoachAndTime": "בחר מאמן ומועד זמין",
+    "selectCoachAndTimeSlot": "בחר את המאמן המועדף עליך ומועד זמין לפגישה",
+    "listView": "תצוגת רשימה",
+    "calendarView": "תצוגת לוח שנה"
   },
   "coach": {
     "coach": "מאמן",

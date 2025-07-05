@@ -3,6 +3,23 @@ import { createClient } from '@/lib/supabase/client';
 import type { User, UserRole, UserStatus } from '@/types';
 import type { Database } from '@/types/supabase';
 
+// API-specific interfaces
+interface GetUsersOptions {
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  role?: string;
+  search?: string;
+  status?: string;
+}
+
+interface GetUsersCountOptions {
+  role?: string;
+  search?: string;
+  status?: string;
+}
+
 export class UserService {
   private supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
 
@@ -253,6 +270,102 @@ export class UserService {
   }
 
   /**
+   * Get users with pagination and filtering (for API)
+   */
+  async getUsersPaginated(options: GetUsersOptions): Promise<User[]> {
+    let query = this.supabase
+      .from('users')
+      .select('*');
+
+    // Apply filters
+    if (options.role) {
+      query = query.eq('role', options.role as 'client' | 'coach' | 'admin');
+    }
+    if (options.status) {
+      query = query.eq('status', options.status as 'active' | 'inactive' | 'suspended');
+    }
+    if (options.search) {
+      query = query.or(
+        `first_name.ilike.%${options.search}%,last_name.ilike.%${options.search}%,email.ilike.%${options.search}%`
+      );
+    }
+
+    // Apply sorting
+    const sortBy = options.sortBy || 'created_at';
+    const sortOrder = options.sortOrder || 'desc';
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+    // Apply pagination
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    if (options.offset) {
+      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching users with pagination:', error);
+      return [];
+    }
+
+    return data.map(this.mapDatabaseUserToUser);
+  }
+
+  /**
+   * Get total count of users (for API pagination)
+   */
+  async getUsersCount(options: GetUsersCountOptions): Promise<number> {
+    let query = this.supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+
+    // Apply filters
+    if (options.role) {
+      query = query.eq('role', options.role as 'client' | 'coach' | 'admin');
+    }
+    if (options.status) {
+      query = query.eq('status', options.status as 'active' | 'inactive' | 'suspended');
+    }
+    if (options.search) {
+      query = query.or(
+        `first_name.ilike.%${options.search}%,last_name.ilike.%${options.search}%,email.ilike.%${options.search}%`
+      );
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      console.error('Error counting users:', error);
+      return 0;
+    }
+
+    return count || 0;
+  }
+
+  /**
+   * Get user by ID (for API)
+   */
+  async getUserById(userId: string): Promise<User | null> {
+    return this.getUserProfile(userId);
+  }
+
+  /**
+   * Update user (for API)
+   */
+  async updateUser(userId: string, updates: Partial<User>): Promise<User | null> {
+    return this.updateUserProfile(userId, updates);
+  }
+
+  /**
+   * Delete user (for API)
+   */
+  async deleteUserById(userId: string): Promise<boolean> {
+    return this.deleteUser(userId);
+  }
+
+  /**
    * Map database user to application user type
    */
   private mapDatabaseUserToUser(dbUser: Database['public']['Tables']['users']['Row']): User {
@@ -271,5 +384,14 @@ export class UserService {
       updatedAt: dbUser.updated_at,
       lastSeenAt: dbUser.last_seen_at || undefined,
     };
-  }
+    }
 }
+
+// Export individual functions for API usage
+const userService = new UserService(true);
+
+export const getUsersPaginated = (options: GetUsersOptions) => userService.getUsersPaginated(options);
+export const getUsersCount = (options: GetUsersCountOptions) => userService.getUsersCount(options);
+export const getUserById = (userId: string) => userService.getUserById(userId);
+export const updateUser = (userId: string, updates: Partial<User>) => userService.updateUser(userId, updates);
+export const deleteUser = (userId: string) => userService.deleteUserById(userId);

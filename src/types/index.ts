@@ -31,20 +31,21 @@ export interface Session {
   title: string;
   description?: string;
   scheduledAt: string;
-  durationMinutes: number;
+  duration: number; // Duration in minutes
+  durationMinutes: number; // Alias for backwards compatibility
   status: SessionStatus;
   meetingUrl?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
-  coach?: {
+  coach: {
     id: string;
     email: string;
     firstName: string;
     lastName: string;
     avatarUrl?: string;
   };
-  client?: {
+  client: {
     id: string;
     email: string;
     firstName: string;

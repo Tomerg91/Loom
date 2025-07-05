@@ -2,6 +2,9 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { locales, defaultLocale } from '@/i18n/config';
+import { applySecurityHeaders } from '@/lib/security/headers';
+import { rateLimitAuth, rateLimitAPI } from '@/lib/security/rate-limit';
+import { validateUserAgent } from '@/lib/security/validation';
 
 // Create the next-intl middleware
 const intlMiddleware = createIntlMiddleware({
@@ -42,14 +45,52 @@ const clientRoutes = ['/client'];
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
-  // Skip middleware for static files and API routes
+  // Create initial response
+  let response = NextResponse.next();
+  
+  // Apply security headers to all responses
+  response = applySecurityHeaders(request, response);
+  
+  // Validate user agent (only in production)
+  const userAgent = request.headers.get('user-agent') || '';
+  if (process.env.NODE_ENV === 'production' && !validateUserAgent(userAgent)) {
+    return new NextResponse('Forbidden', { status: 403 });
+  }
+  
+  // Handle API routes with rate limiting
+  if (pathname.startsWith('/api')) {
+    const rateLimit = pathname.startsWith('/api/auth/')
+      ? rateLimitAuth(request)
+      : rateLimitAPI(request);
+    
+    // Add rate limit headers
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    if (!rateLimit.allowed) {
+      return new NextResponse(JSON.stringify({
+        error: rateLimit.message,
+        retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000),
+      }), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          ...rateLimit.headers,
+        },
+      });
+    }
+    
+    return response;
+  }
+  
+  // Skip middleware for static files
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
-    pathname.includes('.') ||
-    pathname.startsWith('/api')
+    pathname.includes('.')
   ) {
-    return NextResponse.next();
+    return response;
   }
 
   // Handle internationalization first

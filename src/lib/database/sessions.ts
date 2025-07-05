@@ -3,6 +3,47 @@ import { createClient } from '@/lib/supabase/client';
 import type { Session, SessionStatus } from '@/types';
 import type { Database } from '@/types/supabase';
 
+// API-specific interfaces
+interface GetSessionsOptions {
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  status?: string;
+  coachId?: string;
+  clientId?: string;
+  from?: string;
+  to?: string;
+}
+
+interface GetSessionsCountOptions {
+  status?: string;
+  coachId?: string;
+  clientId?: string;
+  from?: string;
+  to?: string;
+}
+
+interface CreateSessionData {
+  title: string;
+  description?: string;
+  scheduledAt: string;
+  duration: number;
+  coachId: string;
+  clientId: string;
+  meetingUrl?: string;
+}
+
+interface UpdateSessionData {
+  title?: string;
+  description?: string;
+  scheduledAt?: string;
+  duration?: number;
+  status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  meetingUrl?: string;
+  notes?: string;
+}
+
 export class SessionService {
   private supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
 
@@ -334,6 +375,7 @@ export class SessionService {
       title: dbSession.title,
       description: dbSession.description || '',
       scheduledAt: dbSession.scheduled_at,
+      duration: dbSession.duration_minutes,
       durationMinutes: dbSession.duration_minutes,
       status: dbSession.status as SessionStatus,
       meetingUrl: dbSession.meeting_url || '',
@@ -346,14 +388,26 @@ export class SessionService {
         firstName: dbSession.coach.first_name || '',
         lastName: dbSession.coach.last_name || '',
         avatarUrl: dbSession.coach.avatar_url || '',
-      } : undefined,
+      } : {
+        id: '',
+        email: '',
+        firstName: 'Unknown',
+        lastName: 'Coach',
+        avatarUrl: '',
+      },
       client: dbSession.client ? {
         id: dbSession.client.id,
         email: dbSession.client.email,
         firstName: dbSession.client.first_name || '',
         lastName: dbSession.client.last_name || '',
         avatarUrl: dbSession.client.avatar_url || '',
-      } : undefined,
+      } : {
+        id: '',
+        email: '',
+        firstName: 'Unknown',
+        lastName: 'Client',
+        avatarUrl: '',
+      },
     };
   }
 
@@ -376,6 +430,7 @@ export class SessionService {
       id: session.id,
       coachId: '', // Not provided in RPC result
       clientId: '', // Not provided in RPC result
+      duration: session.duration_minutes,
       title: session.title,
       description: '',
       scheduledAt: session.scheduled_at,
@@ -401,4 +456,191 @@ export class SessionService {
       },
     };
   }
+
+  /**
+   * Get sessions with pagination and filtering (for API)
+   */
+  async getSessionsPaginated(options: GetSessionsOptions): Promise<Session[]> {
+    let query = this.supabase
+      .from('sessions')
+      .select(`
+        *,
+        coach:users!sessions_coach_id_fkey(*),
+        client:users!sessions_client_id_fkey(*)
+      `);
+
+    // Apply filters
+    if (options.status) {
+      query = query.eq('status', options.status as 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'no_show');
+    }
+    if (options.coachId) {
+      query = query.eq('coach_id', options.coachId);
+    }
+    if (options.clientId) {
+      query = query.eq('client_id', options.clientId);
+    }
+    if (options.from) {
+      query = query.gte('scheduled_at', options.from);
+    }
+    if (options.to) {
+      query = query.lte('scheduled_at', options.to);
+    }
+
+    // Apply sorting
+    const sortBy = options.sortBy || 'scheduled_at';
+    const sortOrder = options.sortOrder || 'desc';
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+    // Apply pagination
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    if (options.offset) {
+      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching sessions with pagination:', error);
+      return [];
+    }
+
+    return data.map(this.mapDatabaseSessionToSession);
+  }
+
+  /**
+   * Get total count of sessions (for API pagination)
+   */
+  async getSessionsCount(options: GetSessionsCountOptions): Promise<number> {
+    let query = this.supabase
+      .from('sessions')
+      .select('*', { count: 'exact', head: true });
+
+    // Apply filters
+    if (options.status) {
+      query = query.eq('status', options.status as 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'no_show');
+    }
+    if (options.coachId) {
+      query = query.eq('coach_id', options.coachId);
+    }
+    if (options.clientId) {
+      query = query.eq('client_id', options.clientId);
+    }
+    if (options.from) {
+      query = query.gte('scheduled_at', options.from);
+    }
+    if (options.to) {
+      query = query.lte('scheduled_at', options.to);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      console.error('Error counting sessions:', error);
+      return 0;
+    }
+
+    return count || 0;
+  }
+
+  /**
+   * Get session by ID (for API)
+   */
+  async getSessionById(sessionId: string): Promise<Session | null> {
+    return this.getSession(sessionId);
+  }
+
+  /**
+   * Create session (for API)
+   */
+  async createSessionFromApi(sessionData: CreateSessionData): Promise<Session | null> {
+    const { data, error } = await this.supabase
+      .from('sessions')
+      .insert({
+        title: sessionData.title,
+        description: sessionData.description,
+        scheduled_at: sessionData.scheduledAt,
+        duration_minutes: sessionData.duration,
+        coach_id: sessionData.coachId,
+        client_id: sessionData.clientId,
+        meeting_url: sessionData.meetingUrl,
+        status: 'scheduled',
+      })
+      .select(`
+        *,
+        coach:users!sessions_coach_id_fkey(*),
+        client:users!sessions_client_id_fkey(*)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Error creating session:', error);
+      return null;
+    }
+
+    return this.mapDatabaseSessionToSession(data);
+  }
+
+  /**
+   * Update session (for API)
+   */
+  async updateSessionFromApi(sessionId: string, updates: UpdateSessionData): Promise<Session | null> {
+    const updateData: Record<string, unknown> = {};
+    
+    if (updates.title) updateData.title = updates.title;
+    if (updates.description !== undefined) updateData.description = updates.description;
+    if (updates.scheduledAt) updateData.scheduled_at = updates.scheduledAt;
+    if (updates.duration) updateData.duration_minutes = updates.duration;
+    if (updates.status) updateData.status = updates.status;
+    if (updates.meetingUrl !== undefined) updateData.meeting_url = updates.meetingUrl;
+    if (updates.notes !== undefined) updateData.notes = updates.notes;
+    
+    updateData.updated_at = new Date().toISOString();
+
+    const { data, error } = await this.supabase
+      .from('sessions')
+      .update(updateData)
+      .eq('id', sessionId)
+      .select(`
+        *,
+        coach:users!sessions_coach_id_fkey(*),
+        client:users!sessions_client_id_fkey(*)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Error updating session:', error);
+      return null;
+    }
+
+    return this.mapDatabaseSessionToSession(data);
+  }
+
+  /**
+   * Delete session (for API)
+   */
+  async deleteSessionFromApi(sessionId: string): Promise<boolean> {
+    const { error } = await this.supabase
+      .from('sessions')
+      .delete()
+      .eq('id', sessionId);
+
+    if (error) {
+      console.error('Error deleting session:', error);
+      return false;
+    }
+
+    return true;
+  }
 }
+
+// Export individual functions for API usage
+const sessionService = new SessionService(true);
+
+export const getSessionsPaginated = (options: GetSessionsOptions) => sessionService.getSessionsPaginated(options);
+export const getSessionsCount = (options: GetSessionsCountOptions) => sessionService.getSessionsCount(options);
+export const getSessionById = (sessionId: string) => sessionService.getSessionById(sessionId);
+export const createSession = (sessionData: CreateSessionData) => sessionService.createSessionFromApi(sessionData);
+export const updateSession = (sessionId: string, updates: UpdateSessionData) => sessionService.updateSessionFromApi(sessionId, updates);
+export const deleteSession = (sessionId: string) => sessionService.deleteSessionFromApi(sessionId);

@@ -1,0 +1,342 @@
+/* Accessibility-focused styles */
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Screen reader only but focusable */
+.sr-only-focusable:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn, .button {
+    border: 2px solid;
+  }
+  
+  .card {
+    border: 2px solid;
+  }
+  
+  .input, .textarea, .select {
+    border: 2px solid;
+  }
+  
+  /* Ensure sufficient contrast for focus states */
+  *:focus {
+    outline: 3px solid;
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Keep essential animations for accessibility */
+  [role="status"],
+  [aria-live] {
+    animation: none;
+  }
+}
+
+/* Focus management styles */
+.focus-trap {
+  outline: none;
+}
+
+.focus-visible {
+  outline: 2px solid theme('colors.ring');
+  outline-offset: 2px;
+}
+
+/* Skip link styles */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: theme('colors.primary.DEFAULT');
+  color: theme('colors.primary.foreground');
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 100;
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* Touch target size (minimum 44x44px) */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure buttons meet minimum touch target */
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Icon buttons should have proper spacing */
+.icon-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Form validation styles */
+.field-error {
+  border-color: theme('colors.destructive.DEFAULT');
+}
+
+.field-error:focus {
+  outline-color: theme('colors.destructive.DEFAULT');
+  ring-color: theme('colors.destructive.DEFAULT');
+}
+
+.error-message {
+  color: theme('colors.destructive.DEFAULT');
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Required field indicator */
+.required::after {
+  content: " *";
+  color: theme('colors.destructive.DEFAULT');
+}
+
+/* Loading states */
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.loading::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 1;
+}
+
+/* Live region styles */
+[aria-live] {
+  speak: literal-punctuation;
+}
+
+[aria-live="assertive"] {
+  speak: literal-punctuation;
+}
+
+/* Progress indicators */
+[role="progressbar"] {
+  min-width: 200px;
+  height: 20px;
+  background: theme('colors.muted.DEFAULT');
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Dialog and modal accessibility */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+}
+
+.dialog-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 51;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Navigation accessibility */
+.nav-link[aria-current="page"] {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* Table accessibility */
+.table-wrapper {
+  overflow-x: auto;
+  role: "region";
+  aria-label: "Scrollable table";
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid theme('colors.border');
+  padding: 8px 12px;
+  text-align: left;
+}
+
+th {
+  background: theme('colors.muted.DEFAULT');
+  font-weight: 600;
+}
+
+/* Caption styling */
+.table-caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* List accessibility */
+.list-none {
+  list-style: none;
+}
+
+/* Ensure list semantics are preserved when removing bullets */
+.list-none[role="list"] li::before {
+  content: "\200B"; /* Zero-width space for screen readers */
+}
+
+/* Color contrast utilities */
+.contrast-high {
+  background: black;
+  color: white;
+}
+
+.contrast-low {
+  background: theme('colors.muted.DEFAULT');
+  color: theme('colors.muted.foreground');
+}
+
+/* Print accessibility */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  /* Ensure links show URLs */
+  a[href^="http"]:after {
+    content: " (" attr(href) ")";
+  }
+  
+  /* Remove background colors for better printing */
+  * {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Mobile accessibility */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch device specific styles */
+  .hover\:hover-effect:hover {
+    /* Disable hover effects on touch devices */
+    background: inherit;
+    color: inherit;
+  }
+  
+  /* Increase touch targets on mobile */
+  .mobile-touch-target {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
+
+/* Custom focus ring utilities */
+.focus-ring-primary:focus {
+  outline: 2px solid theme('colors.primary.DEFAULT');
+  outline-offset: 2px;
+}
+
+.focus-ring-destructive:focus {
+  outline: 2px solid theme('colors.destructive.DEFAULT');
+  outline-offset: 2px;
+}
+
+/* Animation utilities for accessibility */
+.animate-fade-in {
+  animation: fade-in 0.3s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in {
+    animation: none;
+  }
+}
+
+/* Text scaling support */
+@media (max-width: 768px) {
+  html {
+    /* Allow text scaling up to 200% */
+    text-size-adjust: none;
+  }
+}
+
+/* Orientation change support */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Adjust layout for landscape mobile */
+  .mobile-landscape-adjust {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}

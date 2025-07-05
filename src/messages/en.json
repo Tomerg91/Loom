@@ -205,7 +205,20 @@
     "selectTime": "Select time",
     "minutes": "minutes",
     "hour": "hour",
-    "hours": "hours"
+    "hours": "hours",
+    "sessionsDescription": "Manage your coaching sessions",
+    "bookNewSession": "Book New Session",
+    "confirmCancel": "Are you sure you want to cancel this session?",
+    "manageSessions": "Manage Sessions",
+    "manageSessionsDescription": "View and manage all your coaching sessions",
+    "viewAndBookSessions": "View and book coaching sessions with your coaches",
+    "in_progress": "In Progress",
+    "coach": "Coach",
+    "client": "Client",
+    "selectCoachAndTime": "Select a coach and available time slot",
+    "selectCoachAndTimeSlot": "Choose your preferred coach and an available time slot for your session",
+    "listView": "List View",
+    "calendarView": "Calendar View"
   },
   "coach": {
     "coach": "Coach",
