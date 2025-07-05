@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { createAuthService } from '@/lib/auth/auth';
 import { NotificationCenter } from '@/components/notifications/notification-center';
+import { CompactLanguageSwitcher } from '@/components/ui/language-switcher';
 
 interface NavItem {
   label: string;
@@ -183,6 +184,9 @@ export function NavMenu() {
 
           {/* Right side - User menu */}
           <div className="flex items-center space-x-4">
+            {/* Language Switcher */}
+            <CompactLanguageSwitcher />
+            
             {/* Notifications */}
             <NotificationCenter />
 

@@ -20,7 +20,9 @@
     "settings": "הגדרות",
     "profile": "פרופיל",
     "logout": "התנתק",
-    "welcome": "ברוכים הבאים"
+    "welcome": "ברוכים הבאים",
+    "language": "שפה",
+    "selectLanguage": "בחר שפה"
   },
   "navigation": {
     "home": "בית",

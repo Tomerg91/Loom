@@ -20,7 +20,9 @@
     "settings": "Settings",
     "profile": "Profile",
     "logout": "Logout",
-    "welcome": "Welcome"
+    "welcome": "Welcome",
+    "language": "Language",
+    "selectLanguage": "Select language"
   },
   "navigation": {
     "home": "Home",
