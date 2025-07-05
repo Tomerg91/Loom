@@ -1,7 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@/lib/supabase/client';
 import { createUserService } from '@/lib/database';
-import type { User, UserRole, Language } from '@/types';
+import type { User, UserRole, UserStatus, Language } from '@/types';
 
 export interface AuthUser {
   id: string;
@@ -9,8 +9,34 @@ export interface AuthUser {
   role: UserRole;
   firstName?: string;
   lastName?: string;
+  phone?: string;
   avatarUrl?: string;
+  timezone?: string;
   language: Language;
+  status: UserStatus;
+  createdAt: string;
+  updatedAt: string;
+  lastSeenAt?: string;
+  // Additional fields used in auth-context
+  emailVerified?: boolean;
+  isActive?: boolean;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  preferences?: {
+    language: string;
+    notifications: {
+      email: boolean;
+      push: boolean;
+      inApp: boolean;
+    };
+    theme: string;
+  };
+  metadata?: Record<string, unknown>;
+  // Additional profile fields that might be used in components
+  bio?: string;
+  location?: string;
+  website?: string;
+  specialties?: string[];
 }
 
 export interface SignUpData {
@@ -75,8 +101,14 @@ export class AuthService {
             role: userProfile.role,
             firstName: userProfile.firstName,
             lastName: userProfile.lastName,
+            phone: userProfile.phone,
             avatarUrl: userProfile.avatarUrl,
+            timezone: userProfile.timezone,
             language: userProfile.language,
+            status: userProfile.status,
+            createdAt: userProfile.createdAt,
+            updatedAt: userProfile.updatedAt,
+            lastSeenAt: userProfile.lastSeenAt,
           },
           error: null,
         };
@@ -120,8 +152,14 @@ export class AuthService {
             role: userProfile.role,
             firstName: userProfile.firstName,
             lastName: userProfile.lastName,
+            phone: userProfile.phone,
             avatarUrl: userProfile.avatarUrl,
+            timezone: userProfile.timezone,
             language: userProfile.language,
+            status: userProfile.status,
+            createdAt: userProfile.createdAt,
+            updatedAt: userProfile.updatedAt,
+            lastSeenAt: userProfile.lastSeenAt,
           },
           error: null,
         };
@@ -165,8 +203,14 @@ export class AuthService {
           role: userProfile.role,
           firstName: userProfile.firstName,
           lastName: userProfile.lastName,
+          phone: userProfile.phone,
           avatarUrl: userProfile.avatarUrl,
+          timezone: userProfile.timezone,
           language: userProfile.language,
+          status: userProfile.status,
+          createdAt: userProfile.createdAt,
+          updatedAt: userProfile.updatedAt,
+          lastSeenAt: userProfile.lastSeenAt,
         };
       }
 
@@ -257,8 +301,14 @@ export class AuthService {
             role: updatedProfile.role,
             firstName: updatedProfile.firstName,
             lastName: updatedProfile.lastName,
+            phone: updatedProfile.phone,
             avatarUrl: updatedProfile.avatarUrl,
+            timezone: updatedProfile.timezone,
             language: updatedProfile.language,
+            status: updatedProfile.status,
+            createdAt: updatedProfile.createdAt,
+            updatedAt: updatedProfile.updatedAt,
+            lastSeenAt: updatedProfile.lastSeenAt,
           },
           error: null,
         };

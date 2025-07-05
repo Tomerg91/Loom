@@ -33,7 +33,7 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
   // Verify user is the coach or has appropriate access
   if (user.id !== coachId) {
     const { data: profile } = await supabase
-      .from('user_profiles')
+      .from('users')
       .select('role')
       .eq('id', user.id)
       .single();

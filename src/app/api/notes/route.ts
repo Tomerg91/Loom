@@ -13,7 +13,7 @@ const createNoteSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     if (clientId) {
       query = query.eq('client_id', clientId);
     }
-    if (privacyLevel) {
+    if (privacyLevel && (privacyLevel === 'private' || privacyLevel === 'shared_with_client')) {
       query = query.eq('privacy_level', privacyLevel);
     }
     if (search) {
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     if (clientId) {
       countQuery = countQuery.eq('client_id', clientId);
     }
-    if (privacyLevel) {
+    if (privacyLevel && (privacyLevel === 'private' || privacyLevel === 'shared_with_client')) {
       countQuery = countQuery.eq('privacy_level', privacyLevel);
     }
     if (search) {
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
 
     // Verify user is a coach
     const { data: profile } = await supabase
-      .from('user_profiles')
+      .from('users')
       .select('role')
       .eq('id', user.id)
       .single();

@@ -85,7 +85,7 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
   // Verify user is the coach or has admin rights
   if (user.id !== coachId) {
     const { data: profile } = await supabase
-      .from('user_profiles')
+      .from('users')
       .select('role')
       .eq('id', user.id)
       .single();
@@ -111,7 +111,7 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return createErrorResponse('Validation error', HTTP_STATUS.BAD_REQUEST, error.errors);
+      return createErrorResponse('Validation error', HTTP_STATUS.BAD_REQUEST);
     }
 
     console.error('Error in availability POST:', error);

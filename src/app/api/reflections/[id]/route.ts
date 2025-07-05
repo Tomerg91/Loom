@@ -10,13 +10,14 @@ const updateReflectionSchema = z.object({
 });
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const supabase = createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         created_at,
         updated_at
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('client_id', user.id)
       .single();
 
@@ -67,6 +68,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const supabase = createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -81,7 +83,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { data: existingReflection, error: fetchError } = await supabase
       .from('reflections')
       .select('id, client_id')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('client_id', user.id)
       .single();
 
@@ -99,7 +101,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         goals_for_next_session: validatedData.goalsForNextSession,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('client_id', user.id)
       .select(`
         id,
@@ -148,6 +150,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const supabase = createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -159,7 +162,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { data: existingReflection, error: fetchError } = await supabase
       .from('reflections')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('client_id', user.id)
       .single();
 
@@ -171,7 +174,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { error } = await supabase
       .from('reflections')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('client_id', user.id);
 
     if (error) {

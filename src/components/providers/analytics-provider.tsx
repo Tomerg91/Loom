@@ -88,7 +88,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         posthogIdentify(user.id, {
           email: user.email,
           role: user.role,
-          name: user.full_name,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         });
       }
 

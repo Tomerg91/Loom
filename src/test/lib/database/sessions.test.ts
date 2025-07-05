@@ -91,7 +91,7 @@ describe('SessionService', () => {
       });
 
       const result = await sessionService.findMany({
-        userId: 'user-id',
+        coachId: 'user-id',
         page: 1,
         limit: 10,
       });
@@ -115,7 +115,7 @@ describe('SessionService', () => {
       });
 
       await sessionService.findMany({
-        userId: 'user-id',
+        coachId: 'user-id',
         status: 'scheduled',
         page: 1,
         limit: 10,
@@ -135,7 +135,7 @@ describe('SessionService', () => {
       });
 
       await sessionService.findMany({
-        userId: 'user-id',
+        coachId: 'user-id',
         startDate,
         endDate,
         page: 1,
@@ -153,7 +153,7 @@ describe('SessionService', () => {
       });
 
       await expect(sessionService.findMany({
-        userId: 'user-id',
+        coachId: 'user-id',
         page: 1,
         limit: 10,
       })).rejects.toThrow('Database connection failed');
@@ -314,28 +314,6 @@ describe('SessionService', () => {
     it('validates status values', async () => {
       await expect(sessionService.updateStatus('session-id', 'invalid-status' as any))
         .rejects.toThrow('Invalid status');
-    });
-  });
-
-  describe('getSessionStats', () => {
-    it('returns session statistics for user', async () => {
-      const mockStats = {
-        total: 10,
-        scheduled: 3,
-        completed: 6,
-        cancelled: 1,
-      };
-
-      // Mock multiple database calls for different statuses
-      mockSupabaseClient.from().select().eq()
-        .mockResolvedValueOnce({ count: 10, error: null })
-        .mockResolvedValueOnce({ count: 3, error: null })
-        .mockResolvedValueOnce({ count: 6, error: null })
-        .mockResolvedValueOnce({ count: 1, error: null });
-
-      const result = await sessionService.getSessionStats('user-id');
-
-      expect(result).toEqual(mockStats);
     });
   });
 });

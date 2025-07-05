@@ -1,14 +1,15 @@
 import { getTranslations } from 'next-intl/server';
 import { LanguageSettingsCard } from '@/components/settings/language-settings-card';
-import RouteGuard from '@/components/auth/route-guard';
+import { RouteGuard } from '@/components/auth/route-guard';
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
-  };
+  }>;
 }
 
 export default async function LanguageSettingsPage({ params }: Props) {
+  const { locale } = await params;
   const t = await getTranslations('common');
 
   return (
@@ -30,6 +31,7 @@ export default async function LanguageSettingsPage({ params }: Props) {
 }
 
 export async function generateMetadata({ params }: Props) {
+  const { locale } = await params;
   const t = await getTranslations('common');
   
   return {

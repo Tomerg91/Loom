@@ -21,7 +21,7 @@ interface LanguageSwitcherProps {
   variant?: 'select' | 'dropdown' | 'button';
   showFlag?: boolean;
   showNativeName?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'default' | 'lg';
   className?: string;
 }
 
@@ -29,7 +29,7 @@ export function LanguageSwitcher({
   variant = 'dropdown',
   showFlag = true,
   showNativeName = false,
-  size = 'md',
+  size = 'default',
   className = ''
 }: LanguageSwitcherProps) {
   const { currentLocale, currentLanguage, availableLanguages, switchLanguage } = useLanguageSwitcher();

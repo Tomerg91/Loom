@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NextRequest } from 'next/server';
 
 describe('Performance Tests', () => {
   describe('Bundle Size Analysis', () => {
@@ -280,7 +281,7 @@ describe('Performance Tests', () => {
     it('should implement response compression', async () => {
       const { optimizeApiResponse } = await import('@/lib/performance/optimization');
       
-      const mockRequest = new Request('http://localhost/api/test', {
+      const mockRequest = new NextRequest('http://localhost/api/test', {
         headers: {
           'accept-encoding': 'gzip, deflate, br',
           'user-agent': 'Mozilla/5.0',

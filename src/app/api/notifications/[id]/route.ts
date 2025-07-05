@@ -9,13 +9,14 @@ import { createServerClient } from '@/lib/supabase/server';
 import { NotificationService } from '@/lib/database/notifications';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // GET /api/notifications/[id] - Get specific notification
 export const GET = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
+  const { id } = await params;
   const supabase = createServerClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -24,7 +25,7 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
   }
 
   const notificationService = new NotificationService(true);
-  const notification = await notificationService.getNotification(params.id);
+  const notification = await notificationService.getNotification(id);
 
   if (!notification || notification.userId !== user.id) {
     return createErrorResponse('Notification not found', HTTP_STATUS.NOT_FOUND);
@@ -35,6 +36,7 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
 
 // DELETE /api/notifications/[id] - Delete notification
 export const DELETE = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
+  const { id } = await params;
   const supabase = createServerClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -43,7 +45,7 @@ export const DELETE = withErrorHandling(async (request: NextRequest, { params }:
   }
 
   const notificationService = new NotificationService(true);
-  const success = await notificationService.deleteNotification(params.id, user.id);
+  const success = await notificationService.deleteNotification(id, user.id);
 
   if (!success) {
     return createErrorResponse('Failed to delete notification', HTTP_STATUS.INTERNAL_SERVER_ERROR);

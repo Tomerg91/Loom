@@ -1,6 +1,6 @@
-import { CoverageConfig } from 'vitest/config';
+import type { CoverageOptions } from 'vitest';
 
-export const coverageConfig: CoverageConfig = {
+export const coverageConfig: CoverageOptions = {
   provider: 'v8',
   reporter: ['text', 'html', 'json', 'lcov'],
   reportsDirectory: './coverage',

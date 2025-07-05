@@ -229,40 +229,72 @@ export class UserService {
     if (!user) return null;
 
     if (user.role === 'coach') {
-      const { data, error } = await this.supabase
-        .from('coach_statistics')
-        .select('*')
-        .eq('coach_id', userId)
-        .single();
+      // Calculate coach statistics from sessions table
+      const { data: totalSessions, error: totalError } = await this.supabase
+        .from('sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('coach_id', userId);
 
-      if (error) {
-        console.error('Error fetching coach stats:', error);
+      const { data: completedSessions, error: completedError } = await this.supabase
+        .from('sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('coach_id', userId)
+        .eq('status', 'completed');
+
+      const { data: upcomingSessions, error: upcomingError } = await this.supabase
+        .from('sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('coach_id', userId)
+        .in('status', ['scheduled', 'in_progress']);
+
+      // Get unique clients count
+      const { data: clientSessions, error: clientError } = await this.supabase
+        .from('sessions')
+        .select('client_id')
+        .eq('coach_id', userId);
+
+      const uniqueClients = new Set(clientSessions?.map(s => s.client_id) || []);
+      
+      if (totalError || completedError || upcomingError || clientError) {
+        console.error('Error fetching coach stats:', { totalError, completedError, upcomingError, clientError });
         return null;
       }
 
       return {
-        totalSessions: data.total_sessions || 0,
-        completedSessions: data.completed_sessions || 0,
-        upcomingSessions: data.upcoming_sessions || 0,
-        totalClients: data.total_clients || 0,
-        activeClients: data.active_clients || 0,
+        totalSessions: totalSessions?.count || 0,
+        completedSessions: completedSessions?.count || 0,
+        upcomingSessions: upcomingSessions?.count || 0,
+        totalClients: uniqueClients.size,
+        activeClients: uniqueClients.size, // For now, assume all clients are active
       };
     } else if (user.role === 'client') {
-      const { data, error } = await this.supabase
-        .from('client_progress')
-        .select('*')
-        .eq('client_id', userId)
-        .single();
+      // Calculate client statistics from sessions table
+      const { data: totalSessions, error: totalError } = await this.supabase
+        .from('sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', userId);
 
-      if (error) {
-        console.error('Error fetching client stats:', error);
+      const { data: completedSessions, error: completedError } = await this.supabase
+        .from('sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', userId)
+        .eq('status', 'completed');
+
+      const { data: upcomingSessions, error: upcomingError } = await this.supabase
+        .from('sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', userId)
+        .in('status', ['scheduled', 'in_progress']);
+
+      if (totalError || completedError || upcomingError) {
+        console.error('Error fetching client stats:', { totalError, completedError, upcomingError });
         return null;
       }
 
       return {
-        totalSessions: data.total_sessions || 0,
-        completedSessions: data.completed_sessions || 0,
-        upcomingSessions: data.upcoming_sessions || 0,
+        totalSessions: totalSessions?.count || 0,
+        completedSessions: completedSessions?.count || 0,
+        upcomingSessions: upcomingSessions?.count || 0,
       };
     }
 

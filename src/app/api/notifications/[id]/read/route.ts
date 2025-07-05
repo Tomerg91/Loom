@@ -9,13 +9,14 @@ import { createServerClient } from '@/lib/supabase/server';
 import { NotificationService } from '@/lib/database/notifications';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // POST /api/notifications/[id]/read - Mark notification as read
 export const POST = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
+  const { id } = await params;
   const supabase = createServerClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -24,7 +25,7 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
   }
 
   const notificationService = new NotificationService(true);
-  const success = await notificationService.markSingleAsRead(params.id, user.id);
+  const success = await notificationService.markSingleAsRead(id, user.id);
 
   if (!success) {
     return createErrorResponse('Failed to mark notification as read', HTTP_STATUS.INTERNAL_SERVER_ERROR);

@@ -7,9 +7,9 @@ export async function GET(request: NextRequest) {
   
   try {
     // Check database connection
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data, error } = await supabase
-      .from('profiles')
+      .from('users')
       .select('id')
       .limit(1);
     
@@ -101,9 +101,9 @@ export async function GET(request: NextRequest) {
 // HEAD /api/health - Readiness check endpoint
 export async function HEAD(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { error } = await supabase
-      .from('profiles')
+      .from('users')
       .select('id')
       .limit(1);
     

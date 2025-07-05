@@ -10,13 +10,14 @@ const updateNoteSchema = z.object({
 });
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const supabase = createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         created_at,
         updated_at
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('coach_id', user.id)
       .single();
 
@@ -67,6 +68,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const supabase = createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -81,7 +83,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { data: existingNote, error: fetchError } = await supabase
       .from('coach_notes')
       .select('id, coach_id')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('coach_id', user.id)
       .single();
 
@@ -96,7 +98,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         ...validatedData,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('coach_id', user.id)
       .select(`
         id,
@@ -145,6 +147,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const supabase = createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -156,7 +159,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { data: existingNote, error: fetchError } = await supabase
       .from('coach_notes')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('coach_id', user.id)
       .single();
 
@@ -168,7 +171,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { error } = await supabase
       .from('coach_notes')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('coach_id', user.id);
 
     if (error) {

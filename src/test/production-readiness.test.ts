@@ -139,7 +139,7 @@ describe('Production Readiness', () => {
         const supabase = createClient();
         
         // Simple connectivity test
-        const { error } = await supabase.from('profiles').select('id').limit(1);
+        const { error } = await supabase.from('users').select('id').limit(1);
         expect(error).toBeNull();
       } catch (error) {
         // If we can't connect, that's expected in test environment
