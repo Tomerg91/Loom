@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders, mockUser, mockSupabaseClient, mockFetch } from '@/test/utils';
-import { SignInForm } from '@/components/auth/signin-form';
+import { SigninForm } from '@/components/auth/signin-form';
 import { RouteGuard } from '@/components/auth/route-guard';
 
 // Mock Next.js navigation
@@ -55,7 +55,7 @@ describe('Authentication Flow Integration', () => {
         error: null,
       });
 
-      renderWithProviders(<SignInForm />);
+      renderWithProviders(<SigninForm />);
 
       // Fill out and submit form
       const emailInput = screen.getByLabelText(/email/i);
@@ -87,7 +87,7 @@ describe('Authentication Flow Integration', () => {
         error: { message: 'Invalid login credentials' },
       });
 
-      renderWithProviders(<SignInForm />);
+      renderWithProviders(<SigninForm />);
 
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/password/i);
@@ -107,7 +107,7 @@ describe('Authentication Flow Integration', () => {
     });
 
     it('shows validation errors for invalid input', async () => {
-      renderWithProviders(<SignInForm />);
+      renderWithProviders(<SigninForm />);
 
       const submitButton = screen.getByRole('button', { name: /sign in/i });
       fireEvent.click(submitButton);
@@ -130,7 +130,7 @@ describe('Authentication Flow Integration', () => {
       require('@/lib/store/auth-store').useUser.mockReturnValue(mockUser);
 
       renderWithProviders(
-        <RouteGuard requiredRole="client">
+        <RouteGuard requireRole="client">
           <ProtectedComponent />
         </RouteGuard>
       );
@@ -143,7 +143,7 @@ describe('Authentication Flow Integration', () => {
       require('@/lib/store/auth-store').useUser.mockReturnValue(null);
 
       renderWithProviders(
-        <RouteGuard requiredRole="client">
+        <RouteGuard requireRole="client">
           <ProtectedComponent />
         </RouteGuard>
       );
@@ -158,7 +158,7 @@ describe('Authentication Flow Integration', () => {
       require('@/lib/store/auth-store').useUser.mockReturnValue(clientUser);
 
       renderWithProviders(
-        <RouteGuard requiredRole="admin">
+        <RouteGuard requireRole="admin">
           <ProtectedComponent />
         </RouteGuard>
       );
@@ -172,7 +172,7 @@ describe('Authentication Flow Integration', () => {
       require('@/lib/store/auth-store').useUser.mockReturnValue(undefined);
 
       renderWithProviders(
-        <RouteGuard requiredRole="client">
+        <RouteGuard requireRole="client">
           <ProtectedComponent />
         </RouteGuard>
       );

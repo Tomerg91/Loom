@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders, mockUseMutation } from '@/test/utils';
-import { SignInForm } from '@/components/auth/signin-form';
+import { renderWithProviders } from '@/test/utils';
+import { SigninForm } from '@/components/auth/signin-form';
 
 // Mock TanStack Query
 const mockUseMutation = vi.fn();
@@ -20,7 +20,7 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
-describe('SignInForm', () => {
+describe('SigninForm', () => {
   const mockMutate = vi.fn();
   
   beforeEach(() => {
@@ -34,7 +34,7 @@ describe('SignInForm', () => {
   });
 
   it('renders signin form correctly', () => {
-    renderWithProviders(<SignInForm />);
+    renderWithProviders(<SigninForm />);
     
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe('SignInForm', () => {
   });
 
   it('shows validation errors for empty fields', async () => {
-    renderWithProviders(<SignInForm />);
+    renderWithProviders(<SigninForm />);
     
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
@@ -55,7 +55,7 @@ describe('SignInForm', () => {
   });
 
   it('shows validation error for invalid email', async () => {
-    renderWithProviders(<SignInForm />);
+    renderWithProviders(<SigninForm />);
     
     const emailInput = screen.getByLabelText(/email/i);
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
@@ -69,7 +69,7 @@ describe('SignInForm', () => {
   });
 
   it('submits form with valid data', async () => {
-    renderWithProviders(<SignInForm />);
+    renderWithProviders(<SigninForm />);
     
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/password/i);
@@ -95,7 +95,7 @@ describe('SignInForm', () => {
       error: null,
     });
     
-    renderWithProviders(<SignInForm />);
+    renderWithProviders(<SigninForm />);
     
     const submitButton = screen.getByRole('button', { name: /signing in/i });
     expect(submitButton).toBeDisabled();
@@ -109,7 +109,7 @@ describe('SignInForm', () => {
       error: new Error('Invalid credentials'),
     });
     
-    renderWithProviders(<SignInForm />);
+    renderWithProviders(<SigninForm />);
     
     expect(screen.getByText(/invalid credentials/i)).toBeInTheDocument();
   });
@@ -124,7 +124,7 @@ describe('SignInForm', () => {
       onSuccess: mockOnSuccess,
     });
     
-    renderWithProviders(<SignInForm />);
+    renderWithProviders(<SigninForm />);
     
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/password/i);

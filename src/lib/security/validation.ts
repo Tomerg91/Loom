@@ -17,6 +17,20 @@ export const secureEmailSchema = z
     message: 'Email contains potentially harmful content',
   });
 
+// Helper function to create secure string schemas with additional validations
+function createSecureStringSchema() {
+  return z.string();
+}
+
+// Helper function to apply security transforms after all other validations
+function applySecurity<T extends z.ZodString>(schema: T) {
+  return schema
+    .transform(sanitizeInput)
+    .refine((val) => !containsSQLInjection(val), {
+      message: 'Input contains potentially harmful content',
+    });
+}
+
 export const securePasswordSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters')
@@ -78,12 +92,15 @@ export const fileUploadSchema = z.object({
 
 // Session and user data validation
 export const sessionValidationSchema = z.object({
-  title: secureStringSchema
-    .min(1, 'Title is required')
-    .max(100, 'Title is too long'),
-  description: secureStringSchema
-    .max(2000, 'Description is too long')
-    .optional(),
+  title: applySecurity(
+    z.string()
+      .min(1, 'Title is required')
+      .max(100, 'Title is too long')
+  ),
+  description: applySecurity(
+    z.string()
+      .max(2000, 'Description is too long')
+  ).optional(),
   coachId: z.string().uuid('Invalid coach ID'),
   clientId: z.string().uuid('Invalid client ID'),
   scheduledAt: z.string().datetime('Invalid date format'),
@@ -97,38 +114,46 @@ export const sessionValidationSchema = z.object({
 });
 
 export const noteValidationSchema = z.object({
-  title: secureStringSchema
-    .min(1, 'Title is required')
-    .max(100, 'Title is too long'),
-  content: secureStringSchema
-    .min(1, 'Content is required')
-    .max(5000, 'Content is too long'),
+  title: applySecurity(
+    z.string()
+      .min(1, 'Title is required')
+      .max(100, 'Title is too long')
+  ),
+  content: applySecurity(
+    z.string()
+      .min(1, 'Content is required')
+      .max(5000, 'Content is too long')
+  ),
   clientId: z.string().uuid('Invalid client ID'),
   sessionId: z.string().uuid('Invalid session ID').optional(),
   privacyLevel: z.enum(['private', 'shared_with_client'], {
     errorMap: () => ({ message: 'Invalid privacy level' }),
   }),
-  tags: z.array(secureStringSchema.max(50, 'Tag is too long'))
+  tags: z.array(applySecurity(z.string().max(50, 'Tag is too long')))
     .max(10, 'Too many tags')
     .optional(),
 });
 
 export const reflectionValidationSchema = z.object({
-  content: secureStringSchema
-    .min(10, 'Reflection should be at least 10 characters')
-    .max(2000, 'Reflection is too long'),
+  content: applySecurity(
+    z.string()
+      .min(10, 'Reflection should be at least 10 characters')
+      .max(2000, 'Reflection is too long')
+  ),
   sessionId: z.string().uuid('Invalid session ID').optional(),
   moodRating: z.number()
     .int('Mood rating must be a whole number')
     .min(1, 'Mood rating must be between 1 and 10')
     .max(10, 'Mood rating must be between 1 and 10')
     .optional(),
-  insights: secureStringSchema
-    .max(1000, 'Insights are too long')
-    .optional(),
-  goalsForNextSession: secureStringSchema
-    .max(1000, 'Goals are too long')
-    .optional(),
+  insights: applySecurity(
+    z.string()
+      .max(1000, 'Insights are too long')
+  ).optional(),
+  goalsForNextSession: applySecurity(
+    z.string()
+      .max(1000, 'Goals are too long')
+  ).optional(),
 });
 
 // Notification validation
@@ -137,28 +162,37 @@ export const notificationValidationSchema = z.object({
   type: z.enum(['session_reminder', 'session_confirmation', 'new_message', 'system_update'], {
     errorMap: () => ({ message: 'Invalid notification type' }),
   }),
-  title: secureStringSchema
-    .min(1, 'Title is required')
-    .max(100, 'Title is too long'),
-  message: secureStringSchema
-    .min(1, 'Message is required')
-    .max(500, 'Message is too long'),
+  title: applySecurity(
+    z.string()
+      .min(1, 'Title is required')
+      .max(100, 'Title is too long')
+  ),
+  message: applySecurity(
+    z.string()
+      .min(1, 'Message is required')
+      .max(500, 'Message is too long')
+  ),
   data: z.record(z.unknown()).optional(),
 });
 
 // User profile validation
 export const userProfileValidationSchema = z.object({
-  firstName: secureStringSchema
-    .min(1, 'First name is required')
-    .max(50, 'First name is too long'),
-  lastName: secureStringSchema
-    .min(1, 'Last name is required')
-    .max(50, 'Last name is too long'),
+  firstName: applySecurity(
+    z.string()
+      .min(1, 'First name is required')
+      .max(50, 'First name is too long')
+  ),
+  lastName: applySecurity(
+    z.string()
+      .min(1, 'Last name is required')
+      .max(50, 'Last name is too long')
+  ),
   email: secureEmailSchema,
-  phoneNumber: secureStringSchema
-    .regex(/^\+?[\d\s-()]+$/, 'Invalid phone number format')
-    .max(20, 'Phone number is too long')
-    .optional(),
+  phoneNumber: applySecurity(
+    z.string()
+      .regex(/^\+?[\d\s-()]+$/, 'Invalid phone number format')
+      .max(20, 'Phone number is too long')
+  ).optional(),
   dateOfBirth: z.string()
     .datetime('Invalid date format')
     .optional()

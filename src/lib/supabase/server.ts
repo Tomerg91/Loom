@@ -3,7 +3,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { type NextRequest, type NextResponse } from 'next/server';
 import { type Database } from '@/types/supabase';
 
-// Server-side Supabase client for middleware
+// Server-side Supabase client for middleware (without cookie access)
 export const createServerClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -21,10 +21,49 @@ export const createServerClient = () => {
   );
 };
 
+// Server-side Supabase client for middleware with request context
+export const createServerClientWithRequest = (request: NextRequest, response: NextResponse) => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  
+  return createSupabaseServerClient<Database>(
+    supabaseUrl,
+    supabaseKey,
+    {
+      cookies: {
+        get: (name: string) => request.cookies.get(name)?.value,
+        set: (name: string, value: string, options: any) => {
+          try {
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            });
+          } catch (error) {
+            console.warn('Failed to set cookie in middleware:', error);
+          }
+        },
+        remove: (name: string, options: any) => {
+          try {
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+              maxAge: 0,
+            });
+          } catch (error) {
+            console.warn('Failed to remove cookie in middleware:', error);
+          }
+        },
+      },
+    }
+  );
+};
+
 // For route handlers and server components that have access to cookies
 export const createClient = async () => {
   const { cookies } = await import('next/headers');
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   
@@ -38,14 +77,16 @@ export const createClient = async () => {
           try {
             cookieStore.set(name, value, options);
           } catch (error) {
-            // Handle cookie setting errors
+            // Handle cookie setting errors in read-only contexts
+            console.warn('Failed to set cookie:', error);
           }
         },
         remove: (name: string, options: any) => {
           try {
             cookieStore.set(name, '', { ...options, maxAge: 0 });
           } catch (error) {
-            // Handle cookie removal errors
+            // Handle cookie removal errors in read-only contexts
+            console.warn('Failed to remove cookie:', error);
           }
         },
       },

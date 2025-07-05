@@ -335,3 +335,39 @@ export function prefersReducedMotion(): boolean {
 export function prefersHighContrast(): boolean {
   return window.matchMedia('(prefers-contrast: high)').matches;
 }
+
+// Create ARIA live region utility
+export function createAriaLiveRegion(
+  priority: 'polite' | 'assertive' = 'polite',
+  atomic: boolean = true
+): HTMLElement {
+  const liveRegion = document.createElement('div');
+  liveRegion.setAttribute('aria-live', priority);
+  liveRegion.setAttribute('aria-atomic', atomic.toString());
+  liveRegion.className = 'sr-only';
+  liveRegion.style.cssText = `
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  `;
+  
+  if (document.body) {
+    document.body.appendChild(liveRegion);
+  }
+  
+  return liveRegion;
+}
+
+// Announce to screen reader utility (wrapper for ScreenReaderAnnouncer.announce)
+export function announceToScreenReader(
+  message: string,
+  priority: 'polite' | 'assertive' = 'polite'
+): void {
+  ScreenReaderAnnouncer.announce(message, priority);
+}

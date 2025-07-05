@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NextRequest } from 'next/server';
 import { POST, GET } from '@/app/api/sessions/route';
 import { createMockSession, mockSupabaseClient } from '@/test/utils';
 
@@ -66,7 +67,7 @@ describe('/api/sessions', () => {
         type: 'individual',
       });
 
-      const request = new Request('http://localhost:3000/api/sessions', {
+      const request = new NextRequest('http://localhost:3000/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,7 +100,7 @@ describe('/api/sessions', () => {
         error: new Error('Not authenticated'),
       });
 
-      const request = new Request('http://localhost:3000/api/sessions', {
+      const request = new NextRequest('http://localhost:3000/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -117,7 +118,7 @@ describe('/api/sessions', () => {
       const validateRequestBody = require('@/lib/api/validation').validateRequestBody;
       validateRequestBody.mockRejectedValue(new Error('Title is required'));
 
-      const request = new Request('http://localhost:3000/api/sessions', {
+      const request = new NextRequest('http://localhost:3000/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -153,7 +154,7 @@ describe('/api/sessions', () => {
         type: 'individual',
       });
 
-      const request = new Request('http://localhost:3000/api/sessions', {
+      const request = new NextRequest('http://localhost:3000/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -190,7 +191,7 @@ describe('/api/sessions', () => {
         findMany: mockFindMany,
       }));
 
-      const request = new Request('http://localhost:3000/api/sessions?page=1&limit=10');
+      const request = new NextRequest('http://localhost:3000/api/sessions?page=1&limit=10');
 
       const response = await GET(request);
       const data = await response.json();
@@ -216,7 +217,7 @@ describe('/api/sessions', () => {
         findMany: mockFindMany,
       }));
 
-      const request = new Request('http://localhost:3000/api/sessions?status=scheduled');
+      const request = new NextRequest('http://localhost:3000/api/sessions?status=scheduled');
 
       await GET(request);
 
@@ -233,7 +234,7 @@ describe('/api/sessions', () => {
         error: new Error('Not authenticated'),
       });
 
-      const request = new Request('http://localhost:3000/api/sessions');
+      const request = new NextRequest('http://localhost:3000/api/sessions');
 
       const response = await GET(request);
       const data = await response.json();
@@ -250,7 +251,7 @@ describe('/api/sessions', () => {
         findMany: mockFindMany,
       }));
 
-      const request = new Request('http://localhost:3000/api/sessions');
+      const request = new NextRequest('http://localhost:3000/api/sessions');
 
       const response = await GET(request);
       const data = await response.json();

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/notifications/route';
 import { POST as MarkAsRead } from '@/app/api/notifications/[id]/read/route';
 import { createMockNotification, mockSupabaseClient } from '@/test/utils';
@@ -55,7 +56,7 @@ describe('/api/notifications', () => {
         findMany: mockFindMany,
       }));
 
-      const request = new Request('http://localhost:3000/api/notifications?page=1&limit=20');
+      const request = new NextRequest('http://localhost:3000/api/notifications?page=1&limit=20');
 
       const response = await GET(request);
       const data = await response.json();
@@ -88,7 +89,7 @@ describe('/api/notifications', () => {
         findMany: mockFindMany,
       }));
 
-      const request = new Request('http://localhost:3000/api/notifications?unreadOnly=true');
+      const request = new NextRequest('http://localhost:3000/api/notifications?unreadOnly=true');
 
       await GET(request);
 
@@ -114,7 +115,7 @@ describe('/api/notifications', () => {
         findMany: mockFindMany,
       }));
 
-      const request = new Request('http://localhost:3000/api/notifications?sortOrder=desc');
+      const request = new NextRequest('http://localhost:3000/api/notifications?sortOrder=desc');
 
       await GET(request);
 
@@ -131,7 +132,7 @@ describe('/api/notifications', () => {
         error: new Error('Not authenticated'),
       });
 
-      const request = new Request('http://localhost:3000/api/notifications');
+      const request = new NextRequest('http://localhost:3000/api/notifications');
 
       const response = await GET(request);
       const data = await response.json();
@@ -152,7 +153,7 @@ describe('/api/notifications', () => {
         create: mockCreate,
       }));
 
-      const request = new Request('http://localhost:3000/api/notifications', {
+      const request = new NextRequest('http://localhost:3000/api/notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -180,7 +181,7 @@ describe('/api/notifications', () => {
     });
 
     it('validates required fields', async () => {
-      const request = new Request('http://localhost:3000/api/notifications', {
+      const request = new NextRequest('http://localhost:3000/api/notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -195,7 +196,7 @@ describe('/api/notifications', () => {
     });
 
     it('only allows admin to create notifications for other users', async () => {
-      const request = new Request('http://localhost:3000/api/notifications', {
+      const request = new NextRequest('http://localhost:3000/api/notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -224,7 +225,7 @@ describe('/api/notifications', () => {
       }));
 
       const response = await MarkAsRead(
-        new Request('http://localhost:3000/api/notifications/test-id/read', {
+        new NextRequest('http://localhost:3000/api/notifications/test-id/read', {
           method: 'POST',
         }),
         { params: { id: 'test-id' } }
@@ -244,7 +245,7 @@ describe('/api/notifications', () => {
       }));
 
       const response = await MarkAsRead(
-        new Request('http://localhost:3000/api/notifications/invalid-id/read', {
+        new NextRequest('http://localhost:3000/api/notifications/invalid-id/read', {
           method: 'POST',
         }),
         { params: { id: 'invalid-id' } }
@@ -263,7 +264,7 @@ describe('/api/notifications', () => {
       });
 
       const response = await MarkAsRead(
-        new Request('http://localhost:3000/api/notifications/test-id/read', {
+        new NextRequest('http://localhost:3000/api/notifications/test-id/read', {
           method: 'POST',
         }),
         { params: { id: 'test-id' } }

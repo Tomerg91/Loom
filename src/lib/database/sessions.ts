@@ -633,6 +633,61 @@ export class SessionService {
 
     return true;
   }
+
+  /**
+   * Test-compatible methods (aliases for existing functionality)
+   */
+  async create(sessionData: CreateSessionData): Promise<Session | null> {
+    return this.createSessionFromApi(sessionData);
+  }
+
+  async findMany(options: GetSessionsOptions = {}): Promise<{ data: Session[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
+    const data = await this.getSessionsPaginated(options);
+    const total = await this.getSessionsCount(options);
+    const page = Math.floor((options.offset || 0) / (options.limit || 10)) + 1;
+    const limit = options.limit || 10;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      }
+    };
+  }
+
+  async findById(sessionId: string): Promise<Session | null> {
+    return this.getSessionById(sessionId);
+  }
+
+  async update(sessionId: string, updates: UpdateSessionData): Promise<Session | null> {
+    return this.updateSessionFromApi(sessionId, updates);
+  }
+
+  async delete(sessionId: string): Promise<boolean> {
+    return this.deleteSessionFromApi(sessionId);
+  }
+
+  async findUpcoming(userId: string): Promise<Session[]> {
+    return this.getUpcomingSessions(userId);
+  }
+
+  async findByDateRange(from: string, to: string, userId?: string): Promise<Session[]> {
+    const options: GetSessionsOptions = { from, to };
+    if (userId) {
+      // Determine if this is a coach or client based on existing sessions
+      options.coachId = userId;
+      options.clientId = userId;
+    }
+    return this.getSessionsPaginated(options);
+  }
+
+  async updateStatus(sessionId: string, status: SessionStatus): Promise<boolean> {
+    return this.updateSessionStatus(sessionId, status);
+  }
 }
 
 // Export individual functions for API usage
