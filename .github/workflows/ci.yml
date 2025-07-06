@@ -328,3 +328,119 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  # Slack Notifications
+  notify-slack:
+    name: Slack Notifications
+    runs-on: ubuntu-latest
+    needs: [quality, test, e2e, build, deploy-production, migrate-production]
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+      - name: Notify Slack on Success
+        if: contains(needs.*.result, 'success') && !contains(needs.*.result, 'failure')
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#deployments'
+          title: '✅ CI/CD Pipeline Completed Successfully'
+          message: |
+            🎉 All checks passed for `${{ github.ref_name }}`!
+            
+            📋 **Summary:**
+            • Quality checks: ✅
+            • Tests: ✅ 
+            • E2E tests: ✅
+            • Build: ✅
+            • Deployment: ✅
+            • Migrations: ✅
+            
+            📝 **Details:**
+            • Commit: `${{ github.sha }}`
+            • Author: ${{ github.actor }}
+            • Branch: `${{ github.ref_name }}`
+            
+            🔗 [View Workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          
+      - name: Notify Slack on Failure
+        if: contains(needs.*.result, 'failure')
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#deployments'
+          title: '❌ CI/CD Pipeline Failed'
+          message: |
+            🚨 Pipeline failed for `${{ github.ref_name }}`
+            
+            📋 **Failed Jobs:**
+            ${{ needs.quality.result == 'failure' && '• Quality checks: ❌' || '' }}
+            ${{ needs.test.result == 'failure' && '• Tests: ❌' || '' }}
+            ${{ needs.e2e.result == 'failure' && '• E2E tests: ❌' || '' }}
+            ${{ needs.build.result == 'failure' && '• Build: ❌' || '' }}
+            ${{ needs.deploy-production.result == 'failure' && '• Deployment: ❌' || '' }}
+            ${{ needs.migrate-production.result == 'failure' && '• Migrations: ❌' || '' }}
+            
+            📝 **Details:**
+            • Commit: `${{ github.sha }}`
+            • Author: ${{ github.actor }}
+            • Branch: `${{ github.ref_name }}`
+            
+            🔗 [View Failed Workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            Please check the logs and fix the issues immediately.
+            
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          
+      - name: Notify Slack on Deployment Success
+        if: needs.deploy-production.result == 'success' && github.ref == 'refs/heads/main'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#deployments'
+          title: '🚀 Production Deployment Successful'
+          message: |
+            🎉 Successfully deployed to production!
+            
+            📝 **Deployment Details:**
+            • Environment: Production
+            • Version: `${{ github.sha }}`
+            • Deployed by: ${{ github.actor }}
+            • Branch: `${{ github.ref_name }}`
+            
+            🔗 **Links:**
+            • [Production App](${{ secrets.PRODUCTION_URL }})
+            • [Health Check](${{ secrets.PRODUCTION_URL }}/api/health)
+            • [Deployment Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          
+      - name: Notify Slack on Critical Failure
+        if: needs.deploy-production.result == 'failure' || needs.migrate-production.result == 'failure'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#critical-alerts'
+          title: '🚨 CRITICAL: Production Deployment/Migration Failed'
+          message: |
+            🚨 **CRITICAL ALERT**: Production deployment or migration failed!
+            
+            ⚠️ **Impact:** Production environment may be in an inconsistent state
+            
+            📝 **Details:**
+            • Deployment Status: ${{ needs.deploy-production.result }}
+            • Migration Status: ${{ needs.migrate-production.result }}
+            • Commit: `${{ github.sha }}`
+            • Author: ${{ github.actor }}
+            
+            🔗 [Emergency Response Runbook](https://your-docs-url.com/emergency-response)
+            🔗 [Failed Workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            @channel - Immediate action required!
+            
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

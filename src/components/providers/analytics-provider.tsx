@@ -15,8 +15,12 @@ import {
 
 declare global {
   interface Window {
-    gtag: (command: string, targetId: string, config?: any) => void;
-    posthog: any;
+    gtag: (command: string, targetId: string, config?: Record<string, unknown>) => void;
+    posthog?: {
+      init: (key: string, config: Record<string, unknown>) => void;
+      capture: (event: string, properties?: Record<string, unknown>) => void;
+      identify: (userId: string, properties?: Record<string, unknown>) => void;
+    };
   }
 }
 

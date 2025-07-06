@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import React from 'react';
 import { env } from '@/env.mjs';
 
 // Sentry configuration
@@ -33,7 +34,7 @@ export const initSentry = () => {
 };
 
 // Error tracking utilities
-export const captureError = (error: Error, context?: Record<string, any>) => {
+export const captureError = (error: Error, context?: Record<string, unknown>) => {
   if (env.SENTRY_DSN) {
     Sentry.withScope((scope) => {
       if (context) {
@@ -84,7 +85,7 @@ export const addBreadcrumb = (breadcrumb: {
   message: string;
   category?: string;
   level?: Sentry.SeverityLevel;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }) => {
   if (env.SENTRY_DSN) {
     Sentry.addBreadcrumb(breadcrumb);
@@ -92,10 +93,10 @@ export const addBreadcrumb = (breadcrumb: {
 };
 
 // API error boundary
-export const withSentryErrorBoundary = <T extends Record<string, any>>(
+export const withSentryErrorBoundary = <T extends Record<string, unknown>>(
   Component: React.ComponentType<T>,
   options?: {
-    fallback?: React.ComponentType<any>;
+    fallback?: React.ComponentType<{ error?: Error }>;
     beforeCapture?: (scope: Sentry.Scope) => void;
   }
 ): React.ComponentType<T> => {
@@ -127,7 +128,7 @@ export class APIError extends Error {
 }
 
 export class ValidationError extends Error {
-  constructor(message: string, public field: string, public value: any) {
+  constructor(message: string, public field: string, public value: unknown) {
     super(message);
     this.name = 'ValidationError';
     captureError(this, {

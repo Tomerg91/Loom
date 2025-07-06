@@ -16,8 +16,6 @@ interface ConditionalRenderProps {
   role?: UserRole;
   // Show if user has any of these roles
   anyRole?: UserRole[];
-  // Show if user is authenticated
-  requireAuth?: boolean;
   // Invert the condition (show if NOT matching)
   not?: boolean;
   // Fallback content when condition is not met
@@ -31,7 +29,6 @@ export function ConditionalRender({
   allPermissions,
   role,
   anyRole,
-  requireAuth,
   not = false,
   fallback = null,
 }: ConditionalRenderProps) {
@@ -67,11 +64,8 @@ export function ConditionalRender({
     shouldShow = shouldShow && hasAnyRole;
   }
 
-  // Check authentication (handled by permission hooks internally)
-  if (requireAuth !== undefined) {
-    // This is implicitly handled by the permission hooks
-    // as they return false when no user is present
-  }
+  // Authentication is implicitly handled by permission hooks
+  // They return false when no user is present
 
   // Apply NOT condition
   if (not) {

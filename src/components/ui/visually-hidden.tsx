@@ -3,9 +3,7 @@
 import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
-export interface VisuallyHiddenProps extends React.HTMLAttributes<HTMLSpanElement> {
-  asChild?: boolean;
-}
+export interface VisuallyHiddenProps extends React.HTMLAttributes<HTMLSpanElement> {}
 
 export const VisuallyHidden = forwardRef<HTMLSpanElement, VisuallyHiddenProps>(
   ({ className, children, ...props }, ref) => {

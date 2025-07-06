@@ -303,10 +303,10 @@ export function auditAuthentication(config: {
 }
 
 // Data exposure audit
-export function auditDataExposure(response: any, sensitiveFields: string[]): SecurityIssue[] {
+export function auditDataExposure(response: unknown, sensitiveFields: string[]): SecurityIssue[] {
   const issues: SecurityIssue[] = [];
   
-  function checkObject(obj: any, path = ''): void {
+  function checkObject(obj: unknown, path = ''): void {
     if (typeof obj !== 'object' || obj === null) return;
     
     Object.keys(obj).forEach(key => {
@@ -344,8 +344,8 @@ export function auditDataExposure(response: any, sensitiveFields: string[]): Sec
 export function performSecurityAudit(config: {
   headers?: Record<string, string>;
   inputs?: Array<{ value: string; context: string }>;
-  authConfig?: any;
-  apiResponses?: Array<{ response: any; sensitiveFields: string[] }>;
+  authConfig?: unknown;
+  apiResponses?: Array<{ response: unknown; sensitiveFields: string[] }>;
 }): SecurityAuditResult {
   const allIssues: SecurityIssue[] = [];
   
@@ -409,14 +409,14 @@ export class SecurityMonitor {
   private static events: Array<{
     timestamp: string;
     type: 'auth_failure' | 'rate_limit' | 'suspicious_input' | 'access_denied';
-    details: Record<string, any>;
+    details: Record<string, unknown>;
     ipAddress?: string;
     userAgent?: string;
   }> = [];
   
   static logSecurityEvent(
     type: 'auth_failure' | 'rate_limit' | 'suspicious_input' | 'access_denied',
-    details: Record<string, any>,
+    details: Record<string, unknown>,
     request?: { ip?: string; userAgent?: string }
   ) {
     this.events.push({

@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Verify the token with Supabase
-      const supabase = (authService as any).supabase;
+      const supabase = (authService as { supabase: { auth: { verifyOtp: (params: { token_hash: string; type: string }) => Promise<{ data: { user?: unknown }; error?: { message: string } }> } } }).supabase;
       const { data, error } = await supabase.auth.verifyOtp({
         token_hash,
         type,
