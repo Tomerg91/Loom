@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import React from 'react';
 
 // Cache configuration
 export const CACHE_CONFIG = {
@@ -38,7 +38,7 @@ export const setCacheHeaders = (
 };
 
 // Response compression
-export const compressResponse = (data: any): string => {
+export const compressResponse = (data: unknown): string => {
   return JSON.stringify(data, null, 0);
 };
 
@@ -85,23 +85,23 @@ export const createLazyLoader = (threshold: number = 0.1) => {
 };
 
 // Bundle analyzer helper
-export const analyzeBundleSize = (stats: any) => {
+export const analyzeBundleSize = (stats: { assets?: { name: string; size: number }[] }) => {
   const assets = stats.assets || [];
-  const totalSize = assets.reduce((sum: number, asset: any) => sum + asset.size, 0);
+  const totalSize = assets.reduce((sum: number, asset) => sum + asset.size, 0);
   
   return {
     totalSize,
-    assets: assets.map((asset: any) => ({
+    assets: assets.map((asset) => ({
       name: asset.name,
       size: asset.size,
       percentage: (asset.size / totalSize) * 100,
     })),
     jsSize: assets
-      .filter((asset: any) => asset.name.endsWith('.js'))
-      .reduce((sum: number, asset: any) => sum + asset.size, 0),
+      .filter((asset) => asset.name.endsWith('.js'))
+      .reduce((sum: number, asset) => sum + asset.size, 0),
     cssSize: assets
-      .filter((asset: any) => asset.name.endsWith('.css'))
-      .reduce((sum: number, asset: any) => sum + asset.size, 0),
+      .filter((asset) => asset.name.endsWith('.css'))
+      .reduce((sum: number, asset) => sum + asset.size, 0),
   };
 };
 
@@ -129,7 +129,7 @@ export const createDynamicImport = <T>(
 };
 
 // API response optimization
-export const optimizeApiResponse = (data: any, request: NextRequest) => {
+export const optimizeApiResponse = (data: unknown, request: NextRequest) => {
   const acceptEncoding = request.headers.get('accept-encoding') || '';
   const userAgent = request.headers.get('user-agent') || '';
   
@@ -157,13 +157,13 @@ export const optimizeApiResponse = (data: any, request: NextRequest) => {
 };
 
 // Remove unnecessary fields
-const removeUnnecessaryFields = (obj: any, fields: string[]): any => {
+const removeUnnecessaryFields = (obj: unknown, fields: string[]): unknown => {
   if (Array.isArray(obj)) {
     return obj.map(item => removeUnnecessaryFields(item, fields));
   }
   
   if (obj && typeof obj === 'object') {
-    const filtered: any = {};
+    const filtered: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       if (!fields.includes(key)) {
         filtered[key] = removeUnnecessaryFields(value, fields);
@@ -176,13 +176,13 @@ const removeUnnecessaryFields = (obj: any, fields: string[]): any => {
 };
 
 // Compress large objects
-const compressLargeObjects = (obj: any): any => {
+const compressLargeObjects = (obj: unknown): unknown => {
   if (Array.isArray(obj)) {
     return obj.map(compressLargeObjects);
   }
   
   if (obj && typeof obj === 'object') {
-    const compressed: any = {};
+    const compressed: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       // Truncate long strings
       if (typeof value === 'string' && value.length > 500) {
@@ -198,7 +198,7 @@ const compressLargeObjects = (obj: any): any => {
 };
 
 // Database query optimization
-export const optimizeQuery = (query: any, options: {
+export const optimizeQuery = (query: { limit: (n: number) => typeof query; offset: (n: number) => typeof query; select: (fields: string) => typeof query; with: (relation: string) => typeof query }, options: {
   limit?: number;
   offset?: number;
   fields?: string[];
@@ -234,7 +234,7 @@ export const optimizeQuery = (query: any, options: {
 export const monitorMemoryUsage = () => {
   if (typeof window === 'undefined') return null;
   
-  const memory = (performance as any).memory;
+  const memory = (performance as { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
   if (!memory) return null;
   
   return {
@@ -246,7 +246,7 @@ export const monitorMemoryUsage = () => {
 };
 
 // Request deduplication
-const requestCache = new Map<string, Promise<any>>();
+const requestCache = new Map<string, Promise<unknown>>();
 
 export const deduplicateRequest = <T>(
   key: string,
@@ -290,7 +290,7 @@ export const preloadRoute = (href: string) => {
 };
 
 // Performance optimization middleware
-export const performanceMiddleware = (handler: Function) => {
+export const performanceMiddleware = (handler: (request: NextRequest) => Promise<Response>) => {
   return async (request: NextRequest) => {
     const start = Date.now();
     

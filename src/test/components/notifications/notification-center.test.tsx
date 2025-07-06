@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { renderWithProviders, mockUseQuery, mockUseMutation, createMockNotification } from '@/test/utils';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 
@@ -56,7 +57,7 @@ describe('NotificationCenter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    (vi.mocked(require('@tanstack/react-query').useQuery)).mockReturnValue(
+    (vi.mocked(useQuery)).mockReturnValue(
       mockUseQuery(mockNotificationsResponse, {
         isLoading: false,
         isError: false,
@@ -64,7 +65,7 @@ describe('NotificationCenter', () => {
       })
     );
     
-    (vi.mocked(require('@tanstack/react-query').useMutation)).mockReturnValue(
+    (vi.mocked(useMutation)).mockReturnValue(
       mockUseMutation(null, {
         mutate: vi.fn(),
         isPending: false,
@@ -95,7 +96,7 @@ describe('NotificationCenter', () => {
   });
 
   it('shows loading state when fetching notifications', () => {
-    (vi.mocked(require('@tanstack/react-query').useQuery)).mockReturnValue(
+    (vi.mocked(useQuery)).mockReturnValue(
       mockUseQuery(null, {
         isLoading: true,
         isError: false,
@@ -114,7 +115,7 @@ describe('NotificationCenter', () => {
   });
 
   it('shows empty state when no notifications', () => {
-    (vi.mocked(require('@tanstack/react-query').useQuery)).mockReturnValue(
+    (vi.mocked(useQuery)).mockReturnValue(
       mockUseQuery({
         data: [],
         pagination: { page: 1, limit: 20, total: 0, unreadCount: 0 },
@@ -135,7 +136,7 @@ describe('NotificationCenter', () => {
 
   it('marks notification as read when clicked', async () => {
     const mockMutate = vi.fn();
-    (vi.mocked(require('@tanstack/react-query').useMutation)).mockReturnValue(
+    (vi.mocked(useMutation)).mockReturnValue(
       mockUseMutation(null, {
         mutate: mockMutate,
         isPending: false,
@@ -159,7 +160,7 @@ describe('NotificationCenter', () => {
 
   it('marks all notifications as read', async () => {
     const mockMutate = vi.fn();
-    (vi.mocked(require('@tanstack/react-query').useMutation)).mockReturnValue(
+    (vi.mocked(useMutation)).mockReturnValue(
       mockUseMutation(null, {
         mutate: mockMutate,
         isPending: false,
@@ -183,7 +184,7 @@ describe('NotificationCenter', () => {
 
   it('deletes notification from dropdown menu', async () => {
     const mockMutate = vi.fn();
-    (vi.mocked(require('@tanstack/react-query').useMutation)).mockReturnValue(
+    (vi.mocked(useMutation)).mockReturnValue(
       mockUseMutation(null, {
         mutate: mockMutate,
         isPending: false,

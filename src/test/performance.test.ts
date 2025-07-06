@@ -31,7 +31,8 @@ describe('Performance Tests', () => {
     });
 
     it('should have proper code splitting', async () => {
-      const nextConfig = require('../../../next.config.js');
+      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       
       // Check that code splitting is configured
       expect(nextConfig.experimental?.optimizePackageImports).toBeDefined();
@@ -41,7 +42,8 @@ describe('Performance Tests', () => {
     it('should tree-shake unused code', async () => {
       // This would be tested by analyzing the build output
       // For now, we check that the configuration supports tree-shaking
-      const nextConfig = require('../../../next.config.js');
+      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       expect(nextConfig.swcMinify).toBe(true);
     });
   });
@@ -81,16 +83,18 @@ describe('Performance Tests', () => {
   });
 
   describe('Image Optimization', () => {
-    it('should use modern image formats', () => {
-      const nextConfig = require('../../../next.config.js');
+    it('should use modern image formats', async () => {
+      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       const imageFormats = nextConfig.images?.formats || [];
       
       expect(imageFormats).toContain('image/avif');
       expect(imageFormats).toContain('image/webp');
     });
 
-    it('should have proper image sizing', () => {
-      const nextConfig = require('../../../next.config.js');
+    it('should have proper image sizing', async () => {
+      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       const imageSizes = nextConfig.images?.imageSizes || [];
       const deviceSizes = nextConfig.images?.deviceSizes || [];
       
@@ -107,8 +111,9 @@ describe('Performance Tests', () => {
   });
 
   describe('Caching Strategy', () => {
-    it('should have proper cache headers configuration', () => {
-      const nextConfig = require('../../../next.config.js');
+    it('should have proper cache headers configuration', async () => {
+      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       
       expect(nextConfig.headers).toBeDefined();
       expect(typeof nextConfig.headers).toBe('function');
@@ -203,7 +208,8 @@ describe('Performance Tests', () => {
   describe('Network Performance', () => {
     it('should minimize HTTP requests', async () => {
       // Check that resources are bundled appropriately
-      const nextConfig = require('../../../next.config.js');
+      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       expect(nextConfig.compress).toBe(true);
     });
 
@@ -252,9 +258,10 @@ describe('Performance Tests', () => {
   });
 
   describe('Rendering Performance', () => {
-    it('should minimize render blocking resources', () => {
+    it('should minimize render blocking resources', async () => {
       // Check that CSS is optimized
-      const nextConfig = require('../../../next.config.js');
+      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       expect(nextConfig.experimental?.optimizeCss).toBe(true);
     });
 
@@ -303,7 +310,8 @@ describe('Performance Tests', () => {
   describe('Build Performance', () => {
     it('should have fast build times', async () => {
       // Check build optimizations
-      const nextConfig = require('../../../next.config.js');
+      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       expect(nextConfig.swcMinify).toBe(true);
     });
 

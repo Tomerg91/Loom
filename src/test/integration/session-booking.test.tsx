@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { renderWithProviders, mockUser, mockCoachUser, createMockSession, mockFetch } from '@/test/utils';
 import { SessionBookingForm } from '@/components/sessions/session-booking-form';
 import { SessionList } from '@/components/sessions/session-list';
@@ -83,9 +84,9 @@ describe('Session Booking Integration', () => {
       data: null,
     });
 
-    require('@tanstack/react-query').useQuery.mockImplementation(mockUseQuery);
-    require('@tanstack/react-query').useMutation.mockImplementation(mockUseMutation);
-    require('@tanstack/react-query').useQueryClient.mockImplementation(mockQueryClient);
+    (vi.mocked(useQuery)).mockImplementation(mockUseQuery);
+    (vi.mocked(useMutation)).mockImplementation(mockUseMutation);
+    (vi.mocked(useQueryClient)).mockImplementation(mockQueryClient);
   });
 
   describe('Complete Booking Flow', () => {
@@ -151,7 +152,7 @@ describe('Session Booking Integration', () => {
         data: null,
       });
 
-      require('@tanstack/react-query').useMutation.mockImplementation(mockMutationWithError);
+      (vi.mocked(useMutation)).mockImplementation(mockMutationWithError);
 
       renderWithProviders(<SessionBookingForm />);
 
@@ -190,7 +191,7 @@ describe('Session Booking Integration', () => {
           error: null,
         });
 
-      require('@tanstack/react-query').useQuery.mockImplementation(mockUseQuery);
+      (vi.mocked(useQuery)).mockImplementation(mockUseQuery);
 
       renderWithProviders(<SessionBookingForm />);
 
@@ -233,7 +234,7 @@ describe('Session Booking Integration', () => {
           isLoading: false,
         });
 
-      require('@tanstack/react-query').useQuery.mockImplementation(mockUseQuery);
+      (vi.mocked(useQuery)).mockImplementation(mockUseQuery);
 
       renderWithProviders(<SessionBookingForm />);
 
@@ -283,7 +284,7 @@ describe('Session Booking Integration', () => {
         error: null,
       });
 
-      require('@tanstack/react-query').useQuery.mockImplementation(mockUseQuery);
+      (vi.mocked(useQuery)).mockImplementation(mockUseQuery);
 
       renderWithProviders(<SessionList />);
 
@@ -311,8 +312,8 @@ describe('Session Booking Integration', () => {
         data: null,
       });
 
-      require('@tanstack/react-query').useMutation.mockImplementation(mockMutationSuccess);
-      require('@tanstack/react-query').useQueryClient.mockImplementation(mockQueryClient);
+      (vi.mocked(useMutation)).mockImplementation(mockMutationSuccess);
+      (vi.mocked(useQueryClient)).mockImplementation(mockQueryClient);
 
       renderWithProviders(<SessionBookingForm />);
 
@@ -383,7 +384,7 @@ describe('Session Booking Integration', () => {
           isLoading: false,
         });
 
-      require('@tanstack/react-query').useQuery.mockImplementation(mockUseQueryUpdated);
+      (vi.mocked(useQuery)).mockImplementation(mockUseQueryUpdated);
 
       // Re-render to simulate real-time update
       await waitFor(() => {

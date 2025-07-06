@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { useUser } from '@/lib/store/auth-store';
 import { renderWithProviders, mockUser, mockSupabaseClient, mockFetch } from '@/test/utils';
 import { SigninForm } from '@/components/auth/signin-form';
 import { RouteGuard } from '@/components/auth/route-guard';
@@ -38,7 +39,7 @@ describe('Authentication Flow Integration', () => {
     vi.clearAllMocks();
     
     // Default to no user
-    require('@/lib/store/auth-store').useUser.mockReturnValue(null);
+    (vi.mocked(useUser)).mockReturnValue(null);
     
     // Mock successful API responses
     mockFetch({
@@ -127,7 +128,7 @@ describe('Authentication Flow Integration', () => {
 
     it('allows access when user is authenticated', () => {
       // Mock authenticated user
-      require('@/lib/store/auth-store').useUser.mockReturnValue(mockUser);
+      (vi.mocked(useUser)).mockReturnValue(mockUser);
 
       renderWithProviders(
         <RouteGuard requireRole="client">
@@ -140,7 +141,7 @@ describe('Authentication Flow Integration', () => {
 
     it('redirects to signin when user is not authenticated', () => {
       // Mock no user
-      require('@/lib/store/auth-store').useUser.mockReturnValue(null);
+      (vi.mocked(useUser)).mockReturnValue(null);
 
       renderWithProviders(
         <RouteGuard requireRole="client">
@@ -155,7 +156,7 @@ describe('Authentication Flow Integration', () => {
     it('redirects when user lacks required role', () => {
       // Mock user with insufficient role
       const clientUser = { ...mockUser, role: 'client' };
-      require('@/lib/store/auth-store').useUser.mockReturnValue(clientUser);
+      (vi.mocked(useUser)).mockReturnValue(clientUser);
 
       renderWithProviders(
         <RouteGuard requireRole="admin">
@@ -169,7 +170,7 @@ describe('Authentication Flow Integration', () => {
 
     it('shows loading state while checking authentication', () => {
       // Mock loading state
-      require('@/lib/store/auth-store').useUser.mockReturnValue(undefined);
+      (vi.mocked(useUser)).mockReturnValue(undefined);
 
       renderWithProviders(
         <RouteGuard requireRole="client">
@@ -185,7 +186,7 @@ describe('Authentication Flow Integration', () => {
   describe('Session Management', () => {
     it('handles session expiration gracefully', async () => {
       // Mock authenticated user initially
-      require('@/lib/store/auth-store').useUser.mockReturnValue(mockUser);
+      (vi.mocked(useUser)).mockReturnValue(mockUser);
 
       // Mock session check returning expired session
       mockSupabaseClient.auth.getUser.mockResolvedValue({
@@ -194,7 +195,7 @@ describe('Authentication Flow Integration', () => {
       });
 
       const ProtectedComponent = () => {
-        const user = require('@/lib/store/auth-store').useUser();
+        const user = useUser();
         return user ? <div>Protected Content</div> : <div>Please sign in</div>;
       };
 
@@ -227,7 +228,7 @@ describe('Authentication Flow Integration', () => {
       });
 
       // Update user state
-      require('@/lib/store/auth-store').useUser.mockReturnValue(mockUser);
+      (vi.mocked(useUser)).mockReturnValue(mockUser);
 
       rerender(<div>Authenticated App</div>);
 
@@ -238,7 +239,7 @@ describe('Authentication Flow Integration', () => {
   describe('Sign Out Flow', () => {
     it('completes sign out successfully', async () => {
       // Mock authenticated user
-      require('@/lib/store/auth-store').useUser.mockReturnValue(mockUser);
+      (vi.mocked(useUser)).mockReturnValue(mockUser);
 
       // Mock successful sign out
       mockSupabaseClient.auth.signOut.mockResolvedValue({

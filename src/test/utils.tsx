@@ -123,7 +123,7 @@ export function renderWithProviders(
 
 // Mock API responses
 export const mockApiResponse = {
-  success: (data: any) => ({
+  success: <T>(data: T) => ({
     data,
     success: true,
     error: null,
@@ -147,7 +147,7 @@ export const mockFetchResponse = {
 };
 
 // Helper to mock fetch with specific responses
-export const mockFetch = (response: any) => {
+export const mockFetch = (response: unknown) => {
   global.fetch = vi.fn().mockResolvedValue({
     ...mockFetchResponse,
     json: vi.fn().mockResolvedValue(response),
@@ -216,7 +216,7 @@ export const createMockReflection = (overrides = {}) => ({
 });
 
 // Mock TanStack Query hooks
-export const mockUseQuery = (data: any, options: any = {}) => ({
+export const mockUseQuery = <T>(data: T, options: Partial<{ isLoading: boolean; isError: boolean; error: Error | null }> = {}) => ({
   data,
   isLoading: false,
   isError: false,
@@ -225,13 +225,13 @@ export const mockUseQuery = (data: any, options: any = {}) => ({
   ...options,
 });
 
-export const mockUseMutation = (options: any = {}) => ({
+export const mockUseMutation = (data: unknown = null, options: Partial<{ mutate: ReturnType<typeof vi.fn>; isPending: boolean; isError: boolean; error: Error | null }> = {}) => ({
   mutate: vi.fn(),
   mutateAsync: vi.fn(),
-  isLoading: false,
+  isPending: false,
   isError: false,
   error: null,
-  data: null,
+  data,
   ...options,
 });
 

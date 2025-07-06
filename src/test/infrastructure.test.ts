@@ -150,11 +150,12 @@ describe('Infrastructure Tests', () => {
   });
 
   describe('Build Configuration', () => {
-    it('should have optimized Next.js configuration', () => {
+    it('should have optimized Next.js configuration', async () => {
       const nextConfigPath = join(projectRoot, 'next.config.js');
       expect(existsSync(nextConfigPath)).toBe(true);
       
-      const nextConfig = require(nextConfigPath);
+      const nextConfigModule = await import(nextConfigPath);
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       
       // Check optimization settings
       expect(nextConfig.swcMinify).toBe(true);
@@ -266,8 +267,9 @@ describe('Infrastructure Tests', () => {
       expect(true).toBe(true); // Placeholder
     });
 
-    it('should use exact versions for critical packages', () => {
-      const packageJson = require(join(projectRoot, 'package.json'));
+    it('should use exact versions for critical packages', async () => {
+      const packageJsonModule = await import(join(projectRoot, 'package.json'));
+      const packageJson = packageJsonModule.default || packageJsonModule;
       
       // Check that some critical packages don't use ranges
       const criticalPackages = ['next', 'react', 'react-dom'];
@@ -361,17 +363,19 @@ describe('Infrastructure Tests', () => {
   });
 
   describe('Security Configuration', () => {
-    it('should have security headers configured', () => {
+    it('should have security headers configured', async () => {
       const nextConfigPath = join(projectRoot, 'next.config.js');
-      const nextConfig = require(nextConfigPath);
+      const nextConfigModule = await import(nextConfigPath);
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       
       expect(nextConfig.headers).toBeDefined();
       expect(typeof nextConfig.headers).toBe('function');
     });
 
-    it('should have HTTPS redirect in production', () => {
+    it('should have HTTPS redirect in production', async () => {
       const nextConfigPath = join(projectRoot, 'next.config.js');
-      const nextConfig = require(nextConfigPath);
+      const nextConfigModule = await import(nextConfigPath);
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       
       expect(nextConfig.redirects).toBeDefined();
       expect(typeof nextConfig.redirects).toBe('function');
@@ -379,17 +383,19 @@ describe('Infrastructure Tests', () => {
   });
 
   describe('Performance Configuration', () => {
-    it('should have bundle analyzer configuration', () => {
+    it('should have bundle analyzer configuration', async () => {
       const nextConfigPath = join(projectRoot, 'next.config.js');
-      const nextConfig = require(nextConfigPath);
+      const nextConfigModule = await import(nextConfigPath);
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       
       // Check that bundle analyzer can be enabled
       expect(nextConfig.webpack).toBeDefined();
     });
 
-    it('should have caching configuration', () => {
+    it('should have caching configuration', async () => {
       const nextConfigPath = join(projectRoot, 'next.config.js');
-      const nextConfig = require(nextConfigPath);
+      const nextConfigModule = await import(nextConfigPath);
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       
       expect(nextConfig.headers).toBeDefined();
       expect(nextConfig.compress).toBe(true);
@@ -402,15 +408,17 @@ describe('Infrastructure Tests', () => {
       expect(existsSync(healthCheckPath)).toBe(true);
     });
 
-    it('should have proper build output', () => {
+    it('should have proper build output', async () => {
       const nextConfigPath = join(projectRoot, 'next.config.js');
-      const nextConfig = require(nextConfigPath);
+      const nextConfigModule = await import(nextConfigPath);
+      const nextConfig = nextConfigModule.default || nextConfigModule;
       
       expect(nextConfig.output).toBe('standalone');
     });
 
-    it('should have startup scripts', () => {
-      const packageJson = require(join(projectRoot, 'package.json'));
+    it('should have startup scripts', async () => {
+      const packageJsonModule = await import(join(projectRoot, 'package.json'));
+      const packageJson = packageJsonModule.default || packageJsonModule;
       
       expect(packageJson.scripts.start).toBeDefined();
       expect(packageJson.scripts.build).toBeDefined();

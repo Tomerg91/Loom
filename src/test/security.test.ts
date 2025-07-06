@@ -276,13 +276,15 @@ describe('Security Tests', () => {
   describe('Dependency Security', () => {
     it('should not have known vulnerabilities', async () => {
       // This is checked by npm audit in CI/CD
-      const packageJson = require('../../../package.json');
+      const packageJsonModule = await import('../../../package.json');
+      const packageJson = packageJsonModule.default || packageJsonModule;
       expect(packageJson.dependencies).toBeDefined();
       expect(packageJson.devDependencies).toBeDefined();
     });
 
-    it('should use secure versions of critical packages', () => {
-      const packageJson = require('../../../package.json');
+    it('should use secure versions of critical packages', async () => {
+      const packageJsonModule = await import('../../../package.json');
+      const packageJson = packageJsonModule.default || packageJsonModule;
       
       // Check that security-critical packages are up to date
       const criticalPackages = ['next', '@supabase/supabase-js', 'zod'];

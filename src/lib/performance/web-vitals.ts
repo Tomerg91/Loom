@@ -26,14 +26,14 @@ interface WebVital {
   value: number;
   rating: 'good' | 'needs-improvement' | 'poor';
   delta: number;
-  entries: any[];
+  entries: PerformanceEntry[];
   id: string;
   navigationType: string;
 }
 
 // Web Vitals collection
 export const collectWebVitals = (callback?: (metric: WebVital) => void) => {
-  const reportMetric = (metric: any) => {
+  const reportMetric = (metric: { name: string; value: number; delta: number; entries: PerformanceEntry[]; id: string; navigationType: string }) => {
     const enhancedMetric: WebVital = {
       ...metric,
       rating: getRating(metric.name, metric.value),

@@ -37,13 +37,13 @@ export interface UpdateProfileData {
   specialties?: string[];
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   user?: AuthUser;
   error?: string;
   message?: string;
-  details?: any[];
+  details?: string[];
 }
 
 class AuthApiClient {

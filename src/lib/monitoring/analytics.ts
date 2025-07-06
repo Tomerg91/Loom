@@ -5,7 +5,11 @@ export const GA_TRACKING_ID = env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
 declare global {
   interface Window {
-    gtag: (command: string, targetId: string, config?: any) => void;
+    gtag: (command: string, targetId: string, config?: Record<string, unknown>) => void;
+    posthog?: { 
+      capture: (name: string, properties?: Record<string, unknown>) => void;
+      identify: (userId: string, properties?: Record<string, unknown>) => void;
+    };
   }
 }
 
@@ -20,7 +24,7 @@ export interface AnalyticsEvent {
   label?: string;
   value?: number;
   userId?: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
 }
 
 // Google Analytics functions
@@ -43,15 +47,15 @@ export const event = ({ action, category, label, value }: AnalyticsEvent) => {
 };
 
 // PostHog functions
-export const posthogEvent = (name: string, properties?: Record<string, any>) => {
-  if (typeof window !== 'undefined' && (window as any).posthog) {
-    (window as any).posthog.capture(name, properties);
+export const posthogEvent = (name: string, properties?: Record<string, unknown>) => {
+  if (typeof window !== 'undefined' && window.posthog) {
+    window.posthog.capture(name, properties);
   }
 };
 
-export const posthogIdentify = (userId: string, properties?: Record<string, any>) => {
-  if (typeof window !== 'undefined' && (window as any).posthog) {
-    (window as any).posthog.identify(userId, properties);
+export const posthogIdentify = (userId: string, properties?: Record<string, unknown>) => {
+  if (typeof window !== 'undefined' && window.posthog) {
+    window.posthog.identify(userId, properties);
   }
 };
 
@@ -130,7 +134,7 @@ export const trackPerformance = (metric: string, value: number, page: string) =>
 };
 
 // Web Vitals tracking
-export const trackWebVitals = (metric: any) => {
+export const trackWebVitals = (metric: { name: string; value: number; rating: string; delta: number }) => {
   trackEvent({
     action: 'web_vitals',
     category: 'performance',

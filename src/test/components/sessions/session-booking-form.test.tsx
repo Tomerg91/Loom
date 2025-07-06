@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { renderWithProviders, mockUseQuery, mockUseMutation, mockCoachUser } from '@/test/utils';
 import { SessionBookingForm } from '@/components/sessions/session-booking-form';
 
@@ -58,12 +59,12 @@ describe('SessionBookingForm', () => {
     vi.clearAllMocks();
     
     // Mock coaches query
-    (vi.mocked(require('@tanstack/react-query').useQuery))
+    (vi.mocked(useQuery))
       .mockImplementationOnce(() => mockUseQuery(mockCoaches))
       // Mock time slots query  
       .mockImplementationOnce(() => mockUseQuery(mockTimeSlots));
     
-    (vi.mocked(require('@tanstack/react-query').useMutation)).mockReturnValue(
+    (vi.mocked(useMutation)).mockReturnValue(
       mockUseMutation(null, {
         mutate: vi.fn(),
         isPending: false,
@@ -127,7 +128,7 @@ describe('SessionBookingForm', () => {
 
   it('submits form with valid data', async () => {
     const mockMutate = vi.fn();
-    (vi.mocked(require('@tanstack/react-query').useMutation)).mockReturnValue(
+    (vi.mocked(useMutation)).mockReturnValue(
       mockUseMutation(null, {
         mutate: mockMutate,
         isPending: false,
@@ -177,7 +178,7 @@ describe('SessionBookingForm', () => {
   });
 
   it('shows loading state during submission', () => {
-    (vi.mocked(require('@tanstack/react-query').useMutation)).mockReturnValue(
+    (vi.mocked(useMutation)).mockReturnValue(
       mockUseMutation(null, {
         mutate: vi.fn(),
         isPending: true,
@@ -193,7 +194,7 @@ describe('SessionBookingForm', () => {
   });
 
   it('shows error message on submission failure', () => {
-    (vi.mocked(require('@tanstack/react-query').useMutation)).mockReturnValue(
+    (vi.mocked(useMutation)).mockReturnValue(
       mockUseMutation(null, {
         mutate: vi.fn(),
         isPending: false,
@@ -220,7 +221,7 @@ describe('SessionBookingForm', () => {
       },
     ];
     
-    (vi.mocked(require('@tanstack/react-query').useQuery))
+    (vi.mocked(useQuery))
       .mockImplementationOnce(() => mockUseQuery(mockCoaches))
       .mockImplementationOnce(() => mockUseQuery(slotsWithUnavailable));
     

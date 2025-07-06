@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST, GET } from '@/app/api/sessions/route';
 import { createMockSession, mockSupabaseClient } from '@/test/utils';
+import { SessionService } from '@/lib/database/sessions';
+import { validateRequestBody } from '@/lib/api/validation';
+import { SessionNotificationService } from '@/lib/notifications/session-notifications';
 
 // Mock Supabase
 vi.mock('@/lib/supabase/server', () => ({
@@ -51,13 +54,11 @@ describe('/api/sessions', () => {
 
   describe('POST /api/sessions', () => {
     it('creates a new session successfully', async () => {
-      const sessionService = require('@/lib/database/sessions').SessionService;
       const mockCreate = vi.fn().mockResolvedValue(mockSession);
       sessionService.mockImplementation(() => ({
         create: mockCreate,
       }));
 
-      const validateRequestBody = require('@/lib/api/validation').validateRequestBody;
       validateRequestBody.mockResolvedValue({
         title: 'Test Session',
         description: 'Test description',
@@ -115,7 +116,6 @@ describe('/api/sessions', () => {
     });
 
     it('returns 400 for invalid request body', async () => {
-      const validateRequestBody = require('@/lib/api/validation').validateRequestBody;
       validateRequestBody.mockRejectedValue(new Error('Title is required'));
 
       const request = new NextRequest('http://localhost:3000/api/sessions', {
@@ -133,19 +133,16 @@ describe('/api/sessions', () => {
     });
 
     it('sends confirmation notification after creating session', async () => {
-      const sessionService = require('@/lib/database/sessions').SessionService;
       const mockCreate = vi.fn().mockResolvedValue(mockSession);
       sessionService.mockImplementation(() => ({
         create: mockCreate,
       }));
 
-      const notificationService = require('@/lib/notifications/session-notifications').SessionNotificationService;
       const mockSendConfirmation = vi.fn();
       notificationService.mockImplementation(() => ({
         sendSessionConfirmation: mockSendConfirmation,
       }));
 
-      const validateRequestBody = require('@/lib/api/validation').validateRequestBody;
       validateRequestBody.mockResolvedValue({
         title: 'Test Session',
         coachId: 'coach-id',
@@ -177,7 +174,6 @@ describe('/api/sessions', () => {
     it('returns user sessions successfully', async () => {
       const mockSessions = [mockSession, createMockSession({ id: 'session-2' })];
       
-      const sessionService = require('@/lib/database/sessions').SessionService;
       const mockFindMany = vi.fn().mockResolvedValue({
         data: mockSessions,
         pagination: {
@@ -203,7 +199,6 @@ describe('/api/sessions', () => {
     });
 
     it('filters sessions by status', async () => {
-      const sessionService = require('@/lib/database/sessions').SessionService;
       const mockFindMany = vi.fn().mockResolvedValue({
         data: [mockSession],
         pagination: {
@@ -245,7 +240,6 @@ describe('/api/sessions', () => {
     });
 
     it('handles database errors gracefully', async () => {
-      const sessionService = require('@/lib/database/sessions').SessionService;
       const mockFindMany = vi.fn().mockRejectedValue(new Error('Database error'));
       sessionService.mockImplementation(() => ({
         findMany: mockFindMany,

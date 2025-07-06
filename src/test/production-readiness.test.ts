@@ -273,16 +273,14 @@ describe('Production Readiness', () => {
 
   describe('Deployment Configuration', () => {
     it('should have Docker configuration', () => {
-      const fs = require('fs');
-      expect(fs.existsSync('./Dockerfile')).toBe(true);
-      expect(fs.existsSync('./docker-compose.yml')).toBe(true);
-      expect(fs.existsSync('./.dockerignore')).toBe(true);
+      expect(existsSync('./Dockerfile')).toBe(true);
+      expect(existsSync('./docker-compose.yml')).toBe(true);
+      expect(existsSync('./.dockerignore')).toBe(true);
     });
 
     it('should have CI/CD configuration', () => {
-      const fs = require('fs');
-      expect(fs.existsSync('./.github/workflows/ci.yml')).toBe(true);
-      expect(fs.existsSync('./.github/workflows/deploy.yml')).toBe(true);
+      expect(existsSync('./.github/workflows/ci.yml')).toBe(true);
+      expect(existsSync('./.github/workflows/deploy.yml')).toBe(true);
     });
 
     it('should have proper build output configuration', () => {
