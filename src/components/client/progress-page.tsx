@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/tabs';
 import { 
   TrendingUp,
-  TrendingDown,
   Target,
   Calendar,
   Star,

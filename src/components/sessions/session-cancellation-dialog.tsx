@@ -216,7 +216,7 @@ export function SessionCancellationDialog({
             <span>Cancel Session</span>
           </DialogTitle>
           <DialogDescription>
-            Cancel "{session.title}" scheduled for {' '}
+            Cancel &quot;{session.title}&quot; scheduled for {' '}
             {new Date(session.scheduledAt).toLocaleDateString()} at{' '}
             {new Date(session.scheduledAt).toLocaleTimeString([], { 
               hour: '2-digit', 

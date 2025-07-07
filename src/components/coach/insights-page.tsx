@@ -413,7 +413,7 @@ export function CoachInsightsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Client Progress Overview</CardTitle>
-              <CardDescription>Track your clients' progress and achievements</CardDescription>
+              <CardDescription>Track your clients&apos; progress and achievements</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

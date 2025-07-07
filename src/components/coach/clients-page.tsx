@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,12 +29,10 @@ import {
   Search, 
   Calendar, 
   MessageSquare,
-  TrendingUp,
   Clock,
   Star,
   MoreHorizontal,
   Mail,
-  Phone,
   FileText,
   Video,
   AlertCircle,

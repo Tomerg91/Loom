@@ -5,7 +5,7 @@
  * accessibility best practices are followed throughout the application.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('Accessibility Tests', () => {
   beforeEach(() => {
@@ -15,8 +15,6 @@ describe('Accessibility Tests', () => {
 
   describe('ARIA Attributes', () => {
     it('should have proper ARIA labels', async () => {
-      const { FocusManager } = await import('@/lib/accessibility/aria');
-      
       // Test button with ARIA label
       const container = document.createElement('div');
       container.innerHTML = `
@@ -58,7 +56,7 @@ describe('Accessibility Tests', () => {
     });
 
     it('should implement ARIA states correctly', async () => {
-      const { createAriaLiveRegion } = await import('@/lib/accessibility/aria');
+      const { createAriaLiveRegion: _createAriaLiveRegion } = await import('@/lib/accessibility/aria');
       
       const container = document.createElement('div');
       container.innerHTML = `
@@ -215,7 +213,7 @@ describe('Accessibility Tests', () => {
   describe('Color and Contrast', () => {
     it('should meet color contrast requirements', async () => {
       // Mock color contrast testing
-      const checkContrast = (foreground: string, background: string) => {
+      const checkContrast = (_foreground: string, _background: string) => {
         // Simplified contrast check - real implementation would calculate actual ratios
         const contrastRatio = 4.5; // Mock ratio
         return contrastRatio >= 4.5; // WCAG AA requirement
@@ -271,9 +269,9 @@ describe('Accessibility Tests', () => {
         </form>
       `;
       
-      const emailInput = container.querySelector('#email');
+      const _emailInput = container.querySelector('#email');
       const emailLabel = container.querySelector('label[for="email"]');
-      const passwordInput = container.querySelector('#password');
+      const _passwordInput = container.querySelector('#password');
       const passwordLabel = container.querySelector('label[for="password"]');
       const fieldset = container.querySelector('fieldset');
       const legend = container.querySelector('legend');
@@ -331,7 +329,7 @@ describe('Accessibility Tests', () => {
       `;
       
       const button = container.querySelector('button');
-      const link = container.querySelector('a');
+      const _link = container.querySelector('a');
       
       // In a real test, you'd measure computed styles
       expect(button?.style.width).toBe('44px');
@@ -395,7 +393,7 @@ describe('Accessibility Tests', () => {
         writable: true,
       });
 
-      const { useReducedMotion } = await import('@/lib/accessibility/hooks');
+      const { useReducedMotion: _useReducedMotion } = await import('@/lib/accessibility/hooks');
       // This would test the actual hook implementation
       expect(true).toBe(true); // Placeholder
     });

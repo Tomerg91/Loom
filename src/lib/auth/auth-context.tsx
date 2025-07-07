@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { AuthUser } from '@/lib/auth/auth';
 
@@ -31,7 +31,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(!initialUser);
   const supabase = createClient();
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       setIsLoading(true);
       const { data: { user: authUser }, error } = await supabase.auth.getUser();
@@ -83,7 +83,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase, setUser, setIsLoading]);
 
   const signOut = async () => {
     try {

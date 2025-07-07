@@ -177,7 +177,7 @@ describe('Production Readiness', () => {
       try {
         const healthRoute = await import('@/app/api/health/route');
         expect(healthRoute.GET).toBeDefined();
-      } catch (error) {
+      } catch (_error) {
         throw new Error('Health check endpoint not found');
       }
     });

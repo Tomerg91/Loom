@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthService } from '@/lib/auth/auth';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const authService = createAuthService(true);
     const session = await authService.getSession();
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
   try {
     const authService = createAuthService(true);
     const { error } = await authService.signOut();

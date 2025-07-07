@@ -55,7 +55,7 @@ export function SessionCancellationConfirmation({
             <div>
               <h2 className="text-2xl font-bold mb-2">Session Cancelled Successfully</h2>
               <p className="text-muted-foreground">
-                Your session "{result.sessionTitle}" has been cancelled
+                Your session &quot;{result.sessionTitle}&quot; has been cancelled
               </p>
             </div>
             <Badge variant="outline" className="text-muted-foreground">

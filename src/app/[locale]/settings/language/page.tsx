@@ -8,8 +8,7 @@ interface Props {
   }>;
 }
 
-export default async function LanguageSettingsPage({ params }: Props) {
-  const { locale } = await params;
+export default async function LanguageSettingsPage() {
   const t = await getTranslations('common');
 
   return (
@@ -30,8 +29,7 @@ export default async function LanguageSettingsPage({ params }: Props) {
   );
 }
 
-export async function generateMetadata({ params }: Props) {
-  const { locale } = await params;
+export async function generateMetadata({ params: _params }: Props) {
   const t = await getTranslations('common');
   
   return {

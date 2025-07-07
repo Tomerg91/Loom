@@ -6,7 +6,6 @@ import { Providers } from '@/components/providers/providers';
 import { getServerUser } from '@/lib/auth/auth';
 import { locales } from '@/i18n/config';
 import { PerformanceMonitorComponent } from '@/components/monitoring/performance-monitor';
-import { collectWebVitals } from '@/lib/performance/web-vitals';
 import { initSentry } from '@/lib/monitoring/sentry';
 import '../globals.css';
 

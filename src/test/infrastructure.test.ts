@@ -5,7 +5,7 @@
  * and production environment setup are correctly configured.
  */
 
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi as _vi, beforeAll as _beforeAll } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 

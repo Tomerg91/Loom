@@ -29,7 +29,8 @@ import {
   Download,
   Upload,
   Trash2,
-  Copy
+  Copy,
+  Clock
 } from 'lucide-react';
 
 interface SystemHealth {

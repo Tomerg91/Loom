@@ -150,7 +150,7 @@ describe('Performance Tests', () => {
         with: vi.fn().mockReturnThis(),
       };
 
-      const optimized = optimizeQuery(mockQuery, {
+      const _optimized = optimizeQuery(mockQuery, {
         limit: 10,
         offset: 0,
         fields: ['id', 'title'],
@@ -229,7 +229,7 @@ describe('Performance Tests', () => {
     });
 
     it('should preload critical resources', async () => {
-      const { preloadResource, preloadRoute } = await import('@/lib/performance/optimization');
+      const { preloadResource, preloadRoute: _preloadRoute } = await import('@/lib/performance/optimization');
       
       // Mock DOM methods
       const mockLink = {

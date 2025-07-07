@@ -80,7 +80,6 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-  const [cancelReason, setCancelReason] = useState('');
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [sessionNotes, setSessionNotes] = useState('');
   const [sessionRating, setSessionRating] = useState(0);
@@ -122,18 +121,6 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
     },
   });
 
-  const cancelSessionMutation = useMutation({
-    mutationFn: async (reason: string) => {
-      // Mock API call
-      console.log('Cancelling session:', sessionId, reason);
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-      setIsCancelDialogOpen(false);
-      setCancelReason('');
-    },
-  });
 
   const completeSessionMutation = useMutation({
     mutationFn: async (data: { notes: string; rating: number }) => {
@@ -470,7 +457,7 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
                   <span className="ml-2 text-sm font-medium">{session.rating}/5</span>
                 </div>
                 {session.feedback && (
-                  <p className="text-sm text-muted-foreground italic">"{session.feedback}"</p>
+                  <p className="text-sm text-muted-foreground italic">&quot;{session.feedback}&quot;</p>
                 )}
               </CardContent>
             </Card>

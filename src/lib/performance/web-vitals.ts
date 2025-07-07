@@ -87,7 +87,7 @@ export class PerformanceMonitor {
       try {
         observer.observe({ entryTypes: ['longtask'] });
         this.observers.push(observer);
-      } catch (_e) {
+      } catch {
         console.warn('Long task observer not supported');
       }
     }
@@ -103,7 +103,7 @@ export class PerformanceMonitor {
       try {
         observer.observe({ entryTypes: ['layout-shift'] });
         this.observers.push(observer);
-      } catch (_e) {
+      } catch {
         console.warn('Layout shift observer not supported');
       }
     }
@@ -119,7 +119,7 @@ export class PerformanceMonitor {
       try {
         observer.observe({ entryTypes: ['paint'] });
         this.observers.push(observer);
-      } catch (_e) {
+      } catch {
         console.warn('Paint timing observer not supported');
       }
     }
@@ -135,7 +135,7 @@ export class PerformanceMonitor {
       try {
         observer.observe({ entryTypes: ['resource'] });
         this.observers.push(observer);
-      } catch (_e) {
+      } catch {
         console.warn('Resource timing observer not supported');
       }
     }
