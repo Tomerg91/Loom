@@ -119,7 +119,7 @@ export function SecuritySettingsCard() {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Key className="h-5 w-5" />
-            <span>Password & Authentication</span>
+            <span>Password &amp; Authentication</span>
           </CardTitle>
           <CardDescription>
             Manage your password and authentication methods
@@ -264,7 +264,7 @@ export function SecuritySettingsCard() {
 
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-base font-medium">Analytics & Cookies</Label>
+              <Label className="text-base font-medium">Analytics &amp; Cookies</Label>
               <p className="text-sm text-muted-foreground">
                 Allow us to collect analytics data to improve the service
               </p>

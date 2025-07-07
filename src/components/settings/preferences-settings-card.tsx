@@ -161,7 +161,7 @@ export function PreferencesSettingsCard() {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Globe className="h-5 w-5" />
-            <span>Language & Region</span>
+            <span>Language &amp; Region</span>
           </CardTitle>
           <CardDescription>
             Set your language and regional preferences
@@ -238,7 +238,7 @@ export function PreferencesSettingsCard() {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Calendar className="h-5 w-5" />
-            <span>Calendar & Scheduling</span>
+            <span>Calendar &amp; Scheduling</span>
           </CardTitle>
           <CardDescription>
             Configure your calendar and scheduling preferences

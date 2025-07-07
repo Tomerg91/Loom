@@ -304,7 +304,7 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Date & Time</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">Date &amp; Time</Label>
                   <p className="text-sm">
                     {new Date(session.scheduledAt).toLocaleDateString()} at{' '}
                     {new Date(session.scheduledAt).toLocaleTimeString([], { 

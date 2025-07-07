@@ -5,10 +5,27 @@ import { collectWebVitals, PerformanceMonitor, checkPerformanceBudget } from '@/
 import { monitorMemoryUsage } from '@/lib/performance/optimization';
 import { trackPerformance } from '@/lib/monitoring/analytics';
 
+interface MemoryUsage {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+  usage: number;
+}
+
+interface BudgetStatus {
+  passed: boolean;
+  violations: Array<{
+    metric: string;
+    value: number;
+    budget: number;
+    violation: number;
+  }>;
+}
+
 interface PerformanceData {
   webVitals: Record<string, number>;
-  memoryUsage: any;
-  budgetStatus: any;
+  memoryUsage: MemoryUsage | null;
+  budgetStatus: BudgetStatus | null;
   longTasks: PerformanceEntry[];
   layoutShifts: PerformanceEntry[];
 }

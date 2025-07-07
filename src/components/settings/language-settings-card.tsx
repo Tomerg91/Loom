@@ -210,7 +210,7 @@ export function LanguageSettingsCard() {
 
             <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
               <div>
-                <p className="font-medium">Date & Time Formatting</p>
+                <p className="font-medium">Date &amp; Time Formatting</p>
                 <p className="text-sm text-muted-foreground">
                   Localized date, time, and number formatting
                 </p>

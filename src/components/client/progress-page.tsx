@@ -185,7 +185,7 @@ export function ClientProgressPage() {
             coachName: 'Sarah Johnson',
             date: '2024-01-15T14:00:00Z',
             duration: 60,
-            topic: 'Goal Setting & Planning',
+            topic: 'Goal Setting &amp; Planning',
             rating: 4,
             notes: 'Established clear goals and milestones',
             keyInsights: ['SMART goals are more achievable', 'Break down large goals into smaller steps'],

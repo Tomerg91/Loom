@@ -131,7 +131,7 @@ export function NotificationSettingsCard() {
     },
   });
 
-  const handleSettingChange = (category: keyof NotificationSettings, key: string, value: any) => {
+  const handleSettingChange = (category: keyof NotificationSettings, key: string, value: boolean | string | number) => {
     if (!settings) return;
     
     const updatedSettings = {
@@ -150,7 +150,7 @@ export function NotificationSettingsCard() {
     category: keyof NotificationSettings, 
     nestedKey: string, 
     key: string, 
-    value: any
+    value: boolean | string
   ) => {
     if (!settings) return;
     
@@ -159,7 +159,7 @@ export function NotificationSettingsCard() {
       [category]: {
         ...settings[category],
         [nestedKey]: {
-          ...(settings[category] as any)[nestedKey],
+          ...((settings[category] as Record<string, Record<string, boolean | string>>)[nestedKey]),
           [key]: value,
         },
       },

@@ -53,7 +53,7 @@ export function SettingsPage() {
     },
     {
       id: 'security',
-      label: 'Security & Privacy',
+      label: 'Security &amp; Privacy',
       description: 'Manage your security settings and privacy preferences',
       icon: Shield,
       href: '/settings/security',
@@ -83,7 +83,7 @@ export function SettingsPage() {
       action: 'Setup',
     },
     {
-      title: 'Language & Region',
+      title: 'Language &amp; Region',
       description: 'Change your language and regional settings',
       icon: Globe,
       href: '/settings/preferences',
@@ -190,7 +190,7 @@ export function SettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button variant="outline" className="h-20 flex-col">
               <CreditCard className="h-6 w-6 mb-2" />
-              <span>Billing & Payments</span>
+              <span>Billing &amp; Payments</span>
             </Button>
             <Button variant="outline" className="h-20 flex-col">
               <Key className="h-6 w-6 mb-2" />
@@ -207,7 +207,7 @@ export function SettingsPage() {
       {/* Help & Support */}
       <Card>
         <CardHeader>
-          <CardTitle>Help & Support</CardTitle>
+          <CardTitle>Help &amp; Support</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">

@@ -123,7 +123,7 @@ export function renderWithProviders(
 
 // Mock API responses
 export const mockApiResponse = {
-  success: <T>(data: T) => ({
+  success: <T,>(data: T) => ({
     data,
     success: true,
     error: null,
@@ -216,7 +216,7 @@ export const createMockReflection = (overrides = {}) => ({
 });
 
 // Mock TanStack Query hooks
-export const mockUseQuery = <T>(data: T, options: Partial<{ isLoading: boolean; isError: boolean; error: Error | null }> = {}) => ({
+export const mockUseQuery = <T,>(data: T, options: Partial<{ isLoading: boolean; isError: boolean; error: Error | null }> = {}) => ({
   data,
   isLoading: false,
   isError: false,

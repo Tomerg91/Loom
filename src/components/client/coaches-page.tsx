@@ -102,7 +102,7 @@ export function ClientCoachesPage() {
           firstName: 'Michael',
           lastName: 'Chen',
           email: 'michael.chen@loom.com',
-          title: 'Life & Wellness Coach',
+          title: 'Life &amp; Wellness Coach',
           bio: 'Passionate about helping individuals achieve work-life balance and personal fulfillment. Specialized in stress management and holistic wellness approaches.',
           specialties: ['Work-Life Balance', 'Stress Management', 'Mindfulness'],
           experience: 5,

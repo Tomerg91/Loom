@@ -112,7 +112,7 @@ export function ClientBookPage() {
         id: '2',
         firstName: 'Michael',
         lastName: 'Chen',
-        title: 'Life & Wellness Coach',
+        title: 'Life &amp; Wellness Coach',
         specialties: ['Work-Life Balance', 'Stress Management'],
         rating: 4.7,
         reviewCount: 85,
@@ -332,7 +332,7 @@ export function ClientBookPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">Select Date & Time</h2>
+              <h2 className="text-2xl font-bold">Select Date &amp; Time</h2>
               <p className="text-muted-foreground">
                 Booking with {selectedCoach.firstName} {selectedCoach.lastName}
               </p>
@@ -414,7 +414,7 @@ export function ClientBookPage() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="sessionType">Session Type</Label>
-                  <Select value={bookingForm.sessionType} onValueChange={(value: any) => setBookingForm(prev => ({ ...prev, sessionType: value }))}>
+                  <Select value={bookingForm.sessionType} onValueChange={(value: 'video' | 'phone' | 'in-person') => setBookingForm(prev => ({ ...prev, sessionType: value }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

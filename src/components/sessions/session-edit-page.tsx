@@ -138,7 +138,7 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
     }
   }, [session]);
 
-  const handleInputChange = (field: keyof typeof formData, value: any) => {
+  const handleInputChange = (field: keyof typeof formData, value: string | number | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
@@ -284,7 +284,7 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="scheduledAt">Date & Time</Label>
+                    <Label htmlFor="scheduledAt">Date &amp; Time</Label>
                     <Input
                       id="scheduledAt"
                       type="datetime-local"
@@ -318,7 +318,7 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
 
             <Card>
               <CardHeader>
-                <CardTitle>Session Type & Location</CardTitle>
+                <CardTitle>Session Type &amp; Location</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
