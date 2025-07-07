@@ -214,12 +214,6 @@ secret = "env(SUPABASE_AUTH_EXTERNAL_TWITTER_SECRET)"
 redirect_uri = ""
 url = ""
 
-[auth.external.slack]
-enabled = false
-client_id = ""
-secret = "env(SUPABASE_AUTH_EXTERNAL_SLACK_SECRET)"
-redirect_uri = ""
-url = ""
 
 [auth.external.spotify]
 enabled = false

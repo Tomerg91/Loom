@@ -45,10 +45,5 @@ jobs:
           sleep 30
           curl -f ${{ secrets.PRODUCTION_URL }}/api/health
           
-      - name: Notify deployment
-        if: always()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-          text: "Production deployment ${{ job.status }}"
+      # Notification placeholder - add your preferred notification service here
+      # (email, Discord, Teams, etc.)
