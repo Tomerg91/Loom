@@ -198,6 +198,8 @@ export function ClientProgressPage() {
             duration: 60,
             topic: 'Stress Management',
             status: 'upcoming',
+            keyInsights: [],
+            actionItems: [],
           },
         ],
         insights: [

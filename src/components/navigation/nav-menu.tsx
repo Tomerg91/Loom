@@ -122,7 +122,7 @@ export function NavMenu() {
             <div className="hidden md:flex items-center space-x-1">
               {/* Common items */}
               {commonItems.map((item) => (
-                <Link key={item.href} href={item.href}>
+                <Link key={item.href} href={item.href as '/dashboard'}>
                   <Button
                     variant={isActive(item.href, item.exact) ? "default" : "ghost"}
                     size="sm"
@@ -137,7 +137,7 @@ export function NavMenu() {
               {/* Role-specific items */}
               <AdminOnly>
                 {adminItems.map((item) => (
-                  <Link key={item.href} href={item.href}>
+                  <Link key={item.href} href={item.href as '/dashboard'}>
                     <Button
                       variant={isActive(item.href) ? "default" : "ghost"}
                       size="sm"
@@ -152,7 +152,7 @@ export function NavMenu() {
 
               <CoachOnly>
                 {coachItems.map((item) => (
-                  <Link key={item.href} href={item.href}>
+                  <Link key={item.href} href={item.href as '/dashboard'}>
                     <Button
                       variant={isActive(item.href) ? "default" : "ghost"}
                       size="sm"
@@ -167,7 +167,7 @@ export function NavMenu() {
 
               <ClientOnly>
                 {clientItems.map((item) => (
-                  <Link key={item.href} href={item.href}>
+                  <Link key={item.href} href={item.href as '/dashboard'}>
                     <Button
                       variant={isActive(item.href) ? "default" : "ghost"}
                       size="sm"
@@ -254,7 +254,7 @@ export function NavMenu() {
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-card border-t border-border">
           {/* Common items */}
           {commonItems.map((item) => (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href} href={item.href as '/dashboard'}>
               <Button
                 variant={isActive(item.href, item.exact) ? "default" : "ghost"}
                 size="sm"
@@ -269,7 +269,7 @@ export function NavMenu() {
           {/* Role-specific items */}
           <AdminOnly>
             {adminItems.map((item) => (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href as '/dashboard'}>
                 <Button
                   variant={isActive(item.href) ? "default" : "ghost"}
                   size="sm"
@@ -284,7 +284,7 @@ export function NavMenu() {
 
           <CoachOnly>
             {coachItems.map((item) => (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href as '/dashboard'}>
                 <Button
                   variant={isActive(item.href) ? "default" : "ghost"}
                   size="sm"
@@ -299,7 +299,7 @@ export function NavMenu() {
 
           <ClientOnly>
             {clientItems.map((item) => (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href as '/dashboard'}>
                 <Button
                   variant={isActive(item.href) ? "default" : "ghost"}
                   size="sm"
