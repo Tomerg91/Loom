@@ -3,15 +3,7 @@ import { env } from '@/env.mjs';
 // Google Analytics
 export const GA_TRACKING_ID = env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
-declare global {
-  interface Window {
-    gtag: (command: string, targetId: string, config?: Record<string, unknown>) => void;
-    posthog?: { 
-      capture: (name: string, properties?: Record<string, unknown>) => void;
-      identify: (userId: string, properties?: Record<string, unknown>) => void;
-    };
-  }
-}
+// Window interface is declared in analytics-provider.tsx to avoid duplication
 
 // PostHog
 export const POSTHOG_KEY = env.NEXT_PUBLIC_POSTHOG_KEY;
