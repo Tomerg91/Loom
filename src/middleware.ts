@@ -1,4 +1,3 @@
-import createIntlMiddleware from 'next-intl/middleware';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { locales, defaultLocale } from '@/i18n/config';
@@ -6,12 +5,6 @@ import { applySecurityHeaders } from '@/lib/security/headers';
 import { rateLimitAuth, rateLimitAPI } from '@/lib/security/rate-limit';
 import { validateUserAgent } from '@/lib/security/validation';
 
-// Create the next-intl middleware
-const intlMiddleware = createIntlMiddleware({
-  locales,
-  defaultLocale,
-  localePrefix: 'as-needed'
-});
 
 // Routes that require authentication
 const protectedRoutes = [

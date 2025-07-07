@@ -1,6 +1,5 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +35,6 @@ export function SessionCancellationConfirmation({
   result, 
   onClose 
 }: SessionCancellationConfirmationProps) {
-  const t = useTranslations('sessions.cancellation');
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

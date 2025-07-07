@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,7 +21,6 @@ import { Label } from '@/components/ui/label';
 import { 
   Calendar,
   Clock,
-  User,
   MapPin,
   Video,
   Phone,
@@ -76,7 +74,6 @@ interface SessionDetailsPageProps {
 }
 
 export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
-  const t = useTranslations('sessions');
   const router = useRouter();
   const user = useUser();
   const queryClient = useQueryClient();
@@ -243,7 +240,7 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
             <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Session Not Found</h2>
             <p className="text-muted-foreground mb-4">
-              The session you're looking for doesn't exist or you don't have permission to view it.
+              The session you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.
             </p>
             <Button onClick={() => router.push('/sessions')}>
               <ArrowLeft className="mr-2 h-4 w-4" />

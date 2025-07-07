@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { 
@@ -14,21 +12,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  Bell,
   Mail,
   Smartphone,
   Monitor,
-  Calendar,
-  MessageSquare,
-  AlertTriangle,
   CheckCircle,
   Volume2,
   VolumeX,
   Clock,
-  Save
 } from 'lucide-react';
 import { useUser } from '@/lib/store/auth-store';
 
@@ -70,7 +62,6 @@ interface NotificationSettings {
 }
 
 export function NotificationSettingsCard() {
-  const t = useTranslations('settings.notifications');
   const user = useUser();
   const queryClient = useQueryClient();
   const [hasChanges, setHasChanges] = useState(false);

@@ -254,7 +254,7 @@ export function SecuritySettingsCard() {
             <div>
               <Label className="text-base font-medium">Activity Status</Label>
               <p className="text-sm text-muted-foreground">
-                Show when you're online and your last activity
+                Show when you&apos;re online and your last activity
               </p>
             </div>
             <Switch defaultChecked />

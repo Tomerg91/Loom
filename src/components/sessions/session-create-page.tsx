@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +18,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   ArrowLeft,
-  Save,
   Video,
   Phone,
   MapPin,
@@ -40,7 +38,6 @@ interface User {
 }
 
 export function SessionCreatePage() {
-  const t = useTranslations('sessions');
   const router = useRouter();
   const user = useUser();
   const queryClient = useQueryClient();

@@ -223,11 +223,7 @@ export function validateAndSanitizeRequest<T>(
 
 // Content sanitization for rich text
 export function sanitizeRichText(html: string): string {
-  // Whitelist of allowed HTML tags and attributes
-  const allowedTags = ['p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'h1', 'h2', 'h3'];
-  const allowedAttributes: Record<string, string[]> = {
-    // No attributes allowed for now
-  };
+  // Simple sanitization - in production, use a library like DOMPurify
   
   // Simple sanitization - in production, use a library like DOMPurify
   let sanitized = html;

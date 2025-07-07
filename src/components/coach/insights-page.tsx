@@ -30,9 +30,6 @@ import {
   Target,
   Award,
   Activity,
-  MessageSquare,
-  CheckCircle,
-  AlertTriangle,
   Download,
   RefreshCw
 } from 'lucide-react';
@@ -194,16 +191,6 @@ export function CoachInsightsPage() {
     }
   };
 
-  const getTrendColor = (trend: string) => {
-    switch (trend) {
-      case 'up':
-        return 'text-green-600';
-      case 'down':
-        return 'text-red-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
 
   if (isLoading) {
     return (
@@ -580,7 +567,7 @@ export function CoachInsightsPage() {
                       </div>
                     </div>
                     <blockquote className="text-sm italic border-l-4 border-primary/20 pl-4">
-                      "{feedback.comment}"
+                      &quot;{feedback.comment}&quot;
                     </blockquote>
                   </div>
                 ))}

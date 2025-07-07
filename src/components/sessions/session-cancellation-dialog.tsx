@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Dialog,
@@ -21,14 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   AlertTriangle,
   Clock,
   DollarSign,
   Mail,
-  MessageSquare,
   RefreshCw,
   X
 } from 'lucide-react';
@@ -72,7 +69,6 @@ export function SessionCancellationDialog({
   onClose, 
   onSuccess 
 }: SessionCancellationDialogProps) {
-  const t = useTranslations('sessions.cancellation');
   const user = useUser();
   const queryClient = useQueryClient();
 
@@ -200,7 +196,7 @@ export function SessionCancellationDialog({
           <DialogHeader>
             <DialogTitle>Cannot Cancel Session</DialogTitle>
             <DialogDescription>
-              You don't have permission to cancel this session or it has already been completed/cancelled.
+              You don&apos;t have permission to cancel this session or it has already been completed/cancelled.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

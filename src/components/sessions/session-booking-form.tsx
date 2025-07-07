@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -187,9 +188,11 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                     <SelectItem key={coach.id} value={coach.id}>
                       <div className="flex items-center gap-2">
                         {coach.avatar && (
-                          <img
+                          <Image
                             src={coach.avatar}
                             alt=""
+                            width={24}
+                            height={24}
                             className="w-6 h-6 rounded-full"
                           />
                         )}
@@ -210,9 +213,11 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
             <Card className="p-4 bg-muted">
               <div className="flex items-start gap-3">
                 {selectedCoachData.avatar && (
-                  <img
+                  <Image
                     src={selectedCoachData.avatar}
                     alt=""
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-full"
                   />
                 )}

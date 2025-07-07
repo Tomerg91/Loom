@@ -118,7 +118,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     }
 
     return () => subscription.unsubscribe();
-  }, [initialUser, refreshUser]);
+  }, [initialUser, refreshUser, supabase.auth]);
 
   const value = {
     user,

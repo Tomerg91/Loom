@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,8 +20,6 @@ import {
   ArrowLeft,
   Save,
   AlertTriangle,
-  Calendar,
-  Clock,
   Video,
   Phone,
   MapPin,
@@ -60,7 +57,6 @@ interface SessionEditPageProps {
 }
 
 export function SessionEditPage({ sessionId }: SessionEditPageProps) {
-  const t = useTranslations('sessions');
   const router = useRouter();
   const user = useUser();
   const queryClient = useQueryClient();
@@ -194,7 +190,7 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
             <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Session Not Found</h2>
             <p className="text-muted-foreground mb-4">
-              The session you're trying to edit doesn't exist or you don't have permission to edit it.
+              The session you&apos;re trying to edit doesn&apos;t exist or you don&apos;t have permission to edit it.
             </p>
             <Button onClick={() => router.push('/sessions')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -214,7 +210,7 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
             <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
             <p className="text-muted-foreground mb-4">
-              You don't have permission to edit this session.
+              You don&apos;t have permission to edit this session.
             </p>
             <Button onClick={() => router.push(`/sessions/${sessionId}`)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
