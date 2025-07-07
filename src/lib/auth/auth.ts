@@ -337,6 +337,13 @@ export class AuthService {
   }
 
   /**
+   * Verify OTP token
+   */
+  public async verifyOtp(params: { token_hash: string; type: string }) {
+    return this.supabase.auth.verifyOtp(params);
+  }
+
+  /**
    * Listen to auth state changes
    */
   onAuthStateChange(callback: (user: AuthUser | null) => void) {
