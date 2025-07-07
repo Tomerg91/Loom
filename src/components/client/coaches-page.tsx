@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,8 +21,6 @@ import {
   Star,
   Calendar,
   MessageSquare,
-  Video,
-  Clock,
   MapPin,
   Award,
   BookOpen,
@@ -422,7 +420,7 @@ export function ClientCoachesPage() {
               {/* Approach */}
               <div>
                 <h4 className="text-sm font-medium mb-2">Coaching Approach</h4>
-                <p className="text-sm text-muted-foreground italic">"{coach.approach}"</p>
+                <p className="text-sm text-muted-foreground italic">&quot;{coach.approach}&quot;</p>
               </div>
 
               {/* Action Buttons */}

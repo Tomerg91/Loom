@@ -23,7 +23,7 @@ export function useLanguageSwitcher() {
   const router = useRouter();
 
   const switchLanguage = (newLocale: string) => {
-    if (!locales.includes(newLocale as any)) {
+    if (!locales.includes(newLocale as 'en' | 'he')) {
       console.warn(`Locale ${newLocale} is not supported`);
       return;
     }
@@ -31,7 +31,7 @@ export function useLanguageSwitcher() {
     const segments = pathname.split('/').filter(Boolean);
     const currentLocale = segments[0];
     
-    const isLocaleInPath = locales.includes(currentLocale as any);
+    const isLocaleInPath = locales.includes(currentLocale as 'en' | 'he');
     
     let newPathname;
     if (isLocaleInPath) {

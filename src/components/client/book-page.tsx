@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { 
@@ -18,29 +17,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { 
   Calendar,
   Clock,
   Star,
   MapPin,
   Video,
   Phone,
-  MessageSquare,
   ChevronLeft,
   ChevronRight,
   Check,
-  X,
-  AlertCircle,
-  BookOpen,
-  Target
+  AlertCircle
 } from 'lucide-react';
 
 interface Coach {
@@ -79,7 +65,6 @@ interface BookingForm {
 export function ClientBookPage() {
   const t = useTranslations('client.book');
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [bookingForm, setBookingForm] = useState<BookingForm>({
     coachId: '',
@@ -89,7 +74,6 @@ export function ClientBookPage() {
     notes: '',
     preferredCommunication: 'email',
   });
-  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [bookingStep, setBookingStep] = useState(1); // 1: Select Coach, 2: Select Time, 3: Session Details, 4: Confirmation
 
   // Mock coaches data
@@ -125,12 +109,12 @@ export function ClientBookPage() {
 
   // Mock time slots data
   const { data: timeSlots } = useQuery<TimeSlot[]>({
-    queryKey: ['time-slots', selectedCoach?.id, selectedDate],
+    queryKey: ['time-slots', selectedCoach?.id],
     queryFn: async () => {
       if (!selectedCoach) return [];
       
       const slots: TimeSlot[] = [];
-      const startDate = new Date(selectedDate);
+      const startDate = new Date();
       
       // Generate mock slots for the next 7 days
       for (let day = 0; day < 7; day++) {
@@ -142,7 +126,7 @@ export function ClientBookPage() {
         
         const timeOptions = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
         
-        timeOptions.forEach((time, index) => {
+        timeOptions.forEach((time) => {
           slots.push({
             id: `${selectedCoach.id}-${date.toISOString().split('T')[0]}-${time}`,
             coachId: selectedCoach.id,
@@ -211,7 +195,6 @@ export function ClientBookPage() {
       preferredCommunication: 'email',
     });
     setBookingStep(1);
-    setIsBookingDialogOpen(false);
   };
 
   if (coachesLoading) {
@@ -557,11 +540,11 @@ export function ClientBookPage() {
                 </div>
 
                 <div className="bg-muted/50 p-4 rounded-lg">
-                  <h3 className="font-medium mb-2">What's Next?</h3>
+                  <h3 className="font-medium mb-2">What&apos;s Next?</h3>
                   <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• You'll receive a confirmation email with session details</li>
+                    <li>• You&apos;ll receive a confirmation email with session details</li>
                     <li>• Your coach will send you a preparation guide</li>
-                    <li>• You'll get a reminder 24 hours before your session</li>
+                    <li>• You&apos;ll get a reminder 24 hours before your session</li>
                     <li>• Session link will be available 15 minutes before start time</li>
                   </ul>
                 </div>

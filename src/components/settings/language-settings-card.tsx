@@ -44,7 +44,7 @@ export function LanguageSettingsCard() {
     const segments = pathname.split('/').filter(Boolean);
     const currentLocale = segments[0];
     
-    const isLocaleInPath = locales.includes(currentLocale as any);
+    const isLocaleInPath = locales.includes(currentLocale as 'en' | 'he');
     
     let newPathname;
     if (isLocaleInPath) {

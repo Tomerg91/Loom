@@ -35,16 +35,12 @@ import {
   Users, 
   Plus, 
   Search, 
-  Filter, 
   MoreHorizontal,
   Mail,
-  Phone,
-  Calendar,
   Edit,
   Trash2,
   Shield,
-  UserCheck,
-  UserX
+  UserCheck
 } from 'lucide-react';
 
 interface User {

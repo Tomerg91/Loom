@@ -312,7 +312,7 @@ describe('SessionService', () => {
     });
 
     it('validates status values', async () => {
-      await expect(sessionService.updateStatus('session-id', 'invalid-status' as any))
+      await expect(sessionService.updateStatus('session-id', 'invalid-status' as 'scheduled'))
         .rejects.toThrow('Invalid status');
     });
   });

@@ -14,7 +14,7 @@ const updateProfileSchema = z.object({
   specialties: z.array(z.string()).optional(),
 });
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const authService = createAuthService(true);
     const user = await authService.getCurrentUser();
