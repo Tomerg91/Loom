@@ -203,7 +203,7 @@ export class RealtimeClient {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'user_profiles',
+          table: 'users',
           filter: `id=eq.${userId}`,
         },
         callback

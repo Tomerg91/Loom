@@ -84,7 +84,7 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
       }
 
       if (user) {
-        router.push(redirectTo);
+        router.push(redirectTo as '/dashboard');
         router.refresh();
       }
     } catch (err) {

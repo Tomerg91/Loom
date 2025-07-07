@@ -59,7 +59,7 @@ export function RouteGuard({
     // Check if authentication is required
     if (requireAuth && !user) {
       const loginPath = redirectTo || '/auth/signin';
-      router.push(loginPath);
+      router.push(loginPath as '/auth/signin');
       return;
     }
 
@@ -71,14 +71,14 @@ export function RouteGuard({
     // Check role requirements
     if ((requireRole || requireAnyRole) && !hasRequiredRole) {
       const unauthorizedPath = redirectTo || '/dashboard';
-      router.push(unauthorizedPath);
+      router.push(unauthorizedPath as '/dashboard');
       return;
     }
 
     // Check permission requirements
     if (!permissionSatisfied || !anyPermissionSatisfied) {
       const unauthorizedPath = redirectTo || '/dashboard';
-      router.push(unauthorizedPath);
+      router.push(unauthorizedPath as '/dashboard');
       return;
     }
   }, [

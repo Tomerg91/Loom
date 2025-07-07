@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 
     // Verify user is a client
     const { data: profile } = await supabase
-      .from('user_profiles')
+      .from('users')
       .select('role')
       .eq('id', user.id)
       .single();

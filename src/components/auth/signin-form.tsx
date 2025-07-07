@@ -55,7 +55,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
       }
 
       if (user) {
-        router.push(redirectTo);
+        router.push(redirectTo as '/dashboard');
         router.refresh();
       }
     } catch (err) {

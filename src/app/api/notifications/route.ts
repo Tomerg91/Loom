@@ -38,12 +38,12 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       sortBy,
       sortOrder,
       isRead: unreadOnly ? false : undefined,
-      type,
+      type: type || undefined,
     }),
     notificationService.getNotificationsCount({
       userId: user.id,
       isRead: unreadOnly ? false : undefined,
-      type,
+      type: type || undefined,
     }),
     notificationService.getUnreadCount(user.id),
   ]);
@@ -77,7 +77,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   // Check if user has permission to create notifications (admin or coach)
   const { data: profile } = await supabase
-    .from('user_profiles')
+    .from('users')
     .select('role')
     .eq('id', user.id)
     .single();

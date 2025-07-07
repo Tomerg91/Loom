@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     // Verify client exists and coach has access
     const { data: clientExists } = await supabase
-      .from('user_profiles')
+      .from('users')
       .select('id')
       .eq('id', validatedData.clientId)
       .eq('role', 'client')

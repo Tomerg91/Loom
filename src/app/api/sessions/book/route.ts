@@ -33,7 +33,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   // Verify user is a client
   const { data: profile } = await supabase
-    .from('user_profiles')
+    .from('users')
     .select('role, first_name, last_name')
     .eq('id', user.id)
     .single();
@@ -44,7 +44,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   // Verify coach exists and get coach details
   const { data: coach } = await supabase
-    .from('user_profiles')
+    .from('users')
     .select('id, first_name, last_name, email')
     .eq('id', validatedData.coachId)
     .eq('role', 'coach')
@@ -102,7 +102,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     coachId: session.coach_id,
     clientId: session.client_id,
     title: session.title,
-    description: session.description,
+    description: session.description || undefined,
     scheduledAt: session.scheduled_at,
     duration: session.duration_minutes,
     durationMinutes: session.duration_minutes,
