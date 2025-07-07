@@ -17,7 +17,7 @@ export const sentryConfig = {
       blockAllMedia: true,
     }),
   ],
-  beforeSend(event, hint) {
+  beforeSend(event, _hint) {
     // Don't send events for non-error console logs
     if (event.level === 'info' || event.level === 'warning') {
       return null;

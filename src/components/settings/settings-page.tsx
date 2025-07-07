@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,6 @@ import {
   Monitor,
   ArrowRight
 } from 'lucide-react';
-import { useUser } from '@/lib/store/auth-store';
 import { NotificationSettingsCard } from './notification-settings-card';
 import { ProfileSettingsCard } from './profile-settings-card';
 import { SecuritySettingsCard } from './security-settings-card';
@@ -31,9 +29,7 @@ import { PreferencesSettingsCard } from './preferences-settings-card';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 
 export function SettingsPage() {
-  const t = useTranslations('settings');
   const router = useRouter();
-  const user = useUser();
   const [activeTab, setActiveTab] = useState('profile');
 
   const settingsCategories = [

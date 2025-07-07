@@ -1,5 +1,4 @@
 // Security audit utilities and vulnerability scanning
-import { z } from 'zod';
 
 export interface SecurityAuditResult {
   score: number; // 0-100

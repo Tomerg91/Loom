@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations, useLocale } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,6 @@ import {
 import { 
   Palette,
   Globe,
-  Clock,
   Moon,
   Sun,
   Monitor,
@@ -25,17 +24,14 @@ import {
   VolumeX,
   Calendar,
   Layout,
-  Accessibility,
-  Languages as LanguagesIcon
+  Accessibility
 } from 'lucide-react';
 import { locales } from '@/i18n/config';
 
 export function PreferencesSettingsCard() {
-  const t = useTranslations('settings.preferences');
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
-  const [darkMode, setDarkMode] = useState(false);
   const [sounds, setSounds] = useState(true);
   const [animations, setAnimations] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
@@ -44,7 +40,7 @@ export function PreferencesSettingsCard() {
     const segments = pathname.split('/').filter(Boolean);
     const currentLocale = segments[0];
     
-    const isLocaleInPath = locales.includes(currentLocale as any);
+    const isLocaleInPath = locales.includes(currentLocale as 'en' | 'he');
     
     let newPathname;
     if (isLocaleInPath) {

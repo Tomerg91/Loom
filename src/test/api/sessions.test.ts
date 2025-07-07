@@ -2,9 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST, GET } from '@/app/api/sessions/route';
 import { createMockSession, mockSupabaseClient } from '@/test/utils';
-import { SessionService } from '@/lib/database/sessions';
-import { validateRequestBody } from '@/lib/api/validation';
-import { SessionNotificationService } from '@/lib/notifications/session-notifications';
 
 // Mock Supabase
 vi.mock('@/lib/supabase/server', () => ({
@@ -55,7 +52,7 @@ describe('/api/sessions', () => {
   describe('POST /api/sessions', () => {
     it('creates a new session successfully', async () => {
       const mockCreate = vi.fn().mockResolvedValue(mockSession);
-      sessionService.mockImplementation(() => ({
+      SessionService.mockImplementation(() => ({
         create: mockCreate,
       }));
 
@@ -134,12 +131,12 @@ describe('/api/sessions', () => {
 
     it('sends confirmation notification after creating session', async () => {
       const mockCreate = vi.fn().mockResolvedValue(mockSession);
-      sessionService.mockImplementation(() => ({
+      SessionService.mockImplementation(() => ({
         create: mockCreate,
       }));
 
       const mockSendConfirmation = vi.fn();
-      notificationService.mockImplementation(() => ({
+      SessionNotificationService.mockImplementation(() => ({
         sendSessionConfirmation: mockSendConfirmation,
       }));
 
@@ -183,7 +180,7 @@ describe('/api/sessions', () => {
           totalPages: 1,
         },
       });
-      sessionService.mockImplementation(() => ({
+      SessionService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 
@@ -208,7 +205,7 @@ describe('/api/sessions', () => {
           totalPages: 1,
         },
       });
-      sessionService.mockImplementation(() => ({
+      SessionService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 
@@ -241,7 +238,7 @@ describe('/api/sessions', () => {
 
     it('handles database errors gracefully', async () => {
       const mockFindMany = vi.fn().mockRejectedValue(new Error('Database error'));
-      sessionService.mockImplementation(() => ({
+      SessionService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 

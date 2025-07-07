@@ -1,13 +1,11 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { NotificationSettingsCard } from './notification-settings-card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function NotificationSettingsPage() {
-  const t = useTranslations('settings');
   const router = useRouter();
 
   return (

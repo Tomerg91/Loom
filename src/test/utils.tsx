@@ -90,7 +90,6 @@ export const mockSupabaseClient = {
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   queryClient?: QueryClient;
   locale?: string;
-  user?: User | null;
 }
 
 export function renderWithProviders(
@@ -104,7 +103,6 @@ export function renderWithProviders(
       },
     }),
     locale = 'en',
-    user = mockUser,
     ...renderOptions
   }: CustomRenderOptions = {}
 ) {

@@ -5,8 +5,7 @@
  * common vulnerabilities and follows security best practices.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NextRequest } from 'next/server';
+import { describe, it, expect } from 'vitest';
 
 describe('Security Tests', () => {
   describe('Input Validation and Sanitization', () => {

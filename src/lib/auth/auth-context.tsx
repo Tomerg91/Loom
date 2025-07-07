@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import type { AuthUser } from '@/lib/auth/auth';
 
@@ -119,7 +118,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     }
 
     return () => subscription.unsubscribe();
-  }, [initialUser]);
+  }, [initialUser, refreshUser]);
 
   const value = {
     user,

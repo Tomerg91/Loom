@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { FocusManager, ScreenReaderAnnouncer, prefersReducedMotion } from './aria';
+import { FocusManager, ScreenReaderAnnouncer } from './aria';
 
 // Focus management hook
 export function useFocusManagement(isOpen: boolean) {

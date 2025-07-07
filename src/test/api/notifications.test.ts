@@ -3,7 +3,6 @@ import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/notifications/route';
 import { POST as MarkAsRead } from '@/app/api/notifications/[id]/read/route';
 import { createMockNotification, mockSupabaseClient } from '@/test/utils';
-import { NotificationService } from '@/lib/database/notifications';
 
 // Mock Supabase
 vi.mock('@/lib/supabase/server', () => ({
@@ -52,7 +51,7 @@ describe('/api/notifications', () => {
           unreadCount: 1,
         },
       });
-      notificationService.mockImplementation(() => ({
+      NotificationService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 
@@ -84,7 +83,7 @@ describe('/api/notifications', () => {
           unreadCount: 1,
         },
       });
-      notificationService.mockImplementation(() => ({
+      NotificationService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 
@@ -109,7 +108,7 @@ describe('/api/notifications', () => {
           unreadCount: 1,
         },
       });
-      notificationService.mockImplementation(() => ({
+      NotificationService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 
@@ -146,7 +145,7 @@ describe('/api/notifications', () => {
       const mockNotification = createMockNotification();
       
       const mockCreate = vi.fn().mockResolvedValue(mockNotification);
-      notificationService.mockImplementation(() => ({
+      NotificationService.mockImplementation(() => ({
         create: mockCreate,
       }));
 
@@ -216,7 +215,7 @@ describe('/api/notifications', () => {
   describe('POST /api/notifications/[id]/read', () => {
     it('marks notification as read successfully', async () => {
       const mockMarkAsRead = vi.fn().mockResolvedValue(true);
-      notificationService.mockImplementation(() => ({
+      NotificationService.mockImplementation(() => ({
         markAsRead: mockMarkAsRead,
       }));
 
@@ -235,7 +234,7 @@ describe('/api/notifications', () => {
 
     it('returns 404 for non-existent notification', async () => {
       const mockMarkAsRead = vi.fn().mockResolvedValue(false);
-      notificationService.mockImplementation(() => ({
+      NotificationService.mockImplementation(() => ({
         markAsRead: mockMarkAsRead,
       }));
 

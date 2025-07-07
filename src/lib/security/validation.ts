@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { sanitizeInput, containsSQLInjection, sanitizeHTML } from './headers';
+import { sanitizeInput, containsSQLInjection } from './headers';
 
 // Enhanced validation schemas with security checks
 export const secureStringSchema = z
@@ -16,11 +16,6 @@ export const secureEmailSchema = z
   .refine((val) => !containsSQLInjection(val), {
     message: 'Email contains potentially harmful content',
   });
-
-// Helper function to create secure string schemas with additional validations
-function createSecureStringSchema() {
-  return z.string();
-}
 
 // Helper function to apply security transforms after all other validations
 function applySecurity<T extends z.ZodString>(schema: T) {

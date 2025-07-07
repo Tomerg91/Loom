@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,8 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { 
   User,
   Mail,
-  Phone,
-  MapPin,
   Camera,
   Save,
   Edit,
@@ -23,7 +20,6 @@ import {
 import { useUser } from '@/lib/store/auth-store';
 
 export function ProfileSettingsCard() {
-  const t = useTranslations('settings.profile');
   const user = useUser();
   const queryClient = useQueryClient();
   
