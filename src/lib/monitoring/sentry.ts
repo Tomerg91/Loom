@@ -2,24 +2,16 @@ import * as Sentry from '@sentry/nextjs';
 import React from 'react';
 import { env } from '@/env.mjs';
 
-// Sentry configuration
+// Sentry configuration (shared between client and server)
 export const sentryConfig = {
   dsn: env.SENTRY_DSN,
   environment: env.NODE_ENV,
   tracesSampleRate: env.NODE_ENV === 'production' ? 0.1 : 1.0,
   debug: env.NODE_ENV === 'development',
   
-  // Session replay configuration
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0,
-  integrations: [
-    // Updated to use correct function syntax for Sentry v9+
-    Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration({
-      maskAllText: false,
-      blockAllMedia: false,
-    }),
-  ],
+  // Note: Browser-specific integrations are now in sentry.client.config.js
+  // Server-specific configuration is in sentry.server.config.js
+  integrations: [],
   beforeSend(event: unknown) {
     // Don't send events for non-error console logs
     const eventObj = event as { level?: string };
