@@ -31,29 +31,19 @@ export const createServerClientWithRequest = (request: NextRequest, response: Ne
     supabaseKey,
     {
       cookies: {
-        get: (name: string) => request.cookies.get(name)?.value,
-        set: (name: string, value: string, options: { maxAge?: number; httpOnly?: boolean; secure?: boolean; sameSite?: 'strict' | 'lax' | 'none'; path?: string }) => {
-          try {
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            });
-          } catch (error) {
-            console.warn('Failed to set cookie in middleware:', error);
-          }
-        },
-        remove: (name: string, options: { path?: string; domain?: string }) => {
-          try {
-            response.cookies.set({
-              name,
-              value: '',
-              ...options,
-              maxAge: 0,
-            });
-          } catch (error) {
-            console.warn('Failed to remove cookie in middleware:', error);
-          }
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookies) => {
+          cookies.forEach(({ name, value, options }) => {
+            try {
+              response.cookies.set({
+                name,
+                value,
+                ...options,
+              });
+            } catch (error) {
+              console.warn('Failed to set cookie in middleware:', error);
+            }
+          });
         },
       },
     }
@@ -72,22 +62,15 @@ export const createClient = async () => {
     supabaseKey,
     {
       cookies: {
-        get: (name: string) => cookieStore.get(name)?.value,
-        set: (name: string, value: string, options: { maxAge?: number; httpOnly?: boolean; secure?: boolean; sameSite?: 'strict' | 'lax' | 'none'; path?: string }) => {
-          try {
-            cookieStore.set(name, value, options);
-          } catch (error) {
-            // Handle cookie setting errors in read-only contexts
-            console.warn('Failed to set cookie:', error);
-          }
-        },
-        remove: (name: string, options: { path?: string; domain?: string }) => {
-          try {
-            cookieStore.set(name, '', { ...options, maxAge: 0 });
-          } catch (error) {
-            // Handle cookie removal errors in read-only contexts
-            console.warn('Failed to remove cookie:', error);
-          }
+        getAll: () => cookieStore.getAll(),
+        setAll: (cookies) => {
+          cookies.forEach(({ name, value, options }) => {
+            try {
+              cookieStore.set(name, value, options);
+            } catch (error) {
+              console.warn('Failed to set cookie:', error);
+            }
+          });
         },
       },
     }

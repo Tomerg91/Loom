@@ -2,6 +2,7 @@
 
 import { useTranslations, useLocale } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
+import { type Route } from 'next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -54,7 +55,7 @@ export function LanguageSettingsCard() {
       newPathname = `/${newLocale}${pathname}`;
     }
     
-    router.push(newPathname);
+    router.push(newPathname as Route);
   };
 
   const currentLanguage = languageOptions.find(lang => lang.code === locale);

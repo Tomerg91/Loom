@@ -28,7 +28,7 @@ export function getRateLimitKey(request: NextRequest, identifier?: string): stri
   // Get IP from various headers (for production with proxies)
   const forwarded = request.headers.get('x-forwarded-for');
   const realIP = request.headers.get('x-real-ip');
-  const ip = forwarded?.split(',')[0] || realIP || request.ip || 'unknown';
+  const ip = forwarded?.split(',')[0] || realIP || 'unknown';
   
   return `${ip}:${request.nextUrl.pathname}`;
 }

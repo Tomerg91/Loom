@@ -159,10 +159,9 @@ export const measureCustomMetric = (name: string, startTime: number) => {
     value: duration,
     rating: duration < 1000 ? 'good' : duration < 3000 ? 'needs-improvement' : 'poor',
     delta: duration,
-    entries: [],
     id: `custom_${name}_${Date.now()}`,
     navigationType: 'navigate',
-  });
+  } as never);
   
   return duration;
 };

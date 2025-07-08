@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
+import { type Route } from 'next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -50,7 +51,7 @@ export function PreferencesSettingsCard() {
       newPathname = `/${newLocale}${pathname}`;
     }
     
-    router.push(newPathname);
+    router.push(newPathname as Route);
   };
 
   const themes = [

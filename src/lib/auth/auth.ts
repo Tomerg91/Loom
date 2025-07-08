@@ -339,7 +339,7 @@ export class AuthService {
   /**
    * Verify OTP token
    */
-  public async verifyOtp(params: { token_hash: string; type: 'signup' | 'invite' | 'magiclink' | 'recovery' | 'email_change' | 'email' | 'sms' | 'phone_change' }) {
+  public async verifyOtp(params: { token_hash: string; type: 'signup' | 'invite' | 'magiclink' | 'recovery' | 'email_change' | 'email' }) {
     return this.supabase.auth.verifyOtp({
       ...params,
       type: params.type

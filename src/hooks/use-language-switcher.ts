@@ -2,6 +2,7 @@
 
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
+import { type Route } from 'next';
 import { locales } from '@/i18n/config';
 
 interface LanguageOption {
@@ -43,7 +44,7 @@ export function useLanguageSwitcher() {
       newPathname = `/${newLocale}${pathname}`;
     }
     
-    router.push(newPathname);
+    router.push(newPathname as Route);
   };
 
   const getCurrentLanguage = () => {

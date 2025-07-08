@@ -329,8 +329,8 @@ export function auditDataExposure(response: unknown, sensitiveFields: string[]):
       }
       
       // Recursively check nested objects
-      if (typeof obj[key] === 'object') {
-        checkObject(obj[key], currentPath);
+      if (typeof (obj as Record<string, unknown>)[key] === 'object') {
+        checkObject((obj as Record<string, unknown>)[key], currentPath);
       }
     });
   }

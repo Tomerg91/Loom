@@ -150,7 +150,7 @@ export function NotificationSettingsCard() {
       [category]: {
         ...settings[category],
         [nestedKey]: {
-          ...((settings[category] as Record<string, Record<string, boolean | string>>)[nestedKey]),
+          ...((settings[category] as Record<string, unknown>)[nestedKey] as Record<string, unknown>),
           [key]: value,
         },
       },

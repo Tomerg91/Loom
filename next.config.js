@@ -92,6 +92,22 @@ const nextConfig = {
 
   // Webpack configuration
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Suppress critical dependency warnings for instrumentation libraries
+    config.module.exprContextCritical = false;
+    
+    // More specific suppression for OpenTelemetry/Sentry
+    config.ignoreWarnings = [
+      {
+        module: /node_modules\/@opentelemetry\/instrumentation/,
+      },
+      {
+        module: /node_modules\/@sentry\/nextjs/,
+      },
+      {
+        message: /Critical dependency: the request of a dependency is an expression/,
+      },
+    ];
+
     // Optimize bundle size
     if (!dev && !isServer) {
       config.optimization.splitChunks = {

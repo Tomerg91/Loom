@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const verifyTokenSchema = z.object({
   token_hash: z.string().min(1, 'Token hash is required'),
-  type: z.enum(['signup', 'recovery', 'email_change', 'phone_change']).default('signup'),
+  type: z.enum(['signup', 'recovery', 'email_change', 'email', 'invite', 'magiclink']).default('signup'),
 });
 
 export async function POST(request: NextRequest) {

@@ -261,9 +261,9 @@ export class UserService {
       }
 
       return {
-        totalSessions: (totalSessions as { count: number } | null)?.count || 0,
-        completedSessions: (completedSessions as { count: number } | null)?.count || 0,
-        upcomingSessions: (upcomingSessions as { count: number } | null)?.count || 0,
+        totalSessions: (totalSessions as unknown as { count: number } | null)?.count || 0,
+        completedSessions: (completedSessions as unknown as { count: number } | null)?.count || 0,
+        upcomingSessions: (upcomingSessions as unknown as { count: number } | null)?.count || 0,
         totalClients: uniqueClients.size,
         activeClients: uniqueClients.size, // For now, assume all clients are active
       };
@@ -292,9 +292,9 @@ export class UserService {
       }
 
       return {
-        totalSessions: (totalSessions as { count: number } | null)?.count || 0,
-        completedSessions: (completedSessions as { count: number } | null)?.count || 0,
-        upcomingSessions: (upcomingSessions as { count: number } | null)?.count || 0,
+        totalSessions: (totalSessions as unknown as { count: number } | null)?.count || 0,
+        completedSessions: (completedSessions as unknown as { count: number } | null)?.count || 0,
+        upcomingSessions: (upcomingSessions as unknown as { count: number } | null)?.count || 0,
       };
     }
 

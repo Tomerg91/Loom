@@ -15,21 +15,9 @@ export const mockUser: User = {
   role: 'client',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
-  emailVerified: true,
-  isActive: true,
-  avatarUrl: null,
-  phoneNumber: undefined,
-  dateOfBirth: undefined,
-  preferences: {
-    language: 'en',
-    notifications: {
-      email: true,
-      push: true,
-      inApp: true,
-    },
-    theme: 'light',
-  },
-  metadata: {},
+  avatarUrl: undefined,
+  language: 'en',
+  status: 'active',
 };
 
 export const mockCoachUser: User = {

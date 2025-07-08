@@ -9,20 +9,19 @@ export const sentryConfig = {
   tracesSampleRate: env.NODE_ENV === 'production' ? 0.1 : 1.0,
   debug: env.NODE_ENV === 'development',
   integrations: [
-    Sentry.browserTracingIntegration({
-      tracingOrigins: ['localhost', /^https:\/\/yourapp\.com/],
-    }),
+    Sentry.browserTracingIntegration(),
     Sentry.replayIntegration({
       maskAllText: true,
       blockAllMedia: true,
     }),
   ],
-  beforeSend(event) {
+  beforeSend(event: unknown) {
     // Don't send events for non-error console logs
-    if (event.level === 'info' || event.level === 'warning') {
+    const eventObj = event as { level?: string };
+    if (eventObj.level === 'info' || eventObj.level === 'warning') {
       return null;
     }
-    return event;
+    return event as never;
   },
 };
 
@@ -39,7 +38,7 @@ export const captureError = (error: Error, context?: Record<string, unknown>) =>
     Sentry.withScope((scope) => {
       if (context) {
         Object.keys(context).forEach((key) => {
-          scope.setContext(key, context[key]);
+          scope.setContext(key, context[key] as never);
         });
       }
       Sentry.captureException(error);
@@ -73,9 +72,16 @@ export const setUserContext = (user: {
 // Performance monitoring
 export const startTransaction = (name: string, operation: string) => {
   if (env.SENTRY_DSN) {
-    return Sentry.startTransaction({
+    return Sentry.startSpan({
       name,
       op: operation,
+    }, () => {
+      // Return a span-like object for compatibility
+      return {
+        finish: () => {},
+        setTag: () => {},
+        setData: () => {},
+      };
     });
   }
   return null;
@@ -102,7 +108,7 @@ export const withSentryErrorBoundary = <T extends Record<string, unknown>>(
 ): React.ComponentType<T> => {
   if (env.SENTRY_DSN) {
     return Sentry.withErrorBoundary(Component, {
-      fallback: options?.fallback || (() => React.createElement('div', null, 'Something went wrong')),
+      fallback: (options?.fallback || (({ error: _error }: { error: unknown }) => React.createElement('div', null, 'Something went wrong'))) as never,
       beforeCapture: options?.beforeCapture,
     });
   }

@@ -107,7 +107,7 @@ export class EmailService {
                 <h3 style="margin-top: 0; color: #495057;">Session Details:</h3>
                 <p><strong>Title:</strong> ${sessionData.sessionTitle}</p>
                 ${sessionData.coachName ? `<p><strong>Coach:</strong> ${sessionData.coachName}</p>` : ''}
-                ${sessionData.scheduledAt ? `<p><strong>Time:</strong> ${new Date(sessionData.scheduledAt).toLocaleString()}</p>` : ''}
+                ${sessionData.scheduledAt ? `<p><strong>Time:</strong> ${new Date(sessionData.scheduledAt as string).toLocaleString()}</p>` : ''}
               </div>
             ` : ''}
           </div>
@@ -154,8 +154,8 @@ export class EmailService {
                 <p><strong>Title:</strong> ${sessionData.sessionTitle}</p>
                 ${sessionData.coachName ? `<p><strong>Coach:</strong> ${sessionData.coachName}</p>` : ''}
                 ${sessionData.clientName ? `<p><strong>Client:</strong> ${sessionData.clientName}</p>` : ''}
-                ${sessionData.scheduledAt ? `<p><strong>Scheduled:</strong> ${new Date(sessionData.scheduledAt).toLocaleString()}</p>` : ''}
-                ${sessionData.newScheduledAt ? `<p><strong>New Time:</strong> ${new Date(sessionData.newScheduledAt).toLocaleString()}</p>` : ''}
+                ${sessionData.scheduledAt ? `<p><strong>Scheduled:</strong> ${new Date(sessionData.scheduledAt as string).toLocaleString()}</p>` : ''}
+                ${sessionData.newScheduledAt ? `<p><strong>New Time:</strong> ${new Date(sessionData.newScheduledAt as string).toLocaleString()}</p>` : ''}
               </div>
             ` : ''}
           </div>
