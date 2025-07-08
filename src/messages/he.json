@@ -316,6 +316,8 @@
     "location": "מיקום"
   },
   "dashboard": {
+    "title": "לוח בקרה",
+    "description": "סקירה כללית של פלטפורמת הקואצ'ינג",
     "dashboard": "לוח בקרה",
     "overview": "סקירה כללית",
     "recentActivity": "פעילות אחרונה",

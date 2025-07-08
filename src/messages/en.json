@@ -316,6 +316,8 @@
     "location": "Location"
   },
   "dashboard": {
+    "title": "Dashboard",
+    "description": "Your coaching platform overview",
     "dashboard": "Dashboard",
     "overview": "Overview",
     "recentActivity": "Recent Activity",
