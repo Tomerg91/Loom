@@ -55,6 +55,8 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
           firstName: profile.first_name || '',
           lastName: profile.last_name || '',
           role: profile.role || 'client',
+          language: profile.language || 'en',
+          status: profile.status || 'active',
           createdAt: profile.created_at,
           updatedAt: profile.updated_at,
           emailVerified: authUser.email_confirmed_at ? true : false,

@@ -237,7 +237,12 @@ export function usePresence(channelName: string) {
     };
   }, [user?.id, channelName, user?.firstName, user?.lastName, user?.email, user?.avatarUrl, user?.role]);
 
-  const onlineUsers = Object.values(presenceState).flat();
+  const onlineUsers = Object.values(presenceState).flat() as Array<{
+    user_id: string;
+    name: string;
+    avatar: string;
+    role: 'admin' | 'coach' | 'client';
+  }>;
 
   return {
     presenceState,

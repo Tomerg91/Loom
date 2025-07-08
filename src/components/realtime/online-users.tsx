@@ -6,6 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Circle } from 'lucide-react';
 
+interface OnlineUser {
+  user_id: string;
+  name: string;
+  avatar: string;
+  role: 'admin' | 'coach' | 'client';
+}
+
 interface OnlineUsersProps {
   sessionId?: string;
   showHeader?: boolean;
@@ -65,25 +72,25 @@ export function OnlineUsers({ sessionId, showHeader = true, className = '' }: On
               </p>
             ) : (
               <div className="space-y-3">
-                {onlineUsers.map((user, index) => (
-                  <div key={`${(user as any).user_id}-${index}`} className="flex items-center gap-3">
+                {onlineUsers.map((user: OnlineUser, index) => (
+                  <div key={`${user.user_id}-${index}`} className="flex items-center gap-3">
                     <div className="relative">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={(user as any).avatar as string} alt={(user as any).name as string} />
+                        <AvatarImage src={user.avatar} alt={user.name} />
                         <AvatarFallback className="text-xs">
-                          {getInitials((user as any).name as string)}
+                          {getInitials(user.name)}
                         </AvatarFallback>
                       </Avatar>
                       <Circle className="absolute -bottom-0.5 -right-0.5 h-3 w-3 fill-green-500 text-green-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{(user as any).name as string}</p>
+                      <p className="text-sm font-medium truncate">{user.name}</p>
                       <p className="text-xs text-muted-foreground">
                         Active now
                       </p>
                     </div>
-                    <Badge className={getRoleColor((user as any).role as string)} variant="outline">
-                      {(user as any).role as string}
+                    <Badge className={getRoleColor(user.role)} variant="outline">
+                      {user.role}
                     </Badge>
                   </div>
                 ))}
@@ -95,12 +102,12 @@ export function OnlineUsers({ sessionId, showHeader = true, className = '' }: On
 
       {!showHeader && onlineUsers.length > 0 && (
         <div className="flex -space-x-2">
-          {onlineUsers.slice(0, 5).map((user, index) => (
-            <div key={`${(user as any).user_id}-${index}`} className="relative">
+          {onlineUsers.slice(0, 5).map((user: OnlineUser, index) => (
+            <div key={`${user.user_id}-${index}`} className="relative">
               <Avatar className="h-8 w-8 border-2 border-background">
-                <AvatarImage src={(user as any).avatar as string} alt={(user as any).name as string} />
+                <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="text-xs">
-                  {getInitials((user as any).name as string)}
+                  {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
               <Circle className="absolute -bottom-0.5 -right-0.5 h-3 w-3 fill-green-500 text-green-500" />

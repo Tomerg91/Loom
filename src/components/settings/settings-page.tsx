@@ -123,7 +123,7 @@ export function SettingsPage() {
               <div
                 key={action.title}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={() => router.push(action.href as any)}
+                onClick={() => router.push(action.href)}
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">

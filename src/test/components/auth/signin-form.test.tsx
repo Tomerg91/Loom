@@ -3,15 +3,6 @@ import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '@/test/utils';
 import { SigninForm } from '@/components/auth/signin-form';
 
-// Mock TanStack Query
-const mockUseMutation = vi.fn();
-vi.mock('@tanstack/react-query', () => ({
-  useMutation: mockUseMutation,
-  useQueryClient: vi.fn(() => ({
-    invalidateQueries: vi.fn(),
-  })),
-}));
-
 // Mock Next.js navigation
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({

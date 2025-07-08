@@ -32,7 +32,7 @@ export const createServerClientWithRequest = (request: NextRequest, response: Ne
     {
       cookies: {
         get: (name: string) => request.cookies.get(name)?.value,
-        set: (name: string, value: string, options: any) => {
+        set: (name: string, value: string, options: { maxAge?: number; httpOnly?: boolean; secure?: boolean; sameSite?: 'strict' | 'lax' | 'none'; path?: string }) => {
           try {
             response.cookies.set({
               name,
@@ -73,7 +73,7 @@ export const createClient = async () => {
     {
       cookies: {
         get: (name: string) => cookieStore.get(name)?.value,
-        set: (name: string, value: string, options: any) => {
+        set: (name: string, value: string, options: { maxAge?: number; httpOnly?: boolean; secure?: boolean; sameSite?: 'strict' | 'lax' | 'none'; path?: string }) => {
           try {
             cookieStore.set(name, value, options);
           } catch (error) {

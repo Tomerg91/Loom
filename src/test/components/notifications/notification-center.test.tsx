@@ -4,15 +4,6 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { renderWithProviders, mockUseQuery, mockUseMutation, createMockNotification } from '@/test/utils';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 
-// Mock the hooks
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: vi.fn(),
-  useMutation: vi.fn(),
-  useQueryClient: vi.fn(() => ({
-    invalidateQueries: vi.fn(),
-  })),
-}));
-
 vi.mock('@/lib/realtime/hooks', () => ({
   useRealtimeNotifications: vi.fn(() => ({
     isConnected: true,

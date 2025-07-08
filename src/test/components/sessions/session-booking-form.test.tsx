@@ -4,15 +4,6 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { renderWithProviders, mockUseQuery, mockUseMutation, mockCoachUser } from '@/test/utils';
 import { SessionBookingForm } from '@/components/sessions/session-booking-form';
 
-// Mock the hooks
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: vi.fn(),
-  useMutation: vi.fn(),
-  useQueryClient: vi.fn(() => ({
-    invalidateQueries: vi.fn(),
-  })),
-}));
-
 vi.mock('@/lib/store/auth-store', () => ({
   useUser: vi.fn(() => ({
     id: 'test-client-id',

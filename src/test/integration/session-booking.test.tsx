@@ -5,16 +5,6 @@ import { renderWithProviders, mockUser, mockCoachUser, createMockSession, mockFe
 import { SessionBookingForm } from '@/components/sessions/session-booking-form';
 import { SessionList } from '@/components/sessions/session-list';
 
-// Mock TanStack Query
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: vi.fn(),
-  useMutation: vi.fn(),
-  useQueryClient: vi.fn(() => ({
-    invalidateQueries: vi.fn(),
-    setQueryData: vi.fn(),
-  })),
-}));
-
 // Mock auth store
 vi.mock('@/lib/store/auth-store', () => ({
   useUser: vi.fn(() => mockUser),

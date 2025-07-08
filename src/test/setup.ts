@@ -21,6 +21,18 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+// Mock @tanstack/react-query
+vi.mock('@tanstack/react-query', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+  return {
+    ...actual,
+    useQuery: vi.fn(),
+    useMutation: vi.fn(),
+    useInfiniteQuery: vi.fn(),
+    useQueryClient: vi.fn(),
+  };
+});
+
 // Mock environment variables
 Object.defineProperty(process, 'env', {
   value: {
