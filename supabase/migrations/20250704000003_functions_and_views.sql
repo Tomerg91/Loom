@@ -77,7 +77,7 @@ RETURNS TABLE (
 DECLARE
   day_of_week INTEGER;
   availability_record RECORD;
-  current_time TIME;
+  slot_time TIME;
   slot_start TIME;
   slot_end TIME;
 BEGIN
@@ -93,11 +93,11 @@ BEGIN
       AND ca.is_available = true
   LOOP
     -- Generate time slots within availability window
-    current_time := availability_record.start_time;
+    slot_time := availability_record.start_time;
     
-    WHILE current_time + (slot_duration || ' minutes')::INTERVAL <= availability_record.end_time::TIME LOOP
-      slot_start := current_time;
-      slot_end := current_time + (slot_duration || ' minutes')::INTERVAL;
+    WHILE slot_time + (slot_duration || ' minutes')::INTERVAL <= availability_record.end_time::TIME LOOP
+      slot_start := slot_time;
+      slot_end := slot_time + (slot_duration || ' minutes')::INTERVAL;
       
       -- Check if this slot conflicts with existing sessions
       RETURN QUERY
@@ -110,7 +110,7 @@ BEGIN
           slot_duration
         );
       
-      current_time := current_time + (slot_duration || ' minutes')::INTERVAL;
+      slot_time := slot_time + (slot_duration || ' minutes')::INTERVAL;
     END LOOP;
   END LOOP;
   

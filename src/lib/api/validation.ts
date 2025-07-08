@@ -173,3 +173,16 @@ export function validateQuery<T>(schema: z.ZodSchema<T>, query: Record<string, s
     return schema.parse({}) as T;
   }
 }
+
+// General API input validation helper
+export function validateApiInput<T>(schema: z.ZodSchema<T>, input: unknown): { success: boolean; data?: T; errors?: string[] } {
+  const result = schema.safeParse(input);
+  if (result.success) {
+    return { success: true, data: result.data };
+  } else {
+    return { 
+      success: false, 
+      errors: result.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`)
+    };
+  }
+}

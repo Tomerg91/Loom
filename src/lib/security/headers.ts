@@ -123,6 +123,21 @@ export function containsSQLInjection(input: string): boolean {
   return SQL_INJECTION_PATTERNS.some(pattern => pattern.test(input));
 }
 
+// XSS prevention patterns
+export const XSS_PATTERNS = [
+  /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+  /javascript:/gi,
+  /on\w+\s*=/gi,
+  /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
+  /<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi,
+  /<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi,
+  /<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi,
+];
+
+export function containsXSS(input: string): boolean {
+  return XSS_PATTERNS.some(pattern => pattern.test(input));
+}
+
 // XSS prevention
 export function sanitizeHTML(html: string): string {
   // Simple HTML sanitization - in production, use a library like DOMPurify

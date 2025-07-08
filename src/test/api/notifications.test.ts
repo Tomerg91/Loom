@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/notifications/route';
 import { POST as MarkAsRead } from '@/app/api/notifications/[id]/read/route';
 import { createMockNotification, mockSupabaseClient } from '@/test/utils';
+import { NotificationService } from '@/lib/database/notifications';
 
 // Mock Supabase
 vi.mock('@/lib/supabase/server', () => ({

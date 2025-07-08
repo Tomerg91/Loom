@@ -128,7 +128,11 @@ CREATE POLICY "Users can update their own notifications" ON notifications
     FOR UPDATE USING (auth.uid() = user_id);
 
 CREATE POLICY "System can create notifications" ON notifications
-    FOR INSERT WITH CHECK (true);
+    FOR INSERT WITH CHECK (
+        -- Only allow system/admin roles or users creating notifications for themselves
+        EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin') OR
+        auth.uid() = user_id
+    );
 
 CREATE POLICY "Users can delete their own notifications" ON notifications
     FOR DELETE USING (auth.uid() = user_id);

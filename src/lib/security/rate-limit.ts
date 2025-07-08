@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 import { RATE_LIMITS } from './headers';
 
+// Re-export rate limits for external use
+export { RATE_LIMITS };
+
 interface RateLimitEntry {
   count: number;
   resetTime: number;

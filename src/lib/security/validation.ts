@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { sanitizeInput, containsSQLInjection } from './headers';
+import { sanitizeInput, containsSQLInjection, containsXSS, SQL_INJECTION_PATTERNS, XSS_PATTERNS } from './headers';
+
+// Re-export security functions for external use
+export { sanitizeInput, containsSQLInjection, containsXSS, SQL_INJECTION_PATTERNS, XSS_PATTERNS };
 
 // Enhanced validation schemas with security checks
 export const secureStringSchema = z

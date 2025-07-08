@@ -61,7 +61,7 @@ describe('SessionBookingForm', () => {
         isPending: false,
         isError: false,
         error: null,
-      })
+      }) as ReturnType<typeof useMutation>
     );
   });
 
@@ -125,7 +125,7 @@ describe('SessionBookingForm', () => {
         isPending: false,
         isError: false,
         error: null,
-      })
+      }) as ReturnType<typeof useMutation>
     );
     
     renderWithProviders(<SessionBookingForm />);
@@ -175,7 +175,7 @@ describe('SessionBookingForm', () => {
         isPending: true,
         isError: false,
         error: null,
-      })
+      }) as ReturnType<typeof useMutation>
     );
     
     renderWithProviders(<SessionBookingForm />);
@@ -191,7 +191,7 @@ describe('SessionBookingForm', () => {
         isPending: false,
         isError: true,
         error: new Error('Failed to book session'),
-      })
+      }) as ReturnType<typeof useMutation>
     );
     
     renderWithProviders(<SessionBookingForm />);

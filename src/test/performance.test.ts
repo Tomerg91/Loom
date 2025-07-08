@@ -31,7 +31,7 @@ describe('Performance Tests', () => {
     });
 
     it('should have proper code splitting', async () => {
-      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfigModule = await import('../../next.config.js');
       const nextConfig = nextConfigModule.default || nextConfigModule;
       
       // Check that code splitting is configured
@@ -42,7 +42,7 @@ describe('Performance Tests', () => {
     it('should tree-shake unused code', async () => {
       // This would be tested by analyzing the build output
       // For now, we check that the configuration supports tree-shaking
-      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfigModule = await import('../../next.config.js');
       const nextConfig = nextConfigModule.default || nextConfigModule;
       expect(nextConfig.swcMinify).toBe(true);
     });
@@ -84,7 +84,7 @@ describe('Performance Tests', () => {
 
   describe('Image Optimization', () => {
     it('should use modern image formats', async () => {
-      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfigModule = await import('../../next.config.js');
       const nextConfig = nextConfigModule.default || nextConfigModule;
       const imageFormats = nextConfig.images?.formats || [];
       
@@ -93,7 +93,7 @@ describe('Performance Tests', () => {
     });
 
     it('should have proper image sizing', async () => {
-      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfigModule = await import('../../next.config.js');
       const nextConfig = nextConfigModule.default || nextConfigModule;
       const imageSizes = nextConfig.images?.imageSizes || [];
       const deviceSizes = nextConfig.images?.deviceSizes || [];
@@ -112,7 +112,7 @@ describe('Performance Tests', () => {
 
   describe('Caching Strategy', () => {
     it('should have proper cache headers configuration', async () => {
-      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfigModule = await import('../../next.config.js');
       const nextConfig = nextConfigModule.default || nextConfigModule;
       
       expect(nextConfig.headers).toBeDefined();
@@ -208,7 +208,7 @@ describe('Performance Tests', () => {
   describe('Network Performance', () => {
     it('should minimize HTTP requests', async () => {
       // Check that resources are bundled appropriately
-      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfigModule = await import('../../next.config.js');
       const nextConfig = nextConfigModule.default || nextConfigModule;
       expect(nextConfig.compress).toBe(true);
     });
@@ -260,7 +260,7 @@ describe('Performance Tests', () => {
   describe('Rendering Performance', () => {
     it('should minimize render blocking resources', async () => {
       // Check that CSS is optimized
-      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfigModule = await import('../../next.config.js');
       const nextConfig = nextConfigModule.default || nextConfigModule;
       expect(nextConfig.experimental?.optimizeCss).toBe(true);
     });
@@ -310,7 +310,7 @@ describe('Performance Tests', () => {
   describe('Build Performance', () => {
     it('should have fast build times', async () => {
       // Check build optimizations
-      const nextConfigModule = await import('../../../next.config.js');
+      const nextConfigModule = await import('../../next.config.js');
       const nextConfig = nextConfigModule.default || nextConfigModule;
       expect(nextConfig.swcMinify).toBe(true);
     });

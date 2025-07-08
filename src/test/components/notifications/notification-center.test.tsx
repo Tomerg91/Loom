@@ -53,7 +53,7 @@ describe('NotificationCenter', () => {
         isLoading: false,
         isError: false,
         error: null,
-      })
+      }) as ReturnType<typeof useQuery>
     );
     
     (vi.mocked(useMutation)).mockReturnValue(
@@ -62,7 +62,7 @@ describe('NotificationCenter', () => {
         isPending: false,
         isError: false,
         error: null,
-      })
+      }) as ReturnType<typeof useMutation>
     );
   });
 
@@ -92,7 +92,7 @@ describe('NotificationCenter', () => {
         isLoading: true,
         isError: false,
         error: null,
-      })
+      }) as ReturnType<typeof useQuery>
     );
     
     renderWithProviders(<NotificationCenter />);
@@ -114,7 +114,7 @@ describe('NotificationCenter', () => {
         isLoading: false,
         isError: false,
         error: null,
-      })
+      }) as ReturnType<typeof useQuery>
     );
     
     renderWithProviders(<NotificationCenter />);
@@ -133,7 +133,7 @@ describe('NotificationCenter', () => {
         isPending: false,
         isError: false,
         error: null,
-      })
+      }) as ReturnType<typeof useMutation>
     );
     
     renderWithProviders(<NotificationCenter />);
@@ -157,7 +157,7 @@ describe('NotificationCenter', () => {
         isPending: false,
         isError: false,
         error: null,
-      })
+      }) as ReturnType<typeof useMutation>
     );
     
     renderWithProviders(<NotificationCenter />);
@@ -181,7 +181,7 @@ describe('NotificationCenter', () => {
         isPending: false,
         isError: false,
         error: null,
-      })
+      }) as ReturnType<typeof useMutation>
     );
     
     renderWithProviders(<NotificationCenter />);

@@ -38,12 +38,7 @@ CREATE TABLE sessions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
-    CONSTRAINT sessions_coach_is_coach CHECK (
-        EXISTS (SELECT 1 FROM users WHERE users.id = coach_id AND users.role = 'coach')
-    ),
-    CONSTRAINT sessions_client_is_client CHECK (
-        EXISTS (SELECT 1 FROM users WHERE users.id = client_id AND users.role = 'client')
-    ),
+    -- Note: Role validation will be handled by application logic or triggers
     CONSTRAINT sessions_different_users CHECK (coach_id != client_id),
     CONSTRAINT sessions_positive_duration CHECK (duration_minutes > 0),
     CONSTRAINT sessions_future_or_current CHECK (scheduled_at >= NOW() - INTERVAL '1 day')
@@ -60,14 +55,9 @@ CREATE TABLE coach_notes (
     privacy_level privacy_level NOT NULL DEFAULT 'private',
     tags TEXT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     
-    CONSTRAINT coach_notes_coach_is_coach CHECK (
-        EXISTS (SELECT 1 FROM users WHERE users.id = coach_id AND users.role = 'coach')
-    ),
-    CONSTRAINT coach_notes_client_is_client CHECK (
-        EXISTS (SELECT 1 FROM users WHERE users.id = client_id AND users.role = 'client')
-    )
+    -- Note: Role validation will be handled by application logic or triggers
 );
 
 -- Create reflections table
@@ -80,11 +70,9 @@ CREATE TABLE reflections (
     insights TEXT,
     goals_for_next_session TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     
-    CONSTRAINT reflections_client_is_client CHECK (
-        EXISTS (SELECT 1 FROM users WHERE users.id = client_id AND users.role = 'client')
-    )
+    -- Note: Role validation will be handled by application logic or triggers
 );
 
 -- Create notifications table
@@ -113,9 +101,7 @@ CREATE TABLE coach_availability (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
-    CONSTRAINT coach_availability_coach_is_coach CHECK (
-        EXISTS (SELECT 1 FROM users WHERE users.id = coach_id AND users.role = 'coach')
-    ),
+    -- Note: Role validation will be handled by application logic or triggers
     CONSTRAINT coach_availability_valid_time CHECK (start_time < end_time),
     UNIQUE(coach_id, day_of_week, start_time, end_time)
 );
