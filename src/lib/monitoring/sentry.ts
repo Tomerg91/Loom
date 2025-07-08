@@ -8,11 +8,16 @@ export const sentryConfig = {
   environment: env.NODE_ENV,
   tracesSampleRate: env.NODE_ENV === 'production' ? 0.1 : 1.0,
   debug: env.NODE_ENV === 'development',
+  
+  // Session replay configuration
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
   integrations: [
+    // Updated to use correct function syntax for Sentry v9+
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration({
-      maskAllText: true,
-      blockAllMedia: true,
+      maskAllText: false,
+      blockAllMedia: false,
     }),
   ],
   beforeSend(event: unknown) {
