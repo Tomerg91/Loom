@@ -125,9 +125,9 @@ export function SessionStatus({ session, onStatusChange, showActions = true }: S
           </CardTitle>
           <div className="flex items-center gap-2">
             {isConnected ? (
-              <Wifi className="h-4 w-4 text-green-600" title="Real-time updates active" />
+              <Wifi className="h-4 w-4 text-green-600" />
             ) : (
-              <WifiOff className="h-4 w-4 text-red-600" title="Real-time updates disconnected" />
+              <WifiOff className="h-4 w-4 text-red-600" />
             )}
             <Badge className={getStatusColor(localSession.status)}>
               {getStatusLabel(localSession.status)}

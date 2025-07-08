@@ -58,12 +58,12 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
           createdAt: profile.created_at,
           updatedAt: profile.updated_at,
           emailVerified: authUser.email_confirmed_at ? true : false,
-          isActive: profile.is_active || true,
-          avatarUrl: profile.avatar_url,
-          phoneNumber: profile.phone_number,
-          dateOfBirth: profile.date_of_birth,
-          preferences: profile.preferences || {
-            language: 'en',
+          isActive: profile.status === 'active',
+          avatarUrl: profile.avatar_url || undefined,
+          phoneNumber: profile.phone || undefined,
+          dateOfBirth: undefined,
+          preferences: {
+            language: profile.language || 'en',
             notifications: {
               email: true,
               push: true,
@@ -71,7 +71,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
             },
             theme: 'light',
           },
-          metadata: profile.metadata || {},
+          metadata: {},
         };
         setUser(fullUser);
       } else {

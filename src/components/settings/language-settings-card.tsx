@@ -54,7 +54,7 @@ export function LanguageSettingsCard() {
       newPathname = `/${newLocale}${pathname}`;
     }
     
-    router.push(newPathname);
+    router.push(newPathname as any);
   };
 
   const currentLanguage = languageOptions.find(lang => lang.code === locale);
