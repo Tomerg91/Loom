@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { locales, defaultLocale } from '@/i18n/config';
 import { applySecurityHeaders } from '@/lib/security/headers';
-import { rateLimitAuth, rateLimitAPI } from '@/lib/security/rate-limit';
+import { rateLimitAuth, rateLimitAPI } from '@/lib/security/rate-limit-redis';
 import { validateUserAgent } from '@/lib/security/validation';
 
 
@@ -52,9 +52,9 @@ export async function middleware(request: NextRequest) {
   
   // Handle API routes with rate limiting
   if (pathname.startsWith('/api')) {
-    const rateLimit = pathname.startsWith('/api/auth/')
+    const rateLimit = await (pathname.startsWith('/api/auth/')
       ? rateLimitAuth(request)
-      : rateLimitAPI(request);
+      : rateLimitAPI(request));
     
     // Add rate limit headers
     Object.entries(rateLimit.headers).forEach(([key, value]) => {

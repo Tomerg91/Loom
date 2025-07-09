@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createAuthService } from '@/lib/auth/auth';
+import { basicPasswordSchema } from '@/lib/security/password';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +18,7 @@ import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 const signinSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: basicPasswordSchema,
 });
 
 type SigninFormData = z.infer<typeof signinSchema>;

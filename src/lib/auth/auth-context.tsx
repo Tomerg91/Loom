@@ -41,10 +41,10 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
         return;
       }
 
-      // Get additional user data from users table
+      // Get additional user data from users table (select only necessary fields)
       const { data: profile } = await supabase
         .from('users')
-        .select('*')
+        .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone')
         .eq('id', authUser.id)
         .single();
 

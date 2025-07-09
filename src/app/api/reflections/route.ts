@@ -55,7 +55,9 @@ export async function GET(request: NextRequest) {
       query = query.eq('session_id', sessionId);
     }
     if (search) {
-      query = query.or(`content.ilike.%${search}%,insights.ilike.%${search}%,goals_for_next_session.ilike.%${search}%`);
+      // Sanitize search input to prevent SQL injection
+      const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&').replace(/'/g, "''");
+      query = query.or(`content.ilike.%${sanitizedSearch}%,insights.ilike.%${sanitizedSearch}%,goals_for_next_session.ilike.%${sanitizedSearch}%`);
     }
     if (moodMin) {
       query = query.gte('mood_rating', parseInt(moodMin));
@@ -74,14 +76,16 @@ export async function GET(request: NextRequest) {
     // Get total count for pagination
     let countQuery = supabase
       .from('reflections')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('client_id', user.id);
 
     if (sessionId) {
       countQuery = countQuery.eq('session_id', sessionId);
     }
     if (search) {
-      countQuery = countQuery.or(`content.ilike.%${search}%,insights.ilike.%${search}%,goals_for_next_session.ilike.%${search}%`);
+      // Sanitize search input to prevent SQL injection
+      const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&').replace(/'/g, "''");
+      countQuery = countQuery.or(`content.ilike.%${sanitizedSearch}%,insights.ilike.%${sanitizedSearch}%,goals_for_next_session.ilike.%${sanitizedSearch}%`);
     }
     if (moodMin) {
       countQuery = countQuery.gte('mood_rating', parseInt(moodMin));

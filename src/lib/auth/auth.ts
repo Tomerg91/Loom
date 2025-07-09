@@ -239,8 +239,17 @@ export class AuthService {
    */
   async resetPassword(email: string): Promise<{ error: string | null }> {
     try {
+      // Use hardcoded, validated redirect URLs to prevent redirect attacks
+      const ALLOWED_REDIRECT_URLS = [
+        process.env.NEXT_PUBLIC_SITE_URL + '/reset-password',
+        'https://loom-bay.vercel.app/reset-password',
+        'http://localhost:3001/reset-password', // Development
+      ].filter(Boolean);
+      
+      const redirectUrl = ALLOWED_REDIRECT_URLS[0] || 'https://loom-bay.vercel.app/reset-password';
+      
       const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl,
       });
       return { error: error?.message || null };
     } catch (error) {

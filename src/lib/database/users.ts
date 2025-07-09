@@ -33,7 +33,7 @@ export class UserService {
   async getUserProfile(userId: string): Promise<User | null> {
     const { data, error } = await this.supabase
       .from('users')
-      .select('*')
+      .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at')
       .eq('id', userId)
       .single();
 
@@ -92,7 +92,7 @@ export class UserService {
   async getUsersByRole(role: UserRole): Promise<User[]> {
     const { data, error } = await this.supabase
       .from('users')
-      .select('*')
+      .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at')
       .eq('role', role)
       .eq('status', 'active')
       .order('created_at', { ascending: false });

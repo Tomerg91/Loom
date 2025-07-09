@@ -1,20 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Generate nonce for CSP
+function generateNonce(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 // Security headers configuration
 export const SECURITY_HEADERS = {
-  // Content Security Policy
+  // Content Security Policy - Strict policy without unsafe directives
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.stripe.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "script-src 'self' https://js.stripe.com https://checkout.stripe.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // Only allow unsafe-inline for styles
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: blob: https: http:",
+    "img-src 'self' data: blob: https:",
     "media-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    "connect-src 'self' https://*.supabase.co https://*.supabase.com ws://localhost:* wss://localhost:*",
+    "connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com",
     "worker-src 'self' blob:",
     "manifest-src 'self'",
   ].join('; '),
@@ -35,15 +42,15 @@ export const SECURITY_HEADERS = {
   'Cross-Origin-Resource-Policy': 'same-origin',
 };
 
-// Development environment adjustments
+// Development environment adjustments - Still secure but allows localhost
 const DEV_CSP_OVERRIDES = {
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
-    "style-src 'self' 'unsafe-inline'",
+    "script-src 'self' https://js.stripe.com http://localhost:* ws://localhost:*",
+    "style-src 'self' 'unsafe-inline'", // Only allow unsafe-inline for styles in dev
     "font-src 'self' data:",
     "img-src 'self' data: blob: https: http:",
-    "connect-src 'self' https://*.supabase.co ws://localhost:* wss://localhost:* http://localhost:*",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:* wss://localhost:* http://localhost:*",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

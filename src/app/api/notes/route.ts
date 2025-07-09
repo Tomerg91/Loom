@@ -58,7 +58,9 @@ export async function GET(request: NextRequest) {
       query = query.eq('privacy_level', privacyLevel);
     }
     if (search) {
-      query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
+      // Sanitize search input to prevent SQL injection
+      const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&').replace(/'/g, "''");
+      query = query.or(`title.ilike.%${sanitizedSearch}%,content.ilike.%${sanitizedSearch}%`);
     }
 
     const { data: notes, error } = await query;
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest) {
     // Get total count for pagination
     let countQuery = supabase
       .from('coach_notes')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('coach_id', user.id);
 
     if (clientId) {
@@ -81,7 +83,9 @@ export async function GET(request: NextRequest) {
       countQuery = countQuery.eq('privacy_level', privacyLevel);
     }
     if (search) {
-      countQuery = countQuery.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
+      // Sanitize search input to prevent SQL injection
+      const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&').replace(/'/g, "''");
+      countQuery = countQuery.or(`title.ilike.%${sanitizedSearch}%,content.ilike.%${sanitizedSearch}%`);
     }
 
     const { count: totalCount } = await countQuery;
