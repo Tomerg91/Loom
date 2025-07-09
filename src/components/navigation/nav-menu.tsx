@@ -107,14 +107,14 @@ export function NavMenu() {
   };
 
   return (
-    <nav className="bg-card border-b border-border">
+    <nav className="bg-card border-b border-border" id="main-navigation" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Left side - Logo and Navigation */}
           <div className="flex items-center space-x-8">
             {/* Logo */}
-            <Link href="/dashboard" className="flex items-center space-x-2">
-              <MessageSquare className="h-8 w-8 text-primary" />
+            <Link href="/dashboard" className="flex items-center space-x-2" aria-label="Loom - Go to dashboard">
+              <MessageSquare className="h-8 w-8 text-primary" aria-hidden="true" />
               <span className="text-xl font-bold text-foreground">Loom</span>
             </Link>
 
@@ -127,8 +127,9 @@ export function NavMenu() {
                     variant={isActive(item.href, item.exact) ? "default" : "ghost"}
                     size="sm"
                     className="flex items-center space-x-2"
+                    aria-current={isActive(item.href, item.exact) ? "page" : undefined}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon className="h-4 w-4" aria-hidden="true" />
                     <span>{item.label}</span>
                   </Button>
                 </Link>
@@ -142,8 +143,9 @@ export function NavMenu() {
                       variant={isActive(item.href) ? "default" : "ghost"}
                       size="sm"
                       className="flex items-center space-x-2"
+                      aria-current={isActive(item.href) ? "page" : undefined}
                     >
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4" aria-hidden="true" />
                       <span>{item.label}</span>
                     </Button>
                   </Link>
@@ -157,8 +159,9 @@ export function NavMenu() {
                       variant={isActive(item.href) ? "default" : "ghost"}
                       size="sm"
                       className="flex items-center space-x-2"
+                      aria-current={isActive(item.href) ? "page" : undefined}
                     >
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4" aria-hidden="true" />
                       <span>{item.label}</span>
                     </Button>
                   </Link>
@@ -172,8 +175,9 @@ export function NavMenu() {
                       variant={isActive(item.href) ? "default" : "ghost"}
                       size="sm"
                       className="flex items-center space-x-2"
+                      aria-current={isActive(item.href) ? "page" : undefined}
                     >
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4" aria-hidden="true" />
                       <span>{item.label}</span>
                     </Button>
                   </Link>
@@ -197,8 +201,10 @@ export function NavMenu() {
                 user.role === 'coach' ? 'secondary' : 
                 'outline'
               }
+              role="status"
+              aria-label={`Current role: ${t(`roles.${user.role}`)}`}
             >
-              {user.role === 'admin' && <Shield className="h-3 w-3 mr-1" />}
+              {user.role === 'admin' && <Shield className="h-3 w-3 mr-1" aria-hidden="true" />}
               {t(`roles.${user.role}`)}
             </Badge>
 
@@ -207,7 +213,10 @@ export function NavMenu() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.avatarUrl} alt={getUserDisplayName(user)} />
+                    <AvatarImage 
+                      src={user.avatarUrl} 
+                      alt={`${getUserDisplayName(user)} profile picture - ${t(`roles.${user.role}`)}`} 
+                    />
                     <AvatarFallback>
                       {getUserInitials(user)}
                     </AvatarFallback>

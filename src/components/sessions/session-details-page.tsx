@@ -401,7 +401,10 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
               {/* Coach */}
               <div className="flex items-center space-x-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={session.coach.avatarUrl} alt={session.coach.firstName} />
+                  <AvatarImage 
+                    src={session.coach.avatarUrl} 
+                    alt={`${session.coach.firstName} ${session.coach.lastName} - Coach`} 
+                  />
                   <AvatarFallback>
                     {session.coach.firstName.charAt(0)}{session.coach.lastName.charAt(0)}
                   </AvatarFallback>
@@ -420,7 +423,10 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
               {/* Client */}
               <div className="flex items-center space-x-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={session.client.avatarUrl} alt={session.client.firstName} />
+                  <AvatarImage 
+                    src={session.client.avatarUrl} 
+                    alt={`${session.client.firstName} ${session.client.lastName} - Client`} 
+                  />
                   <AvatarFallback>
                     {session.client.firstName.charAt(0)}{session.client.lastName.charAt(0)}
                   </AvatarFallback>

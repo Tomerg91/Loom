@@ -162,11 +162,13 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Coach Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="coachId" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              {t('selectCoach')}
-            </Label>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4" aria-hidden="true" />
+                {t('selectCoach')}
+              </div>
+            </legend>
             <Select
               value={selectedCoach}
               onValueChange={(value) => {
@@ -190,7 +192,7 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                         {coach.avatar && (
                           <Image
                             src={coach.avatar}
-                            alt=""
+                            alt={`${coach.firstName} ${coach.lastName} profile picture`}
                             width={24}
                             height={24}
                             className="w-6 h-6 rounded-full"
@@ -204,9 +206,9 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
               </SelectContent>
             </Select>
             {errors.coachId && (
-              <p className="text-sm text-destructive">{errors.coachId.message}</p>
+              <p className="text-sm text-destructive" role="alert">{errors.coachId.message}</p>
             )}
-          </div>
+          </fieldset>
 
           {/* Coach Info */}
           {selectedCoachData && (
@@ -215,7 +217,7 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                 {selectedCoachData.avatar && (
                   <Image
                     src={selectedCoachData.avatar}
-                    alt=""
+                    alt={`${selectedCoachData.firstName} ${selectedCoachData.lastName} profile picture`}
                     width={48}
                     height={48}
                     className="w-12 h-12 rounded-full"
@@ -236,10 +238,10 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
           )}
 
           {/* Date Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="date">
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               {t('selectDate')}
-            </Label>
+            </legend>
             <Select
               value={selectedDate}
               onValueChange={(value) => {
@@ -260,13 +262,15 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
               </SelectContent>
             </Select>
             {errors.date && (
-              <p className="text-sm text-destructive">{errors.date.message}</p>
+              <p className="text-sm text-destructive" role="alert">{errors.date.message}</p>
             )}
-          </div>
+          </fieldset>
 
           {/* Duration Selection */}
-          <div className="space-y-2">
-            <Label>{t('duration')}</Label>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              {t('duration')}
+            </legend>
             <Select
               value={watch('duration')?.toString()}
               onValueChange={(value) => {
@@ -285,15 +289,17 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                 <SelectItem value="120">120 {t('minutes')}</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </fieldset>
 
           {/* Time Slot Selection */}
           {watchedCoachId && watchedDate && (
-            <div className="space-y-2">
-              <Label htmlFor="timeSlot" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                {t('selectTime')}
-              </Label>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" aria-hidden="true" />
+                  {t('selectTime')}
+                </div>
+              </legend>
               
               {loadingSlots ? (
                 <div className="text-center py-4 text-muted-foreground">
@@ -309,6 +315,8 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                       disabled={!slot.isAvailable}
                       onClick={() => setValue('timeSlot', slot.startTime)}
                       className="h-auto py-2"
+                      aria-pressed={watch('timeSlot') === slot.startTime}
+                      aria-label={`Select time slot from ${slot.startTime} to ${slot.endTime}${!slot.isAvailable ? ' (unavailable)' : ''}`}
                     >
                       {slot.startTime} - {slot.endTime}
                     </Button>
@@ -320,22 +328,26 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                 </div>
               )}
               {errors.timeSlot && (
-                <p className="text-sm text-destructive">{errors.timeSlot.message}</p>
+                <p className="text-sm text-destructive" role="alert">{errors.timeSlot.message}</p>
               )}
-            </div>
+            </fieldset>
           )}
 
           {/* Session Details */}
-          <div className="space-y-4">
+          <fieldset className="space-y-4">
+            <legend className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-4">
+              Session Details
+            </legend>
             <div className="space-y-2">
               <Label htmlFor="title">{t('title')}</Label>
               <Input
                 id="title"
                 {...register('title')}
                 placeholder="Weekly check-in session"
+                aria-describedby="title-error"
               />
               {errors.title && (
-                <p className="text-sm text-destructive">{errors.title.message}</p>
+                <p id="title-error" className="text-sm text-destructive" role="alert">{errors.title.message}</p>
               )}
             </div>
 
@@ -345,12 +357,13 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                 id="description"
                 {...register('description')}
                 placeholder="Brief description of what you'd like to focus on..."
+                aria-describedby="description-error"
               />
               {errors.description && (
-                <p className="text-sm text-destructive">{errors.description.message}</p>
+                <p id="description-error" className="text-sm text-destructive" role="alert">{errors.description.message}</p>
               )}
             </div>
-          </div>
+          </fieldset>
 
           {/* Submit Button */}
           <div className="flex gap-2 justify-end">

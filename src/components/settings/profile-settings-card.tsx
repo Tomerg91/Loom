@@ -74,7 +74,10 @@ export function ProfileSettingsCard() {
         <CardContent>
           <div className="flex items-center space-x-6">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={user.avatarUrl} alt={user.firstName} />
+              <AvatarImage 
+                src={user.avatarUrl} 
+                alt={`${user.firstName} ${user.lastName} profile picture`} 
+              />
               <AvatarFallback className="text-2xl">
                 {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
               </AvatarFallback>
