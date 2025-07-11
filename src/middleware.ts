@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
-import { locales, defaultLocale } from '@/i18n/config';
+import { routing } from '@/i18n/routing';
 import { applySecurityHeaders } from '@/lib/security/headers';
 import { rateLimitAuth, rateLimitAPI } from '@/lib/security/rate-limit-simple';
 import { validateUserAgent } from '@/lib/security/validation';
@@ -87,14 +87,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // Handle internationalization first
-  const pathnameIsMissingLocale = locales.every(
+  const pathnameIsMissingLocale = routing.locales.every(
     locale => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
   );
 
   if (pathnameIsMissingLocale) {
     // Redirect to default locale if no locale is present
     return NextResponse.redirect(
-      new URL(`/${defaultLocale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
+      new URL(`/${routing.defaultLocale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
     );
   }
 

@@ -4,7 +4,7 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Providers } from '@/components/providers/providers';
 import { getServerUser } from '@/lib/auth/auth';
-import { locales } from '@/i18n/config';
+import { routing } from '@/i18n/routing';
 import { PerformanceMonitorComponent } from '@/components/monitoring/performance-monitor';
 import { initSentry } from '@/lib/monitoring/sentry';
 import '../globals.css';
@@ -15,7 +15,7 @@ const inter = Inter({
 });
 
 export function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
+  return routing.locales.map((locale) => ({ locale }));
 }
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ export default async function LocaleLayout({
 }: LocaleLayoutProps) {
   const { locale } = await params;
   // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(locale as (typeof locales)[number])) {
+  if (!routing.locales.includes(locale as (typeof routing.locales)[number])) {
     notFound();
   }
 
