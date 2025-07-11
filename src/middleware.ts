@@ -4,7 +4,10 @@ import { routing } from '@/i18n/routing';
 import { applySecurityHeaders } from '@/lib/security/headers';
 import { rateLimitAuth, rateLimitAPI } from '@/lib/security/rate-limit-simple';
 import { validateUserAgent } from '@/lib/security/validation';
+import createMiddleware from 'next-intl/middleware';
 
+// Create next-intl middleware
+const intlMiddleware = createMiddleware(routing);
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -38,67 +41,42 @@ const clientRoutes = ['/client'];
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
-  // Create initial response
-  let response = NextResponse.next();
-  
-  // Apply security headers to all responses
-  response = applySecurityHeaders(request, response);
-  
-  // Validate user agent (only in production)
+  // Skip middleware for static files and API routes
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.includes('.') ||
+    pathname.startsWith('/api')
+  ) {
+    return NextResponse.next();
+  }
+
+  // Apply security validation
   const userAgent = request.headers.get('user-agent') || '';
   if (process.env.NODE_ENV === 'production' && !validateUserAgent(userAgent)) {
     return new NextResponse('Forbidden', { status: 403 });
   }
+
+  // Check for invalid locale patterns first
+  const segments = pathname.split('/').filter(Boolean);
+  const firstSegment = segments[0];
   
-  // Handle API routes with rate limiting
-  if (pathname.startsWith('/api')) {
-    const rateLimit = await (pathname.startsWith('/api/auth/')
-      ? rateLimitAuth(request)
-      : rateLimitAPI(request));
-    
-    // Add rate limit headers
-    Object.entries(rateLimit.headers).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
-    if (!rateLimit.allowed) {
-      return new NextResponse(JSON.stringify({
-        error: rateLimit.message,
-        retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000),
-      }), {
-        status: 429,
-        headers: {
-          'Content-Type': 'application/json',
-          ...rateLimit.headers,
-        },
-      });
-    }
-    
-    return response;
-  }
-  
-  // Skip middleware for static files
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/static') ||
-    pathname.includes('.')
-  ) {
-    return response;
+  // If first segment looks like a locale (2 chars) but isn't valid, redirect to default locale
+  if (firstSegment && firstSegment.length === 2 && !routing.locales.includes(firstSegment as any)) {
+    const pathWithoutInvalidLocale = '/' + segments.slice(1).join('/');
+    const redirectUrl = new URL(`/${routing.defaultLocale}${pathWithoutInvalidLocale}`, request.url);
+    return applySecurityHeaders(request, NextResponse.redirect(redirectUrl));
   }
 
-  // Handle internationalization first
-  const pathnameIsMissingLocale = routing.locales.every(
-    locale => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
-  );
-
-  if (pathnameIsMissingLocale) {
-    // Redirect to default locale if no locale is present
-    return NextResponse.redirect(
-      new URL(`/${routing.defaultLocale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
-    );
+  // Handle internationalization first - let next-intl handle ALL locale routing
+  const intlResponse = intlMiddleware(request);
+  if (intlResponse) {
+    // Apply security headers to the intl response
+    return applySecurityHeaders(request, intlResponse);
   }
 
-  
+  // If we get here, the locale is already validated by next-intl
+  // Now handle authentication for locale-prefixed routes
   try {
     // Create supabase client
     const supabase = createServerClient();
@@ -129,7 +107,7 @@ export async function middleware(request: NextRequest) {
 
     // Allow access to public routes
     if (isPublicRoute) {
-      return response;
+      return applySecurityHeaders(request, NextResponse.next());
     }
 
     // Require authentication for protected routes
@@ -178,17 +156,19 @@ export async function middleware(request: NextRequest) {
         .eq('id', user.id);
     }
 
-    return response;
+    return applySecurityHeaders(request, NextResponse.next());
   } catch (error) {
     console.error('Auth middleware error:', error);
     
     // If there's an error and it's a protected route, redirect to signin
-    if (protectedRoutes.some(route => pathname.includes(route))) {
-      const locale = pathname.split('/')[1];
+    const locale = pathname.split('/')[1];
+    const pathWithoutLocale = pathname.slice(locale.length + 1) || '/';
+    
+    if (protectedRoutes.some(route => pathWithoutLocale.startsWith(route))) {
       return NextResponse.redirect(new URL(`/${locale}/auth/signin`, request.url));
     }
     
-    return response;
+    return applySecurityHeaders(request, NextResponse.next());
   }
 }
 
