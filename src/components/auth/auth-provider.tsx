@@ -154,25 +154,38 @@ export function useUser(): AuthUser | null {
   return user;
 }
 
-export function useRequireAuth(): AuthUser {
+export function useRequireAuth(): AuthUser | null {
   const { user, loading } = useAuth();
   
   if (loading) {
-    throw new Error('Authentication still loading');
+    // Return null during loading state
+    return null;
   }
   
   if (!user) {
-    throw new Error('Authentication required');
+    // Redirect to login instead of throwing
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    return null;
   }
   
   return user;
 }
 
-export function useRequireRole(role: 'client' | 'coach' | 'admin'): AuthUser {
+export function useRequireRole(role: 'client' | 'coach' | 'admin'): AuthUser | null {
   const user = useRequireAuth();
   
+  if (!user) {
+    return null;
+  }
+  
   if (user.role !== role) {
-    throw new Error(`${role} role required`);
+    // Redirect to unauthorized page instead of throwing
+    if (typeof window !== 'undefined') {
+      window.location.href = '/unauthorized';
+    }
+    return null;
   }
   
   return user;

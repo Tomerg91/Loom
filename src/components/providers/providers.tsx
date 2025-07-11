@@ -6,6 +6,7 @@ import { StoreProvider } from './store-provider';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { RealtimeProvider } from './realtime-provider';
 import { AnalyticsProvider } from './analytics-provider';
+import { ErrorBoundary } from '@/components/error-boundary';
 import type { AuthUser } from '@/lib/auth/auth';
 
 interface ProvidersProps {
@@ -17,18 +18,30 @@ interface ProvidersProps {
 
 export function Providers({ children, locale, messages, initialUser }: ProvidersProps) {
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      <QueryProvider>
-        <StoreProvider initialUser={initialUser}>
-          <AuthProvider initialUser={initialUser}>
-            <RealtimeProvider>
-              <AnalyticsProvider>
-                {children}
-              </AnalyticsProvider>
-            </RealtimeProvider>
-          </AuthProvider>
-        </StoreProvider>
-      </QueryProvider>
-    </NextIntlClientProvider>
+    <ErrorBoundary>
+      <NextIntlClientProvider locale={locale} messages={messages}>
+        <ErrorBoundary>
+          <QueryProvider>
+            <ErrorBoundary>
+              <StoreProvider initialUser={initialUser}>
+                <ErrorBoundary>
+                  <AuthProvider initialUser={initialUser}>
+                    <ErrorBoundary>
+                      <RealtimeProvider>
+                        <ErrorBoundary>
+                          <AnalyticsProvider>
+                            {children}
+                          </AnalyticsProvider>
+                        </ErrorBoundary>
+                      </RealtimeProvider>
+                    </ErrorBoundary>
+                  </AuthProvider>
+                </ErrorBoundary>
+              </StoreProvider>
+            </ErrorBoundary>
+          </QueryProvider>
+        </ErrorBoundary>
+      </NextIntlClientProvider>
+    </ErrorBoundary>
   );
 }
