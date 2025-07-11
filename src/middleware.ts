@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { locales, defaultLocale } from '@/i18n/config';
 import { applySecurityHeaders } from '@/lib/security/headers';
-import { rateLimitAuth, rateLimitAPI } from '@/lib/security/rate-limit-redis';
+import { rateLimitAuth, rateLimitAPI } from '@/lib/security/rate-limit-simple';
 import { validateUserAgent } from '@/lib/security/validation';
 
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Generate nonce for CSP
-function generateNonce(): string {
+export function generateNonce(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(16)))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
