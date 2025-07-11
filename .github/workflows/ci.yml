@@ -40,14 +40,13 @@ jobs:
       - name: Check code formatting
         run: npm run format:check
       
-      - name: Security audit
+      - name: Security audit (allow moderate)
         run: npm audit --audit-level=moderate
         continue-on-error: true
       
-      - name: Check for vulnerabilities
+      - name: Check for high/critical vulnerabilities
         run: |
-          npx audit-ci --moderate
-        continue-on-error: true
+          npx audit-ci --high
 
   # Unit and Integration Tests
   test:
