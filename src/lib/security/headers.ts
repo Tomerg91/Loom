@@ -9,19 +9,20 @@ export function generateNonce(): string {
 
 // Security headers configuration
 export const SECURITY_HEADERS = {
-  // Content Security Policy - Strict policy without unsafe directives
+  // Content Security Policy - Allow inline scripts and Tranzilla
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' https://js.stripe.com https://checkout.stripe.com",
+    "script-src 'self' 'unsafe-inline' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // Only allow unsafe-inline for styles
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https:",
     "media-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    "form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com",
     "frame-ancestors 'none'",
-    "connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com",
+    "frame-src 'self' https://secure5.tranzila.com https://direct.tranzila.com",
+    "connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com",
     "worker-src 'self' blob:",
     "manifest-src 'self'",
   ].join('; '),
@@ -46,15 +47,16 @@ export const SECURITY_HEADERS = {
 const DEV_CSP_OVERRIDES = {
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' https://js.stripe.com http://localhost:* ws://localhost:*",
+    "script-src 'self' 'unsafe-inline' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com",
     "style-src 'self' 'unsafe-inline'", // Only allow unsafe-inline for styles in dev
     "font-src 'self' data:",
     "img-src 'self' data: blob: https: http:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:* wss://localhost:* http://localhost:*",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com",
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    "form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com",
     "frame-ancestors 'none'",
+    "frame-src 'self' https://secure5.tranzila.com https://direct.tranzila.com",
   ].join('; '),
 };
 

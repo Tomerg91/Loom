@@ -1,18 +1,9 @@
-import { locales } from '@/i18n/config';
-import { notFound } from 'next/navigation';
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
-  // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(locale as (typeof locales)[number])) {
-    notFound();
-  }
-
+  // Root layout just passes through children
+  // Locale validation is handled in [locale]/layout.tsx
   return children;
 }

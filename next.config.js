@@ -53,7 +53,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://js.stripe.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://vercel.live https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; object-src 'none'; base-uri 'self'; form-action 'self';",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com; frame-src 'self' https://secure5.tranzila.com https://direct.tranzila.com; object-src 'none'; base-uri 'self'; form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com;",
           },
         ],
       },
