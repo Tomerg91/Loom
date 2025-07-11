@@ -384,5 +384,10 @@
     "max": "Must be no more than {max}",
     "pattern": "Invalid format",
     "passwordStrength": "Password must contain at least 8 characters, one uppercase, one lowercase, and one number"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "Sorry, we could not find the page you are looking for.",
+    "backHome": "Back to Home"
   }
 }
