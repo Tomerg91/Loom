@@ -47,7 +47,7 @@ export const SECURITY_HEADERS = {
 const DEV_CSP_OVERRIDES = {
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com",
     "style-src 'self' 'unsafe-inline'", // Only allow unsafe-inline for styles in dev
     "font-src 'self' data:",
     "img-src 'self' data: blob: https: http:",
@@ -58,6 +58,10 @@ const DEV_CSP_OVERRIDES = {
     "frame-ancestors 'none'",
     "frame-src 'self' https://secure5.tranzila.com https://direct.tranzila.com",
   ].join('; '),
+  
+  // Less restrictive COEP in development
+  'Cross-Origin-Embedder-Policy': 'unsafe-none',
+  'Cross-Origin-Resource-Policy': 'cross-origin',
 };
 
 export function applySecurityHeaders(request: NextRequest, response: NextResponse) {

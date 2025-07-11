@@ -77,7 +77,7 @@ export async function middleware(request: NextRequest) {
   // If we get here, the locale is already validated by next-intl
   // Now handle authentication for locale-prefixed routes
   try {
-    // Create supabase client
+    // Use singleton supabase client to prevent multiple GoTrueClient instances
     const supabase = createServerClient();
     
     // Get session

@@ -1,5 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@/lib/supabase/client';
+import { supabase as clientSupabase } from '@/lib/supabase/client';
 import { createUserService } from '@/lib/database';
 import type { User, UserRole, UserStatus, Language } from '@/types';
 
@@ -54,12 +54,17 @@ export interface SignInData {
   password: string;
 }
 
+// Singleton instances to prevent multiple service creation
+let serverAuthServiceInstance: AuthService | null = null;
+let clientAuthServiceInstance: AuthService | null = null;
+
 export class AuthService {
-  private supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
+  private supabase: ReturnType<typeof createServerClient> | typeof clientSupabase;
   private userService: ReturnType<typeof createUserService>;
 
   constructor(isServer = true) {
-    this.supabase = isServer ? createServerClient() : createClient();
+    // Use singleton clients to prevent multiple GoTrueClient instances
+    this.supabase = isServer ? createServerClient() : clientSupabase;
     this.userService = createUserService(isServer);
   }
 
@@ -370,8 +375,20 @@ export class AuthService {
   }
 }
 
-// Convenience factory functions
-export const createAuthService = (isServer = true) => new AuthService(isServer);
+// Convenience factory functions with singleton pattern
+export const createAuthService = (isServer = true) => {
+  if (isServer) {
+    if (!serverAuthServiceInstance) {
+      serverAuthServiceInstance = new AuthService(true);
+    }
+    return serverAuthServiceInstance;
+  } else {
+    if (!clientAuthServiceInstance) {
+      clientAuthServiceInstance = new AuthService(false);
+    }
+    return clientAuthServiceInstance;
+  }
+};
 
 // Server-side auth helpers
 export const getServerUser = async (): Promise<AuthUser | null> => {
