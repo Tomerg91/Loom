@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { routing } from '@/i18n/routing';
 import { applySecurityHeaders } from '@/lib/security/headers';
-import { rateLimitAuth, rateLimitAPI } from '@/lib/security/rate-limit-simple';
 import { validateUserAgent } from '@/lib/security/validation';
 import createMiddleware from 'next-intl/middleware';
 
@@ -62,7 +61,7 @@ export async function middleware(request: NextRequest) {
   const firstSegment = segments[0];
   
   // If first segment looks like a locale (2 chars) but isn't valid, redirect to default locale
-  if (firstSegment && firstSegment.length === 2 && !routing.locales.includes(firstSegment as any)) {
+  if (firstSegment && firstSegment.length === 2 && !routing.locales.includes(firstSegment as 'en' | 'he')) {
     const pathWithoutInvalidLocale = '/' + segments.slice(1).join('/');
     const redirectUrl = new URL(`/${routing.defaultLocale}${pathWithoutInvalidLocale}`, request.url);
     return applySecurityHeaders(request, NextResponse.redirect(redirectUrl));
