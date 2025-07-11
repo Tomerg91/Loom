@@ -9,6 +9,9 @@ import { PerformanceMonitorComponent } from '@/components/monitoring/performance
 import { initSentry } from '@/lib/monitoring/sentry';
 import '../globals.css';
 
+// Force dynamic rendering to avoid prerender issues with event handlers in client components
+export const dynamic = 'force-dynamic';
+
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
