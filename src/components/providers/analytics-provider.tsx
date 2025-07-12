@@ -35,9 +35,11 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
       const script = document.createElement('script');
       script.async = true;
       script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`;
+      script.setAttribute('data-analytics', 'ga');
       document.head.appendChild(script);
 
       const configScript = document.createElement('script');
+      configScript.setAttribute('data-analytics', 'ga-config');
       configScript.innerHTML = `
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
@@ -50,6 +52,17 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
 
       // Initialize Web Vitals collection
       collectWebVitals();
+
+      // Cleanup function
+      return () => {
+        // Remove GA scripts
+        const gaScripts = document.querySelectorAll('script[data-analytics]');
+        gaScripts.forEach(script => {
+          if (script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+        });
+      };
     }
   }, []);
 
@@ -57,6 +70,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (POSTHOG_KEY && POSTHOG_HOST) {
       const script = document.createElement('script');
+      script.setAttribute('data-analytics', 'posthog');
       script.innerHTML = `
         !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);var n=t;if("undefined"!=typeof console&&console.error)console.error("PostHog disabled");else{for(var p="get identify capture register register_once alias unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset distinct_id isFeatureEnabled getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys".split(" "),r=0;r<p.length;r++)!function(t){n[t]=function(){var e=Array.prototype.slice.call(arguments);e.unshift(t),n._i.push(e)}}(p[r])}(p=t,r=e,p[r]=function(){p._i.push([r].concat(Array.prototype.slice.call(arguments,0)))},p._i=[],i=document.createElement("script"),i.type="text/javascript",i.async=!0,i.src=s.api_host+"/static/array.js",(a=document.getElementsByTagName("script")[0]).parentNode.insertBefore(i,a),t.__SV=1)}(window,document,window.posthog||[]);
         window.posthog.init('${POSTHOG_KEY}', {
@@ -68,6 +82,22 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         });
       `;
       document.head.appendChild(script);
+
+      // Cleanup function
+      return () => {
+        // Remove PostHog scripts
+        const posthogScripts = document.querySelectorAll('script[data-analytics="posthog"]');
+        posthogScripts.forEach(script => {
+          if (script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+        });
+        
+        // Clean up PostHog instance
+        if (window.posthog) {
+          window.posthog = undefined;
+        }
+      };
     }
   }, []);
 

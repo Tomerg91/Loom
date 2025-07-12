@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,9 +20,45 @@ import {
   Clock,
   Globe
 } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
+
+const connectedDevices = [
+  {
+    id: '1',
+    name: 'MacBook Pro',
+    type: 'desktop',
+    location: 'New York, NY',
+    lastActive: '2024-01-20T10:30:00Z',
+    current: true,
+  },
+  {
+    id: '2',
+    name: 'iPhone 15',
+    type: 'mobile',
+    location: 'New York, NY',
+    lastActive: '2024-01-19T18:45:00Z',
+    current: false,
+  },
+  {
+    id: '3',
+    name: 'Chrome Browser',
+    type: 'browser',
+    location: 'Unknown Location',
+    lastActive: '2024-01-18T14:20:00Z',
+    current: false,
+  },
+];
 
 export function SecuritySettingsCard() {
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Memoize formatted dates for device activity
+  const deviceActivityDates = useMemo(() => {
+    return connectedDevices.reduce((acc, device) => {
+      acc[device.id] = formatDate(device.lastActive);
+      return acc;
+    }, {} as Record<string, string>);
+  }, []);
 
   const securityFeatures = [
     {
@@ -56,33 +92,6 @@ export function SecuritySettingsCard() {
       icon: Lock,
       enabled: true,
       status: 'enabled',
-    },
-  ];
-
-  const connectedDevices = [
-    {
-      id: '1',
-      name: 'MacBook Pro',
-      type: 'desktop',
-      location: 'New York, NY',
-      lastActive: '2024-01-20T10:30:00Z',
-      current: true,
-    },
-    {
-      id: '2',
-      name: 'iPhone 15',
-      type: 'mobile',
-      location: 'New York, NY',
-      lastActive: '2024-01-19T18:45:00Z',
-      current: false,
-    },
-    {
-      id: '3',
-      name: 'Chrome Browser',
-      type: 'browser',
-      location: 'Unknown Location',
-      lastActive: '2024-01-18T14:20:00Z',
-      current: false,
     },
   ];
 
@@ -216,7 +225,7 @@ export function SecuritySettingsCard() {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {device.location} • Last active {new Date(device.lastActive).toLocaleDateString()}
+                      {device.location} • Last active {deviceActivityDates[device.id]}
                     </p>
                   </div>
                 </div>

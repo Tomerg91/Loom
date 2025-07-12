@@ -23,13 +23,13 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
     return createErrorResponse('Invalid user ID format', HTTP_STATUS.BAD_REQUEST);
   }
   
-  const user = await getUserById(id);
+  const result = await getUserById(id);
   
-  if (!user) {
-    return createErrorResponse('User not found', HTTP_STATUS.NOT_FOUND);
+  if (!result.success) {
+    return createErrorResponse(result.error, HTTP_STATUS.NOT_FOUND);
   }
   
-  return createSuccessResponse(user);
+  return createSuccessResponse(result.data);
 });
 
 // PUT /api/users/[id] - Update user
@@ -51,15 +51,19 @@ export const PUT = withErrorHandling(async (request: NextRequest, { params }: Ro
   }
   
   // Check if user exists
-  const existingUser = await getUserById(id);
-  if (!existingUser) {
-    return createErrorResponse('User not found', HTTP_STATUS.NOT_FOUND);
+  const existingUserResult = await getUserById(id);
+  if (!existingUserResult.success) {
+    return createErrorResponse(existingUserResult.error, HTTP_STATUS.NOT_FOUND);
   }
   
   // Update user
-  const updatedUser = await updateUser(id, validation.data);
+  const updateResult = await updateUser(id, validation.data);
   
-  return createSuccessResponse(updatedUser, 'User updated successfully');
+  if (!updateResult.success) {
+    return createErrorResponse(updateResult.error, HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  }
+  
+  return createSuccessResponse(updateResult.data, 'User updated successfully');
 });
 
 // DELETE /api/users/[id] - Delete user
@@ -73,13 +77,17 @@ export const DELETE = withErrorHandling(async (request: NextRequest, { params }:
   }
   
   // Check if user exists
-  const existingUser = await getUserById(id);
-  if (!existingUser) {
-    return createErrorResponse('User not found', HTTP_STATUS.NOT_FOUND);
+  const existingUserResult = await getUserById(id);
+  if (!existingUserResult.success) {
+    return createErrorResponse(existingUserResult.error, HTTP_STATUS.NOT_FOUND);
   }
   
   // Delete user
-  await deleteUser(id);
+  const deleteResult = await deleteUser(id);
+  
+  if (!deleteResult.success) {
+    return createErrorResponse(deleteResult.error, HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  }
   
   return createSuccessResponse(null, 'User deleted successfully', HTTP_STATUS.NO_CONTENT);
 });

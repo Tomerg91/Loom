@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +35,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { useUser } from '@/lib/store/auth-store';
+import { formatDateTime } from '@/lib/utils';
 
 interface Session {
   id: string;
@@ -121,6 +122,11 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
     },
   });
 
+  // Memoize date formatting to prevent recalculation on every render
+  const formattedDateTime = useMemo(() => {
+    if (!session?.scheduledAt) return { date: '', time: '', full: '' };
+    return formatDateTime(session.scheduledAt);
+  }, [session?.scheduledAt]);
 
   const completeSessionMutation = useMutation({
     mutationFn: async (data: { notes: string; rating: number }) => {
@@ -290,11 +296,7 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Date &amp; Time</Label>
                   <p className="text-sm">
-                    {new Date(session.scheduledAt).toLocaleDateString()} at{' '}
-                    {new Date(session.scheduledAt).toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
+                    {formattedDateTime.full}
                   </p>
                 </div>
                 <div>

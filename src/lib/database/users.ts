@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@/lib/supabase/client';
 import type { User, UserRole, UserStatus } from '@/types';
 import type { Database } from '@/types/supabase';
+import { Result, type Result as ResultType } from '@/lib/types/result';
 
 // API-specific interfaces
 interface GetUsersOptions {
@@ -30,46 +31,68 @@ export class UserService {
   /**
    * Get user profile by ID
    */
-  async getUserProfile(userId: string): Promise<User | null> {
-    const { data, error } = await this.supabase
-      .from('users')
-      .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at')
-      .eq('id', userId)
-      .single();
+  async getUserProfile(userId: string): Promise<ResultType<User>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('users')
+        .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at')
+        .eq('id', userId)
+        .single();
 
-    if (error) {
-      console.error('Error fetching user profile:', error);
-      return null;
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return Result.error(`Failed to fetch user profile: ${error.message}`);
+      }
+
+      if (!data) {
+        return Result.error('User not found');
+      }
+
+      const user = this.mapDatabaseUserToUser(data);
+      return Result.success(user);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Unexpected error in getUserProfile:', error);
+      return Result.error(`Unexpected error: ${message}`);
     }
-
-    return this.mapDatabaseUserToUser(data);
   }
 
   /**
    * Update user profile
    */
-  async updateUserProfile(userId: string, updates: Partial<User>): Promise<User | null> {
-    const { data, error } = await this.supabase
-      .from('users')
-      .update({
-        first_name: updates.firstName,
-        last_name: updates.lastName,
-        phone: updates.phone,
-        avatar_url: updates.avatarUrl,
-        timezone: updates.timezone,
-        language: updates.language,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId)
-      .select()
-      .single();
+  async updateUserProfile(userId: string, updates: Partial<User>): Promise<ResultType<User>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('users')
+        .update({
+          first_name: updates.firstName,
+          last_name: updates.lastName,
+          phone: updates.phone,
+          avatar_url: updates.avatarUrl,
+          timezone: updates.timezone,
+          language: updates.language,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId)
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Error updating user profile:', error);
-      return null;
+      if (error) {
+        console.error('Error updating user profile:', error);
+        return Result.error(`Failed to update user profile: ${error.message}`);
+      }
+
+      if (!data) {
+        return Result.error('No user data returned after update');
+      }
+
+      const user = this.mapDatabaseUserToUser(data);
+      return Result.success(user);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Unexpected error in updateUserProfile:', error);
+      return Result.error(`Unexpected error: ${message}`);
     }
-
-    return this.mapDatabaseUserToUser(data);
   }
 
   /**
@@ -89,33 +112,40 @@ export class UserService {
   /**
    * Get users by role
    */
-  async getUsersByRole(role: UserRole): Promise<User[]> {
-    const { data, error } = await this.supabase
-      .from('users')
-      .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at')
-      .eq('role', role)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false });
+  async getUsersByRole(role: UserRole): Promise<ResultType<User[]>> {
+    try {
+      const { data, error } = await this.supabase
+        .from('users')
+        .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at')
+        .eq('role', role)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching users by role:', error);
-      return [];
+      if (error) {
+        console.error('Error fetching users by role:', error);
+        return Result.error(`Failed to fetch users by role: ${error.message}`);
+      }
+
+      const users = data?.map(this.mapDatabaseUserToUser) || [];
+      return Result.success(users);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Unexpected error in getUsersByRole:', error);
+      return Result.error(`Unexpected error: ${message}`);
     }
-
-    return data.map(this.mapDatabaseUserToUser);
   }
 
   /**
    * Get all coaches
    */
-  async getCoaches(): Promise<User[]> {
+  async getCoaches(): Promise<ResultType<User[]>> {
     return this.getUsersByRole('coach');
   }
 
   /**
    * Get all clients
    */
-  async getClients(): Promise<User[]> {
+  async getClients(): Promise<ResultType<User[]>> {
     return this.getUsersByRole('client');
   }
 
@@ -192,22 +222,28 @@ export class UserService {
   /**
    * Delete user account (admin only)
    */
-  async deleteUser(userId: string): Promise<boolean> {
-    // Note: This would typically soft delete or anonymize rather than hard delete
-    const { error } = await this.supabase
-      .from('users')
-      .update({ 
-        status: 'suspended',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId);
+  async deleteUser(userId: string): Promise<ResultType<void>> {
+    try {
+      // Note: This would typically soft delete or anonymize rather than hard delete
+      const { error } = await this.supabase
+        .from('users')
+        .update({ 
+          status: 'suspended',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
 
-    if (error) {
-      console.error('Error deleting user:', error);
-      return false;
+      if (error) {
+        console.error('Error deleting user:', error);
+        return Result.error(`Failed to delete user: ${error.message}`);
+      }
+
+      return Result.success(undefined);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Unexpected error in deleteUser:', error);
+      return Result.error(`Unexpected error: ${message}`);
     }
-
-    return true;
   }
 
   /**
@@ -379,21 +415,21 @@ export class UserService {
   /**
    * Get user by ID (for API)
    */
-  async getUserById(userId: string): Promise<User | null> {
+  async getUserById(userId: string): Promise<ResultType<User>> {
     return this.getUserProfile(userId);
   }
 
   /**
    * Update user (for API)
    */
-  async updateUser(userId: string, updates: Partial<User>): Promise<User | null> {
+  async updateUser(userId: string, updates: Partial<User>): Promise<ResultType<User>> {
     return this.updateUserProfile(userId, updates);
   }
 
   /**
    * Delete user (for API)
    */
-  async deleteUserById(userId: string): Promise<boolean> {
+  async deleteUserById(userId: string): Promise<ResultType<void>> {
     return this.deleteUser(userId);
   }
 

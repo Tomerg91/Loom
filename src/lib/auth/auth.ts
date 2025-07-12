@@ -96,9 +96,10 @@ export class AuthService {
       }
 
       // Create user profile in our database
-      const userProfile = await this.userService.getUserProfile(authData.user.id);
+      const userProfileResult = await this.userService.getUserProfile(authData.user.id);
 
-      if (userProfile) {
+      if (userProfileResult.success) {
+        const userProfile = userProfileResult.data;
         return {
           user: {
             id: userProfile.id,
@@ -119,7 +120,7 @@ export class AuthService {
         };
       }
 
-      return { user: null, error: 'Failed to create user profile' };
+      return { user: null, error: userProfileResult.error || 'Failed to create user profile' };
     } catch (error) {
       return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
@@ -147,9 +148,10 @@ export class AuthService {
       await this.userService.updateLastSeen(authData.user.id);
 
       // Get user profile
-      const userProfile = await this.userService.getUserProfile(authData.user.id);
+      const userProfileResult = await this.userService.getUserProfile(authData.user.id);
 
-      if (userProfile) {
+      if (userProfileResult.success) {
+        const userProfile = userProfileResult.data;
         return {
           user: {
             id: userProfile.id,
@@ -170,7 +172,7 @@ export class AuthService {
         };
       }
 
-      return { user: null, error: 'User profile not found' };
+      return { user: null, error: userProfileResult.error || 'User profile not found' };
     } catch (error) {
       return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
@@ -199,9 +201,10 @@ export class AuthService {
         return null;
       }
 
-      const userProfile = await this.userService.getUserProfile(user.id);
+      const userProfileResult = await this.userService.getUserProfile(user.id);
 
-      if (userProfile) {
+      if (userProfileResult.success) {
+        const userProfile = userProfileResult.data;
         return {
           id: userProfile.id,
           email: userProfile.email,
@@ -305,9 +308,10 @@ export class AuthService {
       }
 
       // Update user profile in database
-      const updatedProfile = await this.userService.updateUserProfile(user.id, updates);
+      const updateResult = await this.userService.updateUserProfile(user.id, updates);
 
-      if (updatedProfile) {
+      if (updateResult.success) {
+        const updatedProfile = updateResult.data;
         return {
           user: {
             id: updatedProfile.id,
@@ -328,7 +332,7 @@ export class AuthService {
         };
       }
 
-      return { user: null, error: 'Failed to update profile' };
+      return { user: null, error: updateResult.error || 'Failed to update profile' };
     } catch (error) {
       return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }

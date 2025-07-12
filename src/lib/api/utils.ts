@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ZodError, ZodSchema } from 'zod';
 import type { ApiResponse, ApiError } from './types';
+import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/types/supabase';
+
+type UserRole = Database['public']['Tables']['users']['Row']['role'];
+type AuthenticatedUser = {
+  id: string;
+  email: string;
+  role: UserRole;
+  status: string;
+};
 
 // HTTP status codes
 export const HTTP_STATUS = {
@@ -167,7 +177,7 @@ export function withErrorHandling<T extends unknown[]>(
 
 // Authentication helpers
 export function requireAuth<T extends unknown[]>(
-  handler: (user: { id: string; role: string }, ...args: T) => Promise<NextResponse>
+  handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
 ) {
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
@@ -180,8 +190,45 @@ export function requireAuth<T extends unknown[]>(
         );
       }
 
-      // TODO: Implement actual user verification with Supabase
-      const user = { id: 'mock-user-id', role: 'client' }; // Mock user for now
+      // Get authenticated user from Supabase
+      const supabase = await createClient();
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !authUser) {
+        return createErrorResponse(
+          'Invalid authentication token',
+          HTTP_STATUS.UNAUTHORIZED
+        );
+      }
+
+      // Get user profile from database
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('id, email, role, status')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profileError || !userProfile) {
+        return createErrorResponse(
+          'User profile not found',
+          HTTP_STATUS.UNAUTHORIZED
+        );
+      }
+
+      // Check if user is active
+      if (userProfile.status !== 'active') {
+        return createErrorResponse(
+          'User account is not active',
+          HTTP_STATUS.FORBIDDEN
+        );
+      }
+
+      const user: AuthenticatedUser = {
+        id: userProfile.id,
+        email: userProfile.email,
+        role: userProfile.role,
+        status: userProfile.status
+      };
       
       return await handler(user, ...args);
     } catch {
@@ -193,20 +240,52 @@ export function requireAuth<T extends unknown[]>(
   };
 }
 
+// Role hierarchy for permission checking
+const ROLE_HIERARCHY: Record<UserRole, number> = {
+  admin: 3,
+  coach: 2,
+  client: 1,
+};
+
 // Permission helpers
-export function requirePermission(permission?: string) {
+export function requirePermission(requiredRole: UserRole) {
   return function<T extends unknown[]>(
-    handler: (user: { id: string; role: string }, ...args: T) => Promise<NextResponse>
+    handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
   ) {
-    return async (user: { id: string; role: string }, ...args: T): Promise<NextResponse> => {
-      // TODO: Implement actual permission checking
-      // This would use the permission system we built earlier
-      // The permission parameter will be used when implementation is complete
-      console.debug('Permission check for:', permission);
+    return async (user: AuthenticatedUser, ...args: T): Promise<NextResponse> => {
+      // Check if user has sufficient role level
+      const userLevel = ROLE_HIERARCHY[user.role];
+      const requiredLevel = ROLE_HIERARCHY[requiredRole];
+      
+      if (userLevel < requiredLevel) {
+        return createErrorResponse(
+          `Access denied. Required role: ${requiredRole}`,
+          HTTP_STATUS.FORBIDDEN
+        );
+      }
       
       return await handler(user, ...args);
     };
   };
+}
+
+// Specific role requirement helpers
+export function requireAdmin<T extends unknown[]>(
+  handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
+) {
+  return requirePermission('admin')(handler);
+}
+
+export function requireCoach<T extends unknown[]>(
+  handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
+) {
+  return requirePermission('coach')(handler);
+}
+
+export function requireClient<T extends unknown[]>(
+  handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
+) {
+  return requirePermission('client')(handler);
 }
 
 // Rate limiting helpers (basic implementation)
@@ -221,7 +300,8 @@ export function rateLimit(maxRequests: number = 100, windowMs: number = 60000) {
       const now = Date.now();
 
       // Clean up old entries
-      for (const [key, value] of rateLimitMap.entries()) {
+      const entries = Array.from(rateLimitMap.entries());
+      for (const [key, value] of entries) {
         if (value.resetTime < now) {
           rateLimitMap.delete(key);
         }

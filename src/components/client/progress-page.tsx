@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,6 +36,7 @@ import {
   RefreshCw,
   Plus
 } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 interface ProgressData {
   overview: {
@@ -239,6 +240,35 @@ export function ClientProgressPage() {
     },
   });
 
+  // Memoize formatted dates for performance
+  const formattedDates = useMemo(() => {
+    if (!progress) return {};
+    
+    const dates: Record<string, string> = {};
+    
+    // Format goal target dates
+    progress.goals?.forEach(goal => {
+      dates[`goal-${goal.id}-target`] = formatDate(goal.targetDate);
+      goal.milestones?.forEach(milestone => {
+        if (milestone.completedDate) {
+          dates[`milestone-${milestone.id}`] = formatDate(milestone.completedDate);
+        }
+      });
+    });
+    
+    // Format session dates
+    progress.sessions?.forEach(session => {
+      dates[`session-${session.id}`] = formatDate(session.date);
+    });
+    
+    // Format achievement dates
+    progress.achievements?.forEach(achievement => {
+      dates[`achievement-${achievement.id}`] = formatDate(achievement.earnedDate);
+    });
+    
+    return dates;
+  }, [progress]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -430,7 +460,7 @@ export function ClientProgressPage() {
                     <div className="flex-1">
                       <p className="font-medium">{session.topic}</p>
                       <p className="text-sm text-muted-foreground">
-                        Session with {session.coachName} • {new Date(session.date).toLocaleDateString()}
+                        Session with {session.coachName} • {formattedDates[`session-${session.id}`]}
                       </p>
                     </div>
                     {session.rating && (
@@ -495,7 +525,7 @@ export function ClientProgressPage() {
                   {/* Target Date */}
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Target Date:</span>
-                    <span className="font-medium">{new Date(goal.targetDate).toLocaleDateString()}</span>
+                    <span className="font-medium">{formattedDates[`goal-${goal.id}-target`]}</span>
                   </div>
 
                   {/* Milestones */}
@@ -514,7 +544,7 @@ export function ClientProgressPage() {
                           </span>
                           {milestone.completedDate && (
                             <span className="text-xs text-muted-foreground">
-                              {new Date(milestone.completedDate).toLocaleDateString()}
+                              {formattedDates[`milestone-${milestone.id}`]}
                             </span>
                           )}
                         </div>
@@ -556,7 +586,7 @@ export function ClientProgressPage() {
                       <div>
                         <CardTitle className="text-lg">{session.topic}</CardTitle>
                         <CardDescription>
-                          with {session.coachName} • {new Date(session.date).toLocaleDateString()} • {session.duration} min
+                          with {session.coachName} • {formattedDates[`session-${session.id}`]} • {session.duration} min
                         </CardDescription>
                       </div>
                     </div>
@@ -630,7 +660,7 @@ export function ClientProgressPage() {
                   <div className="flex items-center justify-between">
                     <Badge variant="outline">{achievement.category}</Badge>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(achievement.earnedDate).toLocaleDateString()}
+                      {formattedDates[`achievement-${achievement.id}`]}
                     </span>
                   </div>
                 </CardContent>

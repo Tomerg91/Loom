@@ -37,6 +37,54 @@ const coachRoutes = ['/coach'];
 // Client-only routes
 const clientRoutes = ['/client'];
 
+// Role cache to reduce database queries
+interface CachedRole {
+  role: string;
+  timestamp: number;
+}
+
+const roleCache = new Map<string, CachedRole>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getUserRole(userId: string, supabase: ReturnType<typeof createServerClient>): Promise<string | null> {
+  const now = Date.now();
+  
+  // Check cache first
+  const cached = roleCache.get(userId);
+  if (cached && (now - cached.timestamp) < CACHE_TTL) {
+    return cached.role;
+  }
+  
+  // Query database if not cached or expired
+  const { data: userProfile } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+    
+  if (userProfile?.role) {
+    // Cache the result
+    roleCache.set(userId, {
+      role: userProfile.role,
+      timestamp: now
+    });
+    
+    // Clean up old cache entries periodically (simple approach)
+    if (roleCache.size > 1000) {
+      const entries = Array.from(roleCache.entries());
+      for (const [key, value] of entries) {
+        if ((now - value.timestamp) >= CACHE_TTL) {
+          roleCache.delete(key);
+        }
+      }
+    }
+    
+    return userProfile.role;
+  }
+  
+  return null;
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
@@ -118,14 +166,8 @@ export async function middleware(request: NextRequest) {
 
     // If user is authenticated, check role-based access
     if (user && isProtectedRoute) {
-      // Get user profile to check role
-      const { data: userProfile } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      const userRole = userProfile?.role;
+      // Get user role (cached for performance)
+      const userRole = await getUserRole(user.id, supabase);
 
       // Check admin routes
       if (adminRoutes.some(route => pathWithoutLocale.startsWith(route))) {

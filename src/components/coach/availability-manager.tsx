@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -77,7 +77,8 @@ export function AvailabilityManager() {
   
   const [isSaving, setIsSaving] = useState(false);
 
-  const timeOptions = generateTimeOptions();
+  // Memoize time options since they never change
+  const timeOptions = useMemo(() => generateTimeOptions(), []);
 
   const {
     control,

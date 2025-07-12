@@ -30,6 +30,9 @@ interface PerformanceData {
   layoutShifts: PerformanceEntry[];
 }
 
+// Maximum entries to keep in arrays to prevent memory leaks
+const MAX_ENTRIES = 100;
+
 export function PerformanceMonitorComponent() {
   const [performanceData, setPerformanceData] = useState<PerformanceData>({
     webVitals: {},
@@ -56,11 +59,11 @@ export function PerformanceMonitorComponent() {
       trackPerformance(metric.name, metric.value, window.location.pathname);
     });
 
-    // Monitor long tasks
+    // Monitor long tasks with limited storage
     monitor.observeLongTasks((entries) => {
       setPerformanceData(prev => ({
         ...prev,
-        longTasks: [...prev.longTasks, ...entries],
+        longTasks: [...prev.longTasks, ...entries].slice(-MAX_ENTRIES),
       }));
       
       entries.forEach(entry => {
@@ -70,11 +73,11 @@ export function PerformanceMonitorComponent() {
       });
     });
 
-    // Monitor layout shifts
+    // Monitor layout shifts with limited storage
     monitor.observeLayoutShifts((entries) => {
       setPerformanceData(prev => ({
         ...prev,
-        layoutShifts: [...prev.layoutShifts, ...entries],
+        layoutShifts: [...prev.layoutShifts, ...entries].slice(-MAX_ENTRIES),
       }));
     });
 
@@ -94,13 +97,15 @@ export function PerformanceMonitorComponent() {
       }
     }, 10000); // Check every 10 seconds
 
-    // Check performance budget
+    // Check performance budget - use current state
     const budgetInterval = setInterval(() => {
-      const budgetStatus = checkPerformanceBudget(performanceData.webVitals);
-      setPerformanceData(prev => ({
-        ...prev,
-        budgetStatus,
-      }));
+      setPerformanceData(prev => {
+        const budgetStatus = checkPerformanceBudget(prev.webVitals);
+        return {
+          ...prev,
+          budgetStatus,
+        };
+      });
     }, 30000); // Check every 30 seconds
 
     return () => {
@@ -108,7 +113,7 @@ export function PerformanceMonitorComponent() {
       clearInterval(memoryInterval);
       clearInterval(budgetInterval);
     };
-  }, [performanceData.webVitals]);
+  }, []); // Empty dependency array to run only once
 
   // Only show in development
   if (process.env.NODE_ENV !== 'development') {

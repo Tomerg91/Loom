@@ -39,6 +39,26 @@ export function formatTime(date: Date | string, locale: string = 'en-US'): strin
 }
 
 /**
+ * Format date and time together for display
+ */
+export function formatDateTime(date: Date | string, locale: string = 'en-US'): {
+  date: string;
+  time: string;
+  full: string;
+} {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  const dateStr = formatDate(dateObj, locale);
+  const timeStr = formatTime(dateObj, locale);
+  
+  return {
+    date: dateStr,
+    time: timeStr,
+    full: `${dateStr} at ${timeStr}`
+  };
+}
+
+/**
  * Format duration in minutes to human readable format
  */
 export function formatDuration(minutes: number, locale: string = 'en-US'): string {
