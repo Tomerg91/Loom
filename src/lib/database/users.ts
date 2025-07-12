@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { User, UserRole, UserStatus } from '@/types';
 import type { Database } from '@/types/supabase';
 import { Result, type Result as ResultType } from '@/lib/types/result';
+import { config } from '@/lib/config';
 
 // API-specific interfaces
 interface GetUsersOptions {
@@ -220,15 +221,26 @@ export class UserService {
   }
 
   /**
-   * Delete user account (admin only)
+   * Delete user account (admin only) - Soft delete implementation
    */
   async deleteUser(userId: string): Promise<ResultType<void>> {
     try {
-      // Note: This would typically soft delete or anonymize rather than hard delete
+      // Implement proper soft delete with data anonymization
+      const anonymizedEmail = `deleted_user_${Date.now()}@deleted.local`;
+      const anonymizedPhone = null;
+      
       const { error } = await this.supabase
         .from('users')
         .update({ 
-          status: 'suspended',
+          status: 'deleted',
+          // Anonymize personal data for privacy compliance
+          email: anonymizedEmail,
+          first_name: 'Deleted',
+          last_name: 'User',
+          phone: anonymizedPhone,
+          avatar_url: null,
+          // Keep audit trail
+          deleted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', userId);
@@ -237,6 +249,9 @@ export class UserService {
         console.error('Error deleting user:', error);
         return Result.error(`Failed to delete user: ${error.message}`);
       }
+
+      // TODO: Also anonymize or delete related data (sessions, notes, etc.)
+      // This should be implemented based on data retention policies
 
       return Result.success(undefined);
     } catch (error) {
@@ -445,7 +460,7 @@ export class UserService {
       lastName: dbUser.last_name || '',
       phone: dbUser.phone || '',
       avatarUrl: dbUser.avatar_url || '',
-      timezone: dbUser.timezone || 'UTC',
+      timezone: dbUser.timezone || config.defaults.TIMEZONE,
       language: dbUser.language as 'en' | 'he',
       status: dbUser.status as UserStatus,
       createdAt: dbUser.created_at,

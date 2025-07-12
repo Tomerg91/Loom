@@ -3,6 +3,7 @@ import { ZodError, ZodSchema } from 'zod';
 import type { ApiResponse, ApiError } from './types';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/supabase';
+import { config } from '@/lib/config';
 
 type UserRole = Database['public']['Tables']['users']['Row']['role'];
 type AuthenticatedUser = {
@@ -134,7 +135,10 @@ export function parsePagination(query: Record<string, string | string[]>): {
   offset: number;
 } {
   const page = Math.max(1, parseInt(query.page as string) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(query.limit as string) || 10));
+  const limit = Math.min(
+    config.api.MAX_PAGE_SIZE, 
+    Math.max(config.api.MIN_PAGE_SIZE, parseInt(query.limit as string) || config.api.DEFAULT_PAGE_SIZE)
+  );
   const offset = (page - 1) * limit;
 
   return { page, limit, offset };

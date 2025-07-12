@@ -4,6 +4,7 @@ import { routing } from '@/i18n/routing';
 import { applySecurityHeaders } from '@/lib/security/headers';
 import { validateUserAgent } from '@/lib/security/validation';
 import createMiddleware from 'next-intl/middleware';
+import { config } from '@/lib/config';
 
 // Create next-intl middleware
 const intlMiddleware = createMiddleware(routing);
@@ -44,7 +45,7 @@ interface CachedRole {
 }
 
 const roleCache = new Map<string, CachedRole>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = config.cache.ROLE_CACHE_TTL;
 
 async function getUserRole(userId: string, supabase: ReturnType<typeof createServerClient>): Promise<string | null> {
   const now = Date.now();
@@ -70,7 +71,7 @@ async function getUserRole(userId: string, supabase: ReturnType<typeof createSer
     });
     
     // Clean up old cache entries periodically (simple approach)
-    if (roleCache.size > 1000) {
+    if (roleCache.size > config.cache.ROLE_CACHE_MAX_SIZE) {
       const entries = Array.from(roleCache.entries());
       for (const [key, value] of entries) {
         if ((now - value.timestamp) >= CACHE_TTL) {

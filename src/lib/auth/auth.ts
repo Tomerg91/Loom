@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { supabase as clientSupabase } from '@/lib/supabase/client';
 import { createUserService } from '@/lib/database';
 import type { User, UserRole, UserStatus, Language } from '@/types';
+import { config } from '@/lib/config';
 
 export interface AuthUser {
   id: string;
@@ -247,14 +248,8 @@ export class AuthService {
    */
   async resetPassword(email: string): Promise<{ error: string | null }> {
     try {
-      // Use hardcoded, validated redirect URLs to prevent redirect attacks
-      const ALLOWED_REDIRECT_URLS = [
-        process.env.NEXT_PUBLIC_SITE_URL + '/reset-password',
-        'https://loom-bay.vercel.app/reset-password',
-        'http://localhost:3001/reset-password', // Development
-      ].filter(Boolean);
-      
-      const redirectUrl = ALLOWED_REDIRECT_URLS[0] || 'https://loom-bay.vercel.app/reset-password';
+      // Use centralized configuration for redirect URLs
+      const redirectUrl = config.getPasswordResetUrl();
       
       const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,

@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { config } from '@/lib/config';
 
 /**
  * Utility function to merge Tailwind CSS classes with clsx and tailwind-merge
@@ -123,7 +124,7 @@ export function generateId(): string {
  */
 export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
-  wait: number
+  wait: number = config.defaults.DEBOUNCE_DELAY
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout;
   return (...args: Parameters<T>) => {

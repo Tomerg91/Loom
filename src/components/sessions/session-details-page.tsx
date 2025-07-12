@@ -85,40 +85,24 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
   const [sessionNotes, setSessionNotes] = useState('');
   const [sessionRating, setSessionRating] = useState(0);
 
-  // Mock data - in real app, this would come from an API
+  // Fetch session data from API
   const { data: session, isLoading, error } = useQuery<Session>({
     queryKey: ['session', sessionId],
     queryFn: async () => {
-      // Mock API call
-      return {
-        id: sessionId,
-        title: 'Leadership Development Session',
-        description: 'Focus on building leadership presence and communication skills',
-        scheduledAt: '2024-01-25T14:00:00Z',
-        duration: 60,
-        status: 'scheduled',
-        sessionType: 'video',
-        meetingUrl: 'https://meet.google.com/abc-def-ghi',
-        notes: 'Client wants to focus on public speaking anxiety and team leadership skills.',
-        coach: {
-          id: '1',
-          firstName: 'Sarah',
-          lastName: 'Johnson',
-          email: 'sarah@loom.com',
-          avatarUrl: undefined,
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        client: {
-          id: '2',
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john@example.com',
-          avatarUrl: undefined,
-        },
-        goals: ['Improve public speaking', 'Develop leadership presence', 'Build team communication'],
-        actionItems: ['Practice daily affirmations', 'Join Toastmasters', 'Lead next team meeting'],
-        createdAt: '2024-01-20T10:00:00Z',
-        updatedAt: '2024-01-20T10:00:00Z',
-      };
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch session');
+      }
+
+      const data = await response.json();
+      return data.data; // API returns { success: true, data: session }
     },
   });
 
@@ -130,9 +114,24 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
 
   const completeSessionMutation = useMutation({
     mutationFn: async (data: { notes: string; rating: number }) => {
-      // Mock API call
-      console.log('Completing session:', sessionId, data);
-      return { success: true };
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'completed',
+          notes: data.notes,
+          rating: data.rating,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to complete session');
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
@@ -144,9 +143,19 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
 
   const deleteSessionMutation = useMutation({
     mutationFn: async () => {
-      // Mock API call
-      console.log('Deleting session:', sessionId);
-      return { success: true };
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete session');
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       router.push('/sessions');
