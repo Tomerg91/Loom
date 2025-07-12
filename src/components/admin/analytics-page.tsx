@@ -61,37 +61,14 @@ export function AdminAnalyticsPage() {
   const { data: analytics, isLoading, error, refetch } = useQuery<AnalyticsData>({
     queryKey: ['admin-analytics', timeRange],
     queryFn: async () => {
-      // Mock API call
-      return {
-        overview: {
-          totalUsers: 1247,
-          activeUsers: 856,
-          totalSessions: 3241,
-          completedSessions: 2987,
-          revenue: 45230,
-          averageRating: 4.7,
-        },
-        userGrowth: [
-          { date: '2024-01-01', newUsers: 12, activeUsers: 145 },
-          { date: '2024-01-02', newUsers: 18, activeUsers: 152 },
-          { date: '2024-01-03', newUsers: 15, activeUsers: 148 },
-          { date: '2024-01-04', newUsers: 22, activeUsers: 167 },
-          { date: '2024-01-05', newUsers: 19, activeUsers: 163 },
-        ],
-        sessionMetrics: [
-          { date: '2024-01-01', totalSessions: 45, completedSessions: 42, cancelledSessions: 3 },
-          { date: '2024-01-02', totalSessions: 52, completedSessions: 48, cancelledSessions: 4 },
-          { date: '2024-01-03', totalSessions: 38, completedSessions: 36, cancelledSessions: 2 },
-          { date: '2024-01-04', totalSessions: 61, completedSessions: 57, cancelledSessions: 4 },
-          { date: '2024-01-05', totalSessions: 49, completedSessions: 46, cancelledSessions: 3 },
-        ],
-        coachPerformance: [
-          { coachId: '1', coachName: 'Sarah Johnson', totalSessions: 234, averageRating: 4.8, revenue: 12450 },
-          { coachId: '2', coachName: 'Mike Chen', totalSessions: 187, averageRating: 4.6, revenue: 9870 },
-          { coachId: '3', coachName: 'Emily Davis', totalSessions: 156, averageRating: 4.9, revenue: 8340 },
-          { coachId: '4', coachName: 'James Wilson', totalSessions: 143, averageRating: 4.5, revenue: 7650 },
-        ],
-      };
+      const response = await fetch(`/api/admin/analytics?timeRange=${timeRange}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics data');
+      }
+      
+      const result = await response.json();
+      return result.data;
     },
   });
 

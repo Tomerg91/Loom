@@ -7,21 +7,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
   User,
   Mail,
-  Camera,
   Save,
   Edit,
   Shield
 } from 'lucide-react';
 import { useUser } from '@/lib/store/auth-store';
+import { AvatarUpload } from '@/components/ui/file-upload';
+import { useFormToast } from '@/components/ui/toast-provider';
 
 export function ProfileSettingsCard() {
   const user = useUser();
   const queryClient = useQueryClient();
+  const [uploadProgress, setUploadProgress] = useState<number | undefined>();
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const { notifySuccess, notifyError } = useFormToast();
   
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -38,16 +41,86 @@ export function ProfileSettingsCard() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      // Mock API call
-      console.log('Updating profile:', data);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return data;
+      const response = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
       setHasChanges(false);
+      notifySuccess('Profile updated');
+    },
+    onError: (error) => {
+      notifyError('Update profile', error.message);
     },
   });
+
+  const handleFileUpload = async (file: File) => {
+    setUploadError(null);
+    setUploadProgress(0);
+
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const progress = (event.loaded / event.total) * 100;
+          setUploadProgress(progress);
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          notifySuccess('Profile picture updated');
+          queryClient.invalidateQueries({ queryKey: ['user'] });
+          setUploadProgress(undefined);
+        } else {
+          const errorData = JSON.parse(xhr.responseText);
+          setUploadError(errorData.error || 'Upload failed');
+          setUploadProgress(undefined);
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        setUploadError('Upload failed');
+        setUploadProgress(undefined);
+      });
+
+      xhr.open('POST', '/api/auth/avatar');
+      xhr.send(formData);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Upload failed');
+      setUploadProgress(undefined);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      const response = await fetch('/api/auth/avatar', { method: 'DELETE' });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to remove avatar');
+      }
+
+      notifySuccess('Profile picture removed');
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    } catch (error) {
+      notifyError('Remove avatar', error instanceof Error ? error.message : 'Failed to remove avatar');
+    }
+  };
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -72,25 +145,15 @@ export function ProfileSettingsCard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-6">
-            <Avatar className="h-24 w-24">
-              <AvatarImage 
-                src={user.avatarUrl} 
-                alt={`${user.firstName} ${user.lastName} profile picture`} 
-              />
-              <AvatarFallback className="text-2xl">
-                {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col space-y-2">
-              <Button type="button" variant="outline" size="sm">
-                <Camera className="mr-2 h-4 w-4" />
-                Upload Photo
-              </Button>
-              <Button type="button" variant="ghost" size="sm" className="text-destructive">
-                Remove Photo
-              </Button>
-            </div>
+          <div className="flex items-center justify-center">
+            <AvatarUpload
+              currentFile={user?.avatarUrl || null}
+              onFileSelect={handleFileUpload}
+              onFileRemove={handleRemoveAvatar}
+              uploadProgress={uploadProgress}
+              error={uploadError}
+              userName={`${user?.firstName} ${user?.lastName}`}
+            />
           </div>
         </CardContent>
       </Card>

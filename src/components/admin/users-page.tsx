@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/toast-provider';
 import { Input } from '@/components/ui/input';
 import { 
   Select,
@@ -58,51 +78,123 @@ interface User {
 
 export function AdminUsersPage() {
   const t = useTranslations('admin.users');
+  const { success, error } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    role: 'client' as 'admin' | 'coach' | 'client',
+    status: 'active' as 'active' | 'inactive' | 'pending',
+  });
 
-  // Mock data - in real app, this would come from an API
-  const { data: users, isLoading, error } = useQuery<User[]>({
+  const { data: usersData, isLoading, error: queryError } = useQuery({
     queryKey: ['admin-users', searchTerm, roleFilter, statusFilter],
     queryFn: async () => {
-      // Mock API call
-      return [
-        {
-          id: '1',
-          email: 'admin@loom.com',
-          firstName: 'Admin',
-          lastName: 'User',
-          role: 'admin',
-          status: 'active',
-          createdAt: '2024-01-15T10:00:00Z',
-          lastLoginAt: '2024-01-20T09:30:00Z',
-        },
-        {
-          id: '2',
-          email: 'coach@loom.com',
-          firstName: 'Coach',
-          lastName: 'Smith',
-          role: 'coach',
-          status: 'active',
-          createdAt: '2024-01-16T11:00:00Z',
-          lastLoginAt: '2024-01-19T14:15:00Z',
-          phone: '+1-555-0123',
-        },
-        {
-          id: '3',
-          email: 'client@loom.com',
-          firstName: 'Client',
-          lastName: 'Johnson',
-          role: 'client',
-          status: 'active',
-          createdAt: '2024-01-17T12:00:00Z',
-          lastLoginAt: '2024-01-18T16:45:00Z',
-          phone: '+1-555-0456',
-        },
-      ];
+      const params = new URLSearchParams();
+      if (searchTerm) params.set('search', searchTerm);
+      if (roleFilter !== 'all') params.set('role', roleFilter);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      
+      const response = await fetch(`/api/admin/users?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      
+      const result = await response.json();
+      return result.data;
     },
   });
+
+  const users = usersData?.users || [];
+
+  // Mutations
+  const updateUserMutation = useMutation({
+    mutationFn: async (data: { id: string; updates: Partial<User> }) => {
+      const response = await fetch(`/api/admin/users/${data.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data.updates),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update user');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      success('User updated successfully');
+      setEditingUser(null);
+    },
+    onError: (err) => {
+      error('Update user failed', err.message);
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete user');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      success('User deleted successfully');
+      setDeletingUser(null);
+    },
+    onError: (err) => {
+      error('Delete user failed', err.message);
+    },
+  });
+
+  // Event handlers
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setEditForm({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email,
+      phone: user.phone || '',
+      role: user.role,
+      status: user.status,
+    });
+  };
+
+  const handleUpdateUser = () => {
+    if (!editingUser) return;
+    
+    updateUserMutation.mutate({
+      id: editingUser.id,
+      updates: editForm,
+    });
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setDeletingUser(user);
+  };
+
+  const confirmDeleteUser = () => {
+    if (!deletingUser) return;
+    
+    deleteUserMutation.mutate(deletingUser.id);
+  };
 
   const getUserInitials = (user: User) => {
     if (user.firstName && user.lastName) {
@@ -171,7 +263,7 @@ export function AdminUsersPage() {
     );
   }
 
-  if (error) {
+  if (queryError) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -362,16 +454,19 @@ export function AdminUsersPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditUser(user)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit User
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => window.open(`mailto:${user.email}`)}>
                           <Mail className="mr-2 h-4 w-4" />
                           Send Email
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem 
+                          className="text-destructive"
+                          onClick={() => handleDeleteUser(user)}
+                        >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete User
                         </DropdownMenuItem>
@@ -384,6 +479,140 @@ export function AdminUsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit User Dialog */}
+      <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Make changes to the user account. Click save when you&apos;re done.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="firstName" className="text-right">
+                First Name
+              </Label>
+              <Input
+                id="firstName"
+                value={editForm.firstName}
+                onChange={(e) => setEditForm(prev => ({ ...prev, firstName: e.target.value }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="lastName" className="text-right">
+                Last Name
+              </Label>
+              <Input
+                id="lastName"
+                value={editForm.lastName}
+                onChange={(e) => setEditForm(prev => ({ ...prev, lastName: e.target.value }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">
+                Phone
+              </Label>
+              <Input
+                id="phone"
+                value={editForm.phone}
+                onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="role" className="text-right">
+                Role
+              </Label>
+              <Select 
+                value={editForm.role} 
+                onValueChange={(value: 'admin' | 'coach' | 'client') => 
+                  setEditForm(prev => ({ ...prev, role: value }))
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="coach">Coach</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                Status
+              </Label>
+              <Select 
+                value={editForm.status} 
+                onValueChange={(value: 'active' | 'inactive' | 'pending') => 
+                  setEditForm(prev => ({ ...prev, status: value }))
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingUser(null)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUpdateUser}
+              disabled={updateUserMutation.isPending}
+            >
+              {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!deletingUser} onOpenChange={() => setDeletingUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the user
+              account for <strong>{deletingUser ? getUserDisplayName(deletingUser) : ''}</strong> and 
+              remove all associated data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteUser}
+              disabled={deleteUserMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteUserMutation.isPending ? 'Deleting...' : 'Delete User'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

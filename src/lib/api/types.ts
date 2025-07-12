@@ -150,3 +150,79 @@ export interface UpdateAvailabilityRequest {
   effectiveTo?: string;
   isActive?: boolean;
 }
+
+// API Response utility class
+export class ApiResponse {
+  static success<T>(data: T, message?: string): Response {
+    return new Response(JSON.stringify({
+      success: true,
+      data,
+      message,
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  static error(code: string, message: string, statusCode: number = 400): Response {
+    return new Response(JSON.stringify({
+      success: false,
+      error: message,
+      code,
+    }), {
+      status: statusCode,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  static badRequest(message: string, details?: unknown): Response {
+    return new Response(JSON.stringify({
+      success: false,
+      error: message,
+      details,
+    }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  static unauthorized(message: string = 'Unauthorized'): Response {
+    return new Response(JSON.stringify({
+      success: false,
+      error: message,
+    }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  static forbidden(message: string = 'Forbidden'): Response {
+    return new Response(JSON.stringify({
+      success: false,
+      error: message,
+    }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  static notFound(message: string = 'Not found'): Response {
+    return new Response(JSON.stringify({
+      success: false,
+      error: message,
+    }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  static internalError(message: string = 'Internal server error'): Response {
+    return new Response(JSON.stringify({
+      success: false,
+      error: message,
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}

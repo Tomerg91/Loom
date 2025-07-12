@@ -4,10 +4,7 @@ import { z } from 'zod';
 
 const updatePasswordSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
+  token: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -28,22 +25,38 @@ export async function POST(request: NextRequest) {
 
     const authService = createAuthService(true);
     
-    // Check if user is authenticated
-    const user = await authService.getCurrentUser();
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
+    // Handle token-based password reset vs authenticated password update
+    if (validation.data.token) {
+      // Token-based password reset
+      const { error } = await authService.updatePasswordWithToken(
+        validation.data.token, 
+        validation.data.password
       );
-    }
+      
+      if (error) {
+        return NextResponse.json(
+          { error },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Authenticated password update
+      const user = await authService.getCurrentUser();
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Not authenticated' },
+          { status: 401 }
+        );
+      }
 
-    const { error } = await authService.updatePassword(validation.data.password);
-
-    if (error) {
-      return NextResponse.json(
-        { error },
-        { status: 400 }
-      );
+      const { error } = await authService.updatePassword(validation.data.password);
+      
+      if (error) {
+        return NextResponse.json(
+          { error },
+          { status: 400 }
+        );
+      }
     }
 
     return NextResponse.json({
