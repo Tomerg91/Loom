@@ -2,67 +2,67 @@
 // In a real application, this would be a proper database connection
 
 interface MockDatabase {
-  select: (fields: any) => MockQueryBuilder;
-  update: (table: any) => MockUpdateBuilder;
-  delete: (table: any) => MockDeleteBuilder;
+  select: (fields: string[] | string) => MockQueryBuilder;
+  update: (table: string) => MockUpdateBuilder;
+  delete: (table: string) => MockDeleteBuilder;
 }
 
 interface MockQueryBuilder {
-  from: (table: any) => MockQueryBuilder;
-  where: (condition: any) => MockQueryBuilder;
-  leftJoin: (table: any, condition: any) => MockQueryBuilder;
-  innerJoin: (table: any, condition: any) => MockQueryBuilder;
-  groupBy: (...fields: any[]) => MockQueryBuilder;
-  orderBy: (...fields: any[]) => MockQueryBuilder;
+  from: (table: string) => MockQueryBuilder;
+  where: (condition: Record<string, unknown>) => MockQueryBuilder;
+  leftJoin: (table: string, condition: Record<string, unknown>) => MockQueryBuilder;
+  innerJoin: (table: string, condition: Record<string, unknown>) => MockQueryBuilder;
+  groupBy: (...fields: string[]) => MockQueryBuilder;
+  orderBy: (...fields: string[]) => MockQueryBuilder;
   limit: (count: number) => MockQueryBuilder;
   offset: (count: number) => MockQueryBuilder;
-  execute: () => Promise<any[]>;
+  execute: () => Promise<unknown[]>;
 }
 
 interface MockUpdateBuilder {
-  set: (data: any) => MockUpdateBuilder;
-  where: (condition: any) => MockUpdateBuilder;
+  set: (data: Record<string, unknown>) => MockUpdateBuilder;
+  where: (condition: Record<string, unknown>) => MockUpdateBuilder;
   execute: () => Promise<void>;
 }
 
 interface MockDeleteBuilder {
-  where: (condition: any) => MockDeleteBuilder;
+  where: (condition: Record<string, unknown>) => MockDeleteBuilder;
   execute: () => Promise<void>;
 }
 
 class MockDB implements MockDatabase {
-  select(fields: any): MockQueryBuilder {
+  select(_fields: string[] | string): MockQueryBuilder {
     return new MockQueryBuilderImpl();
   }
 
-  update(table: any): MockUpdateBuilder {
+  update(_table: string): MockUpdateBuilder {
     return new MockUpdateBuilderImpl();
   }
 
-  delete(table: any): MockDeleteBuilder {
+  delete(_table: string): MockDeleteBuilder {
     return new MockDeleteBuilderImpl();
   }
 }
 
 class MockQueryBuilderImpl implements MockQueryBuilder {
-  from(table: any): MockQueryBuilder { return this; }
-  where(condition: any): MockQueryBuilder { return this; }
-  leftJoin(table: any, condition: any): MockQueryBuilder { return this; }
-  innerJoin(table: any, condition: any): MockQueryBuilder { return this; }
-  groupBy(...fields: any[]): MockQueryBuilder { return this; }
-  orderBy(...fields: any[]): MockQueryBuilder { return this; }
-  limit(count: number): MockQueryBuilder { return this; }
-  offset(count: number): MockQueryBuilder { return this; }
+  from(_table: string): MockQueryBuilder { return this; }
+  where(_condition: Record<string, unknown>): MockQueryBuilder { return this; }
+  leftJoin(_table: string, _condition: Record<string, unknown>): MockQueryBuilder { return this; }
+  innerJoin(_table: string, _condition: Record<string, unknown>): MockQueryBuilder { return this; }
+  groupBy(..._fields: string[]): MockQueryBuilder { return this; }
+  orderBy(..._fields: string[]): MockQueryBuilder { return this; }
+  limit(_count: number): MockQueryBuilder { return this; }
+  offset(_count: number): MockQueryBuilder { return this; }
   
-  async execute(): Promise<any[]> {
+  async execute(): Promise<unknown[]> {
     // Return empty array for mock queries
     return [];
   }
 }
 
 class MockUpdateBuilderImpl implements MockUpdateBuilder {
-  set(data: any): MockUpdateBuilder { return this; }
-  where(condition: any): MockUpdateBuilder { return this; }
+  set(_data: Record<string, unknown>): MockUpdateBuilder { return this; }
+  where(_condition: Record<string, unknown>): MockUpdateBuilder { return this; }
   
   async execute(): Promise<void> {
     // Mock update
@@ -70,7 +70,7 @@ class MockUpdateBuilderImpl implements MockUpdateBuilder {
 }
 
 class MockDeleteBuilderImpl implements MockDeleteBuilder {
-  where(condition: any): MockDeleteBuilder { return this; }
+  where(_condition: Record<string, unknown>): MockDeleteBuilder { return this; }
   
   async execute(): Promise<void> {
     // Mock delete

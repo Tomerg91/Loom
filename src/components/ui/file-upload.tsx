@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import NextImage from 'next/image';
 import { Upload, X, Image, File, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -174,13 +175,20 @@ export function FileUpload({
           </div>
         ) : displayImage ? (
           <div className="relative group">
-            <img
+            <NextImage
               src={displayImage}
-              alt="File preview"
+              alt={variant === 'avatar' ? 'Profile picture preview' : 'File preview'}
+              width={variant === 'avatar' ? 128 : 400}
+              height={variant === 'avatar' ? 128 : 300}
               className={cn(
                 'object-cover',
                 variant === 'avatar' ? 'w-32 h-32 rounded-full' : 'max-w-full max-h-full rounded'
               )}
+              onError={(e) => {
+                // Fallback for broken images
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
             />
             {!disabled && (
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
@@ -202,6 +210,7 @@ export function FileUpload({
         ) : (
           <div className="text-center space-y-2">
             {variant === 'avatar' ? (
+              // eslint-disable-next-line jsx-a11y/alt-text
               <Image className="h-8 w-8 text-muted-foreground" />
             ) : variant === 'document' ? (
               <File className="h-8 w-8 text-muted-foreground" />
