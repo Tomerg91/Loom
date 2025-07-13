@@ -30,6 +30,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           type="password"
           className={className}
           ref={ref}
+          data-testid="password-input"
         />
       );
     }
@@ -41,6 +42,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           type={showPassword ? 'text' : 'password'}
           className={cn('pr-10', className)}
           ref={ref}
+          data-testid="password-input"
         />
         <Button
           type="button"

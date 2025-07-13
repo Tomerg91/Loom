@@ -236,7 +236,7 @@ export function AdminUsersPage() {
     }
   };
 
-  const filteredUsers = users?.filter(user => {
+  const filteredUsers = users?.filter((user: User) => {
     const matchesSearch = 
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getUserDisplayName(user).toLowerCase().includes(searchTerm.toLowerCase());
@@ -312,7 +312,7 @@ export function AdminUsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users?.filter(u => u.status === 'active').length || 0}
+              {users?.filter((u: User) => u.status === 'active').length || 0}
             </div>
           </CardContent>
         </Card>
@@ -324,7 +324,7 @@ export function AdminUsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users?.filter(u => u.role === 'coach').length || 0}
+              {users?.filter((u: User) => u.role === 'coach').length || 0}
             </div>
           </CardContent>
         </Card>
@@ -336,7 +336,7 @@ export function AdminUsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users?.filter(u => u.role === 'client').length || 0}
+              {users?.filter((u: User) => u.role === 'client').length || 0}
             </div>
           </CardContent>
         </Card>
@@ -409,7 +409,7 @@ export function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers?.map((user) => (
+              {filteredUsers?.map((user: User) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center space-x-3">

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { authService } from '@/lib/services/auth-service';
 import { fileService } from '@/lib/services/file-service';
-import { ApiResponse } from '@/lib/api/types';
+import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
 import { config } from '@/lib/config';
 
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     // Get current user session
     const session = await authService.getSession();
     if (!session?.user) {
-      return ApiResponse.unauthorized('Authentication required');
+      return ApiResponseHelper.unauthorized('Authentication required');
     }
 
     // Parse form data
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const file = formData.get('avatar') as File;
 
     if (!file) {
-      return ApiResponse.badRequest('No file provided');
+      return ApiResponseHelper.badRequest('No file provided');
     }
 
     // Validate file
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     });
 
     if (!validation.isValid) {
-      return ApiResponse.badRequest(validation.error || 'Invalid file');
+      return ApiResponseHelper.badRequest(validation.error || 'Invalid file');
     }
 
     // Upload file
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       avatarUrl: uploadResult.url,
     });
 
-    return ApiResponse.success({
+    return ApiResponseHelper.success({
       message: 'Avatar uploaded successfully',
       user: updatedUser,
       avatarUrl: uploadResult.url,
@@ -61,10 +61,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     console.error('Avatar upload error:', error);
     
     if (error instanceof ApiError) {
-      return ApiResponse.error(error.code, error.message);
+      return ApiResponseHelper.error(error.code, error.message);
     }
     
-    return ApiResponse.internalError('Failed to upload avatar');
+    return ApiResponseHelper.internalError('Failed to upload avatar');
   }
 }
 
@@ -73,7 +73,7 @@ export async function DELETE(_request: NextRequest): Promise<Response> {
     // Get current user session
     const session = await authService.getSession();
     if (!session?.user) {
-      return ApiResponse.unauthorized('Authentication required');
+      return ApiResponseHelper.unauthorized('Authentication required');
     }
 
     const user = session.user;
@@ -93,7 +93,7 @@ export async function DELETE(_request: NextRequest): Promise<Response> {
       avatarUrl: null,
     });
 
-    return ApiResponse.success({
+    return ApiResponseHelper.success({
       message: 'Avatar removed successfully',
       user: updatedUser,
     });
@@ -102,9 +102,9 @@ export async function DELETE(_request: NextRequest): Promise<Response> {
     console.error('Avatar removal error:', error);
     
     if (error instanceof ApiError) {
-      return ApiResponse.error(error.code, error.message);
+      return ApiResponseHelper.error(error.code, error.message);
     }
     
-    return ApiResponse.internalError('Failed to remove avatar');
+    return ApiResponseHelper.internalError('Failed to remove avatar');
   }
 }

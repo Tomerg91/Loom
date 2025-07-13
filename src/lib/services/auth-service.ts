@@ -43,6 +43,15 @@ class AuthService {
       return null;
     }
   }
+
+  async updatePasswordWithToken(token: string, password: string) {
+    try {
+      return await this.authLib.updatePasswordWithToken(token, password);
+    } catch (error) {
+      console.error('Error updating password with token:', error);
+      throw error;
+    }
+  }
 }
 
 export const authService = new AuthService();

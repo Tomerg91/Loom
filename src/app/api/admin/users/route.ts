@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { authService } from '@/lib/services/auth-service';
 import { userService } from '@/lib/services/user-service';
-import { ApiResponse } from '@/lib/api/types';
+import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
 import { z } from 'zod';
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     // Verify admin access
     const session = await authService.getSession();
     if (!session?.user || session.user.role !== 'admin') {
-      return ApiResponse.forbidden('Admin access required');
+      return ApiResponseHelper.forbidden('Admin access required');
     }
 
     // Parse query parameters
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const validation = getUsersQuerySchema.safeParse(queryParams);
     if (!validation.success) {
-      return ApiResponse.badRequest('Invalid query parameters');
+      return ApiResponseHelper.badRequest('Invalid query parameters');
     }
 
     const { search, role, status, page, limit } = validation.data;
@@ -47,15 +47,15 @@ export async function GET(request: NextRequest): Promise<Response> {
       limit,
     });
 
-    return ApiResponse.success(result);
+    return ApiResponseHelper.success(result);
 
   } catch (error) {
     console.error('Get users API error:', error);
     
     if (error instanceof ApiError) {
-      return ApiResponse.error(error.code, error.message);
+      return ApiResponseHelper.error(error.code, error.message);
     }
     
-    return ApiResponse.internalError('Failed to fetch users');
+    return ApiResponseHelper.internalError('Failed to fetch users');
   }
 }

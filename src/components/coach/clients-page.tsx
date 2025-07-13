@@ -209,14 +209,14 @@ export function CoachClientsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="coach-clients-page">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{t('title')}</h1>
+          <h1 className="text-3xl font-bold" data-testid="page-title">{t('title')}</h1>
           <p className="text-muted-foreground">{t('description')}</p>
         </div>
-        <Button>
+        <Button data-testid="add-client-button">
           <Plus className="mr-2 h-4 w-4" />
           {t('addClient')}
         </Button>
@@ -289,12 +289,13 @@ export function CoachClientsPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
+                  data-testid="client-search-input"
                 />
               </div>
             </div>
             
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px]" data-testid="status-filter">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -323,7 +324,7 @@ export function CoachClientsPage() {
       {/* Clients Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sortedClients?.map((client) => (
-          <Card key={client.id} className="hover:shadow-lg transition-shadow">
+          <Card key={client.id} className="hover:shadow-lg transition-shadow" data-testid={`client-card-${client.id}`}>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -334,12 +335,12 @@ export function CoachClientsPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-lg">{client.firstName} {client.lastName}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{client.email}</p>
+                    <CardTitle className="text-lg" data-testid={`client-name-${client.id}`}>{client.firstName} {client.lastName}</CardTitle>
+                    <p className="text-sm text-muted-foreground" data-testid={`client-email-${client.id}`}>{client.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge variant={getStatusBadgeVariant(client.status)}>
+                  <Badge variant={getStatusBadgeVariant(client.status)} data-testid={`client-status-${client.id}`}>
                     <div className="flex items-center space-x-1">
                       {getStatusIcon(client.status)}
                       <span>{client.status}</span>
@@ -347,7 +348,7 @@ export function CoachClientsPage() {
                   </Badge>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
+                      <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`client-menu-${client.id}`}>
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>

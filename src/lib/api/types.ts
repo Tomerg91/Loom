@@ -152,7 +152,7 @@ export interface UpdateAvailabilityRequest {
 }
 
 // API Response utility class
-export class ApiResponse {
+export class ApiResponseHelper {
   static success<T>(data: T, message?: string): Response {
     return new Response(JSON.stringify({
       success: true,

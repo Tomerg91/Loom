@@ -232,7 +232,7 @@ export class UserService {
       const { error } = await this.supabase
         .from('users')
         .update({ 
-          status: 'deleted',
+          status: 'inactive',
           // Anonymize personal data for privacy compliance
           email: anonymizedEmail,
           first_name: 'Deleted',

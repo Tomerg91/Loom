@@ -275,6 +275,60 @@ export class AuthService {
   }
 
   /**
+   * Update password with reset token
+   */
+  async updatePasswordWithToken(token: string, password: string): Promise<{ error: string | null }> {
+    try {
+      // Verify the reset token and update password
+      const { error } = await this.supabase.auth.updateUser({
+        password
+      });
+      
+      if (error) {
+        return { error: error.message };
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to update password with token' };
+    }
+  }
+
+  /**
+   * Update user by ID (admin function)
+   */
+  async updateUser(userId: string, updates: Record<string, unknown>): Promise<AuthUser | null> {
+    try {
+      // Update user profile in database
+      const updateResult = await this.userService.updateUserProfile(userId, updates);
+      
+      if (updateResult.success) {
+        const updatedProfile = updateResult.data;
+        return {
+          id: updatedProfile.id,
+          email: updatedProfile.email,
+          role: updatedProfile.role,
+          firstName: updatedProfile.firstName,
+          lastName: updatedProfile.lastName,
+          phone: updatedProfile.phone,
+          avatarUrl: updatedProfile.avatarUrl,
+          timezone: updatedProfile.timezone,
+          language: updatedProfile.language,
+          status: updatedProfile.status,
+          createdAt: updatedProfile.createdAt,
+          updatedAt: updatedProfile.updatedAt,
+          lastSeenAt: updatedProfile.lastSeenAt,
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      return null;
+    }
+  }
+
+  /**
    * Update user profile
    */
   async updateProfile(updates: Partial<User>): Promise<{ user: AuthUser | null; error: string | null }> {

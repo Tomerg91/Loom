@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { authService } from '@/lib/services/auth-service';
 import { userService } from '@/lib/services/user-service';
-import { ApiResponse } from '@/lib/api/types';
+import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
 import { z } from 'zod';
 import { commonValidators } from '@/lib/validation/common';
@@ -25,26 +25,26 @@ export async function GET(
     // Verify admin access
     const session = await authService.getSession();
     if (!session?.user || session.user.role !== 'admin') {
-      return ApiResponse.forbidden('Admin access required');
+      return ApiResponseHelper.forbidden('Admin access required');
     }
 
     // Get user by ID
     const user = await userService.getUserById(id);
     
     if (!user) {
-      return ApiResponse.notFound('User not found');
+      return ApiResponseHelper.notFound('User not found');
     }
 
-    return ApiResponse.success(user);
+    return ApiResponseHelper.success(user);
 
   } catch (error) {
     console.error('Get user API error:', error);
     
     if (error instanceof ApiError) {
-      return ApiResponse.error(error.code, error.message);
+      return ApiResponseHelper.error(error.code, error.message);
     }
     
-    return ApiResponse.internalError('Failed to fetch user');
+    return ApiResponseHelper.internalError('Failed to fetch user');
   }
 }
 
@@ -58,7 +58,7 @@ export async function PUT(
     // Verify admin access
     const session = await authService.getSession();
     if (!session?.user || session.user.role !== 'admin') {
-      return ApiResponse.forbidden('Admin access required');
+      return ApiResponseHelper.forbidden('Admin access required');
     }
 
     // Parse request body
@@ -66,22 +66,22 @@ export async function PUT(
     
     const validation = updateUserSchema.safeParse(body);
     if (!validation.success) {
-      return ApiResponse.badRequest('Invalid request data', validation.error.errors);
+      return ApiResponseHelper.badRequest('Invalid request data', validation.error.errors);
     }
 
     // Prevent admin from demoting themselves
     if (id === session.user.id && validation.data.role && validation.data.role !== 'admin') {
-      return ApiResponse.badRequest('Cannot change your own admin role');
+      return ApiResponseHelper.badRequest('Cannot change your own admin role');
     }
 
     // Update user
     const updatedUser = await userService.updateUser(id, validation.data);
     
     if (!updatedUser) {
-      return ApiResponse.notFound('User not found');
+      return ApiResponseHelper.notFound('User not found');
     }
 
-    return ApiResponse.success({
+    return ApiResponseHelper.success({
       message: 'User updated successfully',
       user: updatedUser,
     });
@@ -90,10 +90,10 @@ export async function PUT(
     console.error('Update user API error:', error);
     
     if (error instanceof ApiError) {
-      return ApiResponse.error(error.code, error.message);
+      return ApiResponseHelper.error(error.code, error.message);
     }
     
-    return ApiResponse.internalError('Failed to update user');
+    return ApiResponseHelper.internalError('Failed to update user');
   }
 }
 
@@ -107,22 +107,22 @@ export async function DELETE(
     // Verify admin access
     const session = await authService.getSession();
     if (!session?.user || session.user.role !== 'admin') {
-      return ApiResponse.forbidden('Admin access required');
+      return ApiResponseHelper.forbidden('Admin access required');
     }
 
     // Prevent admin from deleting themselves
     if (id === session.user.id) {
-      return ApiResponse.badRequest('Cannot delete your own account');
+      return ApiResponseHelper.badRequest('Cannot delete your own account');
     }
 
     // Delete user
     const deleted = await userService.deleteUser(id);
     
     if (!deleted) {
-      return ApiResponse.notFound('User not found');
+      return ApiResponseHelper.notFound('User not found');
     }
 
-    return ApiResponse.success({
+    return ApiResponseHelper.success({
       message: 'User deleted successfully',
     });
 
@@ -130,9 +130,9 @@ export async function DELETE(
     console.error('Delete user API error:', error);
     
     if (error instanceof ApiError) {
-      return ApiResponse.error(error.code, error.message);
+      return ApiResponseHelper.error(error.code, error.message);
     }
     
-    return ApiResponse.internalError('Failed to delete user');
+    return ApiResponseHelper.internalError('Failed to delete user');
   }
 }

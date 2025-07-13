@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { authService } from '@/lib/services/auth-service';
 import { analyticsService } from '@/lib/services/analytics-service';
-import { ApiResponse } from '@/lib/api/types';
+import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
 import { z } from 'zod';
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     // Verify admin access
     const session = await authService.getSession();
     if (!session?.user || session.user.role !== 'admin') {
-      return ApiResponse.forbidden('Admin access required');
+      return ApiResponseHelper.forbidden('Admin access required');
     }
 
     // Parse query parameters
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const validation = analyticsQuerySchema.safeParse(queryParams);
     if (!validation.success) {
-      return ApiResponse.badRequest('Invalid query parameters');
+      return ApiResponseHelper.badRequest('Invalid query parameters');
     }
 
     const { timeRange } = validation.data;
@@ -71,15 +71,15 @@ export async function GET(request: NextRequest): Promise<Response> {
       generatedAt: new Date().toISOString(),
     };
 
-    return ApiResponse.success(analyticsData);
+    return ApiResponseHelper.success(analyticsData);
 
   } catch (error) {
     console.error('Analytics API error:', error);
     
     if (error instanceof ApiError) {
-      return ApiResponse.error(error.code, error.message);
+      return ApiResponseHelper.error(error.code, error.message);
     }
     
-    return ApiResponse.internalError('Failed to fetch analytics data');
+    return ApiResponseHelper.internalError('Failed to fetch analytics data');
   }
 }

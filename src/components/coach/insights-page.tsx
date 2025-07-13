@@ -225,16 +225,16 @@ export function CoachInsightsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="coach-insights-page">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{t('title')}</h1>
+          <h1 className="text-3xl font-bold" data-testid="page-title">{t('title')}</h1>
           <p className="text-muted-foreground">{t('description')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px]" data-testid="time-range-filter">
               <SelectValue placeholder="Select time range" />
             </SelectTrigger>
             <SelectContent>
@@ -244,11 +244,11 @@ export function CoachInsightsPage() {
               <SelectItem value="1y">Last year</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => refetch()}>
+          <Button variant="outline" onClick={() => refetch()} data-testid="refresh-button">
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" data-testid="export-button">
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
@@ -256,11 +256,11 @@ export function CoachInsightsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="clients">Client Progress</TabsTrigger>
-          <TabsTrigger value="goals">Goal Analysis</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4" data-testid="insights-tabs">
+          <TabsTrigger value="overview" data-testid="overview-tab">Overview</TabsTrigger>
+          <TabsTrigger value="clients" data-testid="clients-tab">Client Progress</TabsTrigger>
+          <TabsTrigger value="goals" data-testid="goals-tab">Goal Analysis</TabsTrigger>
+          <TabsTrigger value="feedback" data-testid="feedback-tab">Feedback</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -272,7 +272,7 @@ export function CoachInsightsPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{insights?.overview.totalClients}</div>
+                <div className="text-2xl font-bold" data-testid="total-clients-metric">{insights?.overview.totalClients}</div>
                 <p className="text-xs text-muted-foreground">
                   <span className="text-green-600">{insights?.overview.activeClients}</span> active
                 </p>
