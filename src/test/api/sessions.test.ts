@@ -14,18 +14,33 @@ vi.mock('@/lib/supabase/server', () => ({
 // Mock database services
 vi.mock('@/lib/database/sessions', () => ({
   SessionService: vi.fn().mockImplementation(() => ({
-    create: vi.fn(),
+    getSession: vi.fn(),
+    createSession: vi.fn(),
+    updateSession: vi.fn(),
+    deleteSession: vi.fn(),
+    getUserSessions: vi.fn(),
+    getCoachSessions: vi.fn(),
+    getSessionsByStatus: vi.fn(),
     findMany: vi.fn(),
     findById: vi.fn(),
+    create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
   })),
 }));
 
+// Get the mocked constructor
+const MockedSessionService = vi.mocked(SessionService, true);
+
 // Mock validation
 vi.mock('@/lib/api/validation', () => ({
   validateRequestBody: vi.fn(),
+  createSessionSchema: {},
+  validateQuery: vi.fn(),
 }));
+
+// Get the mocked validation functions
+const mockValidateRequestBody = vi.mocked(validateRequestBody, true);
 
 // Mock notifications
 vi.mock('@/lib/notifications/session-notifications', () => ({
@@ -55,11 +70,11 @@ describe('/api/sessions', () => {
   describe('POST /api/sessions', () => {
     it('creates a new session successfully', async () => {
       const mockCreate = vi.fn().mockResolvedValue(mockSession);
-      SessionService.mockImplementation(() => ({
+      MockedSessionService.mockImplementation(() => ({
         create: mockCreate,
       }));
 
-      validateRequestBody.mockResolvedValue({
+      mockValidateRequestBody.mockResolvedValue({
         title: 'Test Session',
         description: 'Test description',
         coachId: 'coach-id',
@@ -116,7 +131,7 @@ describe('/api/sessions', () => {
     });
 
     it('returns 400 for invalid request body', async () => {
-      validateRequestBody.mockRejectedValue(new Error('Title is required'));
+      mockValidateRequestBody.mockRejectedValue(new Error('Title is required'));
 
       const request = new NextRequest('http://localhost:3000/api/sessions', {
         method: 'POST',
@@ -134,7 +149,7 @@ describe('/api/sessions', () => {
 
     it('sends confirmation notification after creating session', async () => {
       const mockCreate = vi.fn().mockResolvedValue(mockSession);
-      SessionService.mockImplementation(() => ({
+      MockedSessionService.mockImplementation(() => ({
         create: mockCreate,
       }));
 
@@ -143,7 +158,7 @@ describe('/api/sessions', () => {
         sendSessionConfirmation: mockSendConfirmation,
       }));
 
-      validateRequestBody.mockResolvedValue({
+      mockValidateRequestBody.mockResolvedValue({
         title: 'Test Session',
         coachId: 'coach-id',
         scheduledAt: new Date().toISOString(),
@@ -183,7 +198,7 @@ describe('/api/sessions', () => {
           totalPages: 1,
         },
       });
-      SessionService.mockImplementation(() => ({
+      MockedSessionService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 
@@ -208,7 +223,7 @@ describe('/api/sessions', () => {
           totalPages: 1,
         },
       });
-      SessionService.mockImplementation(() => ({
+      MockedSessionService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 
@@ -241,7 +256,7 @@ describe('/api/sessions', () => {
 
     it('handles database errors gracefully', async () => {
       const mockFindMany = vi.fn().mockRejectedValue(new Error('Database error'));
-      SessionService.mockImplementation(() => ({
+      MockedSessionService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 

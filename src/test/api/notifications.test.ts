@@ -13,12 +13,20 @@ vi.mock('@/lib/supabase/server', () => ({
 // Mock database services
 vi.mock('@/lib/database/notifications', () => ({
   NotificationService: vi.fn().mockImplementation(() => ({
-    create: vi.fn(),
-    findMany: vi.fn(),
+    getUserNotifications: vi.fn(),
+    getUnreadCount: vi.fn(),
+    createNotification: vi.fn(),
     markAsRead: vi.fn(),
+    markAllAsRead: vi.fn(),
+    deleteNotification: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
     delete: vi.fn(),
   })),
 }));
+
+// Get the mocked constructor
+const MockedNotificationService = vi.mocked(NotificationService, true);
 
 describe('/api/notifications', () => {
   const mockUser = {
@@ -52,7 +60,7 @@ describe('/api/notifications', () => {
           unreadCount: 1,
         },
       });
-      NotificationService.mockImplementation(() => ({
+      MockedNotificationService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 
@@ -84,7 +92,7 @@ describe('/api/notifications', () => {
           unreadCount: 1,
         },
       });
-      NotificationService.mockImplementation(() => ({
+      MockedNotificationService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 
@@ -109,7 +117,7 @@ describe('/api/notifications', () => {
           unreadCount: 1,
         },
       });
-      NotificationService.mockImplementation(() => ({
+      MockedNotificationService.mockImplementation(() => ({
         findMany: mockFindMany,
       }));
 
@@ -146,7 +154,7 @@ describe('/api/notifications', () => {
       const mockNotification = createMockNotification();
       
       const mockCreate = vi.fn().mockResolvedValue(mockNotification);
-      NotificationService.mockImplementation(() => ({
+      MockedNotificationService.mockImplementation(() => ({
         create: mockCreate,
       }));
 
@@ -216,7 +224,7 @@ describe('/api/notifications', () => {
   describe('POST /api/notifications/[id]/read', () => {
     it('marks notification as read successfully', async () => {
       const mockMarkAsRead = vi.fn().mockResolvedValue(true);
-      NotificationService.mockImplementation(() => ({
+      MockedNotificationService.mockImplementation(() => ({
         markAsRead: mockMarkAsRead,
       }));
 
@@ -235,7 +243,7 @@ describe('/api/notifications', () => {
 
     it('returns 404 for non-existent notification', async () => {
       const mockMarkAsRead = vi.fn().mockResolvedValue(false);
-      NotificationService.mockImplementation(() => ({
+      MockedNotificationService.mockImplementation(() => ({
         markAsRead: mockMarkAsRead,
       }));
 
