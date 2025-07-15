@@ -116,6 +116,7 @@
     "prettier": "^3.6.2",
     "supabase": "^2.30.4",
     "tailwindcss": "^4",
+    "tdd-guard": "^0.1.4",
     "typescript": "^5",
     "undici": "^6.20.0",
     "vitest": "^3.2.4",
