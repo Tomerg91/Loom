@@ -17,6 +17,57 @@ import {
 
 // GET /api/sessions - List sessions with pagination and filters
 export const GET = withErrorHandling(async (request: NextRequest) => {
+  // Authenticate user
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) {
+    return createErrorResponse(
+      'Authentication required',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Get authenticated user from Supabase
+  const { createClient } = await import('@/lib/supabase/server');
+  const supabase = await createClient();
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !authUser) {
+    return createErrorResponse(
+      'Invalid authentication token',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Get user profile from database
+  const { data: userProfile, error: profileError } = await supabase
+    .from('users')
+    .select('id, email, role, status')
+    .eq('id', authUser.id)
+    .single();
+
+  if (profileError || !userProfile) {
+    return createErrorResponse(
+      'User profile not found',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Check if user is active
+  if (userProfile.status !== 'active') {
+    return createErrorResponse(
+      'User account is not active',
+      HTTP_STATUS.FORBIDDEN
+    );
+  }
+
+  const _user = {
+    id: userProfile.id,
+    email: userProfile.email,
+    role: userProfile.role,
+    status: userProfile.status
+  };
+  
+  // Original route logic
   const query = parseQueryParams(request);
   
   // Validate query parameters
@@ -63,6 +114,65 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
 // POST /api/sessions - Create new session
 export const POST = withErrorHandling(async (request: NextRequest) => {
+  // Authenticate user
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) {
+    return createErrorResponse(
+      'Authentication required',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Get authenticated user from Supabase
+  const { createClient } = await import('@/lib/supabase/server');
+  const supabase = await createClient();
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !authUser) {
+    return createErrorResponse(
+      'Invalid authentication token',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Get user profile from database
+  const { data: userProfile, error: profileError } = await supabase
+    .from('users')
+    .select('id, email, role, status')
+    .eq('id', authUser.id)
+    .single();
+
+  if (profileError || !userProfile) {
+    return createErrorResponse(
+      'User profile not found',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Check if user is active
+  if (userProfile.status !== 'active') {
+    return createErrorResponse(
+      'User account is not active',
+      HTTP_STATUS.FORBIDDEN
+    );
+  }
+
+  // Check if user has coach role (required for creating sessions)
+  if (userProfile.role !== 'coach' && userProfile.role !== 'admin') {
+    return createErrorResponse(
+      'Access denied. Required role: coach',
+      HTTP_STATUS.FORBIDDEN
+    );
+  }
+
+  const _user = {
+    id: userProfile.id,
+    email: userProfile.email,
+    role: userProfile.role,
+    status: userProfile.status
+  };
+  
+  // Original route logic
   // Parse and validate request body
   const body = await request.json();
   const validation = validateRequestBody(createSessionSchema, body);

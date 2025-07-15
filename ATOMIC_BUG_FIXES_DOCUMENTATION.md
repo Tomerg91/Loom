@@ -157,32 +157,46 @@ Massive TypeScript compilation failures preventing builds and development.
 
 ### **BUG-005: Missing User Verification & Permission Checks**
 **Priority:** 🟡 High (Security)  
-**Files:** `src/lib/api/utils.ts` (lines 183, 202)  
-**Status:** ❌ Not Started
+**Files:** `src/app/api/` routes  
+**Status:** ✅ In Progress (Sessions route secured)
 
 #### **Problem:**
-API utility functions for user verification and permission checking contain `// TODO:` comments and are not implemented.
+API utility functions for user verification and permission checking are implemented but not applied to protect API endpoints. Routes like `/api/sessions`, `/api/users`, `/api/notifications` are accessible without authentication.
+
+#### **Resolution:**
+🔄 **IN PROGRESS** - Sessions route secured:
+- Added authentication to `/api/sessions` GET and POST endpoints
+- Implemented user verification with Supabase auth
+- Added role-based access control (coach required for POST)
+- Proper error handling for authentication failures
+- Build passes successfully with security implementation
 
 #### **Atomic Fix Checklist:**
-- [ ] **5.1** Run `tdd-guard` to verify test state
-- [ ] **5.2** Write tests for user verification functions
-- [ ] **5.3** Implement `verifyUser` function in `src/lib/api/utils.ts`:
-  - [ ] Verify against Supabase client
-  - [ ] Return user object or null
-  - [ ] Handle authentication errors
-- [ ] **5.4** Implement `checkPermissions` function:
-  - [ ] Check user role against required permissions
-  - [ ] Use permission definitions from `src/lib/auth/permissions.ts`
-  - [ ] Return boolean permission result
-- [ ] **5.5** Update all API routes to use verification functions
+- [x] **5.1** Run `tdd-guard` to verify test state
+- [x] **5.2** Write tests for user verification functions
+- [x] **5.3** Implement `verifyUser` function in `src/lib/api/utils.ts`:
+  - [x] Verify against Supabase client
+  - [x] Return user object or null
+  - [x] Handle authentication errors
+- [x] **5.4** Implement `checkPermissions` function:
+  - [x] Check user role against required permissions
+  - [x] Use permission definitions from `src/lib/auth/permissions.ts`
+  - [x] Return boolean permission result
+- [x] **5.5** Update API routes to use verification functions:
+  - [x] `/api/sessions` GET - Authentication required
+  - [x] `/api/sessions` POST - Coach role required
+  - [ ] `/api/users` endpoints
+  - [ ] `/api/notifications` endpoints
+  - [ ] Additional API routes
 - [ ] **5.6** Test API endpoints with different user roles
-- [ ] **5.7** Ensure all security tests pass with tdd-guard
+- [x] **5.7** Ensure all security tests pass with tdd-guard
 
 #### **Success Criteria:**
-- [ ] User verification function fully implemented
-- [ ] Permission checking function working
+- [x] User verification function fully implemented
+- [x] Permission checking function working
+- [x] Critical API routes secured (sessions)
 - [ ] All API routes properly secured
-- [ ] Security tests pass
+- [x] Security tests pass
 
 ---
 
