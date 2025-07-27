@@ -1,19 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { 
   Tabs,
   TabsContent,
@@ -25,18 +16,21 @@ import {
   Target,
   Calendar,
   Star,
-  Award,
   Activity,
-  CheckCircle,
-  Clock,
   BarChart3,
-  BookOpen,
-  MessageSquare,
-  Download,
-  RefreshCw,
   Plus
 } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import { 
+  DashboardHeader,
+  LoadingState,
+  ErrorState,
+  StatsCard,
+  ChartPlaceholder,
+  ProgressList,
+  SessionList,
+  AchievementGrid,
+  useFormattedDates
+} from '@/components/dashboard';
 
 interface ProgressData {
   overview: {
@@ -240,125 +234,26 @@ export function ClientProgressPage() {
     },
   });
 
-  // Memoize formatted dates for performance
-  const formattedDates = useMemo(() => {
-    if (!progress) return {};
-    
-    const dates: Record<string, string> = {};
-    
-    // Format goal target dates
-    progress.goals?.forEach(goal => {
-      dates[`goal-${goal.id}-target`] = formatDate(goal.targetDate);
-      goal.milestones?.forEach(milestone => {
-        if (milestone.completedDate) {
-          dates[`milestone-${milestone.id}`] = formatDate(milestone.completedDate);
-        }
-      });
-    });
-    
-    // Format session dates
-    progress.sessions?.forEach(session => {
-      dates[`session-${session.id}`] = formatDate(session.date);
-    });
-    
-    // Format achievement dates
-    progress.achievements?.forEach(achievement => {
-      dates[`achievement-${achievement.id}`] = formatDate(achievement.earnedDate);
-    });
-    
-    return dates;
-  }, [progress]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'not_started':
-        return 'bg-gray-100 text-gray-800';
-      case 'paused':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'border-red-200 bg-red-50';
-      case 'medium':
-        return 'border-yellow-200 bg-yellow-50';
-      case 'low':
-        return 'border-green-200 bg-green-50';
-      default:
-        return 'border-gray-200 bg-gray-50';
-    }
-  };
+  // Use the custom hook for formatted dates
+  const formattedDates = useFormattedDates(progress);
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">{t('title')}</h1>
-            <p className="text-muted-foreground">{t('description')}</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
+    return <LoadingState title={t('title')} description={t('description')} />;
   }
 
   if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">{t('title')}</h1>
-            <p className="text-muted-foreground">{t('description')}</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-destructive">Error loading progress data</p>
-        </div>
-      </div>
-    );
+    return <ErrorState title={t('title')} description={t('description')} message="Error loading progress data" />;
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{t('title')}</h1>
-          <p className="text-muted-foreground">{t('description')}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select time range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-              <SelectItem value="all">All time</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={() => refetch()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-        </div>
-      </div>
+      <DashboardHeader
+        title={t('title')}
+        description={t('description')}
+        timeRange={timeRange}
+        onTimeRangeChange={setTimeRange}
+        onRefresh={() => refetch()}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
@@ -371,80 +266,38 @@ export function ClientProgressPage() {
         <TabsContent value="overview" className="space-y-6">
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Overall Progress</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{progress?.overview.overallProgress}%</div>
-                <div className="w-full bg-secondary rounded-full h-2 mt-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all"
-                    style={{ width: `${progress?.overview.overallProgress}%` }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sessions Completed</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{progress?.overview.completedSessions}</div>
-                <p className="text-xs text-muted-foreground">
-                  {progress?.overview.upcomingSessions} upcoming
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Goals Achieved</CardTitle>
-                <Target className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {progress?.overview.completedGoals}/{progress?.overview.totalGoals}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {Math.round((progress?.overview.completedGoals || 0) / (progress?.overview.totalGoals || 1) * 100)}% completion rate
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Current Streak</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{progress?.overview.streakDays}</div>
-                <p className="text-xs text-muted-foreground">
-                  days of consistent progress
-                </p>
-              </CardContent>
-            </Card>
+            <StatsCard
+              title="Overall Progress"
+              value={`${progress?.overview.overallProgress}%`}
+              icon={TrendingUp}
+            />
+            <StatsCard
+              title="Sessions Completed"
+              value={progress?.overview.completedSessions || 0}
+              icon={Calendar}
+              description={`${progress?.overview.upcomingSessions} upcoming`}
+            />
+            <StatsCard
+              title="Goals Achieved"
+              value={`${progress?.overview.completedGoals}/${progress?.overview.totalGoals}`}
+              icon={Target}
+              description={`${Math.round((progress?.overview.completedGoals || 0) / (progress?.overview.totalGoals || 1) * 100)}% completion rate`}
+            />
+            <StatsCard
+              title="Current Streak"
+              value={progress?.overview.streakDays || 0}
+              icon={Activity}
+              description="days of consistent progress"
+            />
           </div>
 
           {/* Progress Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Progress Over Time</CardTitle>
-              <CardDescription>Your growth journey and key metrics</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
-                <div className="text-center">
-                  <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Chart visualization would go here</p>
-                  <p className="text-xs text-muted-foreground">Progress, mood, energy, and confidence trends</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ChartPlaceholder
+            title="Progress Over Time"
+            description="Your growth journey and key metrics"
+            icon={BarChart3}
+            submessage="Progress, mood, energy, and confidence trends"
+          />
 
           {/* Recent Activity */}
           <Card>
@@ -490,210 +343,27 @@ export function ClientProgressPage() {
           </div>
 
           {/* Goals List */}
-          <div className="space-y-4">
-            {progress?.goals.map((goal) => (
-              <Card key={goal.id} className={`border-l-4 ${getPriorityColor(goal.priority)}`}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{goal.title}</CardTitle>
-                      <CardDescription>{goal.description}</CardDescription>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge className={getStatusColor(goal.status)}>
-                        {goal.status.replace('_', ' ')}
-                      </Badge>
-                      <Badge variant="outline">{goal.category}</Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Progress Bar */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">Progress</span>
-                      <span className="text-sm text-muted-foreground">{goal.progress}%</span>
-                    </div>
-                    <div className="w-full bg-secondary rounded-full h-2">
-                      <div 
-                        className="bg-primary h-2 rounded-full transition-all"
-                        style={{ width: `${goal.progress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Target Date */}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Target Date:</span>
-                    <span className="font-medium">{formattedDates[`goal-${goal.id}-target`]}</span>
-                  </div>
-
-                  {/* Milestones */}
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Milestones</h4>
-                    <div className="space-y-2">
-                      {goal.milestones.map((milestone) => (
-                        <div key={milestone.id} className="flex items-center space-x-3">
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                            milestone.completed ? 'bg-primary border-primary' : 'border-muted-foreground'
-                          }`}>
-                            {milestone.completed && <CheckCircle className="w-3 h-3 text-white" />}
-                          </div>
-                          <span className={`text-sm ${milestone.completed ? 'line-through text-muted-foreground' : ''}`}>
-                            {milestone.title}
-                          </span>
-                          {milestone.completedDate && (
-                            <span className="text-xs text-muted-foreground">
-                              {formattedDates[`milestone-${milestone.id}`]}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 pt-2">
-                    <Button size="sm" variant="outline">
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      View Details
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      Discuss with Coach
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ProgressList 
+            goals={progress?.goals || []} 
+            formattedDates={formattedDates} 
+          />
         </TabsContent>
 
         <TabsContent value="sessions" className="space-y-6">
-          {/* Sessions List */}
-          <div className="space-y-4">
-            {progress?.sessions.map((session) => (
-              <Card key={session.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={session.coachAvatar} alt={session.coachName} />
-                        <AvatarFallback>
-                          {session.coachName.split(' ').map(n => n.charAt(0)).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <CardTitle className="text-lg">{session.topic}</CardTitle>
-                        <CardDescription>
-                          with {session.coachName} • {formattedDates[`session-${session.id}`]} • {session.duration} min
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={session.status === 'completed' ? 'default' : session.status === 'upcoming' ? 'secondary' : 'destructive'}>
-                        {session.status}
-                      </Badge>
-                      {session.rating && (
-                        <div className="flex items-center">
-                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-                          <span>{session.rating}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                {session.status === 'completed' && (
-                  <CardContent className="space-y-4">
-                    {session.notes && (
-                      <div>
-                        <h4 className="text-sm font-medium mb-2">Session Notes</h4>
-                        <p className="text-sm text-muted-foreground">{session.notes}</p>
-                      </div>
-                    )}
-                    
-                    {session.keyInsights && session.keyInsights.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium mb-2">Key Insights</h4>
-                        <ul className="space-y-1">
-                          {session.keyInsights.map((insight, index) => (
-                            <li key={index} className="text-sm text-muted-foreground flex items-start">
-                              <span className="text-primary mr-2">•</span>
-                              {insight}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {session.actionItems && session.actionItems.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium mb-2">Action Items</h4>
-                        <ul className="space-y-1">
-                          {session.actionItems.map((item, index) => (
-                            <li key={index} className="text-sm flex items-start">
-                              <CheckCircle className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </CardContent>
-                )}
-              </Card>
-            ))}
-          </div>
+          <SessionList 
+            sessions={progress?.sessions || []} 
+            formattedDates={formattedDates} 
+          />
         </TabsContent>
 
         <TabsContent value="achievements" className="space-y-6">
-          {/* Achievements Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {progress?.achievements.map((achievement) => (
-              <Card key={achievement.id} className="text-center">
-                <CardHeader>
-                  <div className="text-4xl mb-2">{achievement.icon}</div>
-                  <CardTitle className="text-lg">{achievement.title}</CardTitle>
-                  <CardDescription>{achievement.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline">{achievement.category}</Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {formattedDates[`achievement-${achievement.id}`]}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Achievement Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Achievement Statistics</CardTitle>
-              <CardDescription>Your milestone journey</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 border rounded-lg">
-                  <Award className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  <p className="text-2xl font-bold">{progress?.achievements.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Achievements</p>
-                </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <Clock className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  <p className="text-2xl font-bold">{progress?.overview.streakDays}</p>
-                  <p className="text-sm text-muted-foreground">Day Streak</p>
-                </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <Target className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  <p className="text-2xl font-bold">{progress?.overview.completedGoals}</p>
-                  <p className="text-sm text-muted-foreground">Goals Completed</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <AchievementGrid 
+            achievements={progress?.achievements || []} 
+            formattedDates={formattedDates}
+            totalAchievements={progress?.achievements.length}
+            streakDays={progress?.overview.streakDays}
+            completedGoals={progress?.overview.completedGoals}
+          />
         </TabsContent>
       </Tabs>
     </div>

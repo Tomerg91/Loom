@@ -5,16 +5,51 @@ import {
   withErrorHandling,
   HTTP_STATUS
 } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
 import { NotificationService } from '@/lib/database/notifications';
 
 // GET /api/notifications - List notifications with pagination and filters
 export const GET = withErrorHandling(async (request: NextRequest) => {
-  const supabase = createServerClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  // Authenticate user
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) {
+    return createErrorResponse(
+      'Authentication required',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
 
-  if (authError || !user) {
-    return createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+  // Get authenticated user from Supabase
+  const { createClient } = await import('@/lib/supabase/server');
+  const supabase = await createClient();
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !authUser) {
+    return createErrorResponse(
+      'Invalid authentication token',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Get user profile from database
+  const { data: userProfile, error: profileError } = await supabase
+    .from('users')
+    .select('id, email, role, status')
+    .eq('id', authUser.id)
+    .single();
+
+  if (profileError || !userProfile) {
+    return createErrorResponse(
+      'User profile not found',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Check if user is active
+  if (userProfile.status !== 'active') {
+    return createErrorResponse(
+      'User account is not active',
+      HTTP_STATUS.FORBIDDEN
+    );
   }
 
   const { searchParams } = request.nextUrl;
@@ -32,7 +67,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   // Fetch notifications and counts
   const [notifications, total, unreadCount] = await Promise.all([
     notificationService.getNotificationsPaginated({
-      userId: user.id,
+      userId: authUser.id,
       limit,
       offset,
       sortBy,
@@ -41,11 +76,11 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       type: type || undefined,
     }),
     notificationService.getNotificationsCount({
-      userId: user.id,
+      userId: authUser.id,
       isRead: unreadOnly ? false : undefined,
       type: type || undefined,
     }),
-    notificationService.getUnreadCount(user.id),
+    notificationService.getUnreadCount(authUser.id),
   ]);
 
   const totalPages = Math.ceil(total / limit);
@@ -68,22 +103,55 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
 // POST /api/notifications - Create new notification
 export const POST = withErrorHandling(async (request: NextRequest) => {
-  const supabase = createServerClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  // Authenticate user
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) {
+    return createErrorResponse(
+      'Authentication required',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
 
-  if (authError || !user) {
-    return createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+  // Get authenticated user from Supabase
+  const { createClient } = await import('@/lib/supabase/server');
+  const supabase = await createClient();
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !authUser) {
+    return createErrorResponse(
+      'Invalid authentication token',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Get user profile from database
+  const { data: userProfile, error: profileError } = await supabase
+    .from('users')
+    .select('id, email, role, status')
+    .eq('id', authUser.id)
+    .single();
+
+  if (profileError || !userProfile) {
+    return createErrorResponse(
+      'User profile not found',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Check if user is active
+  if (userProfile.status !== 'active') {
+    return createErrorResponse(
+      'User account is not active',
+      HTTP_STATUS.FORBIDDEN
+    );
   }
 
   // Check if user has permission to create notifications (admin or coach)
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.role !== 'admin' && profile?.role !== 'coach') {
-    return createErrorResponse('Insufficient permissions', HTTP_STATUS.FORBIDDEN);
+  if (userProfile.role !== 'admin' && userProfile.role !== 'coach') {
+    return createErrorResponse(
+      'Access denied. Required role: admin or coach',
+      HTTP_STATUS.FORBIDDEN
+    );
   }
 
   const body = await request.json();

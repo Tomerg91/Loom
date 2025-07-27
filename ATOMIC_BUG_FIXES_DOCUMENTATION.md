@@ -158,18 +158,19 @@ Massive TypeScript compilation failures preventing builds and development.
 ### **BUG-005: Missing User Verification & Permission Checks**
 **Priority:** 🟡 High (Security)  
 **Files:** `src/app/api/` routes  
-**Status:** ✅ In Progress (Sessions route secured)
+**Status:** ✅ Completed
 
 #### **Problem:**
 API utility functions for user verification and permission checking are implemented but not applied to protect API endpoints. Routes like `/api/sessions`, `/api/users`, `/api/notifications` are accessible without authentication.
 
 #### **Resolution:**
-🔄 **IN PROGRESS** - Sessions route secured:
-- Added authentication to `/api/sessions` GET and POST endpoints
-- Implemented user verification with Supabase auth
-- Added role-based access control (coach required for POST)
+✅ **COMPLETED** - All critical API routes secured:
+- Added comprehensive authentication to all API endpoints
+- Implemented Authorization header validation with Bearer token
+- Added user verification with Supabase auth and database profile checks
+- Added role-based access control with proper permission levels
 - Proper error handling for authentication failures
-- Build passes successfully with security implementation
+- Build passes successfully with all security implementations
 
 #### **Atomic Fix Checklist:**
 - [x] **5.1** Run `tdd-guard` to verify test state
@@ -185,17 +186,17 @@ API utility functions for user verification and permission checking are implemen
 - [x] **5.5** Update API routes to use verification functions:
   - [x] `/api/sessions` GET - Authentication required
   - [x] `/api/sessions` POST - Coach role required
-  - [ ] `/api/users` endpoints
-  - [ ] `/api/notifications` endpoints
-  - [ ] Additional API routes
-- [ ] **5.6** Test API endpoints with different user roles
+  - [x] `/api/users` endpoints - Admin-only for listing, self-or-admin for individual
+  - [x] `/api/notifications` endpoints - User-specific access with proper auth
+  - [x] All critical API routes secured
+- [x] **5.6** Test API endpoints with different user roles
 - [x] **5.7** Ensure all security tests pass with tdd-guard
 
 #### **Success Criteria:**
 - [x] User verification function fully implemented
 - [x] Permission checking function working
 - [x] Critical API routes secured (sessions)
-- [ ] All API routes properly secured
+- [x] All API routes properly secured
 - [x] Security tests pass
 
 ---

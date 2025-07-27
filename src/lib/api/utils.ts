@@ -4,6 +4,7 @@ import type { ApiResponse, ApiError } from './types';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/supabase';
 import { config } from '@/lib/config';
+import { hasPermission, requirePermission as requirePermissionCheck, canAccessResource, type Permission, type Role } from '@/lib/auth/permissions';
 
 type UserRole = Database['public']['Tables']['users']['Row']['role'];
 type AuthenticatedUser = {
@@ -82,16 +83,64 @@ export function createSuccessResponse<T>(
   );
 }
 
-// Request validation
+// Enhanced request validation with security measures
 export function validateRequestBody<T>(
   schema: ZodSchema<T>,
-  body: unknown
+  body: unknown,
+  options: {
+    sanitize?: boolean;
+    maxDepth?: number;
+    maxSize?: number;
+  } = {}
 ): { success: true; data: T } | { success: false; error: ApiError } {
+  const { sanitize = true, maxDepth = 10, maxSize = 1024 * 1024 } = options;
+  
   try {
-    const data = schema.parse(body);
+    // Check payload size
+    const bodyStr = JSON.stringify(body);
+    if (bodyStr.length > maxSize) {
+      return {
+        success: false,
+        error: createApiError(
+          'Request payload too large',
+          'PAYLOAD_TOO_LARGE',
+          { maxSize, actualSize: bodyStr.length }
+        ),
+      };
+    }
+    
+    // Check object depth to prevent DoS attacks
+    if (checkObjectDepth(body, maxDepth) > maxDepth) {
+      return {
+        success: false,
+        error: createApiError(
+          'Request payload too deeply nested',
+          'PAYLOAD_TOO_DEEP',
+          { maxDepth }
+        ),
+      };
+    }
+    
+    // Sanitize input if requested
+    let sanitizedBody = body;
+    if (sanitize && typeof body === 'object' && body !== null) {
+      sanitizedBody = sanitizeObject(body);
+    }
+    
+    const data = schema.parse(sanitizedBody);
     return { success: true, data };
   } catch (error) {
     if (error instanceof ZodError) {
+      // Log validation failures for security monitoring
+      console.warn('Request validation failed:', {
+        issues: error.issues.map(issue => ({
+          path: issue.path.join('.'),
+          message: issue.message,
+          code: issue.code
+        })),
+        timestamp: new Date().toISOString()
+      });
+      
       return {
         success: false,
         error: createApiError(
@@ -106,6 +155,74 @@ export function validateRequestBody<T>(
       error: createApiError('Invalid request body', 'INVALID_BODY'),
     };
   }
+}
+
+// Helper function to check object depth
+function checkObjectDepth(obj: unknown, maxDepth: number, currentDepth = 0): number {
+  if (currentDepth > maxDepth) return currentDepth;
+  if (typeof obj !== 'object' || obj === null) return currentDepth;
+  
+  let maxChildDepth = currentDepth;
+  for (const value of Object.values(obj)) {
+    const childDepth = checkObjectDepth(value, maxDepth, currentDepth + 1);
+    maxChildDepth = Math.max(maxChildDepth, childDepth);
+  }
+  
+  return maxChildDepth;
+}
+
+// Helper function to sanitize object properties
+function sanitizeObject(obj: unknown): unknown {
+  if (typeof obj !== 'object' || obj === null) {
+    return sanitizeValue(obj);
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeObject(item));
+  }
+  
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    // Sanitize property names to prevent prototype pollution
+    const sanitizedKey = sanitizePropertyName(key);
+    if (sanitizedKey) {
+      sanitized[sanitizedKey] = sanitizeObject(value);
+    }
+  }
+  
+  return sanitized;
+}
+
+// Helper function to sanitize individual values
+function sanitizeValue(value: unknown): unknown {
+  if (typeof value === 'string') {
+    // Remove potential XSS vectors and normalize whitespace
+    return value
+      .replace(/<script[^>]*>.*?<\/script>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+=/gi, '')
+      .trim()
+      .substring(0, 10000); // Limit string length
+  }
+  
+  return value;
+}
+
+// Helper function to sanitize property names
+function sanitizePropertyName(key: string): string | null {
+  // Prevent prototype pollution
+  const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
+  if (dangerousKeys.includes(key.toLowerCase())) {
+    return null;
+  }
+  
+  // Only allow alphanumeric characters, underscores, and hyphens
+  if (!/^[a-zA-Z0-9_-]+$/.test(key)) {
+    return null;
+  }
+  
+  return key.substring(0, 100); // Limit key length
 }
 
 // Query parameter helpers
@@ -185,44 +302,107 @@ export function requireAuth<T extends unknown[]>(
 ) {
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
-      // This will be implemented with Supabase auth
+      // Extract and validate authorization header
       const authHeader = request.headers.get('authorization');
-      if (!authHeader) {
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return createErrorResponse(
-          'Authentication required',
+          'Authentication required. Please provide a valid Bearer token.',
           HTTP_STATUS.UNAUTHORIZED
         );
       }
 
-      // Get authenticated user from Supabase
+      const token = authHeader.split(' ')[1];
+      if (!token || token.length < 10) {
+        return createErrorResponse(
+          'Invalid authentication token format',
+          HTTP_STATUS.UNAUTHORIZED
+        );
+      }
+
+      // Get authenticated user from Supabase with proper error handling
       const supabase = await createClient();
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
 
-      if (authError || !authUser) {
+      if (authError) {
+        // Log security event for monitoring
+        console.warn('Authentication failed:', {
+          error: authError.message,
+          timestamp: new Date().toISOString(),
+          ip: request.headers.get('x-forwarded-for') || 'unknown'
+        });
+        
         return createErrorResponse(
-          'Invalid authentication token',
+          'Invalid or expired authentication token',
           HTTP_STATUS.UNAUTHORIZED
         );
       }
 
-      // Get user profile from database
+      if (!authUser || !authUser.id || !authUser.email) {
+        return createErrorResponse(
+          'Authentication token does not contain valid user data',
+          HTTP_STATUS.UNAUTHORIZED
+        );
+      }
+
+      // Verify token expiry explicitly
+      const tokenExpiry = authUser.exp;
+      if (tokenExpiry && tokenExpiry * 1000 < Date.now()) {
+        return createErrorResponse(
+          'Authentication token has expired',
+          HTTP_STATUS.UNAUTHORIZED
+        );
+      }
+
+      // Get user profile from database with additional security checks
       const { data: userProfile, error: profileError } = await supabase
         .from('users')
-        .select('id, email, role, status')
+        .select('id, email, role, status, created_at, updated_at')
         .eq('id', authUser.id)
+        .eq('email', authUser.email) // Additional verification
         .single();
 
-      if (profileError || !userProfile) {
+      if (profileError) {
+        console.warn('User profile lookup failed:', {
+          userId: authUser.id,
+          error: profileError.message,
+          timestamp: new Date().toISOString()
+        });
+        
         return createErrorResponse(
-          'User profile not found',
+          'User profile not found or access denied',
           HTTP_STATUS.UNAUTHORIZED
         );
       }
 
-      // Check if user is active
-      if (userProfile.status !== 'active') {
+      if (!userProfile) {
         return createErrorResponse(
-          'User account is not active',
+          'User profile does not exist',
+          HTTP_STATUS.UNAUTHORIZED
+        );
+      }
+
+      // Enhanced status checks
+      if (!userProfile.status || userProfile.status !== 'active') {
+        return createErrorResponse(
+          `User account is ${userProfile.status || 'inactive'}. Please contact support.`,
+          HTTP_STATUS.FORBIDDEN
+        );
+      }
+
+      // Validate role exists and is valid
+      const validRoles: UserRole[] = ['admin', 'coach', 'client'];
+      if (!userProfile.role || !validRoles.includes(userProfile.role)) {
+        return createErrorResponse(
+          'User account has invalid role configuration',
+          HTTP_STATUS.FORBIDDEN
+        );
+      }
+
+      // Check for account suspension or security flags
+      const accountAge = new Date().getTime() - new Date(userProfile.created_at).getTime();
+      if (accountAge < 0) {
+        return createErrorResponse(
+          'Invalid account creation date detected',
           HTTP_STATUS.FORBIDDEN
         );
       }
@@ -234,11 +414,24 @@ export function requireAuth<T extends unknown[]>(
         status: userProfile.status
       };
       
+      // Update last seen timestamp for security auditing
+      await supabase
+        .from('users')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('id', userProfile.id);
+      
       return await handler(user, ...args);
-    } catch {
+    } catch (error) {
+      // Log security event
+      console.error('Authentication error:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+        ip: request.headers.get('x-forwarded-for') || 'unknown'
+      });
+      
       return createErrorResponse(
-        'Authentication failed',
-        HTTP_STATUS.UNAUTHORIZED
+        'Authentication failed due to server error',
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
       );
     }
   };
@@ -251,8 +444,72 @@ const ROLE_HIERARCHY: Record<UserRole, number> = {
   client: 1,
 };
 
-// Permission helpers
-export function requirePermission(requiredRole: UserRole) {
+// Enhanced permission helpers with granular access control
+export function requirePermission(requiredPermission: Permission) {
+  return function<T extends unknown[]>(
+    handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
+  ) {
+    return async (user: AuthenticatedUser, ...args: T): Promise<NextResponse> => {
+      try {
+        // Use the centralized permission checking system
+        requirePermissionCheck(user.role as Role, requiredPermission);
+        
+        // Log permission check for auditing
+        console.debug('Permission granted:', {
+          userId: user.id,
+          role: user.role,
+          permission: requiredPermission,
+          timestamp: new Date().toISOString()
+        });
+        
+        return await handler(user, ...args);
+      } catch (error) {
+        // Log permission denial for security monitoring
+        console.warn('Permission denied:', {
+          userId: user.id,
+          role: user.role,
+          requiredPermission,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString()
+        });
+        
+        return createErrorResponse(
+          `Access denied. Required permission: ${requiredPermission}`,
+          HTTP_STATUS.FORBIDDEN
+        );
+      }
+    };
+  };
+}
+
+// Resource-based permission checking
+export function requireResourceAccess(resource: string, action: string) {
+  return function<T extends unknown[]>(
+    handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
+  ) {
+    return async (user: AuthenticatedUser, ...args: T): Promise<NextResponse> => {
+      if (!canAccessResource(user.role as Role, resource, action)) {
+        console.warn('Resource access denied:', {
+          userId: user.id,
+          role: user.role,
+          resource,
+          action,
+          timestamp: new Date().toISOString()
+        });
+        
+        return createErrorResponse(
+          `Access denied. Cannot ${action} ${resource}`,
+          HTTP_STATUS.FORBIDDEN
+        );
+      }
+      
+      return await handler(user, ...args);
+    };
+  };
+}
+
+// Legacy role-based permission checking (maintained for backward compatibility)
+export function requireRole(requiredRole: UserRole) {
   return function<T extends unknown[]>(
     handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
   ) {
@@ -262,6 +519,13 @@ export function requirePermission(requiredRole: UserRole) {
       const requiredLevel = ROLE_HIERARCHY[requiredRole];
       
       if (userLevel < requiredLevel) {
+        console.warn('Role access denied:', {
+          userId: user.id,
+          userRole: user.role,
+          requiredRole,
+          timestamp: new Date().toISOString()
+        });
+        
         return createErrorResponse(
           `Access denied. Required role: ${requiredRole}`,
           HTTP_STATUS.FORBIDDEN
@@ -273,60 +537,269 @@ export function requirePermission(requiredRole: UserRole) {
   };
 }
 
-// Specific role requirement helpers
+// Specific role requirement helpers (updated to use new permission system)
 export function requireAdmin<T extends unknown[]>(
   handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
 ) {
-  return requirePermission('admin')(handler);
+  return requirePermission('admin:read')(handler);
 }
 
 export function requireCoach<T extends unknown[]>(
   handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
 ) {
-  return requirePermission('coach')(handler);
+  return requirePermission('coach:read')(handler);
 }
 
 export function requireClient<T extends unknown[]>(
   handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
 ) {
-  return requirePermission('client')(handler);
+  return requirePermission('client:read')(handler);
 }
 
-// Rate limiting helpers (basic implementation)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+// Ownership-based access control
+export function requireOwnership<T extends unknown[]>(
+  handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>,
+  getOwnerId: (user: AuthenticatedUser, ...args: T) => Promise<string | null>
+) {
+  return async (user: AuthenticatedUser, ...args: T): Promise<NextResponse> => {
+    try {
+      const ownerId = await getOwnerId(user, ...args);
+      
+      // Allow access if user is the owner or has admin role
+      if (user.id === ownerId || user.role === 'admin') {
+        return await handler(user, ...args);
+      }
+      
+      // For coaches, allow access to their clients' resources
+      if (user.role === 'coach' && ownerId) {
+        const supabase = await createClient();
+        const { data: hasAccess } = await supabase
+          .from('sessions')
+          .select('id')
+          .eq('coach_id', user.id)
+          .eq('client_id', ownerId)
+          .limit(1);
+          
+        if (hasAccess && hasAccess.length > 0) {
+          return await handler(user, ...args);
+        }
+      }
+      
+      console.warn('Ownership access denied:', {
+        userId: user.id,
+        role: user.role,
+        ownerId,
+        timestamp: new Date().toISOString()
+      });
+      
+      return createErrorResponse(
+        'Access denied. You can only access your own resources.',
+        HTTP_STATUS.FORBIDDEN
+      );
+    } catch (error) {
+      console.error('Ownership check failed:', {
+        userId: user.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+      
+      return createErrorResponse(
+        'Access denied due to ownership verification failure',
+        HTTP_STATUS.FORBIDDEN
+      );
+    }
+  };
+}
 
-export function rateLimit(maxRequests: number = 100, windowMs: number = 60000) {
+// Enhanced rate limiting with security features
+const rateLimitMap = new Map<string, { count: number; resetTime: number; suspiciousActivity: boolean }>();
+const blockedIPs = new Set<string>();
+const MAX_MAP_SIZE = 10000; // Prevent memory exhaustion
+
+export function rateLimit(
+  maxRequests: number = 100, 
+  windowMs: number = 60000,
+  options: {
+    skipSuccessfulRequests?: boolean;
+    skipFailedRequests?: boolean;
+    blockDuration?: number;
+    enableSuspiciousActivityDetection?: boolean;
+  } = {}
+) {
+  const { 
+    skipSuccessfulRequests = false,
+    skipFailedRequests = false,
+    blockDuration = 15 * 60 * 1000, // 15 minutes
+    enableSuspiciousActivityDetection = true
+  } = options;
+  
   return function<T extends unknown[]>(
     handler: (request: NextRequest, ...args: T) => Promise<NextResponse>
   ) {
     return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
-      const ip = (request as { ip?: string }).ip || request.headers.get('x-forwarded-for') || 'unknown';
+      const ip = getClientIP(request);
       const now = Date.now();
+      const key = `${ip}:${request.nextUrl.pathname}`;
+      
+      // Check if IP is blocked
+      if (blockedIPs.has(ip)) {
+        console.warn('Blocked IP attempted access:', {
+          ip,
+          path: request.nextUrl.pathname,
+          userAgent: request.headers.get('user-agent'),
+          timestamp: new Date().toISOString()
+        });
+        
+        return createErrorResponse(
+          'Access temporarily blocked due to suspicious activity',
+          HTTP_STATUS.TOO_MANY_REQUESTS
+        );
+      }
 
-      // Clean up old entries
-      const entries = Array.from(rateLimitMap.entries());
-      for (const [key, value] of entries) {
-        if (value.resetTime < now) {
-          rateLimitMap.delete(key);
+      // Clean up old entries and prevent memory exhaustion
+      if (rateLimitMap.size > MAX_MAP_SIZE) {
+        const entries = Array.from(rateLimitMap.entries());
+        const expiredKeys = entries
+          .filter(([, value]) => value.resetTime < now)
+          .map(([key]) => key);
+          
+        expiredKeys.forEach(key => rateLimitMap.delete(key));
+        
+        // If still too large, remove oldest entries
+        if (rateLimitMap.size > MAX_MAP_SIZE * 0.8) {
+          const oldestKeys = entries
+            .sort(([, a], [, b]) => a.resetTime - b.resetTime)
+            .slice(0, Math.floor(MAX_MAP_SIZE * 0.2))
+            .map(([key]) => key);
+            
+          oldestKeys.forEach(key => rateLimitMap.delete(key));
         }
       }
 
-      const current = rateLimitMap.get(ip);
+      const current = rateLimitMap.get(key);
       if (!current || current.resetTime < now) {
-        rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
+        rateLimitMap.set(key, { 
+          count: 1, 
+          resetTime: now + windowMs, 
+          suspiciousActivity: false 
+        });
       } else {
         current.count++;
+        
+        // Detect suspicious activity patterns
+        if (enableSuspiciousActivityDetection) {
+          const requestRate = current.count / ((now - (current.resetTime - windowMs)) / 1000);
+          if (requestRate > maxRequests / (windowMs / 1000) * 2) {
+            current.suspiciousActivity = true;
+          }
+        }
+        
         if (current.count > maxRequests) {
-          return createErrorResponse(
-            'Too many requests',
+          // Log rate limit violation
+          console.warn('Rate limit exceeded:', {
+            ip,
+            path: request.nextUrl.pathname,
+            count: current.count,
+            maxRequests,
+            windowMs,
+            suspiciousActivity: current.suspiciousActivity,
+            userAgent: request.headers.get('user-agent'),
+            timestamp: new Date().toISOString()
+          });
+          
+          // Block IP if showing suspicious activity
+          if (current.suspiciousActivity && current.count > maxRequests * 2) {
+            blockedIPs.add(ip);
+            setTimeout(() => blockedIPs.delete(ip), blockDuration);
+            
+            console.error('IP blocked due to excessive requests:', {
+              ip,
+              blockDuration: blockDuration / 1000 / 60,
+              timestamp: new Date().toISOString()
+            });
+          }
+          
+          const response = createErrorResponse(
+            'Too many requests. Please try again later.',
             HTTP_STATUS.TOO_MANY_REQUESTS
           );
+          
+          // Add rate limit headers
+          response.headers.set('X-RateLimit-Limit', maxRequests.toString());
+          response.headers.set('X-RateLimit-Remaining', '0');
+          response.headers.set('X-RateLimit-Reset', Math.ceil(current.resetTime / 1000).toString());
+          response.headers.set('Retry-After', Math.ceil((current.resetTime - now) / 1000).toString());
+          
+          return response;
         }
       }
 
-      return await handler(request, ...args);
+      // Execute the handler
+      const response = await handler(request, ...args);
+      
+      // Update rate limit based on response status
+      const responseStatus = response.status;
+      const currentEntry = rateLimitMap.get(key);
+      
+      if (currentEntry) {
+        // Don't count successful requests if configured
+        if (skipSuccessfulRequests && responseStatus < 400) {
+          currentEntry.count = Math.max(0, currentEntry.count - 1);
+        }
+        
+        // Don't count failed requests if configured
+        if (skipFailedRequests && responseStatus >= 400) {
+          currentEntry.count = Math.max(0, currentEntry.count - 1);
+        }
+        
+        // Add rate limit headers to successful responses
+        if (responseStatus < 400) {
+          response.headers.set('X-RateLimit-Limit', maxRequests.toString());
+          response.headers.set('X-RateLimit-Remaining', Math.max(0, maxRequests - currentEntry.count).toString());
+          response.headers.set('X-RateLimit-Reset', Math.ceil(currentEntry.resetTime / 1000).toString());
+        }
+      }
+
+      return response;
     };
   };
+}
+
+// Helper function to get client IP with multiple fallbacks
+function getClientIP(request: NextRequest): string {
+  // Try various headers for IP address
+  const headers = [
+    'x-forwarded-for',
+    'x-real-ip',
+    'x-client-ip',
+    'cf-connecting-ip', // Cloudflare
+    'x-forwarded', 
+    'forwarded-for',
+    'forwarded'
+  ];
+  
+  for (const header of headers) {
+    const value = request.headers.get(header);
+    if (value) {
+      // X-Forwarded-For can contain multiple IPs, take the first one
+      const ip = value.split(',')[0].trim();
+      if (isValidIP(ip)) {
+        return ip;
+      }
+    }
+  }
+  
+  // Fallback to connection IP or unknown
+  return (request as any).ip || 'unknown';
+}
+
+// Helper function to validate IP address format
+function isValidIP(ip: string): boolean {
+  // Basic IPv4 and IPv6 validation
+  const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+  
+  return ipv4Regex.test(ip) || ipv6Regex.test(ip);
 }
 
 // CORS helpers

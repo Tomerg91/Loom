@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { collectWebVitals, PerformanceMonitor, checkPerformanceBudget } from '@/lib/performance/web-vitals';
 import { monitorMemoryUsage } from '@/lib/performance/optimization';
 import { trackPerformance } from '@/lib/monitoring/analytics';
@@ -31,7 +31,10 @@ interface PerformanceData {
 }
 
 // Maximum entries to keep in arrays to prevent memory leaks
-const MAX_ENTRIES = 100;
+const MAX_ENTRIES = 50; // Reduced for better memory management
+const MEMORY_CHECK_INTERVAL = 10000; // 10 seconds
+const BUDGET_CHECK_INTERVAL = 30000; // 30 seconds
+const CLEANUP_INTERVAL = 60000; // 1 minute
 
 export function PerformanceMonitorComponent() {
   const [performanceData, setPerformanceData] = useState<PerformanceData>({
@@ -41,12 +44,47 @@ export function PerformanceMonitorComponent() {
     longTasks: [],
     layoutShifts: [],
   });
+  
+  // Use refs to track intervals and observers for proper cleanup
+  const memoryIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const budgetIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const cleanupIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const monitorRef = useRef<InstanceType<typeof PerformanceMonitor> | null>(null);
+  
+  // Memoized cleanup function to prevent excessive array operations
+  const cleanupData = useCallback(() => {
+    setPerformanceData(prev => {
+      // Only update if arrays are getting large
+      if (prev.longTasks.length <= MAX_ENTRIES && prev.layoutShifts.length <= MAX_ENTRIES) {
+        return prev;
+      }
+      
+      return {
+        ...prev,
+        longTasks: prev.longTasks.slice(-MAX_ENTRIES),
+        layoutShifts: prev.layoutShifts.slice(-MAX_ENTRIES),
+      };
+    });
+  }, []);
 
   useEffect(() => {
-    const monitor = PerformanceMonitor.getInstance();
+    // Initialize monitor only once
+    if (!monitorRef.current) {
+      monitorRef.current = PerformanceMonitor.getInstance();
+    }
+    const monitor = monitorRef.current;
     
-    // Collect Web Vitals
+    // Collect Web Vitals with throttling to prevent excessive updates
+    const webVitalsThrottle = new Map<string, number>();
     collectWebVitals((metric) => {
+      const lastUpdate = webVitalsThrottle.get(metric.name) || 0;
+      const now = Date.now();
+      
+      // Throttle updates to once per second per metric
+      if (now - lastUpdate < 1000) return;
+      
+      webVitalsThrottle.set(metric.name, now);
+      
       setPerformanceData(prev => ({
         ...prev,
         webVitals: {
@@ -59,13 +97,24 @@ export function PerformanceMonitorComponent() {
       trackPerformance(metric.name, metric.value, window.location.pathname);
     });
 
-    // Monitor long tasks with limited storage
+    // Monitor long tasks with better memory management
     monitor.observeLongTasks((entries) => {
-      setPerformanceData(prev => ({
-        ...prev,
-        longTasks: [...prev.longTasks, ...entries].slice(-MAX_ENTRIES),
-      }));
+      if (entries.length === 0) return;
       
+      setPerformanceData(prev => {
+        const newLongTasks = [...prev.longTasks, ...entries];
+        // Only keep the most recent entries
+        const trimmedTasks = newLongTasks.length > MAX_ENTRIES 
+          ? newLongTasks.slice(-MAX_ENTRIES) 
+          : newLongTasks;
+          
+        return {
+          ...prev,
+          longTasks: trimmedTasks,
+        };
+      });
+      
+      // Process entries without storing them all in memory
       entries.forEach(entry => {
         if (entry.duration > 50) {
           trackPerformance('long_task', entry.duration, window.location.pathname);
@@ -73,16 +122,26 @@ export function PerformanceMonitorComponent() {
       });
     });
 
-    // Monitor layout shifts with limited storage
+    // Monitor layout shifts with better memory management
     monitor.observeLayoutShifts((entries) => {
-      setPerformanceData(prev => ({
-        ...prev,
-        layoutShifts: [...prev.layoutShifts, ...entries].slice(-MAX_ENTRIES),
-      }));
+      if (entries.length === 0) return;
+      
+      setPerformanceData(prev => {
+        const newLayoutShifts = [...prev.layoutShifts, ...entries];
+        // Only keep the most recent entries
+        const trimmedShifts = newLayoutShifts.length > MAX_ENTRIES 
+          ? newLayoutShifts.slice(-MAX_ENTRIES) 
+          : newLayoutShifts;
+          
+        return {
+          ...prev,
+          layoutShifts: trimmedShifts,
+        };
+      });
     });
 
-    // Monitor memory usage
-    const memoryInterval = setInterval(() => {
+    // Monitor memory usage with proper interval management
+    memoryIntervalRef.current = setInterval(() => {
       const memoryUsage = monitorMemoryUsage();
       if (memoryUsage) {
         setPerformanceData(prev => ({
@@ -95,10 +154,10 @@ export function PerformanceMonitorComponent() {
           trackPerformance('high_memory_usage', memoryUsage.usage, window.location.pathname);
         }
       }
-    }, 10000); // Check every 10 seconds
+    }, MEMORY_CHECK_INTERVAL);
 
-    // Check performance budget - use current state
-    const budgetInterval = setInterval(() => {
+    // Check performance budget with proper interval management
+    budgetIntervalRef.current = setInterval(() => {
       setPerformanceData(prev => {
         const budgetStatus = checkPerformanceBudget(prev.webVitals);
         return {
@@ -106,14 +165,52 @@ export function PerformanceMonitorComponent() {
           budgetStatus,
         };
       });
-    }, 30000); // Check every 30 seconds
+    }, BUDGET_CHECK_INTERVAL);
+    
+    // Periodic cleanup to prevent memory leaks
+    cleanupIntervalRef.current = setInterval(cleanupData, CLEANUP_INTERVAL);
 
+    // Cleanup function
     return () => {
-      monitor.disconnect();
-      clearInterval(memoryInterval);
-      clearInterval(budgetInterval);
+      // Disconnect monitor
+      if (monitor) {
+        monitor.disconnect();
+      }
+      
+      // Clear all intervals
+      if (memoryIntervalRef.current) {
+        clearInterval(memoryIntervalRef.current);
+        memoryIntervalRef.current = null;
+      }
+      
+      if (budgetIntervalRef.current) {
+        clearInterval(budgetIntervalRef.current);
+        budgetIntervalRef.current = null;
+      }
+      
+      if (cleanupIntervalRef.current) {
+        clearInterval(cleanupIntervalRef.current);
+        cleanupIntervalRef.current = null;
+      }
+      
+      // Clear throttle maps
+      webVitalsThrottle.clear();
     };
-  }, []); // Empty dependency array to run only once
+  }, [cleanupData]); // Only depend on cleanupData callback
+
+  // Additional cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Final cleanup when component unmounts
+      setPerformanceData({
+        webVitals: {},
+        memoryUsage: null,
+        budgetStatus: null,
+        longTasks: [],
+        layoutShifts: [],
+      });
+    };
+  }, []);
 
   // Only show in development
   if (process.env.NODE_ENV !== 'development') {

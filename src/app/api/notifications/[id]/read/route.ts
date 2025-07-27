@@ -5,7 +5,6 @@ import {
   withErrorHandling,
   HTTP_STATUS
 } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
 import { NotificationService } from '@/lib/database/notifications';
 
 interface RouteParams {
@@ -17,15 +16,52 @@ interface RouteParams {
 // POST /api/notifications/[id]/read - Mark notification as read
 export const POST = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
-  const supabase = createServerClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  // Authenticate user
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) {
+    return createErrorResponse(
+      'Authentication required',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
 
-  if (authError || !user) {
-    return createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+  // Get authenticated user from Supabase
+  const { createClient } = await import('@/lib/supabase/server');
+  const supabase = await createClient();
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !authUser) {
+    return createErrorResponse(
+      'Invalid authentication token',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Get user profile from database
+  const { data: userProfile, error: profileError } = await supabase
+    .from('users')
+    .select('id, email, role, status')
+    .eq('id', authUser.id)
+    .single();
+
+  if (profileError || !userProfile) {
+    return createErrorResponse(
+      'User profile not found',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
+
+  // Check if user is active
+  if (userProfile.status !== 'active') {
+    return createErrorResponse(
+      'User account is not active',
+      HTTP_STATUS.FORBIDDEN
+    );
   }
 
   const notificationService = new NotificationService(true);
-  const success = await notificationService.markSingleAsRead(id, user.id);
+  const success = await notificationService.markSingleAsRead(id, authUser.id);
 
   if (!success) {
     return createErrorResponse('Failed to mark notification as read', HTTP_STATUS.INTERNAL_SERVER_ERROR);

@@ -6,9 +6,9 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    optimizeCss: true,
-    scrollRestoration: true,
-    webVitalsAttribution: ['CLS', 'LCP'],
+    // optimizeCss is now stable and enabled by default in Next.js 15
+    // scrollRestoration is now stable and enabled by default
+    // webVitalsAttribution is deprecated - use built-in Web Vitals reporting
     optimizePackageImports: [
       '@radix-ui/react-icons',
       '@radix-ui/react-dialog',
@@ -20,9 +20,21 @@ const nextConfig = {
     ],
   },
   
+  // Turbopack configuration (moved from experimental in Next.js 15)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+  },
+  
   // Performance optimizations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
+    // React compiler optimizations for Next.js 15
+    reactRemoveProperties: process.env.NODE_ENV === 'production',
   },
   
   // Security headers
@@ -121,43 +133,38 @@ const nextConfig = {
       },
     ];
 
-    // Optimize bundle size
+    // Optimize bundle size for Next.js 15
     if (!dev && !isServer) {
-      config.optimization.splitChunks = {
-        chunks: 'all',
-        cacheGroups: {
-          default: {
-            minChunks: 2,
-            priority: -20,
-            reuseExistingChunk: true,
-          },
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            priority: -10,
-            chunks: 'all',
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            priority: -5,
-            reuseExistingChunk: true,
-            chunks: 'all',
+      // Next.js 15 has improved automatic chunking, but we can still customize
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...config.optimization.splitChunks,
+          cacheGroups: {
+            ...config.optimization.splitChunks.cacheGroups,
+            // Framework chunk for React/Next.js core
+            framework: {
+              chunks: 'all',
+              name: 'framework',
+              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|next)[\\/]/,
+              priority: 40,
+              enforce: true,
+            },
+            // Shared libraries
+            lib: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'lib',
+              priority: 30,
+              chunks: 'all',
+              minChunks: 1,
+            },
           },
         },
       };
     }
     
-    // Security headers for webpack dev server
-    if (dev && !isServer) {
-      config.devServer = {
-        ...config.devServer,
-        headers: {
-          'X-Frame-Options': 'DENY',
-          'X-Content-Type-Options': 'nosniff',
-        },
-      };
-    }
+    // Security headers are now handled through the headers() function above
+    // devServer configuration is deprecated in Next.js 15
 
     // Bundle analyzer
     if (process.env.ANALYZE === 'true') {
@@ -185,6 +192,9 @@ const nextConfig = {
   // Environment variables validation
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
 
   // Redirects
@@ -238,12 +248,9 @@ const nextConfig = {
   },
   
   // Performance monitoring
-  onDemandEntries: {
-    maxInactiveAge: 25 * 1000,
-    pagesBufferLength: 2,
-  },
+  // onDemandEntries is deprecated in Next.js 15 - automatic optimization is now built-in
   
-  // Dev indicators
+  // Dev indicators - simplified in Next.js 15
   devIndicators: {
     position: 'bottom-right',
   },
@@ -259,6 +266,15 @@ const nextConfig = {
   
   // Skip trailing slash redirect
   skipTrailingSlashRedirect: true,
+  
+  // Next.js 15 caching improvements
+  cacheHandler: undefined, // Use default caching
+  cacheMaxMemorySize: 50 * 1024 * 1024, // 50MB
+  
+  // New Next.js 15 performance features
+  httpAgentOptions: {
+    keepAlive: true,
+  },
 };
 
 module.exports = withNextIntl(nextConfig);
