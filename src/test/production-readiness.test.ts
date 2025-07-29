@@ -136,7 +136,7 @@ describe('Production Readiness', () => {
       // Test database connectivity
       try {
         const { createClient } = await import('@/lib/supabase/server');
-        const supabase = createClient();
+        const supabase = await createClient();
         
         // Simple connectivity test
         const { error } = await supabase.from('users').select('id').limit(1);

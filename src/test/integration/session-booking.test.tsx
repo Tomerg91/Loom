@@ -36,10 +36,10 @@ describe('Session Booking Integration', () => {
   ];
 
   const mockBookingMutation = vi.fn();
-  const mockQueryClient = vi.fn(() => ({
+  const mockQueryClient = () => ({
     invalidateQueries: vi.fn(),
     setQueryData: vi.fn(),
-  }));
+  } as any);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -286,9 +286,9 @@ describe('Session Booking Integration', () => {
 
     it('refreshes session list after successful booking', async () => {
       const mockInvalidateQueries = vi.fn();
-      const mockQueryClient = vi.fn(() => ({
+      const mockQueryClient = () => ({
         invalidateQueries: mockInvalidateQueries,
-      }));
+      } as any);
 
       // Mock successful booking
       const mockMutationSuccess = vi.fn().mockReturnValue({

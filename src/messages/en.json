@@ -148,7 +148,23 @@
     "weakPassword": "Password must be at least 8 characters",
     "passwordMismatch": "Passwords do not match",
     "invalidEmail": "Please enter a valid email address",
-    "requiredField": "This field is required"
+    "requiredField": "This field is required",
+    "resetEmailSent": "Reset Email Sent",
+    "resetEmailSentDescription": "We've sent you a password reset link. Please check your email and click the link to continue.",
+    "setNewPassword": "Set New Password",
+    "setNewPasswordDescription": "Enter your new password below to complete the reset process.",
+    "passwordUpdated": "Password Updated",
+    "passwordUpdatedDescription": "Your password has been updated successfully. You can now sign in with your new password.",
+    "newPassword": "New Password",
+    "updating": "Updating...",
+    "updatePassword": "Update Password",
+    "sending": "Sending...",
+    "sendResetLink": "Send Reset Link",
+    "backToSignIn": "Back to Sign In",
+    "back": "Back",
+    "signIn": "Sign In",
+    "enterEmail": "Enter your email",
+    "resetPasswordDescription": "Enter your email address and we'll send you a reset link"
   },
   "user": {
     "role": "Role",
@@ -384,6 +400,51 @@
     "max": "Must be no more than {max}",
     "pattern": "Invalid format",
     "passwordStrength": "Password must contain at least 8 characters, one uppercase, one lowercase, and one number"
+  },
+  "admin": {
+    "users": {
+      "title": "User Management",
+      "description": "Manage users, roles, and permissions",
+      "addUser": "Add New User"
+    },
+    "analytics": {
+      "title": "Analytics Dashboard",
+      "description": "View platform analytics and performance metrics"
+    },
+    "system": {
+      "title": "System Administration",
+      "description": "Configure system settings and monitor health"
+    },
+    "stats": {
+      "totalUsers": "Total Users",
+      "activeUsers": "Active Users",
+      "totalSessions": "Total Sessions",
+      "completionRate": "Completion Rate",
+      "revenue": "Revenue",
+      "avgRating": "Avg Rating",
+      "coaches": "Coaches",
+      "clients": "Clients"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "export": "Export",
+      "exportLogs": "Export Logs",
+      "manageUsers": "Manage Users",
+      "viewSessions": "View Sessions",
+      "generateReport": "Generate Report",
+      "systemHealth": "System Health"
+    },
+    "system": {
+      "overview": "Overview",
+      "settings": "Settings",
+      "security": "Security",
+      "maintenance": "Maintenance",
+      "database": "Database",
+      "server": "Server",
+      "memory": "Memory",
+      "storage": "Storage",
+      "serviceStatus": "Service Status"
+    }
   },
   "notFound": {
     "title": "Page Not Found",

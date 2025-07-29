@@ -151,6 +151,63 @@ export interface UpdateAvailabilityRequest {
   isActive?: boolean;
 }
 
+// Authentication API types
+export interface SignUpRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: 'client' | 'coach';
+  phone?: string;
+  language: 'en' | 'he';
+  acceptedTerms: boolean;
+}
+
+export interface SignUpResponse {
+  user: {
+    id: string;
+    email: string;
+    role: 'client' | 'coach' | 'admin';
+    firstName?: string;
+    lastName?: string;
+    avatarUrl?: string;
+    language: 'en' | 'he';
+    status: string;
+  };
+  message: string;
+}
+
+export interface SignInRequest {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface SignInResponse {
+  user: {
+    id: string;
+    email: string;
+    role: 'client' | 'coach' | 'admin';
+    firstName?: string;
+    lastName?: string;
+    avatarUrl?: string;
+    language: 'en' | 'he';
+    status: string;
+    lastSeenAt?: string;
+  };
+  message: string;
+}
+
+export interface AuthError {
+  code: string;
+  message: string;
+  details?: {
+    email?: string;
+    remainingTime?: number;
+    validationErrors?: unknown[];
+  };
+}
+
 // API Response utility class
 export class ApiResponseHelper {
   static success<T>(data: T, message?: string): Response {

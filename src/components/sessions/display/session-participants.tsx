@@ -27,7 +27,7 @@ export function SessionParticipants({ session }: SessionParticipantsProps) {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <p className="text-sm font-medium">
+            <p className="text-sm font-medium" data-testid="session-coach">
               {session.coach.firstName} {session.coach.lastName}
             </p>
             <p className="text-xs text-muted-foreground">Coach</p>

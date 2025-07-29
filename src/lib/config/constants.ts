@@ -155,6 +155,13 @@ export const REALTIME_CONFIG = {
   
   // Request deduplication
   REQUEST_DEDUP_TTL: 5000,
+  
+  // Connection monitoring
+  CONNECTION_STATUS_INTERVAL: 1000,
+  PRESENCE_STATE_POLLING: 1000,
+  
+  // Cleanup intervals
+  STORE_CLEANUP_INTERVAL: 60 * 60 * 1000, // 1 hour
 } as const;
 
 /**
@@ -215,6 +222,32 @@ export const ENV_CONFIG = {
 } as const;
 
 /**
+ * UI/Design Configuration
+ */
+export const UI_CONFIG = {
+  // Avatar colors
+  AVATAR_COLOR_SATURATION: 70,
+  AVATAR_COLOR_LIGHTNESS: 50,
+  
+  // Default color hues
+  PRIMARY_HUE: 240,
+  SUCCESS_HUE: 120,
+  WARNING_HUE: 60,
+  DANGER_HUE: 0,
+  
+  // Animation durations (in milliseconds)
+  ANIMATION_FAST: 150,
+  ANIMATION_NORMAL: 300,
+  ANIMATION_SLOW: 500,
+  
+  // Z-index layers
+  Z_INDEX_DROPDOWN: 1000,
+  Z_INDEX_MODAL: 1050,
+  Z_INDEX_TOOLTIP: 1070,
+  Z_INDEX_TOAST: 1080,
+} as const;
+
+/**
  * Feature Flags
  */
 export const FEATURE_FLAGS = {
@@ -236,4 +269,5 @@ export type ValidationConfig = typeof VALIDATION_CONFIG;
 export type RealtimeConfig = typeof REALTIME_CONFIG;
 export type SecurityUrls = typeof SECURITY_URLS;
 export type Defaults = typeof DEFAULTS;
+export type UiConfig = typeof UI_CONFIG;
 export type FeatureFlags = typeof FEATURE_FLAGS;

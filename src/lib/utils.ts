@@ -11,52 +11,161 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format date to locale string with support for Hebrew
+ * Generic factory for creating mapping functions (colors, styles, variants, etc.)
+ * Eliminates switch-case duplication across the codebase
+ */
+export function createMappingFunction<T extends string, R>(
+  mappings: Record<T, R>,
+  defaultValue: R
+): (key: string) => R {
+  return (key: string): R => {
+    return mappings[key as T] ?? defaultValue;
+  };
+}
+
+/**
+ * Generic factory for creating formatting functions with locale support
+ * Consolidates date, time, and number formatting patterns
+ */
+export function createFormatterFactory<TInput, TOutput>(
+  baseFormatter: (input: TInput, options?: any) => TOutput,
+  defaultOptions: any = {}
+) {
+  return (customOptions: any = {}) => {
+    const mergedOptions = { ...defaultOptions, ...customOptions };
+    return (input: TInput) => baseFormatter(input, mergedOptions);
+  };
+}
+
+/**
+ * Comprehensive formatting utilities using factory pattern
+ * Eliminates duplicate formatting logic across components
+ */
+export const formatters = {
+  // Date formatting with enhanced locale support
+  date: createFormatterFactory(
+    (date: Date | string, options: Intl.DateTimeFormatOptions & { locale?: string } = {}) => {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      const locale = options.locale === 'he' ? 'he-IL' : 'en-US';
+      const { locale: _, ...dateOptions } = options;
+      
+      const defaultOptions: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        ...dateOptions
+      };
+      
+      return dateObj.toLocaleDateString(locale, defaultOptions);
+    },
+    { locale: 'en-US' }
+  ),
+  
+  // Time formatting with locale support
+  time: createFormatterFactory(
+    (date: Date | string, options: Intl.DateTimeFormatOptions & { locale?: string } = {}) => {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      const locale = options.locale === 'he' ? 'he-IL' : 'en-US';
+      const { locale: _, ...timeOptions } = options;
+      
+      const defaultOptions: Intl.DateTimeFormatOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        ...timeOptions
+      };
+      
+      return dateObj.toLocaleTimeString(locale, defaultOptions);
+    },
+    { locale: 'en-US' }
+  ),
+  
+  // Currency formatting with multiple currency support
+  currency: createFormatterFactory(
+    (amount: number, options: Intl.NumberFormatOptions & { locale?: string } = {}) => {
+      const locale = options.locale || 'en-US';
+      const { locale: _, ...numberOptions } = options;
+      
+      const defaultOptions: Intl.NumberFormatOptions = {
+        style: 'currency',
+        currency: 'USD',
+        ...numberOptions
+      };
+      
+      return new Intl.NumberFormat(locale, defaultOptions).format(amount);
+    },
+    { locale: 'en-US', currency: 'USD' }
+  ),
+  
+  // Number formatting
+  number: createFormatterFactory(
+    (value: number, options: Intl.NumberFormatOptions & { locale?: string } = {}) => {
+      const locale = options.locale || 'en-US';
+      const { locale: _, ...numberOptions } = options;
+      
+      return new Intl.NumberFormat(locale, numberOptions).format(value);
+    },
+    { locale: 'en-US' }
+  ),
+  
+  // Percentage formatting
+  percentage: createFormatterFactory(
+    (value: number, options: Intl.NumberFormatOptions & { locale?: string } = {}) => {
+      const locale = options.locale || 'en-US';
+      const { locale: _, ...numberOptions } = options;
+      
+      const defaultOptions: Intl.NumberFormatOptions = {
+        style: 'percent',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+        ...numberOptions
+      };
+      
+      return new Intl.NumberFormat(locale, defaultOptions).format(value / 100);
+    },
+    { locale: 'en-US' }
+  )
+};
+
+/**
+ * Enhanced date-time formatter that returns structured data
+ */
+export function createDateTimeFormatter(locale: string = 'en-US') {
+  const dateFormatter = formatters.date({ locale });
+  const timeFormatter = formatters.time({ locale });
+  
+  return (date: Date | string): {
+    date: string;
+    time: string;
+    full: string;
+  } => {
+    const dateStr = dateFormatter(date);
+    const timeStr = timeFormatter(date);
+    
+    return {
+      date: dateStr,
+      time: timeStr,
+      full: `${dateStr} at ${timeStr}`
+    };
+  };
+}
+
+/**
+ * Legacy formatting functions for backward compatibility
  */
 export function formatDate(date: Date | string, locale: string = 'en-US'): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  };
-
-  return dateObj.toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US', options);
+  return formatters.date({ locale })(date);
 }
 
-/**
- * Format time to locale string with support for Hebrew
- */
 export function formatTime(date: Date | string, locale: string = 'en-US'): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
-  const options: Intl.DateTimeFormatOptions = {
-    hour: '2-digit',
-    minute: '2-digit',
-  };
-
-  return dateObj.toLocaleTimeString(locale === 'he' ? 'he-IL' : 'en-US', options);
+  return formatters.time({ locale })(date);
 }
 
-/**
- * Format date and time together for display
- */
 export function formatDateTime(date: Date | string, locale: string = 'en-US'): {
   date: string;
   time: string;
   full: string;
 } {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
-  const dateStr = formatDate(dateObj, locale);
-  const timeStr = formatTime(dateObj, locale);
-  
-  return {
-    date: dateStr,
-    time: timeStr,
-    full: `${dateStr} at ${timeStr}`
-  };
+  return createDateTimeFormatter(locale)(date);
 }
 
 /**
@@ -88,28 +197,141 @@ export function truncateText(text: string, maxLength: number): string {
 }
 
 /**
- * Generate initials from name
+ * Enhanced user data processor that handles multiple input formats
+ * Replaces duplicate user processing logic across components
+ */
+export function createUserProcessor() {
+  const getInitials = (user: { 
+    firstName?: string; 
+    lastName?: string; 
+    email?: string;
+    name?: string;
+  }): string => {
+    // Handle different user object formats
+    if (user.firstName && user.lastName) {
+      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    }
+    
+    if (user.name) {
+      const nameParts = user.name.trim().split(' ');
+      if (nameParts.length >= 2) {
+        return `${nameParts[0].charAt(0)}${nameParts[nameParts.length - 1].charAt(0)}`.toUpperCase();
+      }
+      return nameParts[0].charAt(0).toUpperCase();
+    }
+    
+    if (user.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    
+    return '?';
+  };
+
+  const getDisplayName = (user: { 
+    firstName?: string; 
+    lastName?: string; 
+    email?: string;
+    name?: string;
+  }): string => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    
+    if (user.name) {
+      return user.name;
+    }
+    
+    return user.email || 'Unknown User';
+  };
+
+  return { getInitials, getDisplayName };
+}
+
+/**
+ * Legacy function maintained for backward compatibility
+ * Use createUserProcessor().getInitials() for new code
  */
 export function getInitials(firstName?: string, lastName?: string): string {
-  const first = firstName?.charAt(0)?.toUpperCase() || '';
-  const last = lastName?.charAt(0)?.toUpperCase() || '';
-  return first + last || '?';
+  const processor = createUserProcessor();
+  return processor.getInitials({ firstName, lastName });
 }
 
 /**
- * Validate email format
+ * Generic validation factory for creating type-specific validators
+ * Eliminates repetitive validation patterns
+ */
+export function createValidator<T>(
+  validator: (value: T) => boolean,
+  errorMessage?: string
+) {
+  return {
+    validate: validator,
+    isValid: validator,
+    errorMessage: errorMessage || 'Validation failed'
+  };
+}
+
+/**
+ * Collection of common validation patterns
+ */
+export const validators = {
+  email: createValidator(
+    (email: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+    'Invalid email format'
+  ),
+  
+  phone: createValidator(
+    (phone: string): boolean => /^[\+]?[1-9][\d]{0,15}$/.test(phone.replace(/\s/g, '')),
+    'Invalid phone number format'
+  ),
+  
+  url: createValidator(
+    (url: string): boolean => {
+      try {
+        new URL(url);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    'Invalid URL format'
+  ),
+  
+  notEmpty: createValidator(
+    (value: string): boolean => value.trim().length > 0,
+    'Value cannot be empty'
+  ),
+  
+  minLength: (min: number) => createValidator(
+    (value: string): boolean => value.length >= min,
+    `Value must be at least ${min} characters`
+  ),
+  
+  maxLength: (max: number) => createValidator(
+    (value: string): boolean => value.length <= max,
+    `Value must be no more than ${max} characters`
+  ),
+  
+  numeric: createValidator(
+    (value: string): boolean => /^\d+$/.test(value),
+    'Value must be numeric'
+  ),
+  
+  alphanumeric: createValidator(
+    (value: string): boolean => /^[a-zA-Z0-9]+$/.test(value),
+    'Value must be alphanumeric'
+  )
+};
+
+/**
+ * Legacy validation functions for backward compatibility
  */
 export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return validators.email.isValid(email);
 }
 
-/**
- * Validate phone number (basic validation)
- */
 export function isValidPhone(phone: string): boolean {
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-  return phoneRegex.test(phone.replace(/\s/g, ''));
+  return validators.phone.isValid(phone);
 }
 
 /**

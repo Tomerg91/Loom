@@ -266,7 +266,7 @@ describe('SessionService', () => {
         error: null,
       });
 
-      const result = await sessionService.findUpcoming('user-id', 5);
+      const result = await sessionService.findUpcoming('user-id');
 
       expect(result).toEqual(upcomingSessions);
       expect(mockSupabaseClient.from().eq).toHaveBeenCalledWith('status', 'scheduled');

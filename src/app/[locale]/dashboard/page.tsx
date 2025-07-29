@@ -84,7 +84,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" data-testid="dashboard-stats-grid">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -201,7 +201,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
                         })}
                       </p>
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" data-testid="view-session-button">
                       {commonT('view')}
                     </Button>
                   </div>
@@ -229,7 +229,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
             <CardContent className="space-y-4">
               {user.role === 'coach' ? (
                 <>
-                  <Button className="w-full justify-start" variant="outline">
+                  <Button className="w-full justify-start" variant="outline" data-testid="schedule-session-action">
                     <Calendar className="mr-2 h-4 w-4" />
                     {t('quickActions.scheduleSession')}
                   </Button>
@@ -244,7 +244,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
                 </>
               ) : (
                 <>
-                  <Button className="w-full justify-start" variant="outline">
+                  <Button className="w-full justify-start" variant="outline" data-testid="book-session-action">
                     <Calendar className="mr-2 h-4 w-4" />
                     {t('quickActions.bookSession')}
                   </Button>

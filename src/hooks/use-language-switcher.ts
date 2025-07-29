@@ -1,9 +1,8 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
-import { type Route } from 'next';
-import { locales } from '@/i18n/config';
+import { usePathname, useRouter } from '@/i18n/routing';
+import { routing } from '@/i18n/routing';
 
 interface LanguageOption {
   code: string;
@@ -24,7 +23,7 @@ export function useLanguageSwitcher() {
   const router = useRouter();
 
   const switchLanguage = (newLocale: string) => {
-    if (!locales.includes(newLocale as 'en' | 'he')) {
+    if (!routing.locales.includes(newLocale as 'en' | 'he')) {
       console.warn(`Locale ${newLocale} is not supported`);
       return;
     }
@@ -32,7 +31,7 @@ export function useLanguageSwitcher() {
     const segments = pathname.split('/').filter(Boolean);
     const currentLocale = segments[0];
     
-    const isLocaleInPath = locales.includes(currentLocale as 'en' | 'he');
+    const isLocaleInPath = routing.locales.includes(currentLocale as 'en' | 'he');
     
     let newPathname;
     if (isLocaleInPath) {
@@ -44,7 +43,7 @@ export function useLanguageSwitcher() {
       newPathname = `/${newLocale}${pathname}`;
     }
     
-    router.push(newPathname as Route);
+    router.push(newPathname);
   };
 
   const getCurrentLanguage = () => {

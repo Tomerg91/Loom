@@ -281,18 +281,18 @@ export class UserService {
 
     if (user.role === 'coach') {
       // Calculate coach statistics from sessions table
-      const { data: totalSessions, error: totalError } = await this.supabase
+      const { count: totalSessions, error: totalError } = await this.supabase
         .from('sessions')
         .select('id', { count: 'exact', head: true })
         .eq('coach_id', userId);
 
-      const { data: completedSessions, error: completedError } = await this.supabase
+      const { count: completedSessions, error: completedError } = await this.supabase
         .from('sessions')
         .select('id', { count: 'exact', head: true })
         .eq('coach_id', userId)
         .eq('status', 'completed');
 
-      const { data: upcomingSessions, error: upcomingError } = await this.supabase
+      const { count: upcomingSessions, error: upcomingError } = await this.supabase
         .from('sessions')
         .select('id', { count: 'exact', head: true })
         .eq('coach_id', userId)
@@ -312,26 +312,26 @@ export class UserService {
       }
 
       return {
-        totalSessions: (totalSessions as unknown as { count: number } | null)?.count || 0,
-        completedSessions: (completedSessions as unknown as { count: number } | null)?.count || 0,
-        upcomingSessions: (upcomingSessions as unknown as { count: number } | null)?.count || 0,
+        totalSessions: totalSessions || 0,
+        completedSessions: completedSessions || 0,
+        upcomingSessions: upcomingSessions || 0,
         totalClients: uniqueClients.size,
         activeClients: uniqueClients.size, // For now, assume all clients are active
       };
     } else if (user.role === 'client') {
       // Calculate client statistics from sessions table
-      const { data: totalSessions, error: totalError } = await this.supabase
+      const { count: totalSessions, error: totalError } = await this.supabase
         .from('sessions')
         .select('id', { count: 'exact', head: true })
         .eq('client_id', userId);
 
-      const { data: completedSessions, error: completedError } = await this.supabase
+      const { count: completedSessions, error: completedError } = await this.supabase
         .from('sessions')
         .select('id', { count: 'exact', head: true })
         .eq('client_id', userId)
         .eq('status', 'completed');
 
-      const { data: upcomingSessions, error: upcomingError } = await this.supabase
+      const { count: upcomingSessions, error: upcomingError } = await this.supabase
         .from('sessions')
         .select('id', { count: 'exact', head: true })
         .eq('client_id', userId)
@@ -343,9 +343,9 @@ export class UserService {
       }
 
       return {
-        totalSessions: (totalSessions as unknown as { count: number } | null)?.count || 0,
-        completedSessions: (completedSessions as unknown as { count: number } | null)?.count || 0,
-        upcomingSessions: (upcomingSessions as unknown as { count: number } | null)?.count || 0,
+        totalSessions: totalSessions || 0,
+        completedSessions: completedSessions || 0,
+        upcomingSessions: upcomingSessions || 0,
       };
     }
 

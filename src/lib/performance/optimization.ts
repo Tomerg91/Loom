@@ -253,9 +253,9 @@ export const deduplicateRequest = <T>(
   requestFn: () => Promise<T>,
   ttl: number = 5000
 ): Promise<T> => {
-  const cached = requestCache.get(key);
+  const cached = requestCache.get(key) as Promise<T> | undefined;
   if (cached) {
-    return cached as Promise<T>;
+    return cached;
   }
   
   const promise = requestFn();

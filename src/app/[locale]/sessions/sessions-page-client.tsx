@@ -68,7 +68,7 @@ export function SessionsPageClient({ locale }: SessionsPageClientProps) {
             {user?.role === 'client' && (
               <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button data-testid="book-session-button">
                     <Plus className="h-4 w-4 mr-2" />
                     {t('bookSession')}
                   </Button>

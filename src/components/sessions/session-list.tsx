@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Calendar, 
@@ -16,7 +17,8 @@ import {
   Edit, 
   Trash2, 
   MoreHorizontal,
-  Filter
+  Filter,
+  Search
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -60,6 +62,7 @@ export function SessionList({
   const queryClient = useQueryClient();
   
   const [statusFilter, setStatusFilter] = useState<SessionStatus | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
 
   // Fetch sessions
@@ -219,12 +222,26 @@ export function SessionList({
           <CardContent>
             <div className="flex gap-4">
               <div className="space-y-2">
+                <label className="text-sm font-medium">Search</label>
+                <div className="relative">
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search sessions..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 w-64"
+                    data-testid="session-search"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Status</label>
                 <Select
                   value={statusFilter}
                   onValueChange={(value) => setStatusFilter(value as SessionStatus | 'all')}
                 >
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-40" data-testid="status-filter">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -252,7 +269,7 @@ export function SessionList({
       ) : (
         <div className="space-y-4">
           {sessions.map((session) => (
-            <Card key={session.id} className="hover:shadow-md transition-shadow">
+            <Card key={session.id} className="hover:shadow-md transition-shadow" data-testid="session-item">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">

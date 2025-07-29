@@ -202,7 +202,7 @@ export function CoachDashboard() {
         <TabsContent value="overview" className="space-y-6">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
+            <Card data-testid="upcoming-sessions">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   {t('stats.upcomingSessions')}
@@ -219,7 +219,7 @@ export function CoachDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card data-testid="total-clients">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   {t('stats.activeClients')}
@@ -236,7 +236,7 @@ export function CoachDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card data-testid="completed-sessions">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   {t('stats.completedSessions')}
@@ -253,7 +253,7 @@ export function CoachDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card data-testid="monthly-revenue">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Average Rating
@@ -273,7 +273,7 @@ export function CoachDashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Upcoming Sessions */}
-            <Card>
+            <Card data-testid="upcoming-sessions-list">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
@@ -326,7 +326,7 @@ export function CoachDashboard() {
             </Card>
 
             {/* Recent Activity */}
-            <Card>
+            <Card data-testid="recent-notes">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />

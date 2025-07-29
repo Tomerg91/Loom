@@ -5,6 +5,11 @@ interface TimeSlot {
   startTime: string;
   endTime: string;
   isAvailable: boolean;
+  isBooked?: boolean;
+  isBlocked?: boolean;
+  clientName?: string;
+  sessionTitle?: string;
+  conflictReason?: string;
 }
 
 interface AvailabilitySlot {
@@ -26,7 +31,8 @@ export class AvailabilityService {
   async getCoachAvailability(
     coachId: string, 
     date: string, 
-    sessionDuration: number = 60
+    sessionDuration: number = 60,
+    detailed: boolean = false
   ): Promise<TimeSlot[]> {
     try {
       // Get the day of week (0 = Sunday, 1 = Monday, etc.)
@@ -54,13 +60,17 @@ export class AvailabilityService {
       const startOfDay = `${date}T00:00:00Z`;
       const endOfDay = `${date}T23:59:59Z`;
 
+      const sessionSelect = detailed 
+        ? 'scheduled_at, duration_minutes, title, status, client:client_id(first_name, last_name)'
+        : 'scheduled_at, duration_minutes, status';
+
       const { data: existingSessions, error: sessionsError } = await this.supabase
         .from('sessions')
-        .select('scheduled_at, duration_minutes')
+        .select(sessionSelect)
         .eq('coach_id', coachId)
         .gte('scheduled_at', startOfDay)
         .lte('scheduled_at', endOfDay)
-        .in('status', ['scheduled', 'in_progress']);
+        .in('status', ['scheduled', 'in_progress', 'cancelled']);
 
       if (sessionsError) {
         console.error('Error fetching existing sessions:', sessionsError);
@@ -82,17 +92,35 @@ export class AvailabilityService {
           const endTimeString = this.formatTime(currentTime + sessionDuration);
           
           // Check if this time slot conflicts with existing sessions
-          const isAvailable = !this.hasConflict(
+          const conflictInfo = this.getConflictInfo(
             currentTime,
             currentTime + sessionDuration,
-            existingSessions || []
+            existingSessions || [],
+            detailed
           );
 
-          timeSlots.push({
+          const timeSlot: TimeSlot = {
             startTime: startTimeString,
             endTime: endTimeString,
-            isAvailable,
-          });
+            isAvailable: !conflictInfo.hasConflict,
+          };
+
+          if (detailed && conflictInfo.hasConflict) {
+            timeSlot.isBooked = conflictInfo.session?.status === 'scheduled' || conflictInfo.session?.status === 'in_progress';
+            timeSlot.isBlocked = conflictInfo.session?.status === 'cancelled';
+            
+            if (conflictInfo.session) {
+              timeSlot.sessionTitle = conflictInfo.session.title;
+              if (conflictInfo.session.client) {
+                timeSlot.clientName = `${conflictInfo.session.client.first_name} ${conflictInfo.session.client.last_name}`;
+              }
+              timeSlot.conflictReason = conflictInfo.session.status === 'cancelled' 
+                ? 'Time blocked (cancelled session)' 
+                : 'Already booked';
+            }
+          }
+
+          timeSlots.push(timeSlot);
 
           // Move to next 15-minute slot
           currentTime += 15;
@@ -275,13 +303,37 @@ export class AvailabilityService {
       return !(endMinutes <= sessionStartMinutes || startMinutes >= sessionEndMinutes);
     });
   }
+
+  /**
+   * Get detailed conflict information for a time range
+   */
+  private getConflictInfo(
+    startMinutes: number,
+    endMinutes: number,
+    existingSessions: Array<any>,
+    detailed: boolean
+  ): { hasConflict: boolean; session?: any } {
+    const conflictingSession = existingSessions.find(session => {
+      const sessionTime = new Date(session.scheduled_at);
+      const sessionStartMinutes = sessionTime.getHours() * 60 + sessionTime.getMinutes();
+      const sessionEndMinutes = sessionStartMinutes + session.duration_minutes;
+
+      // Check for overlap
+      return !(endMinutes <= sessionStartMinutes || startMinutes >= sessionEndMinutes);
+    });
+
+    return {
+      hasConflict: !!conflictingSession,
+      session: detailed ? conflictingSession : undefined,
+    };
+  }
 }
 
 // Export individual functions for API usage
 const availabilityService = new AvailabilityService(true);
 
-export const getCoachAvailability = (coachId: string, date: string, duration?: number) => 
-  availabilityService.getCoachAvailability(coachId, date, duration);
+export const getCoachAvailability = (coachId: string, date: string, duration?: number, detailed?: boolean) => 
+  availabilityService.getCoachAvailability(coachId, date, duration, detailed);
 
 export const setCoachAvailability = (coachId: string, slots: AvailabilitySlot[]) => 
   availabilityService.setCoachAvailability(coachId, slots);

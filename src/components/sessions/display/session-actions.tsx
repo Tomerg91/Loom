@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, X, Trash2 } from 'lucide-react';
+import { CheckCircle, X, Trash2, Play, Square, Edit } from 'lucide-react';
 import { Session, User } from '../shared/types';
 
 interface SessionActionsProps {
@@ -9,6 +9,9 @@ interface SessionActionsProps {
   onComplete: () => void;
   onCancel: () => void;
   onDelete: () => void;
+  onStart?: () => void;
+  onEnd?: () => void;
+  onReschedule?: () => void;
 }
 
 export function SessionActions({ 
@@ -16,7 +19,10 @@ export function SessionActions({
   currentUser, 
   onComplete, 
   onCancel, 
-  onDelete 
+  onDelete,
+  onStart,
+  onEnd,
+  onReschedule
 }: SessionActionsProps) {
   const canComplete = () => {
     if (!currentUser || !session) return false;
@@ -49,14 +55,39 @@ export function SessionActions({
         <CardTitle>Actions</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        {canComplete() && (
+        {session.status === 'scheduled' && canComplete() && onStart && (
           <Button 
             variant="default" 
             className="w-full"
-            onClick={onComplete}
+            onClick={onStart}
+            data-testid="start-session-button"
           >
-            <CheckCircle className="mr-2 h-4 w-4" />
-            Mark as Completed
+            <Play className="mr-2 h-4 w-4" />
+            Start Session
+          </Button>
+        )}
+        
+        {session.status === 'in_progress' && canComplete() && onEnd && (
+          <Button 
+            variant="default" 
+            className="w-full"
+            onClick={onEnd}
+            data-testid="end-session-button"
+          >
+            <Square className="mr-2 h-4 w-4" />
+            End Session
+          </Button>
+        )}
+        
+        {session.status === 'scheduled' && onReschedule && (
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={onReschedule}
+            data-testid="reschedule-session-button"
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            Reschedule Session
           </Button>
         )}
         
@@ -65,6 +96,7 @@ export function SessionActions({
             variant="outline" 
             className="w-full"
             onClick={onCancel}
+            data-testid="cancel-session-button"
           >
             <X className="mr-2 h-4 w-4" />
             Cancel Session
@@ -76,6 +108,7 @@ export function SessionActions({
             variant="destructive" 
             className="w-full"
             onClick={onDelete}
+            data-testid="delete-session-button"
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Delete Session

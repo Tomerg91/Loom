@@ -444,37 +444,58 @@ const ROLE_HIERARCHY: Record<UserRole, number> = {
   client: 1,
 };
 
-// Enhanced permission helpers with granular access control
-export function requirePermission(requiredPermission: Permission) {
-  return function<T extends unknown[]>(
+/**
+ * Generic factory for creating security middleware functions
+ * Eliminates repetitive patterns in permission and access control
+ */
+function createSecurityMiddleware<T extends unknown[]>(
+  checkFunction: (user: AuthenticatedUser, ...args: T) => boolean | Promise<boolean>,
+  errorMessage: (user: AuthenticatedUser, ...args: T) => string,
+  logContext: (user: AuthenticatedUser, ...args: T) => Record<string, any>
+) {
+  return function(
     handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
   ) {
     return async (user: AuthenticatedUser, ...args: T): Promise<NextResponse> => {
       try {
-        // Use the centralized permission checking system
-        requirePermissionCheck(user.role as Role, requiredPermission);
+        const hasAccess = await checkFunction(user, ...args);
         
-        // Log permission check for auditing
-        console.debug('Permission granted:', {
+        if (!hasAccess) {
+          const context = {
+            userId: user.id,
+            role: user.role,
+            timestamp: new Date().toISOString(),
+            ...logContext(user, ...args)
+          };
+          
+          console.warn('Access denied:', context);
+          
+          return createErrorResponse(
+            errorMessage(user, ...args),
+            HTTP_STATUS.FORBIDDEN
+          );
+        }
+        
+        // Log successful access for auditing
+        console.debug('Access granted:', {
           userId: user.id,
           role: user.role,
-          permission: requiredPermission,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          ...logContext(user, ...args)
         });
         
         return await handler(user, ...args);
       } catch (error) {
-        // Log permission denial for security monitoring
-        console.warn('Permission denied:', {
+        console.warn('Security check failed:', {
           userId: user.id,
           role: user.role,
-          requiredPermission,
           error: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          ...logContext(user, ...args)
         });
         
         return createErrorResponse(
-          `Access denied. Required permission: ${requiredPermission}`,
+          errorMessage(user, ...args),
           HTTP_STATUS.FORBIDDEN
         );
       }
@@ -482,59 +503,38 @@ export function requirePermission(requiredPermission: Permission) {
   };
 }
 
-// Resource-based permission checking
+// Enhanced permission helpers using the generic factory
+export function requirePermission(requiredPermission: Permission) {
+  return createSecurityMiddleware(
+    (user: AuthenticatedUser) => {
+      requirePermissionCheck(user.role as Role, requiredPermission);
+      return true;
+    },
+    () => `Access denied. Required permission: ${requiredPermission}`,
+    () => ({ permission: requiredPermission })
+  );
+}
+
+// Resource-based permission checking using the factory
 export function requireResourceAccess(resource: string, action: string) {
-  return function<T extends unknown[]>(
-    handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
-  ) {
-    return async (user: AuthenticatedUser, ...args: T): Promise<NextResponse> => {
-      if (!canAccessResource(user.role as Role, resource, action)) {
-        console.warn('Resource access denied:', {
-          userId: user.id,
-          role: user.role,
-          resource,
-          action,
-          timestamp: new Date().toISOString()
-        });
-        
-        return createErrorResponse(
-          `Access denied. Cannot ${action} ${resource}`,
-          HTTP_STATUS.FORBIDDEN
-        );
-      }
-      
-      return await handler(user, ...args);
-    };
-  };
+  return createSecurityMiddleware(
+    (user: AuthenticatedUser) => canAccessResource(user.role as Role, resource, action),
+    () => `Access denied. Cannot ${action} ${resource}`,
+    () => ({ resource, action })
+  );
 }
 
-// Legacy role-based permission checking (maintained for backward compatibility)
+// Legacy role-based permission checking using the factory
 export function requireRole(requiredRole: UserRole) {
-  return function<T extends unknown[]>(
-    handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
-  ) {
-    return async (user: AuthenticatedUser, ...args: T): Promise<NextResponse> => {
-      // Check if user has sufficient role level
+  return createSecurityMiddleware(
+    (user: AuthenticatedUser) => {
       const userLevel = ROLE_HIERARCHY[user.role];
       const requiredLevel = ROLE_HIERARCHY[requiredRole];
-      
-      if (userLevel < requiredLevel) {
-        console.warn('Role access denied:', {
-          userId: user.id,
-          userRole: user.role,
-          requiredRole,
-          timestamp: new Date().toISOString()
-        });
-        
-        return createErrorResponse(
-          `Access denied. Required role: ${requiredRole}`,
-          HTTP_STATUS.FORBIDDEN
-        );
-      }
-      
-      return await handler(user, ...args);
-    };
-  };
+      return userLevel >= requiredLevel;
+    },
+    () => `Access denied. Required role: ${requiredRole}`,
+    (user) => ({ userRole: user.role, requiredRole })
+  );
 }
 
 // Specific role requirement helpers (updated to use new permission system)

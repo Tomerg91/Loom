@@ -211,7 +211,7 @@ export function NavMenu() {
             {/* User dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full" data-testid="user-menu">
                   <Avatar className="h-10 w-10">
                     <AvatarImage 
                       src={user.avatarUrl} 
@@ -248,7 +248,7 @@ export function NavMenu() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive" data-testid="logout-button">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>{t('logout')}</span>
                 </DropdownMenuItem>

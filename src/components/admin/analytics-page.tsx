@@ -24,6 +24,7 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
+import { UserGrowthChart, SessionMetricsChart } from '@/components/charts/chart-components';
 
 interface AnalyticsData {
   overview: {
@@ -230,38 +231,18 @@ export function AdminAnalyticsPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* User Growth Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>User Growth</CardTitle>
-            <CardDescription>New and active users over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
-              <div className="text-center">
-                <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Chart visualization would go here</p>
-                <p className="text-xs text-muted-foreground">Integration with charting library needed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <UserGrowthChart 
+          data={analytics?.userGrowth || []}
+          loading={isLoading}
+          height={264}
+        />
 
         {/* Session Metrics Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Session Metrics</CardTitle>
-            <CardDescription>Sessions completed vs cancelled over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
-              <div className="text-center">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Chart visualization would go here</p>
-                <p className="text-xs text-muted-foreground">Integration with charting library needed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <SessionMetricsChart 
+          data={analytics?.sessionMetrics || []}
+          loading={isLoading}
+          height={264}
+        />
       </div>
 
       {/* Coach Performance Table */}

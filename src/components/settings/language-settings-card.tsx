@@ -1,8 +1,7 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
-import { type Route } from 'next';
+import { usePathname, useRouter } from '@/i18n/routing';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -20,7 +19,7 @@ import {
   CheckCircle,
   Info
 } from 'lucide-react';
-import { locales } from '@/i18n/config';
+import { routing } from '@/i18n/routing';
 
 interface LanguageOption {
   code: string;
@@ -45,7 +44,7 @@ export function LanguageSettingsCard() {
     const segments = pathname.split('/').filter(Boolean);
     const currentLocale = segments[0];
     
-    const isLocaleInPath = locales.includes(currentLocale as 'en' | 'he');
+    const isLocaleInPath = routing.locales.includes(currentLocale as 'en' | 'he');
     
     let newPathname;
     if (isLocaleInPath) {
@@ -55,7 +54,7 @@ export function LanguageSettingsCard() {
       newPathname = `/${newLocale}${pathname}`;
     }
     
-    router.push(newPathname as Route);
+    router.push(newPathname);
   };
 
   const currentLanguage = languageOptions.find(lang => lang.code === locale);

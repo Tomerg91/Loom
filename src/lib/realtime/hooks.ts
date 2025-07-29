@@ -237,12 +237,19 @@ export function usePresence(channelName: string) {
     };
   }, [user?.id, channelName, user?.firstName, user?.lastName, user?.email, user?.avatarUrl, user?.role]);
 
-  const onlineUsers = Object.values(presenceState).flat() as Array<{
+  const onlineUsers = Object.values(presenceState).flat().filter((user): user is {
     user_id: string;
     name: string;
     avatar: string;
     role: 'admin' | 'coach' | 'client';
-  }>;
+  } => {
+    return typeof user === 'object' && 
+           user !== null && 
+           'user_id' in user && 
+           'name' in user && 
+           'avatar' in user && 
+           'role' in user;
+  });
 
   return {
     presenceState,

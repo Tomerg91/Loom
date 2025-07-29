@@ -37,6 +37,7 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
   const { searchParams } = request.nextUrl;
   const date = searchParams.get('date');
   const duration = parseInt(searchParams.get('duration') || '60');
+  const detailed = searchParams.get('detailed') === 'true';
 
   if (!date) {
     return createErrorResponse('Date parameter is required', HTTP_STATUS.BAD_REQUEST);
@@ -54,7 +55,7 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
   }
 
   try {
-    const timeSlots = await getCoachAvailability(coachId, date, duration);
+    const timeSlots = await getCoachAvailability(coachId, date, duration, detailed);
     return createSuccessResponse(timeSlots);
   } catch (error) {
     console.error('Error fetching coach availability:', error);

@@ -141,7 +141,7 @@ export function NotificationSettingsCard() {
     category: keyof NotificationSettings, 
     nestedKey: string, 
     key: string, 
-    value: boolean | string
+    value: boolean | string | number
   ) => {
     if (!settings) return;
     
@@ -150,13 +150,13 @@ export function NotificationSettingsCard() {
       [category]: {
         ...settings[category],
         [nestedKey]: {
-          ...((settings[category] as Record<string, unknown>)[nestedKey] as Record<string, unknown>),
+          ...((settings[category] as Record<string, any>)[nestedKey] as Record<string, any>),
           [key]: value,
         },
       },
     };
     
-    updateSettingsMutation.mutate(updatedSettings);
+    updateSettingsMutation.mutate(updatedSettings as NotificationSettings);
     setHasChanges(true);
   };
 

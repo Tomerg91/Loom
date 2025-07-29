@@ -91,6 +91,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
               {...register('email')}
               error={errors.email?.message}
               disabled={isLoading}
+              data-testid="email-input"
             />
           </div>
 
@@ -104,6 +105,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
                 {...register('password')}
                 error={errors.password?.message}
                 disabled={isLoading}
+                data-testid="password-input"
               />
               <Button
                 type="button"
@@ -128,7 +130,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading} data-testid="signin-button">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t('signin.button')}
           </Button>
@@ -137,6 +139,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
             <Link
               href="/auth/reset-password"
               className="text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
+              data-testid="forgot-password-link"
             >
               {t('forgotPassword')}
             </Link>
@@ -146,6 +149,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
               <Link
                 href="/auth/signup"
                 className="text-primary underline-offset-4 hover:underline"
+                data-testid="signup-link"
               >
                 {t('signup.link')}
               </Link>

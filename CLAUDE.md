@@ -75,6 +75,70 @@ Important Notes
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## AI Development Team Configuration
+*Configured by team-configurator on July 28, 2025*
+
+**Detected Technology Stack:**
+- **Frontend**: Next.js 15.3.5 with React 19, TypeScript
+- **Backend**: Next.js API routes  
+- **Database**: Supabase (PostgreSQL)
+- **UI Framework**: Radix UI + Tailwind CSS 4
+- **State Management**: Zustand + TanStack Query
+- **Authentication**: Supabase Auth
+- **Testing**: Vitest + Playwright + Testing Library
+- **Monitoring**: Sentry
+
+### Specialist Assignments
+
+- **React/Next.js Development** → @react-nextjs-expert
+  - Next.js 15 app router, SSR/SSG optimization
+  - React 19 patterns, hooks, component architecture
+  - TypeScript integration, performance optimization
+
+- **Component Architecture** → @react-component-architect  
+  - Radix UI component composition
+  - Reusable component patterns
+  - Design system implementation
+
+- **API Development** → @api-architect
+  - Next.js API routes, RESTful design
+  - Supabase integration, authentication flows
+  - Error handling, validation patterns
+
+- **State Management** → @react-state-manager
+  - Zustand store patterns
+  - TanStack Query for server state
+  - Realtime data synchronization
+
+- **Styling & UI** → @tailwind-css-expert
+  - Tailwind CSS 4 configuration
+  - Responsive design, accessibility
+  - Component styling patterns
+
+- **Code Quality** → @code-reviewer
+  - TypeScript best practices
+  - Testing strategies, code reviews
+  - Performance and security audits
+
+- **Performance** → @performance-optimizer
+  - Next.js optimization techniques
+  - Bundle analysis, Core Web Vitals
+  - Database query optimization
+
+### How to Use Your AI Team
+
+- **For React/Next.js work**: "Build user dashboard with SSR"
+- **For components**: "Create accessible booking form component"
+- **For APIs**: "Design session management endpoints"
+- **For state**: "Implement realtime notifications store"
+- **For styling**: "Style coach availability calendar"
+- **For reviews**: "Review authentication implementation"
+- **For optimization**: "Optimize session booking performance"
+
+Your specialized AI team is ready to help with your coaching platform!
+
+---
+
 Commands
 Run system: ./llm.sh or ./llm.sh quiet
 Test model loading: python scripts/minimal_inference_quiet.py [model_path]

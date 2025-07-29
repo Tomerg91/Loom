@@ -42,6 +42,8 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [verificationStep, setVerificationStep] = useState<'email' | 'code' | 'password'>(token ? 'password' : 'email');
+  const [verificationCode, setVerificationCode] = useState('');
 
   // Form for requesting password reset
   const resetRequestForm = useForm<ResetRequestData>({
@@ -72,9 +74,29 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
         throw new Error(result.error || 'Failed to send reset email');
       }
 
-      setSuccess(true);
+      // Move to verification step instead of showing success immediately
+      setVerificationStep('code');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerificationCode = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // In a real app, this would verify the code
+      // For now, we'll simulate verification and move to password step
+      if (verificationCode.length === 6) {
+        setVerificationStep('password');
+      } else {
+        throw new Error('Please enter a valid 6-digit verification code');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid verification code');
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +157,7 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
     );
   }
 
-  if (success && token) {
+  if (success) {
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="text-center">
@@ -157,14 +179,74 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
     );
   }
 
+  // Verification code step
+  if (verificationStep === 'code') {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle>Verify Your Email</CardTitle>
+          <CardDescription>
+            We&apos;ve sent a 6-digit verification code to your email. Please enter it below.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="verificationCode">Verification Code</Label>
+              <Input
+                id="verificationCode"
+                type="text"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                placeholder="Enter 6-digit code"
+                maxLength={6}
+                disabled={isLoading}
+                data-testid="verification-code-input"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Button
+                onClick={handleVerificationCode}
+                className="w-full"
+                disabled={isLoading || verificationCode.length !== 6}
+                data-testid="verify-code-button"
+              >
+                {isLoading ? 'Verifying...' : 'Verify Code'}
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => setVerificationStep('email')}
+                variant="outline"
+                className="w-full"
+                disabled={isLoading}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Email
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>
-          {token ? t('setNewPassword') : t('resetPassword')}
+          {verificationStep === 'password' ? t('setNewPassword') : t('resetPassword')}
         </CardTitle>
         <CardDescription>
-          {token 
+          {verificationStep === 'password'
             ? t('setNewPasswordDescription')
             : t('resetPasswordDescription')
           }
@@ -178,7 +260,7 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
           </Alert>
         )}
 
-        {token ? (
+        {verificationStep === 'password' ? (
           <form onSubmit={passwordUpdateForm.handleSubmit(handlePasswordUpdate)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">{t('newPassword')}</Label>
@@ -187,6 +269,7 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
                 {...passwordUpdateForm.register('password')}
                 disabled={isLoading}
                 aria-describedby={passwordUpdateForm.formState.errors.password ? 'password-error' : undefined}
+                data-testid="new-password-input"
               />
               {passwordUpdateForm.formState.errors.password && (
                 <p id="password-error" className="text-sm text-destructive">
@@ -202,6 +285,7 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
                 {...passwordUpdateForm.register('confirmPassword')}
                 disabled={isLoading}
                 aria-describedby={passwordUpdateForm.formState.errors.confirmPassword ? 'confirm-password-error' : undefined}
+                data-testid="confirm-new-password-input"
               />
               {passwordUpdateForm.formState.errors.confirmPassword && (
                 <p id="confirm-password-error" className="text-sm text-destructive">
@@ -215,6 +299,7 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
                 type="submit"
                 className="w-full"
                 disabled={isLoading}
+                data-testid="update-password-button"
               >
                 {isLoading ? t('updating') : t('updatePassword')}
               </Button>
@@ -244,6 +329,7 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
                 disabled={isLoading}
                 placeholder={t('enterEmail')}
                 aria-describedby={resetRequestForm.formState.errors.email ? 'email-error' : undefined}
+                data-testid="email-input"
               />
               {resetRequestForm.formState.errors.email && (
                 <p id="email-error" className="text-sm text-destructive">
@@ -257,6 +343,7 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
                 type="submit"
                 className="w-full"
                 disabled={isLoading}
+                data-testid="reset-button"
               >
                 {isLoading ? t('sending') : t('sendResetLink')}
               </Button>

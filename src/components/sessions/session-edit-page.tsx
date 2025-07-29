@@ -66,6 +66,7 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
     description: '',
     scheduledAt: '',
     duration: 60,
+    status: 'scheduled' as 'scheduled' | 'completed' | 'cancelled' | 'no-show',
     sessionType: 'video' as 'video' | 'phone' | 'in-person',
     location: '',
     meetingUrl: '',
@@ -75,46 +76,65 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
   
   const [newGoal, setNewGoal] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const [showRescheduleHelp, setShowRescheduleHelp] = useState(false);
+  const [suggestedTimes, setSuggestedTimes] = useState<string[]>([]);
 
-  // Mock data - in real app, this would come from an API
+  // Fetch session data from API
   const { data: session, isLoading, error } = useQuery<Session>({
     queryKey: ['session', sessionId],
     queryFn: async () => {
-      // Mock API call
-      return {
-        id: sessionId,
-        title: 'Leadership Development Session',
-        description: 'Focus on building leadership presence and communication skills',
-        scheduledAt: '2024-01-25T14:00:00',
-        duration: 60,
-        status: 'scheduled',
-        sessionType: 'video',
-        meetingUrl: 'https://meet.google.com/abc-def-ghi',
-        notes: 'Client wants to focus on public speaking anxiety and team leadership skills.',
-        goals: ['Improve public speaking', 'Develop leadership presence', 'Build team communication'],
-        coach: {
-          id: '1',
-          firstName: 'Sarah',
-          lastName: 'Johnson',
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        client: {
-          id: '2',
-          firstName: 'John',
-          lastName: 'Doe',
-        },
-      };
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch session');
+      }
+
+      const result = await response.json();
+      return result.data;
     },
   });
 
   const updateSessionMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      // Mock API call
-      console.log('Updating session:', sessionId, data);
-      return { success: true };
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: data.title,
+          description: data.description,
+          scheduledAt: data.scheduledAt,
+          duration: data.duration,
+          status: data.status,
+          sessionType: data.sessionType,
+          location: data.location,
+          meetingUrl: data.meetingUrl,
+          notes: data.notes,
+          goals: data.goals,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update session');
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      setHasChanges(false);
       router.push(`/sessions/${sessionId}`);
+    },
+    onError: (error) => {
+      console.error('Failed to update session:', error);
     },
   });
 
@@ -125,6 +145,7 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
         description: session.description || '',
         scheduledAt: session.scheduledAt.slice(0, 16), // Format for datetime-local input
         duration: session.duration,
+        status: session.status,
         sessionType: session.sessionType,
         location: session.location || '',
         meetingUrl: session.meetingUrl || '',
@@ -148,6 +169,23 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
 
   const removeGoal = (index: number) => {
     handleInputChange('goals', formData.goals.filter((_, i) => i !== index));
+  };
+
+  const handleDateTimeChange = (value: string) => {
+    handleInputChange('scheduledAt', value);
+    
+    // Check for conflicts and suggest alternatives if date/time changed significantly
+    if (session && value !== session.scheduledAt.slice(0, 16)) {
+      setShowRescheduleHelp(true);
+      // In a real app, this would call an API to check availability
+      setSuggestedTimes([
+        new Date(new Date(value).getTime() + 60*60*1000).toISOString().slice(0, 16),
+        new Date(new Date(value).getTime() + 2*60*60*1000).toISOString().slice(0, 16),
+        new Date(new Date(value).getTime() + 24*60*60*1000).toISOString().slice(0, 16),
+      ]);
+    } else {
+      setShowRescheduleHelp(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -285,9 +323,38 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
                       id="scheduledAt"
                       type="datetime-local"
                       value={formData.scheduledAt}
-                      onChange={(e) => handleInputChange('scheduledAt', e.target.value)}
+                      onChange={(e) => handleDateTimeChange(e.target.value)}
                       required
                     />
+                    {showRescheduleHelp && (
+                      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <p className="text-sm text-blue-800 mb-2">
+                          <strong>Rescheduling detected.</strong> Here are some alternative times:
+                        </p>
+                        <div className="space-y-1">
+                          {suggestedTimes.map((time, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => {
+                                handleInputChange('scheduledAt', time);
+                                setShowRescheduleHelp(false);
+                              }}
+                              className="block text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              {new Date(time).toLocaleString()}
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowRescheduleHelp(false)}
+                          className="text-xs text-blue-500 hover:text-blue-700 mt-2"
+                        >
+                          Hide suggestions
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -308,6 +375,24 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="status">Session Status</Label>
+                  <Select 
+                    value={formData.status} 
+                    onValueChange={(value: 'scheduled' | 'completed' | 'cancelled' | 'no-show') => handleInputChange('status', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="no-show">No Show</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>

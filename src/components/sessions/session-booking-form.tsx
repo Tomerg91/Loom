@@ -177,7 +177,7 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                 setValue('timeSlot', ''); // Reset time slot when coach changes
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger data-testid="coach-select">
                 <SelectValue placeholder={t('selectCoach')} />
               </SelectTrigger>
               <SelectContent>
@@ -278,7 +278,7 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                 setValue('timeSlot', ''); // Reset time slot when duration changes
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger data-testid="session-type-select">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -317,6 +317,7 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                       className="h-auto py-2"
                       aria-pressed={watch('timeSlot') === slot.startTime}
                       aria-label={`Select time slot from ${slot.startTime} to ${slot.endTime}${!slot.isAvailable ? ' (unavailable)' : ''}`}
+                      data-testid="time-slot"
                     >
                       {slot.startTime} - {slot.endTime}
                     </Button>
@@ -345,6 +346,7 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                 {...register('title')}
                 placeholder="Weekly check-in session"
                 aria-describedby="title-error"
+                data-testid="session-title"
               />
               {errors.title && (
                 <p id="title-error" className="text-sm text-destructive" role="alert">{errors.title.message}</p>
@@ -358,6 +360,7 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
                 {...register('description')}
                 placeholder="Brief description of what you'd like to focus on..."
                 aria-describedby="description-error"
+                data-testid="session-description"
               />
               {errors.description && (
                 <p id="description-error" className="text-sm text-destructive" role="alert">{errors.description.message}</p>
@@ -367,7 +370,7 @@ export function SessionBookingForm({ onSuccess, selectedCoachId }: SessionBookin
 
           {/* Submit Button */}
           <div className="flex gap-2 justify-end">
-            <Button type="submit" disabled={isSubmitting || createSessionMutation.isPending}>
+            <Button type="submit" disabled={isSubmitting || createSessionMutation.isPending} data-testid="book-session-submit">
               {isSubmitting || createSessionMutation.isPending ? commonT('loading') : t('bookSession')}
             </Button>
           </div>

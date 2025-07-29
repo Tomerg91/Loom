@@ -50,6 +50,8 @@ export function PerformanceMonitorComponent() {
   const budgetIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const cleanupIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const monitorRef = useRef<InstanceType<typeof PerformanceMonitor> | null>(null);
+  const webVitalsThrottleRef = useRef<Map<string, number>>(new Map());
+  const isInitializedRef = useRef<boolean>(false);
   
   // Memoized cleanup function to prevent excessive array operations
   const cleanupData = useCallback(() => {
@@ -68,14 +70,20 @@ export function PerformanceMonitorComponent() {
   }, []);
 
   useEffect(() => {
+    // Prevent multiple initializations
+    if (isInitializedRef.current) return;
+    isInitializedRef.current = true;
+    
     // Initialize monitor only once
     if (!monitorRef.current) {
       monitorRef.current = PerformanceMonitor.getInstance();
     }
     const monitor = monitorRef.current;
     
+    // Use ref-based throttle map to prevent memory leaks
+    const webVitalsThrottle = webVitalsThrottleRef.current;
+    
     // Collect Web Vitals with throttling to prevent excessive updates
-    const webVitalsThrottle = new Map<string, number>();
     collectWebVitals((metric) => {
       const lastUpdate = webVitalsThrottle.get(metric.name) || 0;
       const now = Date.now();
@@ -84,6 +92,16 @@ export function PerformanceMonitorComponent() {
       if (now - lastUpdate < 1000) return;
       
       webVitalsThrottle.set(metric.name, now);
+      
+      // Periodically clean old throttle entries to prevent memory buildup
+      if (webVitalsThrottle.size > 10) {
+        const oldestTime = now - 60000; // 1 minute
+        for (const [key, time] of webVitalsThrottle.entries()) {
+          if (time < oldestTime) {
+            webVitalsThrottle.delete(key);
+          }
+        }
+      }
       
       setPerformanceData(prev => ({
         ...prev,
@@ -172,6 +190,8 @@ export function PerformanceMonitorComponent() {
 
     // Cleanup function
     return () => {
+      isInitializedRef.current = false;
+      
       // Disconnect monitor
       if (monitor) {
         monitor.disconnect();
@@ -194,9 +214,9 @@ export function PerformanceMonitorComponent() {
       }
       
       // Clear throttle maps
-      webVitalsThrottle.clear();
+      webVitalsThrottleRef.current.clear();
     };
-  }, [cleanupData]); // Only depend on cleanupData callback
+  }, []); // Empty dependency array to run only once
 
   // Additional cleanup on unmount
   useEffect(() => {

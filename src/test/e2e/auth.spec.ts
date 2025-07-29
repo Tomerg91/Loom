@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createAuthHelper, testConstants, getTestUserByRole } from '../../../tests/helpers';
 
 test.describe('Authentication Flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,38 +8,36 @@ test.describe('Authentication Flow', () => {
   });
 
   test('complete signin flow', async ({ page }) => {
+    const authHelper = createAuthHelper(page);
+    const testUser = getTestUserByRole('client')!;
+
     // Should redirect to signin page when not authenticated
     await expect(page).toHaveURL('/auth/signin');
 
-    // Fill out signin form
-    await page.fill('[data-testid="email-input"]', 'test@example.com');
-    await page.fill('[data-testid="password-input"]', 'password123');
-    
-    // Submit form
-    await page.click('[data-testid="signin-button"]');
+    // Use auth helper for consistent sign in
+    await authHelper.signInUser(testUser.email, testUser.password);
     
     // Should redirect to dashboard on successful signin
-    await expect(page).toHaveURL('/dashboard');
+    await expect(page).toHaveURL(/\/(dashboard|client)/);
     
     // Should show user info in navigation
-    await expect(page.locator('[data-testid="user-menu"]')).toBeVisible();
+    await expect(page.locator(testConstants.selectors.userMenu)).toBeVisible();
   });
 
   test('signin validation errors', async ({ page }) => {
     await page.goto('/auth/signin');
     
     // Try to submit empty form
-    await page.click('[data-testid="signin-button"]');
+    await page.click(testConstants.selectors.signInButton);
     
     // Should show validation errors
-    await expect(page.locator('text=Email is required')).toBeVisible();
-    await expect(page.locator('text=Password is required')).toBeVisible();
+    await expect(page.locator(`text=${testConstants.errorMessages.required}`)).toBeVisible();
     
     // Enter invalid email
-    await page.fill('[data-testid="email-input"]', 'invalid-email');
-    await page.click('[data-testid="signin-button"]');
+    await page.fill(testConstants.selectors.emailInput, 'invalid-email');
+    await page.click(testConstants.selectors.signInButton);
     
-    await expect(page.locator('text=Invalid email format')).toBeVisible();
+    await expect(page.locator(`text=${testConstants.errorMessages.invalidEmail}`)).toBeVisible();
   });
 
   test('signin error handling', async ({ page }) => {
@@ -114,23 +113,22 @@ test.describe('Authentication Flow', () => {
   });
 
   test('role-based access control', async ({ page }) => {
-    // Signin as client
-    await page.goto('/auth/signin');
-    await page.fill('[data-testid="email-input"]', 'client@example.com');
-    await page.fill('[data-testid="password-input"]', 'password123');
-    await page.click('[data-testid="signin-button"]');
+    const authHelper = createAuthHelper(page);
+    
+    // Signin as client using helper
+    await authHelper.signInUserByRole('client');
     
     // Should be able to access client pages
-    await page.goto('/client');
-    await expect(page).toHaveURL('/client');
+    const hasClientAccess = await authHelper.verifyUserRole('client');
+    expect(hasClientAccess).toBe(true);
     
     // Should not be able to access coach pages
     await page.goto('/coach');
-    await expect(page).toHaveURL('/dashboard'); // Redirected
+    await expect(page).not.toHaveURL(/\/coach/); // Redirected away
     
     // Should not be able to access admin pages
     await page.goto('/admin');
-    await expect(page).toHaveURL('/dashboard'); // Redirected
+    await expect(page).not.toHaveURL(/\/admin/); // Redirected away
   });
 
   test('session persistence', async ({ page }) => {

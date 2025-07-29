@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST, GET } from '@/app/api/sessions/route';
 import { createMockSession, mockSupabaseClient } from '@/test/utils';
-import { SessionService } from '@/lib/database/sessions';
+import { SessionService } from '@/lib/database';
 import { validateRequestBody } from '@/lib/api/utils';
 import { SessionNotificationService } from '@/lib/notifications/session-notifications';
 

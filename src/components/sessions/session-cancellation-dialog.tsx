@@ -308,7 +308,7 @@ export function SessionCancellationDialog({
               value={formData.reason} 
               onValueChange={(value) => setFormData(prev => ({ ...prev, reason: value }))}
             >
-              <SelectTrigger>
+              <SelectTrigger data-testid="cancellation-reason-select">
                 <SelectValue placeholder="Select a reason for cancellation" />
               </SelectTrigger>
               <SelectContent>
@@ -332,6 +332,7 @@ export function SessionCancellationDialog({
                 placeholder="Please provide more details about the cancellation reason..."
                 rows={3}
                 required
+                data-testid="custom-reason-textarea"
               />
             </div>
           )}
@@ -441,13 +442,14 @@ export function SessionCancellationDialog({
         </form>
 
         <DialogFooter className="flex justify-between">
-          <Button variant="outline" onClick={onClose} disabled={cancelSessionMutation.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={cancelSessionMutation.isPending} data-testid="keep-session-button">
             Keep Session
           </Button>
           <Button 
             variant="destructive" 
             onClick={handleSubmit}
             disabled={cancelSessionMutation.isPending || !formData.reason}
+            data-testid="cancel-session-button"
           >
             {cancelSessionMutation.isPending ? (
               <>

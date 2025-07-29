@@ -63,7 +63,7 @@ export function SessionInfo({ session }: SessionInfoProps) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-sm font-medium text-muted-foreground">Date &amp; Time</Label>
-            <p className="text-sm">
+            <p className="text-sm" data-testid="session-date">
               {formattedDateTime.full}
             </p>
           </div>
@@ -83,7 +83,7 @@ export function SessionInfo({ session }: SessionInfoProps) {
           </div>
           <div>
             <Label className="text-sm font-medium text-muted-foreground">Status</Label>
-            <Badge className={getStatusColor(session.status)}>
+            <Badge className={getStatusColor(session.status)} data-testid="session-status">
               {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
             </Badge>
           </div>

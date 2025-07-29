@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
-type SubscriptionCallback<T extends Record<string, unknown> = Record<string, unknown>> = (payload: RealtimePostgresChangesPayload<T>) => void;
+type SubscriptionCallback<T extends { [key: string]: any } = { [key: string]: any }> = (payload: RealtimePostgresChangesPayload<T>) => void;
 
 export class RealtimeClient {
   private supabase = createClient();

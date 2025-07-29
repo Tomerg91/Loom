@@ -11,8 +11,26 @@ import {
   SECURITY_URLS,
   DEFAULTS,
   ENV_CONFIG,
+  UI_CONFIG,
   FEATURE_FLAGS,
 } from './constants';
+
+import {
+  AUTH_ENDPOINTS,
+  SESSION_ENDPOINTS,
+  USER_ENDPOINTS,
+  COACH_ENDPOINTS,
+  NOTIFICATION_ENDPOINTS,
+  NOTES_ENDPOINTS,
+  REFLECTION_ENDPOINTS,
+  ADMIN_ENDPOINTS,
+  SYSTEM_ENDPOINTS,
+  EXTERNAL_URLS,
+  HTTP_STATUS,
+  QUERY_PARAMS,
+  CONTENT_TYPES,
+  HTTP_METHODS,
+} from './api-endpoints';
 
 /**
  * Application Configuration
@@ -103,6 +121,11 @@ export class AppConfig {
     return DEFAULTS;
   }
 
+  // UI Configuration
+  get ui() {
+    return UI_CONFIG;
+  }
+
   // Environment Configuration
   get env() {
     return ENV_CONFIG[this.environment];
@@ -111,6 +134,32 @@ export class AppConfig {
   // Feature Flags
   get features() {
     return FEATURE_FLAGS;
+  }
+
+  // API Endpoints
+  get endpoints() {
+    return {
+      auth: AUTH_ENDPOINTS,
+      sessions: SESSION_ENDPOINTS,
+      users: USER_ENDPOINTS,
+      coaches: COACH_ENDPOINTS,
+      notifications: NOTIFICATION_ENDPOINTS,
+      notes: NOTES_ENDPOINTS,
+      reflections: REFLECTION_ENDPOINTS,
+      admin: ADMIN_ENDPOINTS,
+      system: SYSTEM_ENDPOINTS,
+      external: EXTERNAL_URLS,
+    };
+  }
+
+  // HTTP Configuration
+  get http() {
+    return {
+      status: HTTP_STATUS,
+      methods: HTTP_METHODS,
+      contentTypes: CONTENT_TYPES,
+      queryParams: QUERY_PARAMS,
+    };
   }
 
   // Environment-specific getters
@@ -252,7 +301,26 @@ export {
   SECURITY_URLS,
   DEFAULTS,
   ENV_CONFIG,
+  UI_CONFIG,
   FEATURE_FLAGS,
+};
+
+// Export API endpoint configurations
+export {
+  AUTH_ENDPOINTS,
+  SESSION_ENDPOINTS,
+  USER_ENDPOINTS,
+  COACH_ENDPOINTS,
+  NOTIFICATION_ENDPOINTS,
+  NOTES_ENDPOINTS,
+  REFLECTION_ENDPOINTS,
+  ADMIN_ENDPOINTS,
+  SYSTEM_ENDPOINTS,
+  EXTERNAL_URLS,
+  HTTP_STATUS,
+  QUERY_PARAMS,
+  CONTENT_TYPES,
+  HTTP_METHODS,
 };
 
 // Re-export types
@@ -266,5 +334,24 @@ export type {
   RealtimeConfig,
   SecurityUrls,
   Defaults,
+  UiConfig,
   FeatureFlags,
 } from './constants';
+
+// Re-export API endpoint types
+export type {
+  AuthEndpoints,
+  SessionEndpoints,
+  UserEndpoints,
+  CoachEndpoints,
+  NotificationEndpoints,
+  NotesEndpoints,
+  ReflectionEndpoints,
+  AdminEndpoints,
+  SystemEndpoints,
+  ExternalUrls,
+  HttpStatus,
+  QueryParams,
+  ContentTypes,
+  HttpMethods,
+} from './api-endpoints';

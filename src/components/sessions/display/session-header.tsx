@@ -53,8 +53,8 @@ export function SessionHeader({ session, currentUser, onBack, onEdit }: SessionH
           Back to Sessions
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">{session.title}</h1>
-          <p className="text-muted-foreground">{session.description}</p>
+          <h1 className="text-3xl font-bold" data-testid="session-title">{session.title}</h1>
+          <p className="text-muted-foreground" data-testid="session-description">{session.description}</p>
         </div>
       </div>
       <div className="flex items-center space-x-2">

@@ -148,7 +148,23 @@
     "weakPassword": "הסיסמה חייבת להכיל לפחות 8 תווים",
     "passwordMismatch": "הסיסמאות אינן תואמות",
     "invalidEmail": "אנא הזן אימייל תקין",
-    "requiredField": "שדה חובה"
+    "requiredField": "שדה חובה",
+    "resetEmailSent": "אמייל איפוס נשלח",
+    "resetEmailSentDescription": "שלחנו לך קישור לאיפוס סיסמה. אנא בדוק את האימייל שלך ולחץ על הקישור כדי להמשיך.",
+    "setNewPassword": "הגדר סיסמה חדשה",
+    "setNewPasswordDescription": "הזן את הסיסמה החדשה שלך למטה כדי להשלים את תהליך האיפוס.",
+    "passwordUpdated": "הסיסמה עודכנה",
+    "passwordUpdatedDescription": "הסיסמה שלך עודכנה בהצלחה. כעת תוכל להתחבר עם הסיסמה החדשה שלך.",
+    "newPassword": "סיסמה חדשה",
+    "updating": "מעדכן...",
+    "updatePassword": "עדכן סיסמה",
+    "sending": "שולח...",
+    "sendResetLink": "שלח קישור איפוס",
+    "backToSignIn": "חזור להתחברות",
+    "back": "חזור",
+    "signIn": "התחבר",
+    "enterEmail": "הזן את האימייל שלך",
+    "resetPasswordDescription": "הזן את כתובת האימייל שלך ונשלח לך קישור איפוס"
   },
   "user": {
     "role": "תפקיד",
@@ -384,6 +400,51 @@
     "max": "חייב להיות לא יותר מ-{max}",
     "pattern": "פורמט לא תקין",
     "passwordStrength": "הסיסמה חייבת להכיל לפחות 8 תווים, אות גדולה אחת, אות קטנה אחת ומספר אחד"
+  },
+  "admin": {
+    "users": {
+      "title": "ניהול משתמשים",
+      "description": "נהל משתמשים, תפקידים והרשאות",
+      "addUser": "הוסף משתמש חדש"
+    },
+    "analytics": {
+      "title": "לוח בקרה אנליטי",
+      "description": "צפה באנליטיקה של הפלטפורמה ומדדי ביצועים"
+    },
+    "system": {
+      "title": "ניהול מערכת",
+      "description": "הגדר הגדרות מערכת ופקח על בריאותה"
+    },
+    "stats": {
+      "totalUsers": "סך המשתמשים",
+      "activeUsers": "משתמשים פעילים",
+      "totalSessions": "סך הפגישות",
+      "completionRate": "שיעור השלמה",
+      "revenue": "הכנסות",
+      "avgRating": "דירוג ממוצע",
+      "coaches": "מאמנים",
+      "clients": "לקוחות"
+    },
+    "actions": {
+      "refresh": "רענן",
+      "export": "ייצא",
+      "exportLogs": "ייצא יומנים",
+      "manageUsers": "נהל משתמשים",
+      "viewSessions": "צפה בפגישות",
+      "generateReport": "צור דוח",
+      "systemHealth": "בריאות המערכת"
+    },
+    "system": {
+      "overview": "סקירה כללית",
+      "settings": "הגדרות",
+      "security": "אבטחה",
+      "maintenance": "תחזוקה",
+      "database": "בסיס נתונים",
+      "server": "שרת",
+      "memory": "זיכרון",
+      "storage": "אחסון",
+      "serviceStatus": "סטטוס שירותים"
+    }
   },
   "notFound": {
     "title": "הדף לא נמצא",

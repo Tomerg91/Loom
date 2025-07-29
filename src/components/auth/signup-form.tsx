@@ -120,6 +120,7 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 {...register('firstName')}
                 error={errors.firstName?.message}
                 disabled={isLoading}
+                data-testid="first-name-input"
               />
             </div>
             
@@ -131,6 +132,7 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 {...register('lastName')}
                 error={errors.lastName?.message}
                 disabled={isLoading}
+                data-testid="last-name-input"
               />
             </div>
           </div>
@@ -144,6 +146,7 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
               {...register('email')}
               error={errors.email?.message}
               disabled={isLoading}
+              data-testid="email-input"
             />
           </div>
 
@@ -156,6 +159,7 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
               {...register('phone')}
               error={errors.phone?.message}
               disabled={isLoading}
+              data-testid="phone-input"
             />
           </div>
 
@@ -167,7 +171,7 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 onValueChange={(value: 'client' | 'coach') => setValue('role', value)}
                 disabled={isLoading}
               >
-                <SelectTrigger>
+                <SelectTrigger data-testid="role-select">
                   <SelectValue placeholder={t('selectRole')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -187,7 +191,7 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 onValueChange={(value: Language) => setValue('language', value)}
                 disabled={isLoading}
               >
-                <SelectTrigger>
+                <SelectTrigger data-testid="language-select">
                   <SelectValue placeholder={t('selectLanguage')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -211,6 +215,7 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 {...register('password')}
                 error={errors.password?.message}
                 disabled={isLoading}
+                data-testid="password-input"
               />
               <Button
                 type="button"
@@ -244,6 +249,7 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 {...register('confirmPassword')}
                 error={errors.confirmPassword?.message}
                 disabled={isLoading}
+                data-testid="confirm-password-input"
               />
               <Button
                 type="button"
@@ -268,7 +274,7 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading} data-testid="signup-button">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t('signup.button')}
           </Button>
@@ -278,6 +284,7 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
             <Link
               href="/auth/signin"
               className="text-primary underline-offset-4 hover:underline"
+              data-testid="signin-link"
             >
               {t('signin.link')}
             </Link>

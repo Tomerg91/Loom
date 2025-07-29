@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
-import { type Route } from 'next';
+import { usePathname, useRouter } from '@/i18n/routing';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -27,7 +26,7 @@ import {
   Layout,
   Accessibility
 } from 'lucide-react';
-import { locales } from '@/i18n/config';
+import { routing } from '@/i18n/routing';
 
 export function PreferencesSettingsCard() {
   const locale = useLocale();
@@ -41,7 +40,7 @@ export function PreferencesSettingsCard() {
     const segments = pathname.split('/').filter(Boolean);
     const currentLocale = segments[0];
     
-    const isLocaleInPath = locales.includes(currentLocale as 'en' | 'he');
+    const isLocaleInPath = routing.locales.includes(currentLocale as 'en' | 'he');
     
     let newPathname;
     if (isLocaleInPath) {
@@ -51,7 +50,7 @@ export function PreferencesSettingsCard() {
       newPathname = `/${newLocale}${pathname}`;
     }
     
-    router.push(newPathname as Route);
+    router.push(newPathname);
   };
 
   const themes = [

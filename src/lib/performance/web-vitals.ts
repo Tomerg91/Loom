@@ -69,6 +69,7 @@ export const collectWebVitals = (callback?: (metric: WebVital) => void) => {
 export class PerformanceMonitor {
   private static instance: PerformanceMonitor;
   private observers: PerformanceObserver[] = [];
+  private isDisconnected: boolean = false;
 
   static getInstance(): PerformanceMonitor {
     if (!PerformanceMonitor.instance) {
@@ -76,12 +77,23 @@ export class PerformanceMonitor {
     }
     return PerformanceMonitor.instance;
   }
+  
+  static resetInstance(): void {
+    if (PerformanceMonitor.instance) {
+      PerformanceMonitor.instance.disconnect();
+      PerformanceMonitor.instance = null as any;
+    }
+  }
 
   // Monitor long tasks
   observeLongTasks(callback: (entries: PerformanceEntry[]) => void) {
+    if (this.isDisconnected) return;
+    
     if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
       const observer = new PerformanceObserver((list) => {
-        callback(list.getEntries());
+        if (!this.isDisconnected) {
+          callback(list.getEntries());
+        }
       });
       
       try {
@@ -95,9 +107,13 @@ export class PerformanceMonitor {
 
   // Monitor layout shifts
   observeLayoutShifts(callback: (entries: PerformanceEntry[]) => void) {
+    if (this.isDisconnected) return;
+    
     if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
       const observer = new PerformanceObserver((list) => {
-        callback(list.getEntries());
+        if (!this.isDisconnected) {
+          callback(list.getEntries());
+        }
       });
       
       try {
@@ -111,9 +127,13 @@ export class PerformanceMonitor {
 
   // Monitor paint timing
   observePaintTiming(callback: (entries: PerformanceEntry[]) => void) {
+    if (this.isDisconnected) return;
+    
     if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
       const observer = new PerformanceObserver((list) => {
-        callback(list.getEntries());
+        if (!this.isDisconnected) {
+          callback(list.getEntries());
+        }
       });
       
       try {
@@ -127,9 +147,13 @@ export class PerformanceMonitor {
 
   // Monitor resource loading
   observeResourceTiming(callback: (entries: PerformanceEntry[]) => void) {
+    if (this.isDisconnected) return;
+    
     if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
       const observer = new PerformanceObserver((list) => {
-        callback(list.getEntries());
+        if (!this.isDisconnected) {
+          callback(list.getEntries());
+        }
       });
       
       try {
@@ -143,7 +167,14 @@ export class PerformanceMonitor {
 
   // Disconnect all observers
   disconnect() {
-    this.observers.forEach(observer => observer.disconnect());
+    this.isDisconnected = true;
+    this.observers.forEach(observer => {
+      try {
+        observer.disconnect();
+      } catch (error) {
+        console.warn('Error disconnecting performance observer:', error);
+      }
+    });
     this.observers = [];
   }
 }

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { type Route } from 'next';
+import { useRouter } from '@/i18n/routing';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -124,7 +123,7 @@ export function SettingsPage() {
               <div
                 key={action.title}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={() => router.push(action.href as Route)}
+                onClick={() => router.push(action.href)}
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">

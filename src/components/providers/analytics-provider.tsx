@@ -16,11 +16,14 @@ import {
 declare global {
   interface Window {
     gtag: (command: string, targetId: string, config?: Record<string, unknown>) => void;
+    dataLayer: any[];
     posthog?: {
       init: (key: string, config: Record<string, unknown>) => void;
       capture: (event: string, properties?: Record<string, unknown>) => void;
       identify: (userId: string, properties?: Record<string, unknown>) => void;
+      reset: () => void;
     };
+    __POSTHOG_LOADED__?: boolean;
   }
 }
 
@@ -32,6 +35,10 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   // Initialize Google Analytics
   useEffect(() => {
     if (GA_TRACKING_ID) {
+      // Check if GA is already initialized to prevent duplicates
+      const existingGA = document.querySelector('script[data-analytics="ga"]');
+      if (existingGA) return;
+      
       const script = document.createElement('script');
       script.async = true;
       script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`;
@@ -62,6 +69,16 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
             script.parentNode.removeChild(script);
           }
         });
+        
+        // Clear dataLayer to prevent memory accumulation
+        if (typeof window !== 'undefined' && window.dataLayer) {
+          window.dataLayer.length = 0;
+        }
+        
+        // Remove gtag function
+        if (typeof window !== 'undefined' && 'gtag' in window) {
+          delete (window as any).gtag;
+        }
       };
     }
   }, []);
@@ -69,6 +86,10 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   // Initialize PostHog
   useEffect(() => {
     if (POSTHOG_KEY && POSTHOG_HOST) {
+      // Check if PostHog is already initialized to prevent duplicates
+      const existingPostHog = document.querySelector('script[data-analytics="posthog"]');
+      if (existingPostHog) return;
+      
       const script = document.createElement('script');
       script.setAttribute('data-analytics', 'posthog');
       script.innerHTML = `
@@ -85,6 +106,15 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
 
       // Cleanup function
       return () => {
+        // Properly shutdown PostHog before cleanup
+        if (window.posthog && typeof window.posthog.reset === 'function') {
+          try {
+            window.posthog.reset();
+          } catch (error) {
+            console.warn('PostHog reset failed:', error);
+          }
+        }
+        
         // Remove PostHog scripts
         const posthogScripts = document.querySelectorAll('script[data-analytics="posthog"]');
         posthogScripts.forEach(script => {
@@ -93,9 +123,21 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
           }
         });
         
-        // Clean up PostHog instance
-        if (window.posthog) {
-          window.posthog = undefined;
+        // Remove additional PostHog scripts that might be loaded dynamically
+        const dynamicPostHogScripts = document.querySelectorAll('script[src*="posthog"]');
+        dynamicPostHogScripts.forEach(script => {
+          if (script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+        });
+        
+        // Clean up PostHog instance and related properties
+        if (typeof window !== 'undefined') {
+          delete window.posthog;
+          // Clean up PostHog-related window properties
+          if (window.__POSTHOG_LOADED__) {
+            delete window.__POSTHOG_LOADED__;
+          }
         }
       };
     }

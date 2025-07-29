@@ -1,85 +1,174 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createAuthService } from '@/lib/auth/auth';
 import { strongPasswordSchema } from '@/lib/security/password';
+import { 
+  createSuccessResponse, 
+  createErrorResponse, 
+  withErrorHandling,
+  validateRequestBody,
+  rateLimit,
+  HTTP_STATUS
+} from '@/lib/api/utils';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { z } from 'zod';
 
+// Enhanced signup schema with comprehensive security validations
 const signUpSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string()
+    .email('Invalid email address')
+    .min(5, 'Email must be at least 5 characters')
+    .max(254, 'Email must be less than 255 characters')
+    .toLowerCase()
+    .refine(email => {
+      // Basic email security checks
+      const blockedDomains = ['tempmail.com', '10minutemail.com', 'guerrillamail.com'];
+      const domain = email.split('@')[1];
+      return !blockedDomains.includes(domain);
+    }, { message: 'Email domain not allowed' }),
   password: strongPasswordSchema,
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum(['client', 'coach', 'admin'], {
-    errorMap: () => ({ message: 'Role must be client, coach, or admin' })
+  firstName: z.string()
+    .min(1, 'First name is required')
+    .max(50, 'First name must be less than 50 characters')
+    .regex(/^[a-zA-Z\s\-']+$/, 'First name contains invalid characters'),
+  lastName: z.string()
+    .min(1, 'Last name is required')
+    .max(50, 'Last name must be less than 50 characters')
+    .regex(/^[a-zA-Z\s\-']+$/, 'Last name contains invalid characters'),
+  role: z.enum(['client', 'coach'], {
+    errorMap: () => ({ message: 'Role must be client or coach' })
   }),
-  phone: z.string().optional(),
+  phone: z.string()
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format')
+    .optional(),
   language: z.enum(['en', 'he'], {
     errorMap: () => ({ message: 'Language must be en or he' })
   }).default('en'),
+  acceptedTerms: z.boolean()
+    .refine(val => val === true, { message: 'You must accept the terms and conditions' }),
 });
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    
-    // Validate request body
-    const validation = signUpSchema.safeParse(body);
-    if (!validation.success) {
-      return NextResponse.json(
-        { 
-          error: 'Invalid request data',
-          details: validation.error.errors 
-        },
-        { status: 400 }
-      );
-    }
+// Apply rate limiting to prevent abuse
+const rateLimitedHandler = rateLimit(5, 60000, { // 5 requests per minute
+  blockDuration: 15 * 60 * 1000, // 15 minutes block
+  enableSuspiciousActivityDetection: true
+});
 
-    const authService = createAuthService(true);
-    const { user, error } = await authService.signUp(validation.data);
+// Main POST handler with comprehensive security
+export const POST = withErrorHandling(
+  rateLimitedHandler(async (request: NextRequest) => {
+    try {
+      // Parse and validate request body with security measures
+      const body = await request.json();
+      const validation = validateRequestBody(signUpSchema, body, {
+        sanitize: true,
+        maxDepth: 5,
+        maxSize: 10 * 1024 // 10KB limit
+      });
 
-    if (error) {
-      return NextResponse.json(
-        { error },
-        { status: 400 }
-      );
-    }
+      if (!validation.success) {
+        // Log signup attempt for security monitoring
+        console.warn('Invalid signup attempt:', {
+          ip: request.headers.get('x-forwarded-for') || 'unknown',
+          userAgent: request.headers.get('user-agent'),
+          timestamp: new Date().toISOString(),
+          validationErrors: validation.error.details
+        });
+        
+        return createErrorResponse(
+          validation.error.message,
+          HTTP_STATUS.BAD_REQUEST
+        );
+      }
 
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Failed to create user account' },
-        { status: 400 }
-      );
-    }
+      const { acceptedTerms, ...signupData } = validation.data;
+      
+      // Additional security check for terms acceptance
+      if (!acceptedTerms) {
+        return createErrorResponse(
+          'Terms and conditions must be accepted',
+          HTTP_STATUS.BAD_REQUEST
+        );
+      }
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
+      // Create auth service and attempt signup
+      const authService = createAuthService(true);
+      const { user, error } = await authService.signUp(signupData);
+
+      if (error) {
+        // Log failed signup for security monitoring
+        console.warn('Signup failed:', {
+          email: signupData.email,
+          role: signupData.role,
+          error,
+          timestamp: new Date().toISOString(),
+          ip: request.headers.get('x-forwarded-for') || 'unknown'
+        });
+        
+        // Return generic error message to prevent enumeration
+        if (error.includes('already registered') || error.includes('already exists')) {
+          return createErrorResponse(
+            'An account with this email already exists',
+            HTTP_STATUS.CONFLICT
+          );
+        }
+        
+        return createErrorResponse(
+          'Failed to create account. Please try again.',
+          HTTP_STATUS.BAD_REQUEST
+        );
+      }
+
+      if (!user) {
+        return createErrorResponse(
+          'Failed to create user account',
+          HTTP_STATUS.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      // Log successful signup for auditing
+      console.info('User signup successful:', {
+        userId: user.id,
         email: user.email,
         role: user.role,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        avatarUrl: user.avatarUrl,
-        language: user.language,
-      },
-      message: 'User account created successfully. Please check your email for verification.'
-    }, { status: 201 });
+        timestamp: new Date().toISOString(),
+        ip: request.headers.get('x-forwarded-for') || 'unknown'
+      });
 
-  } catch (error) {
-    console.error('Sign-up error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+      // Return sanitized user data
+      const response = createSuccessResponse({
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          avatarUrl: user.avatarUrl,
+          language: user.language,
+          status: user.status
+        },
+        message: 'Account created successfully. Please check your email for verification.'
+      }, 'User account created successfully', HTTP_STATUS.CREATED);
 
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+      return applyCorsHeaders(response, request);
+      
+    } catch (error) {
+      // Log error for monitoring
+      console.error('Signup error:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+        ip: request.headers.get('x-forwarded-for') || 'unknown'
+      });
+      
+      return createErrorResponse(
+        'An unexpected error occurred during signup',
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      );
+    }
+  })
+);
+
+// Handle CORS preflight requests
+export function OPTIONS(request: NextRequest) {
+  return createCorsResponse(request);
 }

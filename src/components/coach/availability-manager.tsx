@@ -200,7 +200,7 @@ export function AvailabilityManager() {
       </div>
 
       {/* Current Schedule Overview */}
-      <Card>
+      <Card data-testid="availability-calendar">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -227,7 +227,7 @@ export function AvailabilityManager() {
                     ) : (
                       <div className="space-y-1">
                         {daySlots.map((slot, index) => (
-                          <Badge key={index} variant="outline" className="w-full justify-center">
+                          <Badge key={index} variant="outline" className="w-full justify-center" data-testid={`time-slot-${day.label.toLowerCase()}-${slot.startTime.replace(':', '')}`}>
                             <Clock className="h-3 w-3 mr-1" />
                             {slot.startTime} - {slot.endTime}
                           </Badge>
@@ -256,7 +256,7 @@ export function AvailabilityManager() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label className="text-base font-medium">Time Slots</Label>
-                <Button type="button" variant="outline" onClick={addTimeSlot}>
+                <Button type="button" variant="outline" onClick={addTimeSlot} data-testid="add-time-slot">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Time Slot
                 </Button>
@@ -279,7 +279,7 @@ export function AvailabilityManager() {
                             value={watch(`slots.${index}.dayOfWeek`)?.toString()}
                             onValueChange={(value) => setValue(`slots.${index}.dayOfWeek`, parseInt(value))}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger data-testid="day-select">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -298,7 +298,7 @@ export function AvailabilityManager() {
                             value={watch(`slots.${index}.startTime`)}
                             onValueChange={(value) => setValue(`slots.${index}.startTime`, value)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger data-testid="start-time">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -317,7 +317,7 @@ export function AvailabilityManager() {
                             value={watch(`slots.${index}.endTime`)}
                             onValueChange={(value) => setValue(`slots.${index}.endTime`, value)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger data-testid="end-time">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -336,6 +336,7 @@ export function AvailabilityManager() {
                           size="sm"
                           onClick={() => remove(index)}
                           className="text-destructive hover:text-destructive"
+                          data-testid="delete-time-slot"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -358,6 +359,7 @@ export function AvailabilityManager() {
                 type="submit" 
                 disabled={isSaving || saveAvailabilityMutation.isPending}
                 className="min-w-32"
+                data-testid="save-time-slot"
               >
                 {isSaving || saveAvailabilityMutation.isPending ? (
                   <>

@@ -155,7 +155,7 @@ describe('Authentication Flow Integration', () => {
 
     it('redirects when user lacks required role', () => {
       // Mock user with insufficient role
-      const clientUser = { ...mockUser, role: 'client' };
+      const clientUser = { ...mockUser, role: 'client' as const };
       (vi.mocked(useUser)).mockReturnValue(clientUser);
 
       renderWithProviders(
@@ -170,7 +170,7 @@ describe('Authentication Flow Integration', () => {
 
     it('shows loading state while checking authentication', () => {
       // Mock loading state
-      (vi.mocked(useUser)).mockReturnValue(undefined);
+      (vi.mocked(useUser)).mockReturnValue(null);
 
       renderWithProviders(
         <RouteGuard requireRole="client">
@@ -267,7 +267,7 @@ describe('Authentication Flow Integration', () => {
       try {
         await mockSupabaseClient.auth.signOut();
       } catch (error) {
-        expect(error.message).toBe('Sign out failed');
+        expect((error as Error).message).toBe('Sign out failed');
       }
 
       // Should still clear local state on error
