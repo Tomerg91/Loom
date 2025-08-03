@@ -80,7 +80,13 @@ export const POST = withErrorHandling(
         );
       }
 
-      const { acceptedTerms, ...signupData } = validation.data;
+      const { acceptedTerms, ...rest } = validation.data;
+      
+      // Ensure language is always present (Zod default should handle this, but TypeScript needs assurance)
+      const signupData = {
+        ...rest,
+        language: rest.language || 'en' as const
+      };
       
       // Additional security check for terms acceptance
       if (!acceptedTerms) {

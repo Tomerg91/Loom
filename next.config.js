@@ -17,10 +17,17 @@ const nextConfig = {
       '@radix-ui/react-tabs',
       '@radix-ui/react-toast',
       'lucide-react',
+      '@supabase/supabase-js',
+      '@tanstack/react-query',
+      'recharts',
+      'date-fns',
     ],
+    // Note: PPR and React compiler require Next.js canary version
+    // ppr: 'incremental',
+    // reactCompiler: true,
   },
   
-  // Turbopack configuration (moved from experimental in Next.js 15)
+  // Turbopack configuration (stable in Next.js 15)
   turbopack: {
     rules: {
       '*.svg': {
@@ -33,8 +40,12 @@ const nextConfig = {
   // Performance optimizations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
-    // React compiler optimizations for Next.js 15
-    reactRemoveProperties: process.env.NODE_ENV === 'production',
+    // Remove test IDs in production
+    reactRemoveProperties: process.env.NODE_ENV === 'production' ? {
+      properties: ['^data-testid$']
+    } : false,
+    // Styled-components support
+    styledComponents: true,
   },
   
   // Security headers

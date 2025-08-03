@@ -23,6 +23,7 @@ export const HTTP_STATUS = {
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
+  METHOD_NOT_ALLOWED: 405,
   CONFLICT: 409,
   UNPROCESSABLE_ENTITY: 422,
   TOO_MANY_REQUESTS: 429,
@@ -399,7 +400,7 @@ export function requireAuth<T extends unknown[]>(
       }
 
       // Check for account suspension or security flags
-      const accountAge = new Date().getTime() - new Date(userProfile.created_at).getTime();
+      const accountAge = new Date().getTime() - new Date(userProfile.createdAt || userProfile.created_at).getTime();
       if (accountAge < 0) {
         return createErrorResponse(
           'Invalid account creation date detected',

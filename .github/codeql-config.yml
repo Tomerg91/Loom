@@ -1,0 +1,44 @@
+name: "Loom App CodeQL Config"
+
+# Disable default queries that are too noisy for our codebase
+disable-default-queries: false
+
+# Add specific query suites
+queries:
+  - uses: security-and-quality
+  - uses: security-extended
+
+# Paths to include in analysis
+paths:
+  - src/
+  - pages/
+  - app/
+
+# Paths to exclude from analysis
+paths-ignore:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/.next/**"
+  - "**/coverage/**"
+  - "**/public/**"
+
+# Additional configuration for JavaScript/TypeScript
+javascript:
+  # Include TypeScript files in JavaScript analysis
+  typescript-mode: true
+  
+  # Specify which files to analyze
+  include:
+    - "**/*.js"
+    - "**/*.jsx"  
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/*.mjs"
+  
+  exclude:
+    - "**/*.min.js"
+    - "**/vendor/**"

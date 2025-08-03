@@ -1,0 +1,92 @@
+version: 2
+updates:
+  # Monitor npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    
+    # Limit the number of open PRs
+    open-pull-requests-limit: 10
+    
+    # Group updates for better management
+    groups:
+      # Group all minor and patch updates
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      # Separate group for major updates  
+      major-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+    
+    # Auto-merge configuration for low-risk updates
+    allow:
+      - dependency-type: "direct"
+        update-type: "security"
+      - dependency-type: "indirect"
+        update-type: "security"
+    
+    # Commit message configuration
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    
+    # Add helpful labels
+    labels:
+      - "dependencies"
+      - "security"
+      - "automated"
+    
+    # Configure reviewers (customize as needed)
+    reviewers:
+      - "team-maintainers"
+    
+    # Configure assignees
+    assignees:
+      - "security-team"
+    
+    # Pull request settings
+    pull-request-branch-name:
+      separator: "/"
+    
+    # Ignore specific dependencies if needed
+    ignore:
+      # Example: ignore major updates for stable packages
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+    
+    # Target specific branches
+    target-branch: "develop"
+
+  # Monitor GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "UTC"
+    
+    open-pull-requests-limit: 5
+    
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    
+    labels:
+      - "github-actions"
+      - "ci/cd"
+      - "automated"
