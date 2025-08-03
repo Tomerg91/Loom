@@ -1,0 +1,179 @@
+import { NextRequest } from 'next/server';
+import { authService } from '@/lib/services/auth-service';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { ApiError } from '@/lib/api/errors';
+import { createServerClient } from '@/lib/supabase/server';
+
+interface Coach {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  avatarUrl?: string;
+  title: string;
+  bio: string;
+  specialties: string[];
+  experience: number;
+  rating: number;
+  reviewCount: number;
+  hourlyRate: number;
+  location: string;
+  languages: string[];
+  availability: {
+    timezone: string;
+    slots: Array<{
+      day: string;
+      times: string[];
+    }>;
+  };
+  credentials: string[];
+  approach: string;
+  successStories: number;
+}
+
+export async function GET(request: NextRequest): Promise<Response> {
+  try {
+    // Verify authentication and get user
+    const session = await authService.getSession();
+    if (!session?.user) {
+      return ApiResponseHelper.unauthorized('Authentication required');
+    }
+
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search');
+    const specialty = searchParams.get('specialty');
+    const minRating = searchParams.get('minRating');
+    const maxRate = searchParams.get('maxRate');
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+
+    const supabase = createServerClient();
+
+    // Build query for coaches
+    let query = supabase
+      .from('users')
+      .select(`
+        id,
+        email,
+        first_name,
+        last_name,
+        phone,
+        avatar_url,
+        timezone,
+        created_at,
+        coach_profiles (
+          title,
+          bio,
+          specialties,
+          experience_years,
+          hourly_rate,
+          location,
+          languages,
+          credentials,
+          approach
+        )
+      `)
+      .eq('role', 'coach')
+      .eq('status', 'active')
+      .limit(limit);
+
+    // Apply search filter
+    if (search) {
+      query = query.or(
+        `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`
+      );
+    }
+
+    const { data: coachData, error } = await query;
+
+    if (error) {
+      throw new ApiError('FETCH_COACHES_FAILED', 'Failed to fetch coaches', 500);
+    }
+
+    // Get additional statistics for each coach
+    const coaches: Coach[] = await Promise.all(
+      (coachData || []).map(async (coach) => {
+        // Get session count for this coach (rating functionality will be implemented later)
+        const { data: sessionStats } = await supabase
+          .from('sessions')
+          .select('status')
+          .eq('coach_id', coach.id)
+          .eq('status', 'completed');
+
+        // TODO: Implement rating system - for now using default values
+        const averageRating = 4.5; // Default rating
+        const reviewCount = sessionStats?.length || 0;
+
+        // Get unique clients count (success stories)
+        const { data: clientSessions } = await supabase
+          .from('sessions')
+          .select('client_id')
+          .eq('coach_id', coach.id)
+          .eq('status', 'completed');
+
+        const uniqueClients = new Set(clientSessions?.map(s => s.client_id) || []);
+
+        const profile = coach.coach_profiles?.[0] as any;
+
+        return {
+          id: coach.id,
+          firstName: coach.first_name || '',
+          lastName: coach.last_name || '',
+          email: coach.email,
+          phone: coach.phone || undefined,
+          avatarUrl: coach.avatar_url || undefined,
+          title: profile?.title || 'Professional Coach',
+          bio: profile?.bio || 'Experienced coach dedicated to helping clients achieve their goals.',
+          specialties: Array.isArray(profile?.specialties) ? profile.specialties : [],
+          experience: typeof profile?.experience_years === 'number' ? profile.experience_years : 0,
+          rating: averageRating,
+          reviewCount: reviewCount,
+          hourlyRate: typeof profile?.hourly_rate === 'number' ? profile.hourly_rate : 100,
+          location: profile?.location || 'Online',
+          languages: Array.isArray(profile?.languages) ? profile.languages : ['English'],
+          availability: {
+            timezone: coach.timezone || 'UTC',
+            slots: [
+              { day: 'Monday', times: ['09:00', '14:00', '16:00'] },
+              { day: 'Tuesday', times: ['10:00', '15:00'] },
+              { day: 'Wednesday', times: ['09:00', '13:00', '17:00'] },
+            ], // This would come from availability table in real implementation
+          },
+          credentials: Array.isArray(profile?.credentials) ? profile.credentials : [],
+          approach: profile?.approach || 'Client-centered coaching approach focused on practical solutions.',
+          successStories: uniqueClients.size,
+        };
+      })
+    );
+
+    // Apply additional filters
+    let filteredCoaches = coaches;
+
+    if (specialty && specialty !== 'all') {
+      filteredCoaches = filteredCoaches.filter(coach =>
+        coach.specialties.some(s => s.toLowerCase().includes(specialty.toLowerCase()))
+      );
+    }
+
+    if (minRating) {
+      const minRatingNum = parseFloat(minRating);
+      filteredCoaches = filteredCoaches.filter(coach => coach.rating >= minRatingNum);
+    }
+
+    if (maxRate) {
+      const maxRateNum = parseFloat(maxRate);
+      filteredCoaches = filteredCoaches.filter(coach => coach.hourlyRate <= maxRateNum);
+    }
+
+    return ApiResponseHelper.success(filteredCoaches);
+
+  } catch (error) {
+    console.error('Coaches API error:', error);
+    
+    if (error instanceof ApiError) {
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
+    }
+    
+    return ApiResponseHelper.internalError('Failed to fetch coaches');
+  }
+}
