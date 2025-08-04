@@ -5,6 +5,8 @@ import {
   withErrorHandling,
   validateRequestBody,
   parseQueryParams,
+  requireAuth,
+  handlePreflight,
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { validateQuery } from '@/lib/api/validation';
@@ -14,58 +16,12 @@ import {
   getSessionsCount, 
   createSession 
 } from '@/lib/database/sessions';
+import { rateLimit } from '@/lib/security/rate-limit';
 
 // GET /api/sessions - List sessions with pagination and filters
-export const GET = withErrorHandling(async (request: NextRequest) => {
-  // Authenticate user
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader) {
-    return createErrorResponse(
-      'Authentication required',
-      HTTP_STATUS.UNAUTHORIZED
-    );
-  }
-
-  // Get authenticated user from Supabase
-  const { createClient } = await import('@/lib/supabase/server');
-  const supabase = await createClient();
-  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-
-  if (authError || !authUser) {
-    return createErrorResponse(
-      'Invalid authentication token',
-      HTTP_STATUS.UNAUTHORIZED
-    );
-  }
-
-  // Get user profile from database
-  const { data: userProfile, error: profileError } = await supabase
-    .from('users')
-    .select('id, email, role, status')
-    .eq('id', authUser.id)
-    .single();
-
-  if (profileError || !userProfile) {
-    return createErrorResponse(
-      'User profile not found',
-      HTTP_STATUS.UNAUTHORIZED
-    );
-  }
-
-  // Check if user is active
-  if (userProfile.status !== 'active') {
-    return createErrorResponse(
-      'User account is not active',
-      HTTP_STATUS.FORBIDDEN
-    );
-  }
-
-  const _user = {
-    id: userProfile.id,
-    email: userProfile.email,
-    role: userProfile.role,
-    status: userProfile.status
-  };
+export const GET = withErrorHandling(
+  rateLimit(100, 60000)( // 100 requests per minute
+    requireAuth(async (user, request: NextRequest) => {
   
   // Original route logic
   const query = parseQueryParams(request);
@@ -99,102 +55,50 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   const hasNext = page < totalPages;
   const hasPrev = page > 1;
   
-  return createSuccessResponse({
-    data: sessions,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages,
-      hasNext,
-      hasPrev,
-    },
-  });
-});
+      return createSuccessResponse({
+        data: sessions,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext,
+          hasPrev,
+        },
+      });
+    })
+  )
+);
 
 // POST /api/sessions - Create new session
-export const POST = withErrorHandling(async (request: NextRequest) => {
-  // Authenticate user
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader) {
-    return createErrorResponse(
-      'Authentication required',
-      HTTP_STATUS.UNAUTHORIZED
-    );
-  }
-
-  // Get authenticated user from Supabase
-  const { createClient } = await import('@/lib/supabase/server');
-  const supabase = await createClient();
-  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-
-  if (authError || !authUser) {
-    return createErrorResponse(
-      'Invalid authentication token',
-      HTTP_STATUS.UNAUTHORIZED
-    );
-  }
-
-  // Get user profile from database
-  const { data: userProfile, error: profileError } = await supabase
-    .from('users')
-    .select('id, email, role, status')
-    .eq('id', authUser.id)
-    .single();
-
-  if (profileError || !userProfile) {
-    return createErrorResponse(
-      'User profile not found',
-      HTTP_STATUS.UNAUTHORIZED
-    );
-  }
-
-  // Check if user is active
-  if (userProfile.status !== 'active') {
-    return createErrorResponse(
-      'User account is not active',
-      HTTP_STATUS.FORBIDDEN
-    );
-  }
-
-  // Check if user has coach role (required for creating sessions)
-  if (userProfile.role !== 'coach' && userProfile.role !== 'admin') {
-    return createErrorResponse(
-      'Access denied. Required role: coach',
-      HTTP_STATUS.FORBIDDEN
-    );
-  }
-
-  const _user = {
-    id: userProfile.id,
-    email: userProfile.email,
-    role: userProfile.role,
-    status: userProfile.status
-  };
-  
-  // Original route logic
-  // Parse and validate request body
-  const body = await request.json();
-  const validation = validateRequestBody(createSessionSchema, body);
-  
-  if (!validation.success) {
-    return createErrorResponse(validation.error, HTTP_STATUS.UNPROCESSABLE_ENTITY);
-  }
-  
-  // Create session
-  const session = await createSession(validation.data);
-  
-  return createSuccessResponse(session, 'Session created successfully', HTTP_STATUS.CREATED);
-});
+export const POST = withErrorHandling(
+  rateLimit(50, 60000)( // 50 session creations per minute
+    requireAuth(async (user, request: NextRequest) => {
+      // Check if user has coach role (required for creating sessions)
+      if (user.role !== 'coach' && user.role !== 'admin') {
+        return createErrorResponse(
+          'Access denied. Required role: coach',
+          HTTP_STATUS.FORBIDDEN
+        );
+      }
+      
+      // Parse and validate request body
+      const body = await request.json();
+      const validation = validateRequestBody(createSessionSchema, body);
+      
+      if (!validation.success) {
+        return createErrorResponse(validation.error, HTTP_STATUS.UNPROCESSABLE_ENTITY);
+      }
+      
+      // Create session
+      const session = await createSession(validation.data);
+      
+      return createSuccessResponse(session, 'Session created successfully', HTTP_STATUS.CREATED);
+    })
+  )
+);
 
 // OPTIONS /api/sessions - Handle CORS preflight
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return handlePreflight(request);
 }

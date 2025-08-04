@@ -31,7 +31,11 @@ export function getRateLimitKey(request: NextRequest, identifier?: string): stri
   // Get IP from various headers (for production with proxies)
   const forwarded = request.headers.get('x-forwarded-for');
   const realIP = request.headers.get('x-real-ip');
-  const ip = forwarded?.split(',')[0] || realIP || 'unknown';
+  const remoteAddr = request.headers.get('x-vercel-forwarded-for') || 
+                    request.headers.get('cf-connecting-ip') ||
+                    request.headers.get('x-client-ip');
+  
+  const ip = forwarded?.split(',')[0]?.trim() || realIP || remoteAddr || 'unknown';
   
   return `${ip}:${request.nextUrl.pathname}`;
 }
@@ -153,4 +157,69 @@ export function applyTieredRateLimit(
       'X-RateLimit-Tier': userTier,
     },
   };
+}
+
+// Higher-order function for rate limiting API endpoints
+export function rateLimit(
+  maxRequests: number, 
+  windowMs: number, 
+  keyExtractor?: (request: NextRequest) => string
+) {
+  return function<T extends any[]>(
+    handler: (request: NextRequest, ...args: T) => Promise<Response>
+  ) {
+    return async function(request: NextRequest, ...args: T): Promise<Response> {
+      const key = keyExtractor ? keyExtractor(request) : getClientKey(request);
+      
+      const result = checkRateLimit(key, {
+        windowMs,
+        max: maxRequests,
+        message: `Too many requests. Limit: ${maxRequests} per ${windowMs}ms`
+      });
+
+      if (!result.success) {
+        const response = new Response(
+          JSON.stringify({
+            success: false,
+            error: result.message,
+            retryAfter: Math.ceil((result.resetTime - Date.now()) / 1000)
+          }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-RateLimit-Limit': maxRequests.toString(),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString(),
+              'Retry-After': Math.ceil((result.resetTime - Date.now()) / 1000).toString()
+            }
+          }
+        );
+        return response;
+      }
+
+      // Add rate limit headers to successful responses
+      const response = await handler(request, ...args);
+      const newHeaders = new Headers(response.headers);
+      newHeaders.set('X-RateLimit-Limit', maxRequests.toString());
+      newHeaders.set('X-RateLimit-Remaining', result.remaining.toString());
+      newHeaders.set('X-RateLimit-Reset', Math.ceil(result.resetTime / 1000).toString());
+      
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders
+      });
+    };
+  };
+}
+
+// Helper function to extract client key for rate limiting
+function getClientKey(request: NextRequest): string {
+  // Try to get IP address from various headers
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  const realIP = request.headers.get('x-real-ip');
+  const clientIP = forwardedFor?.split(',')[0] || realIP || 'unknown';
+  
+  return `ip:${clientIP}`;
 }

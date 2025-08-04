@@ -22,6 +22,15 @@ export const AUTH_ENDPOINTS = {
   // Email verification
   VERIFY: '/api/auth/verify',
   
+  // Multi-Factor Authentication endpoints
+  MFA_STATUS: '/api/auth/mfa-status',
+  MFA_SETUP: '/api/auth/mfa/setup',
+  MFA_VERIFY: '/api/auth/mfa/verify',
+  MFA_ENABLE: '/api/auth/mfa/enable',
+  MFA_DISABLE: '/api/auth/mfa/disable',
+  MFA_BACKUP_CODES: '/api/auth/mfa/backup-codes',
+  SIGNIN_MFA: '/api/auth/signin-mfa',
+  
   // Additional auth endpoints
   AVATAR: '/api/auth/avatar',
   DOCS: '/api/auth/docs',

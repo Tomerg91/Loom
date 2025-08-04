@@ -2,6 +2,8 @@ import { createServerClient } from '@/lib/supabase/server';
 import { supabase as clientSupabase } from '@/lib/supabase/client';
 import { createUserService } from '@/lib/database';
 import { NextRequest } from 'next/server';
+import * as speakeasy from 'speakeasy';
+import * as crypto from 'crypto';
 
 export interface MfaSecret {
   secret: string;
@@ -151,10 +153,20 @@ export class MfaService {
    */
   async verifyTotpCode(secret: string, code: string): Promise<boolean> {
     try {
-      // In a real app, use a library like speakeasy
-      // This is a simplified simulation
-      const validCodes = ['123456', '654321', '111111']; // Mock valid codes
-      return validCodes.includes(code);
+      if (!secret || !code) {
+        return false;
+      }
+
+      // Use speakeasy to verify TOTP code with time window tolerance
+      const verified = speakeasy.totp.verify({
+        secret: secret,
+        encoding: 'base32',
+        token: code,
+        window: 2, // Allow 2 time steps (60 seconds) tolerance
+        algorithm: 'sha1'
+      });
+
+      return verified;
     } catch (error) {
       console.error('Error verifying TOTP code:', error);
       return false;
@@ -166,20 +178,61 @@ export class MfaService {
    */
   async verifyBackupCode(userId: string, code: string): Promise<MfaVerificationResult> {
     try {
-      // In a real app, check against stored backup codes
-      const mockValidBackupCodes = ['12345678', '87654321', '11223344'];
-      const mockUsedCodes = ['11223344']; // Some codes already used
+      if (!userId || !code) {
+        return { success: false, error: 'User ID and backup code are required' };
+      }
+
+      const supabase = await createServerClient();
       
-      if (mockUsedCodes.includes(code)) {
+      // Fetch user's backup codes from database
+      const { data: backupCodes, error: fetchError } = await supabase
+        .from('user_mfa')
+        .select('backup_codes, backup_codes_used')
+        .eq('user_id', userId)
+        .eq('is_enabled', true)
+        .single();
+
+      if (fetchError || !backupCodes) {
+        return { success: false, error: 'No MFA backup codes found for user' };
+      }
+
+      const validCodes = backupCodes.backup_codes || [];
+      const usedCodes = backupCodes.backup_codes_used || [];
+      
+      // Check if code has already been used
+      if (usedCodes.includes(code)) {
         return { success: false, error: 'Backup code has already been used' };
       }
       
-      if (!mockValidBackupCodes.includes(code)) {
+      // Verify code against stored backup codes (hashed comparison)
+      let isValidCode = false;
+      for (const storedCode of validCodes) {
+        // Use crypto to compare hashed backup codes
+        const hashedInput = crypto.createHash('sha256').update(code).digest('hex');
+        if (crypto.timingSafeEqual(Buffer.from(hashedInput), Buffer.from(storedCode))) {
+          isValidCode = true;
+          break;
+        }
+      }
+
+      if (!isValidCode) {
         return { success: false, error: 'Invalid backup code' };
       }
 
       // Mark code as used
-      // await this.markBackupCodeAsUsed(userId, code);
+      const updatedUsedCodes = [...usedCodes, code];
+      const { error: updateError } = await supabase
+        .from('user_mfa')
+        .update({ 
+          backup_codes_used: updatedUsedCodes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (updateError) {
+        console.error('Failed to mark backup code as used:', updateError);
+        return { success: false, error: 'Failed to process backup code' };
+      }
       
       // Log security event
       await this.logSecurityEvent({
@@ -188,8 +241,13 @@ export class MfaService {
         timestamp: new Date().toISOString()
       });
 
-      return { success: true };
+      const remainingCodes = validCodes.length - updatedUsedCodes.length;
+      return { 
+        success: true, 
+        remainingAttempts: remainingCodes 
+      };
     } catch (error) {
+      console.error('Error verifying backup code:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to verify backup code'
@@ -204,8 +262,27 @@ export class MfaService {
     try {
       const newBackupCodes = this.generateBackupCodes();
       
-      // In a real app, save to database
-      // await this.saveBackupCodes(userId, newBackupCodes);
+      // Hash backup codes before storing
+      const hashedCodes = newBackupCodes.map(code => 
+        crypto.createHash('sha256').update(code).digest('hex')
+      );
+      
+      const supabase = await createServerClient();
+      
+      // Save hashed backup codes to database and reset used codes
+      const { error: updateError } = await supabase
+        .from('user_mfa')
+        .update({ 
+          backup_codes: hashedCodes,
+          backup_codes_used: [], // Reset used codes
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (updateError) {
+        console.error('Failed to save backup codes:', updateError);
+        return { codes: null, error: 'Failed to save backup codes to database' };
+      }
       
       // Log security event
       await this.logSecurityEvent({
@@ -214,8 +291,10 @@ export class MfaService {
         timestamp: new Date().toISOString()
       });
 
+      // Return plain text codes to user (only time they'll see them)
       return { codes: newBackupCodes, error: null };
     } catch (error) {
+      console.error('Error regenerating backup codes:', error);
       return {
         codes: null,
         error: error instanceof Error ? error.message : 'Failed to regenerate backup codes'
@@ -411,9 +490,12 @@ export class MfaService {
   private generateBackupCodes(count = 8): string[] {
     const codes: string[] = [];
     for (let i = 0; i < count; i++) {
+      // Generate cryptographically secure random backup codes
+      const randomBytes = crypto.randomBytes(4);
       let code = '';
-      for (let j = 0; j < 8; j++) {
-        code += Math.floor(Math.random() * 10).toString();
+      for (let j = 0; j < 4; j++) {
+        // Convert each byte to 2 digits (00-99)
+        code += (randomBytes[j] % 100).toString().padStart(2, '0');
       }
       codes.push(code);
     }
@@ -424,7 +506,7 @@ export class MfaService {
    * Generate a unique ID
    */
   private generateId(): string {
-    return Math.random().toString(36).substr(2, 9);
+    return crypto.randomBytes(16).toString('hex');
   }
 
   /**
@@ -515,15 +597,60 @@ export class MfaService {
    */
   async verifyAndEnableMFA(userId: string, totpCode: string, ipAddress?: string | null, userAgent?: string | null): Promise<{ success: boolean; error?: string }> {
     try {
-      // Verify the TOTP code
-      const isValid = await this.verifyTotpCode('', totpCode); // In real app, get secret from DB
+      if (!userId || !totpCode) {
+        return { success: false, error: 'User ID and verification code are required' };
+      }
+
+      const supabase = await createServerClient();
+      
+      // Get user's MFA secret from database
+      const { data: mfaData, error: fetchError } = await supabase
+        .from('user_mfa')
+        .select('secret, is_enabled')
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError || !mfaData) {
+        return { success: false, error: 'MFA setup not found. Please set up MFA first.' };
+      }
+
+      if (mfaData.is_enabled) {
+        return { success: false, error: 'MFA is already enabled for this user' };
+      }
+
+      // Verify the TOTP code with the user's secret
+      const isValid = await this.verifyTotpCode(mfaData.secret, totpCode);
       if (!isValid) {
         return { success: false, error: 'Invalid verification code' };
       }
 
-      // Enable MFA (in real app, update database)
+      // Enable MFA in database
+      const { error: updateError } = await supabase
+        .from('user_mfa')
+        .update({ 
+          is_enabled: true,
+          verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (updateError) {
+        console.error('Failed to enable MFA:', updateError);
+        return { success: false, error: 'Failed to enable MFA' };
+      }
+
+      // Log security event
+      await this.logSecurityEvent({
+        userId,
+        type: 'mfa_enabled',
+        timestamp: new Date().toISOString(),
+        ipAddress: ipAddress || undefined,
+        deviceInfo: userAgent || undefined
+      });
+
       return { success: true };
     } catch (error) {
+      console.error('Error enabling MFA:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to enable MFA'

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthService } from '@/lib/auth/auth';
+import { handlePreflight } from '@/lib/api/utils';
 
 export async function POST(_request: NextRequest) {
   try {
@@ -27,13 +28,6 @@ export async function POST(_request: NextRequest) {
   }
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return handlePreflight(request);
 }

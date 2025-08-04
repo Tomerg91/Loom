@@ -803,14 +803,56 @@ function isValidIP(ip: string): boolean {
   return ipv4Regex.test(ip) || ipv6Regex.test(ip);
 }
 
-// CORS helpers
-export function withCors(response: NextResponse): NextResponse {
-  response.headers.set('Access-Control-Allow-Origin', '*');
+// CORS helpers with environment-aware origin validation
+function getAllowedOrigins(): string[] {
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const customOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim()) || [];
+  
+  if (isDevelopment) {
+    // Allow localhost in development
+    return [
+      'http://localhost:3000',
+      'http://localhost:3001', 
+      'http://127.0.0.1:3000',
+      ...customOrigins
+    ];
+  }
+  
+  // Production origins
+  const productionOrigins = [
+    'https://loom-app.vercel.app',
+    'https://www.loom-app.com',
+    ...customOrigins
+  ];
+  
+  return productionOrigins.filter(Boolean);
+}
+
+export function withCors(response: NextResponse, origin?: string): NextResponse {
+  const allowedOrigins = getAllowedOrigins();
+  
+  // Validate origin against allowed list
+  let allowedOrigin = '';
+  if (origin && allowedOrigins.includes(origin)) {
+    allowedOrigin = origin;
+  } else if (allowedOrigins.length > 0) {
+    // Use first allowed origin as default (usually main domain)
+    allowedOrigin = allowedOrigins[0];
+  }
+  
+  if (allowedOrigin) {
+    response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+  }
+  
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Max-Age', '86400'); // 24 hours
+  
   return response;
 }
 
-export function handlePreflight(): NextResponse {
-  return withCors(new NextResponse(null, { status: 200 }));
+export function handlePreflight(request?: NextRequest): NextResponse {
+  const origin = request?.headers.get('origin') || '';
+  return withCors(new NextResponse(null, { status: 200 }), origin);
 }

@@ -2,7 +2,11 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+// Removed: import { createMfaService } from '@/lib/services/mfa-service'; 
+// MFA operations now handled server-side via API endpoints
+import { AUTH_ENDPOINTS } from '@/lib/config/api-endpoints';
 import type { AuthUser } from '@/lib/auth/auth';
+import type { UserRole, UserStatus, Language } from '@/types';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -12,6 +16,16 @@ interface AuthContextType {
   isSessionValid: boolean;
   lastActivity: Date | null;
   securityWarnings: string[];
+  // MFA-related fields
+  mfaRequired: boolean;
+  mfaVerified: boolean;
+  isMfaSession: boolean;
+  mfaStatus: {
+    isEnabled: boolean;
+    isSetup: boolean;
+    backupCodesRemaining: number;
+  } | null;
+  checkMfaStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,6 +49,13 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   const [isSessionValid, setIsSessionValid] = useState(true);
   const [lastActivity, setLastActivity] = useState<Date | null>(new Date());
   const [securityWarnings, setSecurityWarnings] = useState<string[]>([]);
+  
+  // MFA state
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaVerified, setMfaVerified] = useState(false);
+  const [isMfaSession, setIsMfaSession] = useState(false);
+  const [mfaStatus, setMfaStatus] = useState<AuthContextType['mfaStatus']>(null);
+  
   const supabase = createClient();
   
   // Session management constants
@@ -87,6 +108,51 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     }
   }, [supabase.auth]);
   
+  // MFA status checking function
+  const checkMfaStatus = useCallback(async () => {
+    if (!user) {
+      setMfaStatus(null);
+      setMfaRequired(false);
+      setMfaVerified(false);
+      setIsMfaSession(false);
+      return;
+    }
+
+    try {
+      // Use secure server-side endpoint instead of client-side cookie access
+      const response = await fetch(AUTH_ENDPOINTS.MFA_STATUS, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include HTTP-only cookies
+      });
+
+      if (!response.ok) {
+        throw new Error(`MFA status check failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setMfaStatus(data.data.mfaStatus);
+        setIsMfaSession(data.data.isMfaSession);
+        setMfaVerified(data.data.mfaVerified);
+        setMfaRequired(data.data.mfaRequired);
+      } else {
+        throw new Error(data.error || 'Failed to fetch MFA status');
+      }
+    } catch (error) {
+      console.error('Failed to check MFA status:', error);
+      // Set safe defaults on error
+      setMfaStatus(null);
+      setMfaRequired(false);
+      setMfaVerified(false);
+      setIsMfaSession(false);
+    }
+  }, [user]);
+
   const refreshUser = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -95,6 +161,8 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
       const isValid = await validateSession();
       if (!isValid) {
         setUser(null);
+        setMfaStatus(null);
+        setMfaRequired(false);
         return;
       }
       
@@ -111,24 +179,44 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
         .from('users')
         .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at')
         .eq('id', authUser.id)
-        .eq('email', authUser.email) // Additional security check
+        .eq('email', authUser.email || '') // Additional security check
         .single();
+
+      // Type assertion to ensure proper typing
+      type UserProfile = {
+        id: string;
+        email: string;
+        first_name: string | null;
+        last_name: string | null;
+        role: UserRole;
+        language: Language;
+        status: UserStatus;
+        created_at: string;
+        updated_at: string;
+        avatar_url: string | null;
+        phone: string | null;
+        timezone: string;
+        last_seen_at: string | null;
+      };
 
       if (profileError || !profile) {
         setUser(null);
         setSecurityWarnings(prev => [...prev, 'User profile not found or access denied']);
         return;
       }
+
+      // Type assertion for the profile data
+      const typedProfile = profile as UserProfile;
       
       // Security checks
-      if (profile.status !== 'active') {
+      if (typedProfile.status !== 'active') {
         setUser(null);
-        setSecurityWarnings(prev => [...prev, `Account is ${profile.status}`]);
+        setSecurityWarnings(prev => [...prev, `Account is ${typedProfile.status}`]);
         return;
       }
       
       // Check for suspicious activity
-      const accountAge = new Date().getTime() - new Date(profile.created_at).getTime();
+      const accountAge = new Date().getTime() - new Date(typedProfile.createdAt || typedProfile.created_at).getTime();
       if (accountAge < 0) {
         setUser(null);
         setSecurityWarnings(prev => [...prev, 'Invalid account creation date detected']);
@@ -138,21 +226,29 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
       const fullUser: AuthUser = {
         id: authUser.id,
         email: authUser.email || '',
-        firstName: profile.first_name || '',
-        lastName: profile.last_name || '',
-        role: profile.role || 'client',
-        language: profile.language || 'en',
-        status: profile.status || 'active',
-        createdAt: profile.created_at,
-        updatedAt: profile.updated_at,
-        lastSeenAt: profile.last_seen_at,
+        firstName: typedProfile.first_name ?? undefined,
+        lastName: typedProfile.last_name ?? undefined,
+        role: typedProfile.role || 'client',
+        language: typedProfile.language || 'en',
+        status: typedProfile.status || 'active',
+        createdAt: typedProfile.created_at,
+        updatedAt: typedProfile.updated_at,
+        lastSeenAt: typedProfile.last_seen_at ?? undefined,
+        // MFA fields are now handled server-side via /api/auth/mfa-status
+        // These fields are set to safe defaults to maintain type compatibility
+        mfaEnabled: false, // Always false on client-side for security
+        mfaSetupCompleted: false, // Always false on client-side for security
+        mfaVerifiedAt: undefined,
+        rememberDeviceEnabled: false,
         emailVerified: authUser.email_confirmed_at ? true : false,
-        isActive: profile.status === 'active',
-        avatarUrl: profile.avatar_url || undefined,
-        phoneNumber: profile.phone || undefined,
+        isActive: typedProfile.status === 'active',
+        avatarUrl: typedProfile.avatar_url ?? undefined,
+        phoneNumber: typedProfile.phone ?? undefined,
+        phone: typedProfile.phone ?? undefined, // Include both phone and phoneNumber for compatibility
+        timezone: typedProfile.timezone || undefined,
         dateOfBirth: undefined,
         preferences: {
-          language: profile.language || 'en',
+          language: typedProfile.language || 'en',
           notifications: {
             email: true,
             push: true,
@@ -171,6 +267,9 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
         .from('users')
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', authUser.id);
+
+      // Check MFA status when user is loaded
+      await checkMfaStatus();
         
     } catch (error) {
       console.error('Error refreshing user:', error);
@@ -217,6 +316,16 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
       setSecurityWarnings([]);
       setLastActivity(null);
       
+      // Clear MFA state
+      setMfaStatus(null);
+      setMfaRequired(false);
+      setMfaVerified(false);
+      setIsMfaSession(false);
+      
+      // Clear MFA session cookies
+      document.cookie = 'mfa_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      document.cookie = 'mfa_verified=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      
     } catch (error) {
       console.error('Error signing out:', error);
       setSecurityWarnings(prev => [...prev, 'Error occurred during sign out']);
@@ -238,6 +347,8 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
         setIsLoading(false);
         setIsSessionValid(false);
         setSecurityWarnings([]);
+        setMfaStatus(null);
+        setMfaRequired(false);
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
         updateActivity();
         await refreshUser();
@@ -297,6 +408,12 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     isSessionValid,
     lastActivity,
     securityWarnings,
+    // MFA fields
+    mfaRequired,
+    mfaVerified,
+    isMfaSession,
+    mfaStatus,
+    checkMfaStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
