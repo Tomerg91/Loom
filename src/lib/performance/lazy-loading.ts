@@ -151,7 +151,7 @@ export function preloadRouteComponents(pathname: string) {
   } else if (pathname.startsWith('/client')) {
     preloadComponent(() => import('@/components/client/client-dashboard'));
   } else if (pathname.startsWith('/sessions')) {
-    preloadComponent(() => import('@/components/sessions/session-booking-form'));
+    preloadComponent(() => import('@/components/sessions/booking'));
   }
 }
 

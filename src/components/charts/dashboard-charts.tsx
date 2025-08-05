@@ -34,7 +34,7 @@ interface CoachPerformanceChartProps {
   loading?: boolean;
 }
 
-export const CoachPerformanceChart: React.FC<CoachPerformanceChartProps> = ({
+const CoachPerformanceChart: React.FC<CoachPerformanceChartProps> = ({
   data,
   title = "Top Performing Coaches",
   description = "Revenue and session count by coach",
@@ -128,7 +128,7 @@ interface SessionTimeDistributionProps {
   loading?: boolean;
 }
 
-export const SessionTimeDistributionChart: React.FC<SessionTimeDistributionProps> = ({
+const SessionTimeDistributionChart: React.FC<SessionTimeDistributionProps> = ({
   data,
   title = "Session Time Distribution",
   description = "Popular booking times throughout the day",
@@ -220,7 +220,7 @@ interface ClientProgressCorrelationProps {
   loading?: boolean;
 }
 
-export const ClientProgressCorrelationChart: React.FC<ClientProgressCorrelationProps> = ({
+const ClientProgressCorrelationChart: React.FC<ClientProgressCorrelationProps> = ({
   data,
   title = "Client Progress Correlation",
   description = "Sessions completed vs progress achieved",
@@ -322,7 +322,7 @@ interface RetentionRateChartProps {
   loading?: boolean;
 }
 
-export const RetentionRateChart: React.FC<RetentionRateChartProps> = ({
+const RetentionRateChart: React.FC<RetentionRateChartProps> = ({
   data,
   title = "Client Retention Trends",
   description = "New clients vs retention over time",
@@ -426,7 +426,7 @@ interface GoalCategoryChartProps {
   loading?: boolean;
 }
 
-export const GoalCategoryChart: React.FC<GoalCategoryChartProps> = ({
+const GoalCategoryChart: React.FC<GoalCategoryChartProps> = ({
   data,
   title = "Goal Categories",
   description = "Distribution and success rates by goal type",
