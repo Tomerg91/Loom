@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const updateNoteSchema = z.object({
   title: z.string().min(1).max(100).optional(),
-  content: z.string().min(1).max(2000).optional(),
+  content: z.string().min(1).max(10000).optional(),
   privacyLevel: z.enum(['private', 'shared_with_client']).optional(),
   tags: z.array(z.string()).optional(),
 });

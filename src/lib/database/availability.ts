@@ -139,7 +139,8 @@ export class AvailabilityService {
    */
   async setCoachAvailability(
     coachId: string,
-    slots: AvailabilitySlot[]
+    slots: AvailabilitySlot[],
+    timezone?: string
   ): Promise<boolean> {
     try {
       // First, deactivate all existing slots
@@ -160,6 +161,7 @@ export class AvailabilityService {
         start_time: slot.startTime,
         end_time: slot.endTime,
         is_available: true,
+        timezone: timezone || slot.timezone || 'UTC',
       }));
 
       const { error: insertError } = await this.supabase
@@ -185,7 +187,7 @@ export class AvailabilityService {
     try {
       const { data, error } = await this.supabase
         .from('coach_availability')
-        .select('day_of_week, start_time, end_time')
+        .select('day_of_week, start_time, end_time, timezone')
         .eq('coach_id', coachId)
         .eq('is_available', true)
         .order('day_of_week')
@@ -200,6 +202,7 @@ export class AvailabilityService {
         dayOfWeek: slot.day_of_week,
         startTime: slot.start_time,
         endTime: slot.end_time,
+        timezone: slot.timezone || 'UTC',
       }));
     } catch (error) {
       console.error('Error in getCoachSchedule:', error);
@@ -335,8 +338,8 @@ const availabilityService = new AvailabilityService(true);
 export const getCoachAvailability = (coachId: string, date: string, duration?: number, detailed?: boolean) => 
   availabilityService.getCoachAvailability(coachId, date, duration, detailed);
 
-export const setCoachAvailability = (coachId: string, slots: AvailabilitySlot[]) => 
-  availabilityService.setCoachAvailability(coachId, slots);
+export const setCoachAvailability = (coachId: string, slots: AvailabilitySlot[], timezone?: string) => 
+  availabilityService.setCoachAvailability(coachId, slots, timezone);
 
 export const getCoachSchedule = (coachId: string) => 
   availabilityService.getCoachSchedule(coachId);

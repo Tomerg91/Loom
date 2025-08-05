@@ -33,6 +33,7 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
+import { SessionMetricsChart, RevenueChart } from '@/components/charts/chart-components';
 
 interface CoachInsights {
   overview: {
@@ -87,88 +88,51 @@ export function CoachInsightsPage() {
   const { data: insights, isLoading, error, refetch } = useQuery<CoachInsights>({
     queryKey: ['coach-insights', timeRange],
     queryFn: async () => {
-      // Mock API call
+      const response = await fetch(`/api/coach/insights?timeRange=${timeRange}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch insights');
+      }
+      const result = await response.json();
+      
+      // Transform API response to match component interface
+      const apiData = result.data;
       return {
         overview: {
-          totalClients: 15,
-          activeClients: 12,
-          totalSessions: 125,
-          completedSessions: 118,
-          averageRating: 4.7,
-          revenue: 8750,
-          clientRetentionRate: 85,
-          sessionCompletionRate: 94.4,
+          totalClients: apiData.overview.uniqueClients,
+          activeClients: apiData.overview.uniqueClients, // All clients are considered active in this period
+          totalSessions: apiData.overview.totalSessions,
+          completedSessions: apiData.overview.completedSessions,
+          averageRating: apiData.overview.averageMoodRating || apiData.overview.averageProgressRating || 0,
+          revenue: apiData.overview.estimatedRevenue,
+          clientRetentionRate: 85, // Placeholder - would need retention calculation
+          sessionCompletionRate: apiData.overview.completionRate,
         },
-        clientProgress: [
-          {
-            clientId: '1',
-            clientName: 'Sarah Johnson',
-            progressScore: 85,
-            sessionsCompleted: 10,
-            goalAchievement: 80,
-            lastSession: '2024-01-18T14:00:00Z',
-            trend: 'up',
-          },
-          {
-            clientId: '2',
-            clientName: 'Michael Chen',
-            progressScore: 72,
-            sessionsCompleted: 7,
-            goalAchievement: 65,
-            lastSession: '2024-01-17T15:30:00Z',
-            trend: 'up',
-          },
-          {
-            clientId: '3',
-            clientName: 'Emily Rodriguez',
-            progressScore: 45,
-            sessionsCompleted: 3,
-            goalAchievement: 30,
-            lastSession: '2024-01-20T10:00:00Z',
-            trend: 'stable',
-          },
-        ],
-        sessionMetrics: [
-          { date: '2024-01-01', sessionsCompleted: 8, sessionsCancelled: 1, averageRating: 4.6, revenue: 560 },
-          { date: '2024-01-02', sessionsCompleted: 10, sessionsCancelled: 0, averageRating: 4.8, revenue: 700 },
-          { date: '2024-01-03', sessionsCompleted: 6, sessionsCancelled: 2, averageRating: 4.5, revenue: 420 },
-          { date: '2024-01-04', sessionsCompleted: 12, sessionsCancelled: 1, averageRating: 4.9, revenue: 840 },
-          { date: '2024-01-05', sessionsCompleted: 9, sessionsCancelled: 0, averageRating: 4.7, revenue: 630 },
-        ],
+        clientProgress: apiData.clientProgress.map((client: any) => ({
+          clientId: client.id,
+          clientName: client.name,
+          progressScore: Math.round((client.averageProgress || client.averageMood || 50) * 20), // Convert 1-5 to 0-100
+          sessionsCompleted: client.sessionsCompleted,
+          goalAchievement: Math.round((client.averageProgress || 2.5) * 20), // Placeholder calculation
+          lastSession: client.lastSession,
+          trend: client.averageProgress > 3 ? 'up' : client.averageProgress < 2.5 ? 'down' : 'stable',
+        })),
+        sessionMetrics: apiData.sessionMetrics.map((metric: any) => ({
+          date: metric.date,
+          sessionsCompleted: metric.completed,
+          sessionsCancelled: metric.cancelled,
+          averageRating: 4.5, // Placeholder - would need actual ratings
+          revenue: metric.completed * 100, // $100 per session placeholder
+        })),
         goalAnalysis: {
           mostCommonGoals: [
             { goal: 'Career Development', count: 8, successRate: 75 },
             { goal: 'Leadership Skills', count: 6, successRate: 83 },
             { goal: 'Work-Life Balance', count: 5, successRate: 60 },
-            { goal: 'Communication Skills', count: 4, successRate: 90 },
-            { goal: 'Confidence Building', count: 3, successRate: 67 },
-          ],
+          ], // Placeholder - would need goals table
           achievementRate: 73,
-          averageTimeToGoal: 8.5, // weeks
+          averageTimeToGoal: 8.5,
         },
-        feedback: [
-          {
-            clientName: 'Sarah Johnson',
-            rating: 5,
-            comment: 'Excellent session! Really helped me understand my leadership potential.',
-            date: '2024-01-18T14:00:00Z',
-            sessionType: 'Leadership Coaching',
-          },
-          {
-            clientName: 'Michael Chen',
-            rating: 4,
-            comment: 'Good insights on work-life balance. Looking forward to implementing the strategies.',
-            date: '2024-01-17T15:30:00Z',
-            sessionType: 'Life Coaching',
-          },
-          {
-            clientName: 'Emily Rodriguez',
-            rating: 5,
-            comment: 'First session was amazing! Felt heard and supported.',
-            date: '2024-01-20T10:00:00Z',
-            sessionType: 'Initial Consultation',
-          },
-        ],
+        feedback: [], // Placeholder - would need feedback/ratings table
       };
     },
   });
@@ -322,38 +286,31 @@ export function CoachInsightsPage() {
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Session Performance Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Session Performance</CardTitle>
-                <CardDescription>Sessions completed and ratings over time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Chart visualization would go here</p>
-                    <p className="text-xs text-muted-foreground">Integration with charting library needed</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <SessionMetricsChart
+              data={insights?.sessionMetrics.map(metric => ({
+                date: metric.date,
+                totalSessions: metric.sessionsCompleted + metric.sessionsCancelled,
+                completedSessions: metric.sessionsCompleted,
+                cancelledSessions: metric.sessionsCancelled,
+              })) || []}
+              title="Session Performance"
+              description="Sessions completed and cancelled over time"
+              height={264}
+              loading={isLoading}
+            />
 
             {/* Revenue Trend Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue Trend</CardTitle>
-                <CardDescription>Daily revenue and session count</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
-                  <div className="text-center">
-                    <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Chart visualization would go here</p>
-                    <p className="text-xs text-muted-foreground">Integration with charting library needed</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <RevenueChart
+              data={insights?.sessionMetrics.map(metric => ({
+                date: metric.date,
+                revenue: metric.revenue,
+                sessions: metric.sessionsCompleted,
+              })) || []}
+              title="Revenue Trend"
+              description="Daily revenue and session count"
+              height={264}
+              loading={isLoading}
+            />
           </div>
 
           {/* Additional Metrics */}

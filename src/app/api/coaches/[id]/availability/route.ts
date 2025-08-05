@@ -14,10 +14,12 @@ const availabilitySlotSchema = z.object({
   dayOfWeek: z.number().min(0).max(6),
   startTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
   endTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
+  timezone: z.string().optional(),
 });
 
 const setAvailabilitySchema = z.object({
   slots: z.array(availabilitySlotSchema),
+  timezone: z.string().optional(),
 });
 
 interface RouteParams {
@@ -100,7 +102,7 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
     const body = await request.json();
     const validatedData = setAvailabilitySchema.parse(body);
 
-    const success = await setCoachAvailability(coachId, validatedData.slots);
+    const success = await setCoachAvailability(coachId, validatedData.slots, validatedData.timezone);
     
     if (!success) {
       return createErrorResponse('Failed to set availability', HTTP_STATUS.INTERNAL_SERVER_ERROR);

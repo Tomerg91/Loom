@@ -100,9 +100,24 @@ export async function GET(request: NextRequest): Promise<Response> {
           .eq('coach_id', coach.id)
           .eq('status', 'completed');
 
-        // TODO: Implement rating system - for now using default values
-        const averageRating = 4.5; // Default rating
-        const reviewCount = sessionStats?.length || 0;
+        // Get real rating data from completed sessions
+        const { data: ratingStats } = await supabase
+          .from('sessions')
+          .select('rating')
+          .eq('coach_id', coach.id)
+          .eq('status', 'completed')
+          .not('rating', 'is', null);
+
+        let averageRating = 0;
+        let reviewCount = 0;
+        
+        if (ratingStats && ratingStats.length > 0) {
+          const ratings = ratingStats.map(s => s.rating).filter(r => r !== null);
+          averageRating = ratings.length > 0 
+            ? Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * 10) / 10
+            : 0;
+          reviewCount = ratings.length;
+        }
 
         // Get unique clients count (success stories)
         const { data: clientSessions } = await supabase

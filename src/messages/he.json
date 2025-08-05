@@ -449,7 +449,68 @@
     "addTag": "הוסף תגית",
     "noteAdded": "ההערה נוספה בהצלחה",
     "noteUpdated": "ההערה עודכנה בהצלחה",
-    "noteDeleted": "ההערה נמחקה בהצלחה"
+    "noteDeleted": "ההערה נמחקה בהצלחה",
+    "clients": {
+      "title": "ניהול לקוחות",
+      "description": "נהל את לקוחות הקואצ'ינג שלך ועקוב אחר ההתקדמות שלהם",
+      "addClient": "הוסף לקוח",
+      "searchPlaceholder": "חפש לקוחות...",
+      "filterByStatus": "סנן לפי סטטוס",
+      "sortBy": "מיין לפי",
+      "stats": {
+        "totalClients": "סך הכל לקוחות",
+        "activeClients": "לקוחות פעילים",
+        "totalSessions": "סך הכל פגישות",
+        "averageRating": "דירוג ממוצע"
+      },
+      "filters": {
+        "allStatuses": "כל הסטטוסים",
+        "active": "פעיל",
+        "inactive": "לא פעיל",
+        "pending": "בהמתנה"
+      },
+      "sorting": {
+        "name": "שם",
+        "joinedDate": "תאריך הצטרפות",
+        "lastSession": "פגישה אחרונה",
+        "progress": "התקדמות"
+      },
+      "actions": {
+        "actions": "פעולות",
+        "scheduleSession": "קבע פגישה",
+        "sendMessage": "שלח הודעה",
+        "viewNotes": "צפה בהערות",
+        "sendEmail": "שלח אימייל",
+        "startSession": "התחל פגישה",
+        "message": "הודעה"
+      },
+      "info": {
+        "progress": "התקדמות",
+        "goals": "יעדים",
+        "totalSessions": "סך הכל פגישות",
+        "completed": "הושלמו",
+        "rating": "דירוג",
+        "joined": "הצטרף",
+        "lastSession": "פגישה אחרונה",
+        "nextSession": "פגישה הבאה",
+        "never": "אף פעם",
+        "notScheduled": "לא מתוזמן",
+        "notAvailable": "לא זמין"
+      },
+      "status": {
+        "active": "פעיל",
+        "inactive": "לא פעיל",
+        "pending": "בהמתנה"
+      },
+      "errors": {
+        "loadingClients": "שגיאה בטעינת לקוחות",
+        "noClients": "לא נמצאו לקוחות"
+      }
+    },
+    "insights": {
+      "title": "תובנות המאמן",
+      "description": "אנליטיקה ומדדי ביצועים עבור פרקטיקת הקואצ'ינג שלך"
+    }
   },
   "client": {
     "client": "לקוח",

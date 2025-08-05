@@ -6,7 +6,7 @@ const createNoteSchema = z.object({
   clientId: z.string().min(1),
   sessionId: z.string().optional(),
   title: z.string().min(1).max(100),
-  content: z.string().min(1).max(2000),
+  content: z.string().min(1).max(10000),
   privacyLevel: z.enum(['private', 'shared_with_client']),
   tags: z.array(z.string()).optional(),
 });
@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     const clientId = searchParams.get('clientId');
     const privacyLevel = searchParams.get('privacyLevel');
     const search = searchParams.get('search');
+    const tags = searchParams.get('tags');
 
     const offset = (page - 1) * limit;
 
@@ -62,6 +63,14 @@ export async function GET(request: NextRequest) {
       const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&').replace(/'/g, "''");
       query = query.or(`title.ilike.%${sanitizedSearch}%,content.ilike.%${sanitizedSearch}%`);
     }
+    if (tags) {
+      // Filter by tags - notes must contain all specified tags
+      const tagList = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      if (tagList.length > 0) {
+        // Use contains operator to check if tags array contains all specified tags
+        query = query.contains('tags', tagList);
+      }
+    }
 
     const { data: notes, error } = await query;
 
@@ -86,6 +95,13 @@ export async function GET(request: NextRequest) {
       // Sanitize search input to prevent SQL injection
       const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&').replace(/'/g, "''");
       countQuery = countQuery.or(`title.ilike.%${sanitizedSearch}%,content.ilike.%${sanitizedSearch}%`);
+    }
+    if (tags) {
+      // Filter by tags - notes must contain all specified tags
+      const tagList = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      if (tagList.length > 0) {
+        countQuery = countQuery.contains('tags', tagList);
+      }
     }
 
     const { count: totalCount } = await countQuery;

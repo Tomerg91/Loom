@@ -76,38 +76,20 @@ export function ClientBookPage() {
   });
   const [bookingStep, setBookingStep] = useState(1); // 1: Select Coach, 2: Select Time, 3: Session Details, 4: Confirmation
 
-  // Mock coaches data
+  // Real coaches data from API
   const { data: coaches, isLoading: coachesLoading } = useQuery<Coach[]>({
     queryKey: ['available-coaches-booking'],
-    queryFn: async () => [
-      {
-        id: '1',
-        firstName: 'Sarah',
-        lastName: 'Johnson',
-        title: 'Executive Leadership Coach',
-        specialties: ['Leadership Development', 'Career Coaching'],
-        rating: 4.9,
-        reviewCount: 127,
-        hourlyRate: 150,
-        location: 'New York, NY',
-        bio: 'Experienced executive coach specializing in leadership development.',
-      },
-      {
-        id: '2',
-        firstName: 'Michael',
-        lastName: 'Chen',
-        title: 'Life &amp; Wellness Coach',
-        specialties: ['Work-Life Balance', 'Stress Management'],
-        rating: 4.7,
-        reviewCount: 85,
-        hourlyRate: 120,
-        location: 'San Francisco, CA',
-        bio: 'Passionate about helping individuals achieve work-life balance.',
-      },
-    ],
+    queryFn: async () => {
+      const response = await fetch('/api/coaches');
+      if (!response.ok) {
+        throw new Error('Failed to fetch coaches');
+      }
+      const data = await response.json();
+      return data.data || [];
+    },
   });
 
-  // Mock time slots data
+  // Real time slots data from availability API
   const { data: timeSlots } = useQuery<TimeSlot[]>({
     queryKey: ['time-slots', selectedCoach?.id],
     queryFn: async () => {
@@ -116,7 +98,7 @@ export function ClientBookPage() {
       const slots: TimeSlot[] = [];
       const startDate = new Date();
       
-      // Generate mock slots for the next 7 days
+      // Fetch availability for the next 7 days
       for (let day = 0; day < 7; day++) {
         const date = new Date(startDate);
         date.setDate(date.getDate() + day);
@@ -124,19 +106,42 @@ export function ClientBookPage() {
         // Skip weekends for this example
         if (date.getDay() === 0 || date.getDay() === 6) continue;
         
-        const timeOptions = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
+        const dateStr = date.toISOString().split('T')[0];
         
-        timeOptions.forEach((time) => {
-          slots.push({
-            id: `${selectedCoach.id}-${date.toISOString().split('T')[0]}-${time}`,
-            coachId: selectedCoach.id,
-            date: date.toISOString(),
-            time,
-            duration: 60,
-            available: Math.random() > 0.3, // 70% chance of being available
-            sessionType: 'video',
+        try {
+          const response = await fetch(`/api/coaches/${selectedCoach.id}/availability?date=${dateStr}&duration=60`);
+          if (response.ok) {
+            const availabilityData = await response.json();
+            const daySlots = availabilityData.data || [];
+            
+            daySlots.forEach((slot: any) => {
+              slots.push({
+                id: `${selectedCoach.id}-${dateStr}-${slot.time}`,
+                coachId: selectedCoach.id,
+                date: date.toISOString(),
+                time: slot.time,
+                duration: 60,
+                available: slot.available,
+                sessionType: 'video',
+              });
+            });
+          }
+        } catch (error) {
+          console.error(`Failed to fetch availability for ${dateStr}:`, error);
+          // Fallback to some default times if API fails
+          const timeOptions = ['09:00', '14:00', '16:00'];
+          timeOptions.forEach((time) => {
+            slots.push({
+              id: `${selectedCoach.id}-${dateStr}-${time}`,
+              coachId: selectedCoach.id,
+              date: date.toISOString(),
+              time,
+              duration: 60,
+              available: true,
+              sessionType: 'video',
+            });
           });
-        });
+        }
       }
       
       return slots;
@@ -178,9 +183,42 @@ export function ClientBookPage() {
   };
 
   const handleBookingSubmit = async () => {
-    // Mock booking submission
-    console.log('Booking submitted:', { ...bookingForm, selectedSlot, selectedCoach });
-    setBookingStep(4);
+    if (!selectedCoach || !selectedSlot) {
+      console.error('Missing coach or slot information');
+      return;
+    }
+
+    try {
+      // Prepare booking data for API
+      const bookingData = {
+        coachId: selectedCoach.id,
+        title: `${bookingForm.sessionType} Session with ${selectedCoach.firstName} ${selectedCoach.lastName}`,
+        description: `Session goals: ${bookingForm.goals}\nAdditional notes: ${bookingForm.notes}`,
+        scheduledAt: new Date(`${selectedSlot.date.split('T')[0]}T${selectedSlot.time}:00.000Z`).toISOString(),
+        durationMinutes: selectedSlot.duration,
+      };
+
+      const response = await fetch('/api/sessions/book', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to book session');
+      }
+
+      const result = await response.json();
+      console.log('Session booked successfully:', result);
+      setBookingStep(4);
+    } catch (error) {
+      console.error('Booking failed:', error);
+      // In a real app, you would show an error message to the user
+      alert('Booking failed. Please try again.');
+    }
   };
 
   const resetBooking = () => {

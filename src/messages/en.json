@@ -520,7 +520,68 @@
     "addTag": "Add Tag",
     "noteAdded": "Note added successfully",
     "noteUpdated": "Note updated successfully",
-    "noteDeleted": "Note deleted successfully"
+    "noteDeleted": "Note deleted successfully",
+    "clients": {
+      "title": "Client Management",
+      "description": "Manage your coaching clients and track their progress",
+      "addClient": "Add Client",
+      "searchPlaceholder": "Search clients...",
+      "filterByStatus": "Filter by status",
+      "sortBy": "Sort by",
+      "stats": {
+        "totalClients": "Total Clients",
+        "activeClients": "Active Clients",
+        "totalSessions": "Total Sessions",
+        "averageRating": "Average Rating"
+      },
+      "filters": {
+        "allStatuses": "All Statuses",
+        "active": "Active",
+        "inactive": "Inactive",
+        "pending": "Pending"
+      },
+      "sorting": {
+        "name": "Name",
+        "joinedDate": "Joined Date",
+        "lastSession": "Last Session",
+        "progress": "Progress"
+      },
+      "actions": {
+        "actions": "Actions",
+        "scheduleSession": "Schedule Session",
+        "sendMessage": "Send Message",
+        "viewNotes": "View Notes",
+        "sendEmail": "Send Email",
+        "startSession": "Start Session",
+        "message": "Message"
+      },
+      "info": {
+        "progress": "Progress",
+        "goals": "Goals",
+        "totalSessions": "Total Sessions",
+        "completed": "Completed",
+        "rating": "Rating",
+        "joined": "Joined",
+        "lastSession": "Last Session",
+        "nextSession": "Next Session",
+        "never": "Never",
+        "notScheduled": "Not scheduled",
+        "notAvailable": "N/A"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "pending": "Pending"
+      },
+      "errors": {
+        "loadingClients": "Error loading clients",
+        "noClients": "No clients found"
+      }
+    },
+    "insights": {
+      "title": "Coach Insights",
+      "description": "Analytics and performance metrics for your coaching practice"
+    }
   },
   "client": {
     "client": "Client",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -41,7 +41,7 @@ const noteSchema = z.object({
   clientId: z.string().min(1, 'Client selection is required'),
   sessionId: z.string().optional(),
   title: z.string().min(1, 'Title is required').max(100),
-  content: z.string().min(1, 'Content is required').max(2000),
+  content: z.string().min(1, 'Content is required').max(10000),
   privacyLevel: z.enum(['private', 'shared_with_client']),
   tags: z.array(z.string()).optional(),
 });
@@ -86,8 +86,21 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<CoachNote | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term with 300ms delay
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
   const [privacyFilter, setPrivacyFilter] = useState<PrivacyLevel | 'all'>('all');
   const [selectedClientId, setSelectedClientId] = useState(initialClientId || '');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const {
     register,
@@ -131,9 +144,20 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
     enabled: !!watchedClientId,
   });
 
+  // Fetch all available tags
+  const { data: availableTags } = useQuery({
+    queryKey: ['coach-notes-tags'],
+    queryFn: async (): Promise<string[]> => {
+      const response = await fetch('/api/notes/tags');
+      if (!response.ok) throw new Error('Failed to fetch tags');
+      const data = await response.json();
+      return data.data || [];
+    },
+  });
+
   // Fetch notes
   const { data: notesData, isLoading } = useQuery({
-    queryKey: ['coach-notes', selectedClientId, searchTerm, privacyFilter],
+    queryKey: ['coach-notes', selectedClientId, debouncedSearchTerm, privacyFilter, selectedTags],
     queryFn: async (): Promise<NotesResponse> => {
       const params = new URLSearchParams({
         limit: '20',
@@ -147,8 +171,11 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
       if (privacyFilter !== 'all') {
         params.append('privacyLevel', privacyFilter);
       }
-      if (searchTerm) {
-        params.append('search', searchTerm);
+      if (debouncedSearchTerm) {
+        params.append('search', debouncedSearchTerm);
+      }
+      if (selectedTags.length > 0) {
+        params.append('tags', selectedTags.join(','));
       }
 
       const response = await fetch(`/api/notes?${params}`);
@@ -243,6 +270,15 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
     return privacyLevel === 'private' ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800';
   };
 
+  // Highlight search terms in content
+  const highlightSearchTerm = (content: string, searchTerm: string) => {
+    if (!searchTerm || !content) return content;
+    
+    // Create a case-insensitive regex to find the search term
+    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return content.replace(regex, '<mark class="bg-yellow-200 px-1 rounded">$1</mark>');
+  };
+
   const notes = notesData?.data || [];
 
   return (
@@ -268,7 +304,7 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label>Search</Label>
               <div className="relative">
@@ -312,6 +348,47 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <Select
+                value={selectedTags.length > 0 ? selectedTags[0] : ''}
+                onValueChange={(value) => {
+                  if (value === '') {
+                    setSelectedTags([]);
+                  } else if (!selectedTags.includes(value)) {
+                    setSelectedTags([...selectedTags, value]);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by tags" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All tags</SelectItem>
+                  {availableTags?.map((tag) => (
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {selectedTags.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="text-xs">
+                      {tag}
+                      <button
+                        onClick={() => setSelectedTags(selectedTags.filter(t => t !== tag))}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -345,7 +422,12 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg">{note.title}</CardTitle>
+                      <CardTitle 
+                        className="text-lg"
+                        dangerouslySetInnerHTML={{ 
+                          __html: highlightSearchTerm(note.title, debouncedSearchTerm) 
+                        }}
+                      />
                       <Badge className={getPrivacyColor(note.privacyLevel)}>
                         {getPrivacyIcon(note.privacyLevel)}
                         <span className="ml-1">
@@ -386,7 +468,12 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
               </CardHeader>
               
               <CardContent>
-                <p className="text-sm mb-4 whitespace-pre-wrap">{note.content}</p>
+                <div 
+                  className="text-sm mb-4 prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                  dangerouslySetInnerHTML={{ 
+                    __html: highlightSearchTerm(note.content, debouncedSearchTerm) 
+                  }}
+                />
                 
                 {note.tags && note.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2">
@@ -469,11 +556,11 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
 
             <div className="space-y-2">
               <Label htmlFor="content">Content *</Label>
-              <Textarea
-                id="content"
-                {...register('content')}
-                placeholder="Note content..."
-                rows={6}
+              <RichTextEditor
+                value={watch('content') || ''}
+                onChange={(value) => setValue('content', value)}
+                placeholder="Write your note content... Use the toolbar above for formatting."
+                maxLength={10000}
               />
               {errors.content && (
                 <p className="text-sm text-destructive">{errors.content.message}</p>

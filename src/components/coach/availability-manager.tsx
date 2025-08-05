@@ -12,17 +12,19 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Plus, Trash2, Calendar, Save } from 'lucide-react';
+import { Clock, Plus, Trash2, Calendar, Save, Globe } from 'lucide-react';
 
-// Validation schema for availability
+// Validation schema for availability with timezone support
 const timeSlotSchema = z.object({
   dayOfWeek: z.number().min(0).max(6),
   startTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
   endTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
+  timezone: z.string().optional(),
 });
 
 const availabilitySchema = z.object({
   slots: z.array(timeSlotSchema).min(1, 'At least one time slot is required'),
+  timezone: z.string().min(1, 'Timezone is required'),
 }).refine((data) => {
   // Validate that end time is after start time for each slot
   return data.slots.every(slot => {
@@ -41,7 +43,24 @@ interface AvailabilitySlot {
   dayOfWeek: number;
   startTime: string;
   endTime: string;
+  timezone?: string;
 }
+
+// Common timezone options
+const TIMEZONE_OPTIONS = [
+  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+  { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
+  { value: 'America/Chicago', label: 'Central Time (US & Canada)' },
+  { value: 'America/Denver', label: 'Mountain Time (US & Canada)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (US & Canada)' },
+  { value: 'Europe/London', label: 'Greenwich Mean Time (London)' },
+  { value: 'Europe/Paris', label: 'Central European Time (Paris)' },
+  { value: 'Europe/Berlin', label: 'Central European Time (Berlin)' },
+  { value: 'Asia/Tokyo', label: 'Japan Standard Time (Tokyo)' },
+  { value: 'Asia/Shanghai', label: 'China Standard Time (Shanghai)' },
+  { value: 'Asia/Kolkata', label: 'India Standard Time (Mumbai)' },
+  { value: 'Australia/Sydney', label: 'Australian Eastern Time (Sydney)' },
+];
 
 const DAYS_OF_WEEK = [
   { value: 0, label: 'Sunday' },
@@ -90,6 +109,7 @@ export function AvailabilityManager() {
     resolver: zodResolver(availabilitySchema),
     defaultValues: {
       slots: [],
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     },
   });
 
@@ -127,7 +147,11 @@ export function AvailabilityManager() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          slots: formData.slots,
+          slots: formData.slots.map(slot => ({
+            ...slot,
+            timezone: formData.timezone,
+          })),
+          timezone: formData.timezone,
         }),
       });
 
@@ -252,6 +276,35 @@ export function AvailabilityManager() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Timezone Selection */}
+            <div className="space-y-2">
+              <Label className="text-base font-medium">
+                <Globe className="h-4 w-4 inline mr-2" />
+                Timezone
+              </Label>
+              <Select
+                value={watch('timezone')}
+                onValueChange={(value) => setValue('timezone', value)}
+              >
+                <SelectTrigger data-testid="timezone-select">
+                  <SelectValue placeholder="Select your timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIMEZONE_OPTIONS.map(tz => (
+                    <SelectItem key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.timezone && (
+                <p className="text-sm text-red-600">{errors.timezone.message}</p>
+              )}
+              <p className="text-sm text-muted-foreground">
+                All time slots will be set in this timezone. Clients will see times converted to their local timezone.
+              </p>
+            </div>
+
             {/* Time Slots */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">

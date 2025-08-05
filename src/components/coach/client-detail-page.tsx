@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, Clock, Edit, MessageSquare, Star, Video, FileText, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,46 +53,18 @@ interface Session {
 
 export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
   const [activeTab, setActiveTab] = useState('overview');
+  const router = useRouter();
 
-  // Mock data for E2E testing
-  const { data: client, isLoading } = useQuery<ClientDetail>({
+  // Fetch client details from API
+  const { data: client, isLoading, error } = useQuery<ClientDetail>({
     queryKey: ['client-detail', clientId],
     queryFn: async () => {
-      // Mock API call - replace with real implementation
-      return {
-        id: clientId,
-        firstName: 'John',
-        lastName: 'Smith',
-        email: 'john.smith@example.com',
-        phone: '+1-555-0123',
-        avatar: '/avatars/john.jpg',
-        status: 'active',
-        joinedDate: '2023-06-15T00:00:00Z',
-        totalSessions: 12,
-        completedSessions: 10,
-        averageRating: 4.8,
-        goals: ['Weight Loss', 'Strength Training', 'Stress Management'],
-        notes: 'Client is highly motivated and consistent with workouts. Prefers morning sessions.',
-        progress: { current: 75, target: 100 },
-        sessions: [
-          {
-            id: '1',
-            date: '2024-01-15T10:00:00Z',
-            duration: 60,
-            status: 'completed',
-            rating: 5,
-            notes: 'Great session, client made significant progress.',
-            type: 'video'
-          },
-          {
-            id: '2',
-            date: '2024-01-22T10:00:00Z',
-            duration: 60,
-            status: 'scheduled',
-            type: 'video'
-          }
-        ]
-      };
+      const response = await fetch(`/api/coach/clients/${clientId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch client details');
+      }
+      const result = await response.json();
+      return result.data;
     },
   });
 
@@ -141,6 +114,23 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium text-red-900 mb-2">Error Loading Client</h3>
+        <p className="text-red-600 mb-4">
+          {error instanceof Error ? error.message : 'Failed to load client details'}
+        </p>
+        <Button 
+          variant="outline" 
+          onClick={() => window.location.reload()}
+        >
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   if (!client) {
     return (
       <div className="text-center py-12">
@@ -155,7 +145,12 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" data-testid="back-button">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            data-testid="back-button"
+            onClick={() => router.push('/coach/clients')}
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Clients
           </Button>
@@ -179,11 +174,24 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button data-testid="start-session-button">
+          <Button 
+            data-testid="start-session-button"
+            onClick={() => {
+              // TODO: Implement video session start functionality
+              alert('Starting video session - Feature coming soon!');
+            }}
+          >
             <Video className="h-4 w-4 mr-2" />
             Start Session
           </Button>
-          <Button variant="outline" data-testid="message-client-button">
+          <Button 
+            variant="outline" 
+            data-testid="message-client-button"
+            onClick={() => {
+              // TODO: Implement messaging functionality
+              alert('Opening message thread - Feature coming soon!');
+            }}
+          >
             <MessageSquare className="h-4 w-4 mr-2" />
             Message
           </Button>
@@ -194,11 +202,23 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem data-testid="edit-client">
+              <DropdownMenuItem 
+                data-testid="edit-client"
+                onClick={() => {
+                  // TODO: Implement client editing functionality
+                  alert('Opening client editor - Feature coming soon!');
+                }}
+              >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Client
               </DropdownMenuItem>
-              <DropdownMenuItem data-testid="schedule-session">
+              <DropdownMenuItem 
+                data-testid="schedule-session"
+                onClick={() => {
+                  // TODO: Implement session scheduling functionality
+                  router.push(`/coach/sessions/book?clientId=${clientId}`);
+                }}
+              >
                 <Calendar className="h-4 w-4 mr-2" />
                 Schedule Session
               </DropdownMenuItem>

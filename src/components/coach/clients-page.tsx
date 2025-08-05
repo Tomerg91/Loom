@@ -181,7 +181,7 @@ export function CoachClientsPage() {
           </div>
         </div>
         <div className="flex items-center justify-center h-64">
-          <p className="text-destructive">Error loading clients</p>
+          <p className="text-destructive">{t('errors.loadingClients')}</p>
         </div>
       </div>
     );
@@ -205,7 +205,7 @@ export function CoachClientsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.totalClients')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -215,7 +215,7 @@ export function CoachClientsPage() {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.activeClients')}</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -227,7 +227,7 @@ export function CoachClientsPage() {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.totalSessions')}</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -239,7 +239,7 @@ export function CoachClientsPage() {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.averageRating')}</CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -264,7 +264,7 @@ export function CoachClientsPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search clients..."
+                  placeholder={t('searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -275,25 +275,25 @@ export function CoachClientsPage() {
             
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]" data-testid="status-filter">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('filterByStatus')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="all">{t('filters.allStatuses')}</SelectItem>
+                <SelectItem value="active">{t('filters.active')}</SelectItem>
+                <SelectItem value="inactive">{t('filters.inactive')}</SelectItem>
+                <SelectItem value="pending">{t('filters.pending')}</SelectItem>
               </SelectContent>
             </Select>
             
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sort by" />
+                <SelectValue placeholder={t('sortBy')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="joinedDate">Joined Date</SelectItem>
-                <SelectItem value="lastSession">Last Session</SelectItem>
-                <SelectItem value="progress">Progress</SelectItem>
+                <SelectItem value="name">{t('sorting.name')}</SelectItem>
+                <SelectItem value="joinedDate">{t('sorting.joinedDate')}</SelectItem>
+                <SelectItem value="lastSession">{t('sorting.lastSession')}</SelectItem>
+                <SelectItem value="progress">{t('sorting.progress')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -308,7 +308,10 @@ export function CoachClientsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={client.avatarUrl} alt={`${client.firstName} ${client.lastName}`} />
+                    <AvatarImage 
+                      src={client.avatarUrl} 
+                      alt={`${client.firstName} ${client.lastName} profile picture`}
+                    />
                     <AvatarFallback>
                       {client.firstName.charAt(0)}{client.lastName.charAt(0)}
                     </AvatarFallback>
@@ -322,7 +325,7 @@ export function CoachClientsPage() {
                   <Badge variant={getStatusBadgeVariant(client.status)} data-testid={`client-status-${client.id}`}>
                     <div className="flex items-center space-x-1">
                       {getStatusIcon(client.status)}
-                      <span>{client.status}</span>
+                      <span>{t(`status.${client.status}`)}</span>
                     </div>
                   </Badge>
                   <DropdownMenu>
@@ -332,23 +335,23 @@ export function CoachClientsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuLabel>{t('actions.actions')}</DropdownMenuLabel>
                       <DropdownMenuItem>
                         <Calendar className="mr-2 h-4 w-4" />
-                        Schedule Session
+                        {t('actions.scheduleSession')}
                       </DropdownMenuItem>
                       <DropdownMenuItem>
                         <MessageSquare className="mr-2 h-4 w-4" />
-                        Send Message
+                        {t('actions.sendMessage')}
                       </DropdownMenuItem>
                       <DropdownMenuItem>
                         <FileText className="mr-2 h-4 w-4" />
-                        View Notes
+                        {t('actions.viewNotes')}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem>
                         <Mail className="mr-2 h-4 w-4" />
-                        Send Email
+                        {t('actions.sendEmail')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -359,7 +362,7 @@ export function CoachClientsPage() {
               {/* Progress Bar */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Progress</span>
+                  <span className="text-sm font-medium">{t('info.progress')}</span>
                   <span className="text-sm text-muted-foreground">{client.progress.current}%</span>
                 </div>
                 <div className="w-full bg-secondary rounded-full h-2">
@@ -373,7 +376,7 @@ export function CoachClientsPage() {
               {/* Goals */}
               {client.goals && client.goals.length > 0 && (
                 <div>
-                  <span className="text-sm font-medium mb-2 block">Goals</span>
+                  <span className="text-sm font-medium mb-2 block">{t('info.goals')}</span>
                   <div className="flex flex-wrap gap-1">
                     {client.goals.map((goal, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
@@ -387,22 +390,22 @@ export function CoachClientsPage() {
               {/* Session Info */}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground">Total Sessions</p>
+                  <p className="text-muted-foreground">{t('info.totalSessions')}</p>
                   <p className="font-medium">{client.totalSessions}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Completed</p>
+                  <p className="text-muted-foreground">{t('info.completed')}</p>
                   <p className="font-medium">{client.completedSessions}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Rating</p>
+                  <p className="text-muted-foreground">{t('info.rating')}</p>
                   <p className="font-medium flex items-center">
                     <Star className="h-4 w-4 mr-1 text-yellow-500" />
-                    {client.averageRating || 'N/A'}
+                    {client.averageRating || t('info.notAvailable')}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Joined</p>
+                  <p className="text-muted-foreground">{t('info.joined')}</p>
                   <p className="font-medium">{new Date(client.joinedDate).toLocaleDateString()}</p>
                 </div>
               </div>
@@ -411,15 +414,15 @@ export function CoachClientsPage() {
               <div className="border-t pt-3">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Last Session</p>
+                    <p className="text-muted-foreground">{t('info.lastSession')}</p>
                     <p className="font-medium">
-                      {client.lastSession ? new Date(client.lastSession).toLocaleDateString() : 'Never'}
+                      {client.lastSession ? new Date(client.lastSession).toLocaleDateString() : t('info.never')}
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Next Session</p>
+                    <p className="text-muted-foreground">{t('info.nextSession')}</p>
                     <p className="font-medium">
-                      {client.nextSession ? new Date(client.nextSession).toLocaleDateString() : 'Not scheduled'}
+                      {client.nextSession ? new Date(client.nextSession).toLocaleDateString() : t('info.notScheduled')}
                     </p>
                   </div>
                 </div>
@@ -429,11 +432,11 @@ export function CoachClientsPage() {
               <div className="flex gap-2">
                 <Button size="sm" className="flex-1">
                   <Video className="mr-2 h-4 w-4" />
-                  Start Session
+                  {t('actions.startSession')}
                 </Button>
                 <Button size="sm" variant="outline" className="flex-1">
                   <MessageSquare className="mr-2 h-4 w-4" />
-                  Message
+                  {t('actions.message')}
                 </Button>
               </div>
             </CardContent>

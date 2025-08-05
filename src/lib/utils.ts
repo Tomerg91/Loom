@@ -435,3 +435,48 @@ export function stringToColor(str: string): string {
   const hue = hash % 360;
   return `hsl(${hue}, 70%, 50%)`;
 }
+
+/**
+ * Sanitize HTML content to prevent XSS attacks
+ * Removes dangerous tags and attributes while preserving safe formatting
+ */
+export function sanitizeHtml(html: string): string {
+  if (!html) return '';
+  
+  // List of allowed tags and attributes
+  const allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'mark'];
+  const allowedAttributes = ['href', 'class'];
+  
+  // Remove script tags and their content
+  let sanitized = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  
+  // Remove dangerous event handlers and javascript: links
+  sanitized = sanitized.replace(/\son\w+\s*=\s*"[^"]*"/gi, '');
+  sanitized = sanitized.replace(/\son\w+\s*=\s*'[^']*'/gi, '');
+  sanitized = sanitized.replace(/href\s*=\s*"javascript:[^"]*"/gi, 'href="#"');
+  sanitized = sanitized.replace(/href\s*=\s*'javascript:[^']*'/gi, "href='#'");
+  
+  // Remove style attributes that could contain dangerous CSS
+  sanitized = sanitized.replace(/\sstyle\s*=\s*"[^"]*"/gi, '');
+  sanitized = sanitized.replace(/\sstyle\s*=\s*'[^']*'/gi, '');
+  
+  return sanitized;
+}
+
+/**
+ * Escape HTML entities to prevent XSS
+ */
+export function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * Strip all HTML tags from content
+ */
+export function stripHtml(html: string): string {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
