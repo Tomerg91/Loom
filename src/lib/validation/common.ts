@@ -193,7 +193,7 @@ export const validationUtils = {
     const schema = condition(data) ? trueSchema : falseSchema;
     const result = schema.safeParse(data);
     if (!result.success) {
-      result.error.issues.forEach(issue => ctx.addIssue(issue));
+      result.error.issues.forEach((issue: any) => ctx.addIssue(issue));
     }
   }),
 

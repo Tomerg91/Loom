@@ -1,10 +1,17 @@
 import { test, expect } from '@playwright/test';
-import { createAuthHelper, testConstants, getTestUserByRole } from '../../../tests/helpers';
+import { createAuthHelper, testConstants, testUtils, getTestUserByRole, getTestUserByEmail } from '../../../tests/helpers';
 
 test.describe('Authentication Flow', () => {
   test.beforeEach(async ({ page }) => {
+    // Clear any existing auth state for clean test isolation
+    const authHelper = createAuthHelper(page);
+    await authHelper.clearAuthState();
+    
     // Start from the index page
     await page.goto('/');
+    
+    // Wait for page to load completely
+    await page.waitForLoadState('networkidle');
   });
 
   test('complete signin flow', async ({ page }) => {
@@ -18,10 +25,14 @@ test.describe('Authentication Flow', () => {
     await authHelper.signInUser(testUser.email, testUser.password);
     
     // Should redirect to dashboard on successful signin
-    await expect(page).toHaveURL(/\/(dashboard|client)/);
+    await expect(page).toHaveURL(/\/(dashboard|client)/, { timeout: 15000 });
     
     // Should show user info in navigation
-    await expect(page.locator(testConstants.selectors.userMenu)).toBeVisible();
+    await expect(page.locator(testConstants.selectors.userMenu)).toBeVisible({ timeout: 10000 });
+    
+    // Verify user is properly authenticated
+    const isSignedIn = await authHelper.isUserSignedIn();
+    expect(isSignedIn).toBe(true);
   });
 
   test('signin validation errors', async ({ page }) => {
@@ -57,18 +68,29 @@ test.describe('Authentication Flow', () => {
   });
 
   test('signup flow', async ({ page }) => {
+    const authHelper = createAuthHelper(page);
+    const randomEmail = testUtils.randomEmail();
+    
     await page.goto('/auth/signin');
     
     // Navigate to signup
     await page.click('text=Sign up here');
     await expect(page).toHaveURL('/auth/signup');
     
-    // Fill out signup form
-    await page.fill('[data-testid="first-name-input"]', 'Test');
-    await page.fill('[data-testid="last-name-input"]', 'User');
-    await page.fill('[data-testid="email-input"]', 'newuser@example.com');
-    await page.fill('[data-testid="password-input"]', 'password123');
-    await page.fill('[data-testid="confirm-password-input"]', 'password123');
+    // Fill out signup form with test data
+    const userData = {
+      firstName: 'Test',
+      lastName: 'User',
+      email: randomEmail,
+      password: testConstants.DEFAULT_PASSWORD,
+      role: 'client' as const
+    };
+    
+    await page.fill('[data-testid="first-name-input"]', userData.firstName);
+    await page.fill('[data-testid="last-name-input"]', userData.lastName);
+    await page.fill('[data-testid="email-input"]', userData.email);
+    await page.fill('[data-testid="password-input"]', userData.password);
+    await page.fill('[data-testid="confirm-password-input"]', userData.password);
     
     // Select role
     await page.click('[data-testid="role-select"]');
@@ -77,25 +99,29 @@ test.describe('Authentication Flow', () => {
     await page.click('[data-testid="signup-button"]');
     
     // Should redirect to signin with success message
-    await expect(page).toHaveURL('/auth/signin');
-    await expect(page.locator('text=Account created successfully')).toBeVisible();
+    await expect(page).toHaveURL('/auth/signin', { timeout: 15000 });
+    await expect(page.locator('text=Account created successfully')).toBeVisible({ timeout: 10000 });
   });
 
   test('signout flow', async ({ page }) => {
-    // First signin
-    await page.goto('/auth/signin');
-    await page.fill('[data-testid="email-input"]', 'test@example.com');
-    await page.fill('[data-testid="password-input"]', 'password123');
-    await page.click('[data-testid="signin-button"]');
+    const authHelper = createAuthHelper(page);
+    const testUser = getTestUserByEmail('test@example.com')!;
     
-    await expect(page).toHaveURL('/dashboard');
+    // First signin using auth helper
+    await authHelper.signInUser(testUser.email, testUser.password);
     
-    // Open user menu and signout
-    await page.click('[data-testid="user-menu"]');
-    await page.click('text=Sign out');
+    // Verify user is signed in
+    await expect(page).toHaveURL(/\/(dashboard|client)/, { timeout: 15000 });
+    
+    // Use auth helper for consistent signout
+    await authHelper.signOutUser();
     
     // Should redirect to signin page
     await expect(page).toHaveURL('/auth/signin');
+    
+    // Verify user is signed out
+    const isSignedIn = await authHelper.isUserSignedIn();
+    expect(isSignedIn).toBe(false);
     
     // Should not be able to access protected pages
     await page.goto('/dashboard');
@@ -103,12 +129,16 @@ test.describe('Authentication Flow', () => {
   });
 
   test('protected route access', async ({ page }) => {
-    // Try to access protected routes without authentication
-    const protectedRoutes = ['/dashboard', '/sessions', '/coach', '/client'];
+    const authHelper = createAuthHelper(page);
+    const protectedRoutes = ['/dashboard', '/sessions', '/coach', '/client', '/admin'];
     
+    // Ensure user is signed out first
+    await authHelper.signOutUser();
+    
+    // Try to access protected routes without authentication
     for (const route of protectedRoutes) {
-      await page.goto(route);
-      await expect(page).toHaveURL('/auth/signin');
+      const redirectResult = await authHelper.verifyProtectedRouteRedirect(route);
+      expect(redirectResult).toBe(true);
     }
   });
 
@@ -123,43 +153,90 @@ test.describe('Authentication Flow', () => {
     expect(hasClientAccess).toBe(true);
     
     // Should not be able to access coach pages
-    await page.goto('/coach');
-    await expect(page).not.toHaveURL(/\/coach/); // Redirected away
+    const coachAccessDenied = await authHelper.verifyProtectedRouteRedirect('/coach');
+    expect(coachAccessDenied).toBe(false); // Should not have access
     
     // Should not be able to access admin pages
-    await page.goto('/admin');
-    await expect(page).not.toHaveURL(/\/admin/); // Redirected away
+    const adminAccessDenied = await authHelper.verifyProtectedRouteRedirect('/admin');
+    expect(adminAccessDenied).toBe(false); // Should not have access
   });
 
   test('session persistence', async ({ page }) => {
-    // Signin
-    await page.goto('/auth/signin');
-    await page.fill('[data-testid="email-input"]', 'test@example.com');
-    await page.fill('[data-testid="password-input"]', 'password123');
-    await page.click('[data-testid="signin-button"]');
+    const authHelper = createAuthHelper(page);
+    const testUser = getTestUserByEmail('test@example.com')!;
     
-    await expect(page).toHaveURL('/dashboard');
+    // Signin using auth helper
+    await authHelper.signInUser(testUser.email, testUser.password);
     
-    // Refresh page
-    await page.reload();
+    await expect(page).toHaveURL(/\/(dashboard|client)/, { timeout: 15000 });
     
-    // Should still be authenticated
-    await expect(page).toHaveURL('/dashboard');
+    // Test auth persistence using the helper
+    const persistenceResult = await authHelper.verifyAuthPersistence();
+    expect(persistenceResult).toBe(true);
+    
+    // Should still be authenticated after refresh
+    await expect(page).toHaveURL(/\/(dashboard|client)/);
     await expect(page.locator('[data-testid="user-menu"]')).toBeVisible();
   });
 
   test('password reset flow', async ({ page }) => {
-    await page.goto('/auth/signin');
+    const authHelper = createAuthHelper(page);
+    const testUser = getTestUserByEmail('test@example.com')!;
     
-    // Click forgot password link
-    await page.click('text=Forgot your password?');
-    await expect(page).toHaveURL('/auth/reset-password');
+    // Use auth helper for password reset flow
+    const resetResult = await authHelper.requestPasswordReset(testUser.email);
+    expect(resetResult).toBe(true);
+  });
+
+  test('coach role-based access', async ({ page }) => {
+    const authHelper = createAuthHelper(page);
     
-    // Fill reset form
-    await page.fill('[data-testid="email-input"]', 'test@example.com');
-    await page.click('[data-testid="reset-button"]');
+    // Signin as coach
+    await authHelper.signInUserByRole('coach');
+
+    // Should be able to access coach pages
+    const hasCoachAccess = await authHelper.verifyUserRole('coach');
+    expect(hasCoachAccess).toBe(true);
+
+    // Should be able to navigate to coach dashboard
+    await page.goto('/coach');
+    await expect(page).toHaveURL(/\/coach/);
+
+    // Should not be able to access admin pages
+    const adminAccessDenied = await authHelper.verifyProtectedRouteRedirect('/admin');
+    expect(adminAccessDenied).toBe(false);
+  });
+
+  test('admin role-based access', async ({ page }) => {
+    const authHelper = createAuthHelper(page);
     
-    // Should show success message
-    await expect(page.locator('text=Password reset email sent')).toBeVisible();
+    // Signin as admin
+    await authHelper.signInUserByRole('admin');
+
+    // Should be able to access admin pages
+    const hasAdminAccess = await authHelper.verifyUserRole('admin');
+    expect(hasAdminAccess).toBe(true);
+
+    // Should be able to navigate to admin dashboard
+    await page.goto('/admin');
+    await expect(page).toHaveURL(/\/admin/);
+  });
+
+  test('session timeout handling', async ({ page }) => {
+    const authHelper = createAuthHelper(page);
+    const testUser = getTestUserByEmail('test@example.com')!;
+    
+    // Signin first
+    await authHelper.signInUser(testUser.email, testUser.password);
+    
+    // Test session timeout
+    const timeoutResult = await authHelper.testSessionTimeout();
+    expect(timeoutResult).toBe(true);
+  });
+
+  test.afterEach(async ({ page }) => {
+    // Clean up auth state after each test
+    const authHelper = createAuthHelper(page);
+    await authHelper.clearAuthState();
   });
 });

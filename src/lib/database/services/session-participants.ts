@@ -109,7 +109,7 @@ export class SessionParticipantsService extends BaseSessionService {
         } else {
           clientMap.set(clientId, {
             id: clientId,
-            name: `${session.client.first_name || ''} ${session.client.last_name || ''}`.trim(),
+            name: `${session.client.firstName || session.client.first_name || ''} ${session.client.lastName || session.client.last_name || ''}`.trim(),
             email: session.client.email,
             sessionCount: 1,
           });
@@ -150,7 +150,7 @@ export class SessionParticipantsService extends BaseSessionService {
         } else {
           coachMap.set(coachId, {
             id: coachId,
-            name: `${session.coach.first_name || ''} ${session.coach.last_name || ''}`.trim(),
+            name: `${session.coach.firstName || session.coach.first_name || ''} ${session.coach.lastName || session.coach.last_name || ''}`.trim(),
             email: session.coach.email,
             sessionCount: 1,
           });

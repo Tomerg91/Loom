@@ -22,7 +22,9 @@
     "logout": "Logout",
     "welcome": "Welcome",
     "language": "Language",
-    "selectLanguage": "Select language"
+    "selectLanguage": "Select language",
+    "show": "Show",
+    "hide": "Hide"
   },
   "navigation": {
     "home": "Home",
@@ -90,6 +92,186 @@
       "viewProgress": "View My Progress"
     }
   },
+  "mfa": {
+    "setup": {
+      "title": "Set Up Two-Factor Authentication",
+      "intro": {
+        "title": "Introduction",
+        "description": "Add an extra layer of security to your account",
+        "heading": "Secure Your Account with Two-Factor Authentication",
+        "step1": {
+          "title": "Download an authenticator app",
+          "description": "Install Google Authenticator, Authy, or another TOTP app on your phone"
+        },
+        "step2": {
+          "title": "Scan the QR code",
+          "description": "Use your authenticator app to scan the QR code we'll show you"
+        },
+        "step3": {
+          "title": "Enter verification code",
+          "description": "Confirm setup by entering a code from your authenticator app"
+        },
+        "warning": "Make sure to save your backup codes in a secure location. You'll need them if you lose access to your authenticator app."
+      },
+      "qrCode": {
+        "title": "QR Code",
+        "description": "Scan this code with your authenticator app",
+        "heading": "Scan with Authenticator App",
+        "instruction": "Open your authenticator app and scan this QR code",
+        "manualEntry": "Can't scan? Enter code manually",
+        "appSuggestion": "We recommend Google Authenticator, Authy, or Microsoft Authenticator"
+      },
+      "manualKey": {
+        "title": "Manual Setup",
+        "description": "Enter this key manually in your authenticator app",
+        "heading": "Manual Setup Key",
+        "instruction": "Enter this key manually in your authenticator app",
+        "secretKey": "Secret Key",
+        "accountInfo": "Account Information",
+        "issuer": "Issuer",
+        "account": "Account",
+        "warning": "Keep this secret key secure. Anyone with access to it can generate codes for your account."
+      },
+      "verify": {
+        "title": "Verify Setup",
+        "description": "Enter a code from your authenticator app to complete setup",
+        "heading": "Verify Your Setup",
+        "instruction": "Enter the 6-digit code from your authenticator app",
+        "help": "The code changes every 30 seconds, so make sure to use the current one"
+      },
+      "backupCodes": {
+        "title": "Backup Codes",
+        "description": "Save these codes to recover your account if needed",
+        "heading": "Save Your Backup Codes",
+        "instruction": "Store these codes in a safe place. You can use them to access your account if you lose your phone.",
+        "warning": "Each backup code can only be used once. Store them securely and don't share them with anyone."
+      },
+      "complete": {
+        "title": "Setup Complete",
+        "description": "Two-factor authentication has been successfully enabled",
+        "heading": "Setup Complete!",
+        "instruction": "Two-factor authentication is now active on your account. You'll need to enter codes from your authenticator app when signing in.",
+        "feature1": "Your account is now more secure",
+        "feature2": "You have backup codes for emergencies",
+        "feature3": "You can manage MFA settings anytime"
+      },
+      "back": "Back",
+      "next": "Next",
+      "cancel": "Cancel",
+      "getStarted": "Get Started",
+      "finish": "Complete Setup"
+    },
+    "challenge": {
+      "title": "Two-Factor Authentication",
+      "description": "Enter the code from your authenticator app to continue",
+      "backupDescription": "Enter one of your backup codes to continue",
+      "authenticatorApp": "Authenticator App",
+      "backupCode": "Backup Code",
+      "totpLabel": "Authentication Code",
+      "backupLabel": "Backup Code",
+      "backupHelp": "Enter one of your 8-digit backup codes",
+      "trustDevice": "Trust this device",
+      "trustDeviceDescription": "Don't ask for codes on this device for 30 days",
+      "verify": "Verify",
+      "verifying": "Verifying...",
+      "cancel": "Back to Sign In",
+      "useBackupCode": "Use backup code instead",
+      "useAuthenticator": "Use authenticator app",
+      "totpHelp": "Open your authenticator app and enter the 6-digit code",
+      "backupCodeHelp": "Each backup code can only be used once",
+      "troubleshoot": {
+        "title": "Having trouble?",
+        "tip1": "Make sure your device's time is correct",
+        "tip2": "Try refreshing your authenticator app",
+        "tip3": "Use a backup code if available"
+      }
+    },
+    "verification": {
+      "label": "Verification Code",
+      "placeholder": "Enter code",
+      "help": "Enter the code from your authenticator app"
+    },
+    "qrCode": {
+      "instruction": "Scan this QR code with your authenticator app",
+      "apps": "Works with Google Authenticator, Authy, and more",
+      "download": "Download QR Code",
+      "copy": "Copy Setup URI",
+      "accessibility": "Can't scan? View setup details",
+      "error": "Failed to generate QR code",
+      "retry": "Try Again"
+    },
+    "backupCodes": {
+      "title": "Backup Codes",
+      "downloadTitle": "Loom - MFA Backup Codes",
+      "downloadSubtitle": "Save these codes in a secure location",
+      "downloadInstructions": "Use these codes to access your account if you lose your authenticator device. Each code can only be used once.",
+      "downloadWarning": "Keep these codes secret and secure. Anyone with access to them can access your account.",
+      "instruction": "Use these codes to access your account if you lose your authenticator device",
+      "rule1": "Each code can only be used once",
+      "rule2": "Store them in a secure location",
+      "rule3": "Don't share them with anyone",
+      "copyAll": "Copy All Codes",
+      "download": "Download Codes",
+      "regenerate": "Regenerate Codes",
+      "remaining": "remaining",
+      "used": "Used",
+      "lowWarning": "You only have {count} backup codes remaining. Consider regenerating new ones.",
+      "usedInfo": "You have used {used} of {total} backup codes.",
+      "securityWarning": "Keep these codes secret and secure. Anyone with access to them can bypass two-factor authentication on your account."
+    },
+    "management": {
+      "title": "Two-Factor Authentication",
+      "description": "Manage your account's two-factor authentication settings",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "toggle": "Toggle MFA",
+      "recommendedAlert": "We strongly recommend enabling two-factor authentication to secure your account.",
+      "enabledAlert": "Your account is protected with two-factor authentication.",
+      "status": {
+        "enabled": "Two-Factor Authentication is ON",
+        "disabled": "Two-Factor Authentication is OFF",
+        "enabledDescription": "Your account is protected with an additional security layer",
+        "disabledDescription": "Enable MFA for enhanced account security"
+      },
+      "backupCodes": {
+        "title": "Backup Codes",
+        "description": "Emergency codes to access your account",
+        "remaining": "remaining",
+        "view": "View Codes",
+        "regenerate": "Regenerate",
+        "hidden": {
+          "title": "Backup codes are hidden",
+          "description": "Click to view your backup codes"
+        }
+      },
+      "trustedDevices": {
+        "title": "Trusted Devices",
+        "description": "Devices that don't require MFA codes",
+        "current": "Current",
+        "remove": "Remove"
+      },
+      "securityEvents": {
+        "title": "Security Activity",
+        "description": "Recent security events on your account",
+        "viewAll": "View All Events",
+        "types": {
+          "login": "Successful login",
+          "backup_code_used": "Backup code used",
+          "device_trusted": "Device marked as trusted",
+          "mfa_enabled": "Two-factor authentication enabled",
+          "mfa_disabled": "Two-factor authentication disabled",
+          "backup_codes_regenerated": "Backup codes regenerated"
+        }
+      },
+      "recovery": {
+        "title": "Recovery Options",
+        "description": "Options to recover your account",
+        "downloadCodes": "Download Backup Codes",
+        "regenerateCodes": "Regenerate Backup Codes",
+        "warning": "Make sure to update your stored backup codes if you regenerate them."
+      }
+    }
+  },
   "auth": {
     "signin": {
       "title": "Sign In",
@@ -102,6 +284,77 @@
       "description": "Create your account to get started",
       "button": "Create Account",
       "link": "Sign up here"
+    },
+    "mfa": {
+      "verify": {
+        "title": "Two-Factor Authentication",
+        "description": "Enter the code from your authenticator app to continue",
+        "loading": "Loading MFA verification...",
+        "button": "Verify"
+      },
+      "setup": {
+        "title": "Set Up Two-Factor Authentication",
+        "description": "Secure your account with an extra layer of protection",
+        "loading": "Loading MFA setup...",
+        "required": "Multi-factor authentication is required for your account",
+        "adminRequired": "Multi-factor authentication is required for admin accounts",
+        "continue": "Continue",
+        "qrCodeAlt": "QR code for MFA setup",
+        "scanInstructions": "Scan this QR code with your authenticator app",
+        "manualEntry": "Manual Entry Key",
+        "compatibleApps": "Compatible with Google Authenticator, Authy, Microsoft Authenticator, and more",
+        "verificationCode": "Verification Code",
+        "verificationCodePlaceholder": "000000",
+        "verificationInstructions": "Enter the 6-digit code from your authenticator app to complete setup",
+        "verifyDescription": "Enter the code from your authenticator app to verify setup",
+        "verify": "Complete Setup",
+        "verificationFailed": "Verification failed. Please try again.",
+        "error": "Failed to set up MFA. Please try again."
+      },
+      "authenticatorCode": "Authenticator Code",
+      "authenticatorCodePlaceholder": "000000",
+      "authenticatorInstructions": "Enter the 6-digit code from your authenticator app",
+      "backupCode": "Backup Code",
+      "backupCodePlaceholder": "ABCD1234",
+      "backupCodeInstructions": "Enter one of your 8-character backup codes",
+      "methods": {
+        "authenticator": "Authenticator App",
+        "backupCode": "Backup Code"
+      },
+      "rememberDevice": "Remember this device for 30 days",
+      "rememberDeviceWarning": "Only select this on trusted devices",
+      "attemptsRemaining": "{remaining} attempts remaining",
+      "tooManyAttempts": "Too many failed attempts. Please try again later.",
+      "accountLocked": "Account temporarily locked due to failed attempts",
+      "verificationFailed": "Verification failed. Please check your code and try again.",
+      "troubleMessage": "Having trouble?",
+      "useBackupCode": "Use backup code",
+      "useAuthenticator": "Use authenticator app",
+      "cancel": "Cancel",
+      "back": "Back",
+      "backToSignin": "Back to Sign In",
+      "backToDashboard": "Back to Dashboard",
+      "backup": {
+        "description": "Save these backup codes in a secure location",
+        "importance": "Important: Save these backup codes now. They're your only way to recover your account if you lose access to your authenticator app.",
+        "codes": "Backup Codes",
+        "saved": "I've saved my backup codes",
+        "instructions": {
+          "1": "Each code can only be used once",
+          "2": "Store them in a safe place (password manager, secure note)",
+          "3": "Don't share them with anyone"
+        }
+      },
+      "complete": {
+        "title": "MFA Setup Complete!",
+        "description": "Your account is now protected with multi-factor authentication",
+        "continue": "Continue to Dashboard",
+        "features": {
+          "1": "Enhanced account security",
+          "2": "Backup codes for recovery",
+          "3": "Trusted device options"
+        }
+      }
     },
     "email": "Email",
     "password": "Password",

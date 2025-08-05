@@ -5,6 +5,7 @@ import { applySecurityHeaders } from '@/lib/security/headers';
 import { validateUserAgent } from '@/lib/security/validation';
 import createMiddleware from 'next-intl/middleware';
 import { config as appConfig } from '@/lib/config';
+import { createMfaService } from '@/lib/services/mfa-service';
 
 // Create next-intl middleware
 const intlMiddleware = createMiddleware(routing);
@@ -27,6 +28,15 @@ const publicRoutes = [
   '/auth/signup',
   '/auth/reset-password',
   '/auth/callback',
+  '/auth/mfa-verify',
+  '/auth/mfa-setup',
+];
+
+// Routes that require MFA verification (in addition to basic auth)
+const mfaRequiredRoutes = [
+  '/admin',
+  '/settings/security',
+  '/settings/mfa',
 ];
 
 // Admin-only routes
@@ -165,10 +175,57 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
-    // If user is authenticated, check role-based access
+    // If user is authenticated, check role-based access and MFA requirements
     if (user && isProtectedRoute) {
       // Get user role (cached for performance)
       const userRole = await getUserRole(user.id, supabase);
+
+      // Check if MFA verification is required for this route
+      const requiresMfa = mfaRequiredRoutes.some(route => 
+        pathWithoutLocale.startsWith(route)
+      );
+
+      // Check if user has MFA enabled and route requires MFA
+      if (requiresMfa) {
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('mfa_enabled, mfa_verified_at')
+          .eq('id', user.id)
+          .single();
+
+        if (userProfile?.mfa_enabled) {
+          // Check if MFA session is valid
+          const mfaService = createMfaService(true);
+          const mfaSessionToken = request.cookies.get('mfa_session')?.value;
+          
+          if (mfaSessionToken) {
+            const { session: mfaSession } = await mfaService.validateMfaSession(mfaSessionToken);
+            
+            if (!mfaSession || !mfaSession.mfaVerified) {
+              // MFA session is invalid or not fully verified, redirect to MFA verification
+              const redirectUrl = new URL(`/${locale}/auth/mfa-verify`, request.url);
+              redirectUrl.searchParams.set('redirectTo', pathWithoutLocale);
+              return NextResponse.redirect(redirectUrl);
+            }
+          } else {
+            // No MFA session, check if device is trusted
+            const isDeviceTrusted = await mfaService.isDeviceTrusted(user.id);
+            
+            if (!isDeviceTrusted) {
+              // Redirect to MFA verification
+              const redirectUrl = new URL(`/${locale}/auth/mfa-verify`, request.url);
+              redirectUrl.searchParams.set('redirectTo', pathWithoutLocale);
+              return NextResponse.redirect(redirectUrl);
+            }
+          }
+        } else if (adminRoutes.some(route => pathWithoutLocale.startsWith(route))) {
+          // Admin routes require MFA setup if not already enabled
+          const redirectUrl = new URL(`/${locale}/auth/mfa-setup`, request.url);
+          redirectUrl.searchParams.set('required', 'true');
+          redirectUrl.searchParams.set('redirectTo', pathWithoutLocale);
+          return NextResponse.redirect(redirectUrl);
+        }
+      }
 
       // Check admin routes
       if (adminRoutes.some(route => pathWithoutLocale.startsWith(route))) {

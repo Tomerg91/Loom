@@ -3,7 +3,6 @@ import { NextRequest } from 'next/server';
 import { POST, GET } from '@/app/api/sessions/route';
 import { createMockSession, mockSupabaseClient } from '@/test/utils';
 import { SessionService } from '@/lib/database';
-import { validateRequestBody } from '@/lib/api/utils';
 import { SessionNotificationService } from '@/lib/notifications/session-notifications';
 
 // Mock Supabase
@@ -12,7 +11,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 // Mock database services
-vi.mock('@/lib/database/sessions', () => ({
+vi.mock('@/lib/database', () => ({
   SessionService: vi.fn().mockImplementation(() => ({
     getSession: vi.fn(),
     createSession: vi.fn(),
@@ -32,15 +31,28 @@ vi.mock('@/lib/database/sessions', () => ({
 // Get the mocked constructor
 const MockedSessionService = vi.mocked(SessionService, true);
 
-// Mock validation
+
 vi.mock('@/lib/api/validation', () => ({
-  validateRequestBody: vi.fn(),
   createSessionSchema: {},
   validateQuery: vi.fn(),
 }));
 
+// Mock validation - import from utils since that's where validateRequestBody is defined
+vi.mock('@/lib/api/utils', () => ({
+  validateRequestBody: vi.fn(),
+  createSuccessResponse: vi.fn(),
+  createErrorResponse: vi.fn(),
+  HTTP_STATUS: {
+    OK: 200,
+    CREATED: 201,
+    BAD_REQUEST: 400,
+    UNAUTHORIZED: 401,
+    INTERNAL_SERVER_ERROR: 500,
+  },
+}));
+
 // Get the mocked validation functions
-const mockValidateRequestBody = vi.mocked(validateRequestBody, true);
+const mockValidateRequestBody = vi.fn();
 
 // Mock notifications
 vi.mock('@/lib/notifications/session-notifications', () => ({
@@ -74,14 +86,14 @@ describe('/api/sessions', () => {
         create: mockCreate,
       }));
 
-      mockValidateRequestBody.mockResolvedValue({
+      mockValidateRequestBody.mockReturnValue({ success: true, data: {
         title: 'Test Session',
         description: 'Test description',
         coachId: 'coach-id',
         scheduledAt: new Date().toISOString(),
         duration: 60,
         type: 'individual',
-      });
+      } });
 
       const request = new NextRequest('http://localhost:3000/api/sessions', {
         method: 'POST',
@@ -131,7 +143,7 @@ describe('/api/sessions', () => {
     });
 
     it('returns 400 for invalid request body', async () => {
-      mockValidateRequestBody.mockRejectedValue(new Error('Title is required'));
+      mockValidateRequestBody.mockReturnValue({ success: false, error: { message: 'Title is required' } });
 
       const request = new NextRequest('http://localhost:3000/api/sessions', {
         method: 'POST',
@@ -158,13 +170,13 @@ describe('/api/sessions', () => {
         sendSessionConfirmation: mockSendConfirmation,
       }));
 
-      mockValidateRequestBody.mockResolvedValue({
+      mockValidateRequestBody.mockReturnValue({ success: true, data: {
         title: 'Test Session',
         coachId: 'coach-id',
         scheduledAt: new Date().toISOString(),
         duration: 60,
         type: 'individual',
-      });
+      } });
 
       const request = new NextRequest('http://localhost:3000/api/sessions', {
         method: 'POST',

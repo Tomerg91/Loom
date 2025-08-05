@@ -10,10 +10,12 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   return (
     <RouteGuard requireAuth>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <NavMenu />
-        <main className="flex-1">
-          {children}
+        <main className="flex-1 pb-safe-area-bottom">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {children}
+          </div>
         </main>
       </div>
     </RouteGuard>

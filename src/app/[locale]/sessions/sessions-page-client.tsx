@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { SessionBookingForm } from '@/components/sessions/session-booking-form';
+import { SessionBookingForm } from '@/components/sessions/booking';
 import { SessionList } from '@/components/sessions/session-list';
 import { SessionCalendar } from '@/components/sessions/session-calendar';
 import { Calendar, List, Plus, Clock, Users, CheckCircle } from 'lucide-react';

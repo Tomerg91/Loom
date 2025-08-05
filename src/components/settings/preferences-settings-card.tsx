@@ -50,7 +50,7 @@ export function PreferencesSettingsCard() {
       newPathname = `/${newLocale}${pathname}`;
     }
     
-    router.push(newPathname);
+    router.push(newPathname as any);
   };
 
   const themes = [

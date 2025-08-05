@@ -283,18 +283,18 @@ export class UserService {
       // Calculate coach statistics from sessions table
       const { count: totalSessions, error: totalError } = await this.supabase
         .from('sessions')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('coach_id', userId);
 
       const { count: completedSessions, error: completedError } = await this.supabase
         .from('sessions')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('coach_id', userId)
         .eq('status', 'completed');
 
       const { count: upcomingSessions, error: upcomingError } = await this.supabase
         .from('sessions')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('coach_id', userId)
         .in('status', ['scheduled', 'in_progress']);
 
@@ -322,18 +322,18 @@ export class UserService {
       // Calculate client statistics from sessions table
       const { count: totalSessions, error: totalError } = await this.supabase
         .from('sessions')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('client_id', userId);
 
       const { count: completedSessions, error: completedError } = await this.supabase
         .from('sessions')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('client_id', userId)
         .eq('status', 'completed');
 
       const { count: upcomingSessions, error: upcomingError } = await this.supabase
         .from('sessions')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('client_id', userId)
         .in('status', ['scheduled', 'in_progress']);
 

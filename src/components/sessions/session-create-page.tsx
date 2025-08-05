@@ -12,7 +12,7 @@ import { ParticipantSelector } from './forms/participant-selector';
 import { SessionGoalsManager } from './forms/session-goals-manager';
 import { SessionNotesEditor } from './forms/session-notes-editor';
 import { SessionFormActions } from './forms/session-form-actions';
-import { User, SessionFormData, SessionFormField } from './shared/types';
+import { User, SessionFormData, SessionFormField } from '@/types';
 
 export function SessionCreatePage() {
   const router = useRouter();

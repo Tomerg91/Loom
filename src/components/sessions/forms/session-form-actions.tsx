@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Calendar } from 'lucide-react';
-import { SessionFormData } from '../shared/types';
+import { SessionFormData } from '@/types';
 
 interface SessionFormActionsProps {
   formData: SessionFormData;

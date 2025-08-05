@@ -5,6 +5,45 @@ export type UserRole = 'client' | 'coach' | 'admin';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 export type Language = 'en' | 'he';
 
+// MFA types
+export type MfaMethod = 'totp' | 'backup_code';
+export type MfaSessionStatus = 'password_verified' | 'mfa_required' | 'fully_authenticated';
+
+export interface MfaSession {
+  id: string;
+  sessionToken: string;
+  passwordVerified: boolean;
+  mfaVerified: boolean;
+  deviceFingerprint?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface TrustedDevice {
+  id: string;
+  deviceFingerprint: string;
+  deviceName?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface MfaSetupData {
+  secret: string;
+  qrCodeUrl: string;
+  backupCodes: string[];
+}
+
+export interface MfaVerificationData {
+  method: MfaMethod;
+  code: string;
+  rememberDevice?: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -12,6 +51,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  phoneNumber?: string; // Alternative field name for compatibility
   avatarUrl?: string;
   timezone?: string;
   language: Language;
@@ -19,6 +59,25 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   lastSeenAt?: string;
+  // MFA fields
+  mfaEnabled?: boolean;
+  mfaSetupCompleted?: boolean;
+  mfaVerifiedAt?: string;
+  rememberDeviceEnabled?: boolean;
+  // Additional fields for auth compatibility
+  isActive?: boolean;
+  emailVerified?: boolean;
+  dateOfBirth?: string;
+  preferences?: {
+    language: string;
+    notifications: {
+      email: boolean;
+      push: boolean;
+      inApp: boolean;
+    };
+    theme: string;
+  };
+  metadata?: Record<string, unknown>;
 }
 
 // Session types
@@ -34,8 +93,14 @@ export interface Session {
   duration: number; // Duration in minutes
   durationMinutes: number; // Alias for backwards compatibility
   status: SessionStatus;
+  sessionType?: 'video' | 'phone' | 'in-person';
+  location?: string;
   meetingUrl?: string;
   notes?: string;
+  rating?: number;
+  feedback?: string;
+  actionItems?: string[];
+  goals?: string[];
   createdAt: string;
   updatedAt: string;
   coach: {
@@ -139,6 +204,22 @@ export interface SessionBookingForm {
   durationMinutes: number;
 }
 
+export interface SessionFormData {
+  title: string;
+  description: string;
+  scheduledAt: string;
+  duration: number;
+  sessionType: 'video' | 'phone' | 'in-person';
+  location: string;
+  meetingUrl: string;
+  notes: string;
+  goals: string[];
+  coachId: string;
+  clientId: string;
+}
+
+export type SessionFormField = keyof SessionFormData;
+
 export interface ReflectionForm {
   sessionId?: string;
   content: string;
@@ -178,4 +259,19 @@ export interface AppError {
   code: string;
   message: string;
   details?: Record<string, unknown>;
+}
+
+// Global window type declarations
+declare global {
+  interface Window {
+    gtag?: (
+      command: 'config' | 'event',
+      targetId: string,
+      config?: Record<string, unknown>
+    ) => void;
+    posthog?: {
+      capture: (eventName: string, properties?: Record<string, unknown>) => void;
+      identify: (userId: string, properties?: Record<string, unknown>) => void;
+    };
+  }
 }

@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createAuthService } from '@/lib/auth/auth';
+import { createMfaService } from '@/lib/services/mfa-service';
 import { basicPasswordSchema } from '@/lib/security/password';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { MfaVerificationForm } from './mfa-verification-form';
 
 const signinSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -33,6 +35,8 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showMfaChallenge, setShowMfaChallenge] = useState(false);
+  const [mfaData, setMfaData] = useState<{ userId: string; sessionToken?: string } | null>(null);
 
   const {
     register,
@@ -56,6 +60,36 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
       }
 
       if (user) {
+        // Check if user has MFA enabled
+        const mfaService = createMfaService(false);
+        
+        // Check if device is already trusted
+        const isDeviceTrusted = await mfaService.isDeviceTrusted(user.id);
+        
+        if (user.mfaEnabled && !isDeviceTrusted) {
+          // Create MFA session for partial authentication
+          const { session, error: sessionError } = await mfaService.createMfaSession(user.id);
+          
+          if (sessionError) {
+            setError(sessionError);
+            return;
+          }
+
+          if (session) {
+            // Set MFA session cookie
+            document.cookie = `mfa_session=${session.sessionToken}; path=/; secure; samesite=strict; max-age=600`;
+            
+            // Show MFA challenge
+            setMfaData({
+              userId: user.id,
+              sessionToken: session.sessionToken,
+            });
+            setShowMfaChallenge(true);
+            return;
+          }
+        }
+
+        // No MFA required or device is trusted, proceed to dashboard
         router.push(redirectTo as '/dashboard');
         router.refresh();
       }
@@ -65,6 +99,31 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
       setIsLoading(false);
     }
   };
+
+  const handleMfaSuccess = () => {
+    router.push(redirectTo as '/dashboard');
+    router.refresh();
+  };
+
+  const handleMfaCancel = () => {
+    setShowMfaChallenge(false);
+    setMfaData(null);
+    // Clear MFA session cookie
+    document.cookie = 'mfa_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+  };
+
+  // Show MFA challenge if required
+  if (showMfaChallenge && mfaData) {
+    return (
+      <MfaVerificationForm
+        userId={mfaData.userId}
+        mfaSessionToken={mfaData.sessionToken}
+        redirectTo={redirectTo}
+        onSuccess={handleMfaSuccess}
+        onCancel={handleMfaCancel}
+      />
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -153,6 +212,22 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
               >
                 {t('signup.link')}
               </Link>
+            </div>
+
+            {/* Test MFA Flow Button */}
+            <div className="pt-2 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setTempCredentials({ email: 'test@example.com', password: 'password' });
+                  setRequiresMfa(true);
+                }}
+                className="text-xs"
+              >
+                Test MFA Flow
+              </Button>
             </div>
           </div>
         </CardFooter>

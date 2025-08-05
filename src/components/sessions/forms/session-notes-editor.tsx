@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { SessionFormData, SessionFormField } from '../shared/types';
+import { SessionFormData, SessionFormField } from '@/types';
 
 interface SessionNotesEditorProps {
   formData: SessionFormData;

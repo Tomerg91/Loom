@@ -85,13 +85,21 @@ export const LazyComponents = {
     { ssr: false }
   ),
 
-  // Session components
+  // Session components (unified)
   SessionBookingForm: withLazyLoading(
-    () => import('@/components/sessions/session-booking-form'),
+    () => import('@/components/sessions/booking').then(mod => ({ default: mod.SessionBookingForm })),
     { ssr: true }
   ),
   EnhancedSessionBooking: withLazyLoading(
-    () => import('@/components/sessions/enhanced-session-booking'),
+    () => import('@/components/sessions/booking').then(mod => ({ default: mod.EnhancedSessionBooking })),
+    { ssr: true }
+  ),
+  RealtimeSessionBooking: withLazyLoading(
+    () => import('@/components/sessions/booking').then(mod => ({ default: mod.RealtimeSessionBooking })),
+    { ssr: true }
+  ),
+  UnifiedSessionBooking: withLazyLoading(
+    () => import('@/components/sessions/unified-session-booking').then(mod => ({ default: mod.UnifiedSessionBooking })),
     { ssr: true }
   ),
   SessionCalendar: withLazyLoading(

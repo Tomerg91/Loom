@@ -1,7 +1,4 @@
-// These would be used in a real database implementation
-// import { db } from '@/lib/db';
-// import { users, sessions, ratings, payments } from '@/lib/db/schema';
-// import { sql, and, gte, lte, eq, desc, avg, count, sum } from '@/lib/db/orm-functions';
+import { adminAnalyticsService } from '@/lib/database/admin-analytics';
 
 export interface AnalyticsOverview {
   totalUsers: number;
@@ -34,16 +31,18 @@ export interface CoachPerformanceData {
 }
 
 class AnalyticsService {
-  async getOverview(_startDate: Date, _endDate: Date): Promise<AnalyticsOverview> {
+  async getOverview(startDate: Date, endDate: Date): Promise<AnalyticsOverview> {
     try {
-      // Return mock data since we don't have a real database
+      // Use real database data through admin analytics service
+      const overview = await adminAnalyticsService.getOverview(startDate, endDate);
+      
       return {
-        totalUsers: 1247,
-        activeUsers: 856,
-        totalSessions: 3241,
-        completedSessions: 2987,
-        revenue: 45230,
-        averageRating: 4.7,
+        totalUsers: overview.totalUsers,
+        activeUsers: overview.activeUsers,
+        totalSessions: overview.totalSessions,
+        completedSessions: overview.completedSessions,
+        revenue: overview.revenue,
+        averageRating: overview.averageRating,
       };
     } catch (error) {
       console.error('Error fetching overview analytics:', error);
@@ -58,47 +57,51 @@ class AnalyticsService {
     }
   }
 
-  async getUserGrowth(_startDate: Date, _endDate: Date): Promise<UserGrowthData[]> {
+  async getUserGrowth(startDate: Date, endDate: Date): Promise<UserGrowthData[]> {
     try {
-      // Return mock data
-      return [
-        { date: '2024-01-01', newUsers: 12, activeUsers: 145 },
-        { date: '2024-01-02', newUsers: 18, activeUsers: 152 },
-        { date: '2024-01-03', newUsers: 15, activeUsers: 148 },
-        { date: '2024-01-04', newUsers: 22, activeUsers: 167 },
-        { date: '2024-01-05', newUsers: 19, activeUsers: 163 },
-      ];
+      // Use real database data
+      const userGrowthData = await adminAnalyticsService.getUserGrowth(startDate, endDate);
+      
+      return userGrowthData.map(data => ({
+        date: data.date,
+        newUsers: data.newUsers,
+        activeUsers: data.activeUsers,
+      }));
     } catch (error) {
       console.error('Error fetching user growth analytics:', error);
       return [];
     }
   }
 
-  async getSessionMetrics(_startDate: Date, _endDate: Date): Promise<SessionMetricsData[]> {
+  async getSessionMetrics(startDate: Date, endDate: Date): Promise<SessionMetricsData[]> {
     try {
-      // Return mock data
-      return [
-        { date: '2024-01-01', totalSessions: 45, completedSessions: 42, cancelledSessions: 3 },
-        { date: '2024-01-02', totalSessions: 52, completedSessions: 48, cancelledSessions: 4 },
-        { date: '2024-01-03', totalSessions: 38, completedSessions: 36, cancelledSessions: 2 },
-        { date: '2024-01-04', totalSessions: 61, completedSessions: 57, cancelledSessions: 4 },
-        { date: '2024-01-05', totalSessions: 49, completedSessions: 46, cancelledSessions: 3 },
-      ];
+      // Use real database data
+      const sessionMetricsData = await adminAnalyticsService.getSessionMetrics(startDate, endDate);
+      
+      return sessionMetricsData.map(data => ({
+        date: data.date,
+        totalSessions: data.totalSessions,
+        completedSessions: data.completedSessions,
+        cancelledSessions: data.cancelledSessions,
+      }));
     } catch (error) {
       console.error('Error fetching session metrics analytics:', error);
       return [];
     }
   }
 
-  async getCoachPerformance(_startDate: Date, _endDate: Date): Promise<CoachPerformanceData[]> {
+  async getCoachPerformance(startDate: Date, endDate: Date): Promise<CoachPerformanceData[]> {
     try {
-      // Return mock data
-      return [
-        { coachId: '1', coachName: 'Sarah Johnson', totalSessions: 234, averageRating: 4.8, revenue: 12450 },
-        { coachId: '2', coachName: 'Mike Chen', totalSessions: 187, averageRating: 4.6, revenue: 9870 },
-        { coachId: '3', coachName: 'Emily Davis', totalSessions: 156, averageRating: 4.9, revenue: 8340 },
-        { coachId: '4', coachName: 'James Wilson', totalSessions: 143, averageRating: 4.5, revenue: 7650 },
-      ];
+      // Use real database data
+      const coachPerformanceData = await adminAnalyticsService.getCoachPerformance(startDate, endDate);
+      
+      return coachPerformanceData.map(data => ({
+        coachId: data.coachId,
+        coachName: data.coachName,
+        totalSessions: data.totalSessions,
+        averageRating: data.averageRating,
+        revenue: data.revenue,
+      }));
     } catch (error) {
       console.error('Error fetching coach performance analytics:', error);
       return [];

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import { usePathname, useRouter } from '@/i18n/routing';
+import { usePathname, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -44,9 +44,9 @@ export function LanguageSettingsCard() {
     const segments = pathname.split('/').filter(Boolean);
     const currentLocale = segments[0];
     
-    const isLocaleInPath = routing.locales.includes(currentLocale as 'en' | 'he');
+    const isLocaleInPath = routing.locales.includes(currentLocale as any);
     
-    let newPathname;
+    let newPathname: string;
     if (isLocaleInPath) {
       segments[0] = newLocale;
       newPathname = `/${segments.join('/')}`;

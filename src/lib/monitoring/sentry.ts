@@ -12,13 +12,12 @@ export const sentryConfig = {
   // Note: Browser-specific integrations are now in sentry.client.config.js
   // Server-specific configuration is in sentry.server.config.js
   integrations: [],
-  beforeSend(event: unknown) {
+  beforeSend(event: Sentry.Event) {
     // Don't send events for non-error console logs
-    const eventObj = event as { level?: string };
-    if (eventObj.level === 'info' || eventObj.level === 'warning') {
+    if (event.level === 'info' || event.level === 'warning') {
       return null;
     }
-    return event as never;
+    return event;
   },
 };
 
@@ -35,7 +34,7 @@ export const captureError = (error: Error, context?: Record<string, unknown>) =>
     Sentry.withScope((scope) => {
       if (context) {
         Object.keys(context).forEach((key) => {
-          scope.setContext(key, context[key] as never);
+          scope.setContext(key, context[key] as Sentry.Context);
         });
       }
       Sentry.captureException(error);
@@ -72,16 +71,32 @@ export const startTransaction = (name: string, operation: string) => {
     return Sentry.startSpan({
       name,
       op: operation,
-    }, () => {
+    }, (span) => {
       // Return a span-like object for compatibility
       return {
-        finish: () => {},
-        setTag: () => {},
-        setData: () => {},
+        finish: () => {
+          if (span) {
+            span.end();
+          }
+        },
+        setTag: (key: string, value: string) => {
+          if (span) {
+            span.setAttributes({ [key]: value });
+          }
+        },
+        setData: (key: string, value: unknown) => {
+          if (span) {
+            span.setAttributes({ [key]: value });
+          }
+        },
       };
     });
   }
-  return null;
+  return {
+    finish: () => {},
+    setTag: () => {},
+    setData: () => {},
+  };
 };
 
 export const addBreadcrumb = (breadcrumb: {
@@ -105,7 +120,7 @@ export const withSentryErrorBoundary = <T extends Record<string, unknown>>(
 ): React.ComponentType<T> => {
   if (env.SENTRY_DSN) {
     return Sentry.withErrorBoundary(Component, {
-      fallback: (options?.fallback || (({ error: _error }: { error: unknown }) => React.createElement('div', null, 'Something went wrong'))) as never,
+      fallback: options?.fallback || (({ error }: { error?: Error }) => React.createElement('div', null, 'Something went wrong')),
       beforeCapture: options?.beforeCapture,
     });
   }

@@ -36,36 +36,16 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
     }
 
     return (
-      <div className="relative">
-        <Input
-          {...props}
-          type={showPassword ? 'text' : 'password'}
-          className={cn('pr-10', className)}
-          ref={ref}
-          data-testid="password-input"
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className={cn(
-            'absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent',
-            'focus:ring-2 focus:ring-ring focus:ring-offset-2',
-            'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
-            toggleClassName
-          )}
-          onClick={togglePasswordVisibility}
-          disabled={props.disabled}
-          tabIndex={-1}
-          aria-label={showPassword ? 'Hide password' : 'Show password'}
-        >
-          {showPassword ? (
-            <EyeOff className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          )}
-        </Button>
-      </div>
+      <Input
+        {...props}
+        type={showPassword ? 'text' : 'password'}
+        className={className}
+        ref={ref}
+        data-testid="password-input"
+        rightIcon={showPassword ? EyeOff : Eye}
+        onRightIconClick={togglePasswordVisibility}
+        aria-label={showPassword ? 'Hide password' : 'Show password'}
+      />
     );
   }
 );

@@ -54,7 +54,7 @@ export const posthogIdentify = (userId: string, properties?: Record<string, unkn
 // Unified analytics function
 export const trackEvent = (event: AnalyticsEvent) => {
   // Track with Google Analytics
-  if (GA_TRACKING_ID) {
+  if (GA_TRACKING_ID && typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', event.action, {
       event_category: event.category,
       event_label: event.label,
@@ -63,7 +63,7 @@ export const trackEvent = (event: AnalyticsEvent) => {
   }
 
   // Track with PostHog
-  if (POSTHOG_KEY) {
+  if (POSTHOG_KEY && typeof window !== 'undefined') {
     posthogEvent(`${event.category}_${event.action}`, {
       label: event.label,
       value: event.value,

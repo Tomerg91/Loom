@@ -16,7 +16,7 @@ import { SessionParticipants } from './display/session-participants';
 import { SessionRating } from './display/session-rating';
 import { SessionActions } from './display/session-actions';
 import { SessionDialogs } from './display/session-dialogs';
-import { Session } from './shared/types';
+import { Session } from '@/types';
 
 interface SessionDetailsPageProps {
   sessionId: string;

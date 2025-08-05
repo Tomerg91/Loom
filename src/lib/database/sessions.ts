@@ -86,6 +86,20 @@ export class SessionService {
     return this.workflowService.completeSession(sessionId, notes);
   }
 
+  /**
+   * Start session
+   */
+  async startSession(sessionId: string): Promise<boolean> {
+    return this.workflowService.startSession(sessionId);
+  }
+
+  /**
+   * Mark session as no-show
+   */
+  async markNoShow(sessionId: string, reason?: string): Promise<boolean> {
+    return this.workflowService.markNoShow(sessionId, reason);
+  }
+
   // ==================== PARTICIPANT OPERATIONS ====================
   /**
    * Get upcoming sessions for a user
@@ -252,6 +266,13 @@ export const getSessionById = (sessionId: string) => sessionService.getSessionBy
 export const createSession = (sessionData: CreateSessionData) => sessionService.createSessionFromApi(sessionData);
 export const updateSession = (sessionId: string, updates: UpdateSessionData) => sessionService.updateSessionFromApi(sessionId, updates);
 export const deleteSession = (sessionId: string) => sessionService.deleteSessionFromApi(sessionId);
+
+// Export workflow methods
+export const startSession = (sessionId: string) => sessionService.startSession(sessionId);
+export const completeSession = (sessionId: string, notes?: string) => sessionService.completeSession(sessionId, notes);
+export const cancelSession = (sessionId: string, reason?: string) => sessionService.cancelSession(sessionId);
+export const markNoShow = (sessionId: string, reason?: string) => sessionService.markNoShow(sessionId, reason);
+export const updateSessionStatus = (sessionId: string, status: SessionStatus) => sessionService.updateSessionStatus(sessionId, status);
 
 // Export specialized services for direct access if needed
 export { SessionCrudService } from './services/session-crud';

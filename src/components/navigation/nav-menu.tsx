@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -29,7 +30,9 @@ import {
   BookOpen,
   Clock,
   FileText,
-  TrendingUp
+  TrendingUp,
+  Menu,
+  X
 } from 'lucide-react';
 import { createAuthService } from '@/lib/auth/auth';
 import { NotificationCenter } from '@/components/notifications/notification-center';
@@ -106,20 +109,22 @@ export function NavMenu() {
     return user.email;
   };
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
-    <nav className="bg-card border-b border-border" id="main-navigation" aria-label="Main navigation">
+    <nav className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-md bg-card/95" id="main-navigation" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Left side - Logo and Navigation */}
           <div className="flex items-center space-x-8">
             {/* Logo */}
-            <Link href="/dashboard" className="flex items-center space-x-2" aria-label="Loom - Go to dashboard">
+            <Link href="/dashboard" className="flex items-center space-x-2 transition-transform hover:scale-105" aria-label="Loom - Go to dashboard">
               <MessageSquare className="h-8 w-8 text-primary" aria-hidden="true" />
               <span className="text-xl font-bold text-foreground">Loom</span>
             </Link>
 
-            {/* Navigation Items */}
-            <div className="hidden md:flex items-center space-x-1">
+            {/* Navigation Items - Desktop */}
+            <div className="hidden lg:flex items-center space-x-1">
               {/* Common items */}
               {commonItems.map((item) => (
                 <Link key={item.href} href={item.href as '/dashboard'}>
@@ -187,26 +192,47 @@ export function NavMenu() {
           </div>
 
           {/* Right side - User menu */}
-          <div className="flex items-center space-x-4">
-            {/* Language Switcher */}
-            <CompactLanguageSwitcher />
+          <div className="flex items-center space-x-2 lg:space-x-4">
+            {/* Mobile menu toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-navigation"
+              aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" aria-hidden="true" />
+              ) : (
+                <Menu className="h-6 w-6" aria-hidden="true" />
+              )}
+            </Button>
+
+            {/* Language Switcher - Hidden on small screens */}
+            <div className="hidden sm:block">
+              <CompactLanguageSwitcher />
+            </div>
             
             {/* Notifications */}
             <NotificationCenter />
 
-            {/* Role badge */}
-            <Badge 
-              variant={
-                user.role === 'admin' ? 'default' : 
-                user.role === 'coach' ? 'secondary' : 
-                'outline'
-              }
-              role="status"
-              aria-label={`Current role: ${t(`roles.${user.role}`)}`}
-            >
-              {user.role === 'admin' && <Shield className="h-3 w-3 mr-1" aria-hidden="true" />}
-              {t(`roles.${user.role}`)}
-            </Badge>
+            {/* Role badge - Hidden on small screens */}
+            <div className="hidden md:block">
+              <Badge 
+                variant={
+                  user.role === 'admin' ? 'default' : 
+                  user.role === 'coach' ? 'secondary' : 
+                  'outline'
+                }
+                role="status"
+                aria-label={`Current role: ${t(`roles.${user.role}`)}`}
+              >
+                {user.role === 'admin' && <Shield className="h-3 w-3 mr-1" aria-hidden="true" />}
+                {t(`roles.${user.role}`)}
+              </Badge>
+            </div>
 
             {/* User dropdown */}
             <DropdownMenu>
@@ -259,17 +285,43 @@ export function NavMenu() {
       </div>
 
       {/* Mobile navigation */}
-      <div className="md:hidden">
+      <div 
+        className={`lg:hidden transition-all duration-300 ease-in-out ${
+          isMobileMenuOpen 
+            ? 'max-h-screen opacity-100 visible' 
+            : 'max-h-0 opacity-0 invisible overflow-hidden'
+        }`}
+        id="mobile-navigation"
+        aria-hidden={!isMobileMenuOpen}
+      >
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-card border-t border-border">
+          {/* Mobile menu header with role badge and language switcher */}
+          <div className="flex items-center justify-between pb-3 border-b border-border sm:hidden">
+            <Badge 
+              variant={
+                user.role === 'admin' ? 'default' : 
+                user.role === 'coach' ? 'secondary' : 
+                'outline'
+              }
+              role="status"
+              aria-label={`Current role: ${t(`roles.${user.role}`)}`}
+            >
+              {user.role === 'admin' && <Shield className="h-3 w-3 mr-1" aria-hidden="true" />}
+              {t(`roles.${user.role}`)}
+            </Badge>
+            <CompactLanguageSwitcher />
+          </div>
+
           {/* Common items */}
           {commonItems.map((item) => (
-            <Link key={item.href} href={item.href as '/dashboard'}>
+            <Link key={item.href} href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
               <Button
                 variant={isActive(item.href, item.exact) ? "default" : "ghost"}
                 size="sm"
-                className="w-full justify-start flex items-center space-x-2"
+                className="w-full justify-start flex items-center space-x-3 py-3 transition-all hover:scale-[1.02]"
+                aria-current={isActive(item.href, item.exact) ? "page" : undefined}
               >
-                <item.icon className="h-4 w-4" />
+                <item.icon className="h-5 w-5" aria-hidden="true" />
                 <span>{item.label}</span>
               </Button>
             </Link>
@@ -277,48 +329,66 @@ export function NavMenu() {
 
           {/* Role-specific items */}
           <AdminOnly>
-            {adminItems.map((item) => (
-              <Link key={item.href} href={item.href as '/dashboard'}>
-                <Button
-                  variant={isActive(item.href) ? "default" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start flex items-center space-x-2"
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Button>
-              </Link>
-            ))}
+            <div className="border-t border-border pt-3 mt-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pb-2">
+                {t('admin')}
+              </p>
+              {adminItems.map((item) => (
+                <Link key={item.href} href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button
+                    variant={isActive(item.href) ? "default" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start flex items-center space-x-3 py-3 transition-all hover:scale-[1.02]"
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                  >
+                    <item.icon className="h-5 w-5" aria-hidden="true" />
+                    <span>{item.label}</span>
+                  </Button>
+                </Link>
+              ))}
+            </div>
           </AdminOnly>
 
           <CoachOnly>
-            {coachItems.map((item) => (
-              <Link key={item.href} href={item.href as '/dashboard'}>
-                <Button
-                  variant={isActive(item.href) ? "default" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start flex items-center space-x-2"
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Button>
-              </Link>
-            ))}
+            <div className="border-t border-border pt-3 mt-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pb-2">
+                {t('coach')}
+              </p>
+              {coachItems.map((item) => (
+                <Link key={item.href} href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button
+                    variant={isActive(item.href) ? "default" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start flex items-center space-x-3 py-3 transition-all hover:scale-[1.02]"
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                  >
+                    <item.icon className="h-5 w-5" aria-hidden="true" />
+                    <span>{item.label}</span>
+                  </Button>
+                </Link>
+              ))}
+            </div>
           </CoachOnly>
 
           <ClientOnly>
-            {clientItems.map((item) => (
-              <Link key={item.href} href={item.href as '/dashboard'}>
-                <Button
-                  variant={isActive(item.href) ? "default" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start flex items-center space-x-2"
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Button>
-              </Link>
-            ))}
+            <div className="border-t border-border pt-3 mt-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pb-2">
+                {t('client')}
+              </p>
+              {clientItems.map((item) => (
+                <Link key={item.href} href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button
+                    variant={isActive(item.href) ? "default" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start flex items-center space-x-3 py-3 transition-all hover:scale-[1.02]"
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                  >
+                    <item.icon className="h-5 w-5" aria-hidden="true" />
+                    <span>{item.label}</span>
+                  </Button>
+                </Link>
+              ))}
+            </div>
           </ClientOnly>
         </div>
       </div>

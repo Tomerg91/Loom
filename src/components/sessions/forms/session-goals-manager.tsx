@@ -6,7 +6,7 @@ import {
   X,
   Plus,
 } from 'lucide-react';
-import { SessionFormData, SessionFormField } from '../shared/types';
+import { SessionFormData, SessionFormField } from '@/types';
 
 interface SessionGoalsManagerProps {
   formData: SessionFormData;

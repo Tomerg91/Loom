@@ -38,15 +38,18 @@ export function DashboardHeader({
   children
 }: DashboardHeaderProps) {
   return (
-    <div className="flex items-center justify-between">
-      <div>
-        <h1 className="text-3xl font-bold">{title}</h1>
-        <p className="text-muted-foreground">{description}</p>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{title}</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">{description}</p>
       </div>
-      <div className="flex items-center gap-2">
+      
+      {/* Actions container */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+        {/* Time range selector */}
         {showTimeRange && timeRange && onTimeRangeChange && (
           <Select value={timeRange} onValueChange={onTimeRangeChange}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Select time range" />
             </SelectTrigger>
             <SelectContent>
@@ -58,19 +61,35 @@ export function DashboardHeader({
             </SelectContent>
           </Select>
         )}
-        {showRefresh && onRefresh && (
-          <Button variant="outline" onClick={onRefresh}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-        )}
-        {showExport && onExport && (
-          <Button variant="outline" onClick={onExport}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-        )}
-        {children}
+        
+        {/* Action buttons */}
+        <div className="flex gap-2">
+          {showRefresh && onRefresh && (
+            <Button 
+              variant="outline" 
+              onClick={onRefresh}
+              className="flex-1 sm:flex-none"
+              size="sm"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Refresh</span>
+              <span className="sm:hidden">Refresh</span>
+            </Button>
+          )}
+          {showExport && onExport && (
+            <Button 
+              variant="outline" 
+              onClick={onExport}
+              className="flex-1 sm:flex-none"
+              size="sm"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Export</span>
+              <span className="sm:hidden">Export</span>
+            </Button>
+          )}
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -80,11 +80,11 @@ class UserService {
       }
       
       if (filters.role) {
-        filteredUsers = filteredUsers.filter(user => user.role === filters.role);
+        filteredUsers = filteredUsers.filter((user: any) => user.role === filters.role);
       }
       
       if (filters.status) {
-        filteredUsers = filteredUsers.filter(user => user.status === filters.status);
+        filteredUsers = filteredUsers.filter((user: any) => user.status === filters.status);
       }
 
       const total = filteredUsers.length;

@@ -11,7 +11,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 // Mock database services
-vi.mock('@/lib/database/notifications', () => ({
+vi.mock('@/lib/database', () => ({
   NotificationService: vi.fn().mockImplementation(() => ({
     getUserNotifications: vi.fn(),
     getUnreadCount: vi.fn(),

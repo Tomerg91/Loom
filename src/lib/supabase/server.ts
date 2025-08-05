@@ -60,11 +60,17 @@ export const createServerClientWithRequest = (request: NextRequest, response: Ne
         setAll: (cookies) => {
           cookies.forEach(({ name, value, options }) => {
             try {
+              const sameSiteValue = options?.sameSite === true 
+                ? 'strict' as const
+                : (options?.sameSite === false 
+                    ? 'none' as const 
+                    : options?.sameSite as 'strict' | 'lax' | 'none' | undefined);
+              
               response.cookies.set({
                 name,
                 value,
                 ...options,
-                sameSite: options?.sameSite === true ? 'strict' : options?.sameSite as 'strict' | 'lax' | 'none' | undefined
+                sameSite: sameSiteValue
               });
             } catch (error) {
               console.warn('Failed to set cookie in middleware:', error);
@@ -94,9 +100,15 @@ export const createClient = async () => {
         setAll: (cookies) => {
           cookies.forEach(({ name, value, options }) => {
             try {
+              const sameSiteValue = options?.sameSite === true 
+                ? 'strict' as const
+                : (options?.sameSite === false 
+                    ? 'none' as const 
+                    : options?.sameSite as 'strict' | 'lax' | 'none' | undefined);
+              
               cookieStore.set(name, value, {
                 ...options,
-                sameSite: options?.sameSite === true ? 'strict' : options?.sameSite as 'strict' | 'lax' | 'none' | undefined
+                sameSite: sameSiteValue
               });
             } catch (error) {
               console.warn('Failed to set cookie:', error);

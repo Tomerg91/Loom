@@ -36,10 +36,26 @@ describe('Session Booking Integration', () => {
   ];
 
   const mockBookingMutation = vi.fn();
-  const mockQueryClient = () => ({
-    invalidateQueries: vi.fn(),
-    setQueryData: vi.fn(),
-  } as any);
+  const mockInvalidateQueries = vi.fn();
+  const mockSetQueryData = vi.fn();
+  const mockQueryClient = {
+    invalidateQueries: mockInvalidateQueries,
+    setQueryData: mockSetQueryData,
+    getQueryData: vi.fn(),
+    removeQueries: vi.fn(),
+    cancelQueries: vi.fn(),
+    isFetching: vi.fn(() => 0),
+    isMutating: vi.fn(() => 0),
+    getDefaultOptions: vi.fn(() => ({})),
+    setDefaultOptions: vi.fn(),
+    setQueryDefaults: vi.fn(),
+    getQueryDefaults: vi.fn(() => ({})),
+    setMutationDefaults: vi.fn(),
+    getMutationDefaults: vi.fn(() => ({})),
+    mount: vi.fn(),
+    unmount: vi.fn(),
+    clear: vi.fn(),
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -76,7 +92,7 @@ describe('Session Booking Integration', () => {
 
     (vi.mocked(useQuery)).mockImplementation(mockUseQuery);
     (vi.mocked(useMutation)).mockImplementation(mockUseMutation);
-    (vi.mocked(useQueryClient)).mockImplementation(mockQueryClient);
+    (vi.mocked(useQueryClient)).mockReturnValue(mockQueryClient);
   });
 
   describe('Complete Booking Flow', () => {
@@ -285,10 +301,25 @@ describe('Session Booking Integration', () => {
     });
 
     it('refreshes session list after successful booking', async () => {
-      const mockInvalidateQueries = vi.fn();
-      const mockQueryClient = () => ({
-        invalidateQueries: mockInvalidateQueries,
-      } as any);
+      const localMockInvalidateQueries = vi.fn();
+      const localMockQueryClient = {
+        invalidateQueries: localMockInvalidateQueries,
+        setQueryData: vi.fn(),
+        getQueryData: vi.fn(),
+        removeQueries: vi.fn(),
+        cancelQueries: vi.fn(),
+        isFetching: vi.fn(() => 0),
+        isMutating: vi.fn(() => 0),
+        getDefaultOptions: vi.fn(() => ({})),
+        setDefaultOptions: vi.fn(),
+        setQueryDefaults: vi.fn(),
+        getQueryDefaults: vi.fn(() => ({})),
+        setMutationDefaults: vi.fn(),
+        getMutationDefaults: vi.fn(() => ({})),
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        clear: vi.fn(),
+      };
 
       // Mock successful booking
       const mockMutationSuccess = vi.fn().mockReturnValue({
@@ -303,7 +334,7 @@ describe('Session Booking Integration', () => {
       });
 
       (vi.mocked(useMutation)).mockImplementation(mockMutationSuccess);
-      (vi.mocked(useQueryClient)).mockImplementation(mockQueryClient);
+      (vi.mocked(useQueryClient)).mockReturnValue(localMockQueryClient);
 
       renderWithProviders(<SessionBookingForm />);
 
@@ -328,7 +359,7 @@ describe('Session Booking Integration', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(mockInvalidateQueries).toHaveBeenCalledWith({
+        expect(localMockInvalidateQueries).toHaveBeenCalledWith({
           queryKey: ['sessions'],
         });
       });

@@ -64,7 +64,7 @@ export const createLazyLoader = (threshold: number = 0.1) => {
 
   return new IntersectionObserver(
     (entries) => {
-      entries.forEach((entry) => {
+      entries.forEach((entry: any) => {
         if (entry.isIntersecting) {
           const target = entry.target as HTMLElement;
           target.dataset.loaded = 'true';
@@ -91,16 +91,16 @@ export const analyzeBundleSize = (stats: { assets?: { name: string; size: number
   
   return {
     totalSize,
-    assets: assets.map((asset) => ({
+    assets: assets.map((asset: any) => ({
       name: asset.name,
       size: asset.size,
       percentage: (asset.size / totalSize) * 100,
     })),
     jsSize: assets
-      .filter((asset) => asset.name.endsWith('.js'))
+      .filter((asset: any) => asset.name.endsWith('.js'))
       .reduce((sum: number, asset) => sum + asset.size, 0),
     cssSize: assets
-      .filter((asset) => asset.name.endsWith('.css'))
+      .filter((asset: any) => asset.name.endsWith('.css'))
       .reduce((sum: number, asset) => sum + asset.size, 0),
   };
 };
@@ -159,7 +159,7 @@ export const optimizeApiResponse = (data: unknown, request: NextRequest) => {
 // Remove unnecessary fields
 const removeUnnecessaryFields = (obj: unknown, fields: string[]): unknown => {
   if (Array.isArray(obj)) {
-    return obj.map(item => removeUnnecessaryFields(item, fields));
+    return obj.map((item: any) => removeUnnecessaryFields(item, fields));
   }
   
   if (obj && typeof obj === 'object') {
@@ -178,7 +178,7 @@ const removeUnnecessaryFields = (obj: unknown, fields: string[]): unknown => {
 // Compress large objects
 const compressLargeObjects = (obj: unknown): unknown => {
   if (Array.isArray(obj)) {
-    return obj.map(compressLargeObjects);
+    return obj.map((item: any) => compressLargeObjects(item));
   }
   
   if (obj && typeof obj === 'object') {
@@ -198,7 +198,14 @@ const compressLargeObjects = (obj: unknown): unknown => {
 };
 
 // Database query optimization
-export const optimizeQuery = (query: { limit: (n: number) => typeof query; offset: (n: number) => typeof query; select: (fields: string) => typeof query; with: (relation: string) => typeof query }, options: {
+type QueryBuilder = {
+  limit: (n: number) => QueryBuilder;
+  offset: (n: number) => QueryBuilder;
+  select: (fields: string) => QueryBuilder;
+  with: (relation: string) => QueryBuilder;
+};
+
+export const optimizeQuery = (query: QueryBuilder, options: {
   limit?: number;
   offset?: number;
   fields?: string[];
@@ -246,7 +253,7 @@ export const monitorMemoryUsage = () => {
 };
 
 // Request deduplication
-const requestCache = new Map<string, Promise<unknown>>();
+const requestCache = new Map<string, Promise<any>>();
 
 export const deduplicateRequest = <T>(
   key: string,
@@ -259,7 +266,7 @@ export const deduplicateRequest = <T>(
   }
   
   const promise = requestFn();
-  requestCache.set(key, promise);
+  requestCache.set(key, promise as Promise<any>);
   
   // Clear cache after TTL
   setTimeout(() => {
@@ -290,8 +297,8 @@ export const preloadRoute = (href: string) => {
 };
 
 // Performance optimization middleware
-export const performanceMiddleware = (handler: (request: NextRequest) => Promise<Response>) => {
-  return async (request: NextRequest) => {
+export const performanceMiddleware = (handler: (request: NextRequest) => Promise<Response | NextResponse>) => {
+  return async (request: NextRequest): Promise<Response | NextResponse> => {
     const start = Date.now();
     
     try {
@@ -310,3 +317,64 @@ export const performanceMiddleware = (handler: (request: NextRequest) => Promise
     }
   };
 };
+
+// Advanced debounce with immediate execution option
+export function advancedDebounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number,
+  immediate: boolean = false
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null;
+  
+  return function executedFunction(...args: Parameters<T>) {
+    const later = () => {
+      timeout = null;
+      if (!immediate) func(...args);
+    };
+    
+    const callNow = immediate && !timeout;
+    
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    
+    if (callNow) func(...args);
+  };
+}
+
+// Throttle with trailing option
+export function advancedThrottle<T extends (...args: any[]) => any>(
+  func: T,
+  limit: number,
+  options: { leading?: boolean; trailing?: boolean } = {}
+): (...args: Parameters<T>) => void {
+  const { leading = true, trailing = true } = options;
+  let timeout: NodeJS.Timeout | null;
+  let previous = 0;
+  let result: ReturnType<T>;
+
+  return function executedFunction(...args: Parameters<T>) {
+    const now = Date.now();
+
+    if (!previous && !leading) previous = now;
+
+    const remaining = limit - (now - previous);
+
+    if (remaining <= 0 || remaining > limit) {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+
+      previous = now;
+      result = func.apply(this, args);
+    } else if (!timeout && trailing) {
+      timeout = setTimeout(() => {
+        previous = leading ? Date.now() : 0;
+        timeout = null;
+        result = func.apply(this, args);
+      }, remaining);
+    }
+
+    return result;
+  };
+}

@@ -25,7 +25,7 @@ export async function PageWrapper({
   requireAuth = false,
   requiredRoles = [],
   locale = 'en',
-  containerClassName = 'container mx-auto px-4 py-8',
+  containerClassName = 'container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8',
   showAppLayout = true,
   loadingComponent,
   errorBoundary = true,
@@ -100,7 +100,7 @@ export function ClientPageWrapper({
   user,
   requiredRoles = [],
   locale: _locale = 'en',
-  containerClassName = 'container mx-auto px-4 py-8',
+  containerClassName = 'container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8',
   showAppLayout = true,
   loadingComponent,
   errorBoundary = true,
@@ -171,7 +171,7 @@ export function ClientPageWrapper({
  */
 export function SimplePage({ 
   children, 
-  className = 'container mx-auto px-4 py-8' 
+  className = 'container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8' 
 }: { 
   children: React.ReactNode; 
   className?: string; 
@@ -190,10 +190,13 @@ export function SimplePage({
  */
 export function LoadingPage({ message = 'Loading...' }: { message?: string }) {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center space-y-4">
+    <div className="min-h-screen-mobile flex items-center justify-center p-4">
+      <div className="text-center space-y-4 max-w-sm">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <p className="text-muted-foreground">{message}</p>
+        <div className="space-y-2">
+          <p className="text-lg font-medium">Loading</p>
+          <p className="text-sm text-muted-foreground">{message}</p>
+        </div>
       </div>
     </div>
   );

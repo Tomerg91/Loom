@@ -93,21 +93,55 @@ export function SessionCancellationDialog({
 
   const cancelSessionMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      // Mock API call
-      console.log('Cancelling session:', session?.id, data);
+      if (!session?.id) throw new Error('Session ID is required');
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Determine cancellation type based on current user
+      let cancellationType: 'coach' | 'client' | 'admin' = 'client';
+      if (user?.role === 'admin') {
+        cancellationType = 'admin';
+      } else if (user?.id === session.coach.id) {
+        cancellationType = 'coach';
+      } else if (user?.id === session.client.id) {
+        cancellationType = 'client';
+      }
       
-      return { 
-        success: true,
-        refundAmount: getCancellationDetails().refundAmount,
-        feeCharged: getCancellationDetails().feeAmount,
+      const requestBody = {
+        reason: data.reason === 'other' ? data.customReason.trim() : data.reason,
+        refundRequested: data.refundRequested,
+        cancellationType,
+        notifyParticipants: data.notifyParticipants,
       };
+      
+      const response = await fetch(`/api/sessions/${session.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || 'Failed to cancel session');
+      }
+      
+      const result = await response.json();
+      return result.data;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['session', session?.id] });
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      
+      // Show success message with actual policy information
+      if (result?.cancellationPolicy) {
+        const policy = result.cancellationPolicy;
+        console.log('Session cancelled successfully:', {
+          type: policy.type,
+          feeAmount: policy.feeAmount,
+          refundPercentage: policy.refundPercentage,
+          message: policy.message,
+        });
+      }
       
       // Reset form
       setFormData({

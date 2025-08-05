@@ -172,17 +172,43 @@ export const POST = withErrorHandling(
       // Clear failed attempts on successful signin
       clearFailedAttempts(email);
 
-      // Log successful signin for auditing
+      // Check if user has MFA enabled
+      const { createMFAService } = await import('@/lib/services/mfa-service');
+      const mfaService = createMFAService(true);
+      const requiresMFA = await mfaService.requiresMFA(user.id);
+
+      if (requiresMFA) {
+        // Log MFA required for auditing
+        console.info('User signin - MFA required:', {
+          userId: user.id,
+          email: user.email,
+          timestamp: new Date().toISOString(),
+          ip: request.headers.get('x-forwarded-for') || 'unknown'
+        });
+
+        // Return MFA challenge response (don't complete signin yet)
+        const response = createSuccessResponse({
+          requiresMFA: true,
+          userId: user.id,
+          email: user.email,
+          message: 'MFA verification required to complete signin'
+        }, 'MFA verification required');
+
+        return applyCorsHeaders(response, request);
+      }
+
+      // Log successful signin for auditing (non-MFA)
       console.info('User signin successful:', {
         userId: user.id,
         email: user.email,
         role: user.role,
         rememberMe,
+        mfaEnabled: false,
         timestamp: new Date().toISOString(),
         ip: request.headers.get('x-forwarded-for') || 'unknown'
       });
 
-      // Return sanitized user data
+      // Return sanitized user data (complete signin)
       const response = createSuccessResponse({
         user: {
           id: user.id,
@@ -193,7 +219,8 @@ export const POST = withErrorHandling(
           avatarUrl: user.avatarUrl,
           language: user.language,
           status: user.status,
-          lastSeenAt: user.lastSeenAt
+          lastSeenAt: user.lastSeenAt,
+          mfaEnabled: false
         },
         message: 'Successfully signed in'
       }, 'Authentication successful');

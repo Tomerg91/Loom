@@ -18,6 +18,11 @@ export interface AuthUser {
   createdAt: string;
   updatedAt: string;
   lastSeenAt?: string;
+  // MFA fields
+  mfaEnabled?: boolean;
+  mfaSetupCompleted?: boolean;
+  mfaVerifiedAt?: string;
+  rememberDeviceEnabled?: boolean;
   // Additional fields used in auth-context
   emailVerified?: boolean;
   isActive?: boolean;
@@ -116,6 +121,11 @@ export class AuthService {
             createdAt: userProfile.createdAt,
             updatedAt: userProfile.updatedAt,
             lastSeenAt: userProfile.lastSeenAt,
+            // MFA fields
+            mfaEnabled: userProfile.mfaEnabled,
+            mfaSetupCompleted: userProfile.mfaSetupCompleted,
+            mfaVerifiedAt: userProfile.mfaVerifiedAt,
+            rememberDeviceEnabled: userProfile.rememberDeviceEnabled,
           },
           error: null,
         };
@@ -168,6 +178,11 @@ export class AuthService {
             createdAt: userProfile.createdAt,
             updatedAt: userProfile.updatedAt,
             lastSeenAt: userProfile.lastSeenAt,
+            // MFA fields
+            mfaEnabled: userProfile.mfaEnabled,
+            mfaSetupCompleted: userProfile.mfaSetupCompleted,
+            mfaVerifiedAt: userProfile.mfaVerifiedAt,
+            rememberDeviceEnabled: userProfile.rememberDeviceEnabled,
           },
           error: null,
         };
@@ -220,6 +235,11 @@ export class AuthService {
           createdAt: userProfile.createdAt,
           updatedAt: userProfile.updatedAt,
           lastSeenAt: userProfile.lastSeenAt,
+          // MFA fields
+          mfaEnabled: userProfile.mfaEnabled,
+          mfaSetupCompleted: userProfile.mfaSetupCompleted,
+          mfaVerifiedAt: userProfile.mfaVerifiedAt,
+          rememberDeviceEnabled: userProfile.rememberDeviceEnabled,
         };
       }
 
@@ -318,6 +338,11 @@ export class AuthService {
           createdAt: updatedProfile.createdAt,
           updatedAt: updatedProfile.updatedAt,
           lastSeenAt: updatedProfile.lastSeenAt,
+          // MFA fields
+          mfaEnabled: updatedProfile.mfaEnabled,
+          mfaSetupCompleted: updatedProfile.mfaSetupCompleted,
+          mfaVerifiedAt: updatedProfile.mfaVerifiedAt,
+          rememberDeviceEnabled: updatedProfile.rememberDeviceEnabled,
         };
       }
       
@@ -344,8 +369,8 @@ export class AuthService {
       if (updates.firstName || updates.lastName) {
         authUpdates.data = {
           ...user.user_metadata,
-          first_name: updates.firstName || user.user_metadata.first_name,
-          last_name: updates.lastName || user.user_metadata.last_name,
+          first_name: updates.firstName || user.user_metadata.firstName || user.user_metadata.first_name,
+          last_name: updates.lastName || user.user_metadata.lastName || user.user_metadata.last_name,
         };
       }
 
@@ -376,6 +401,11 @@ export class AuthService {
             createdAt: updatedProfile.createdAt,
             updatedAt: updatedProfile.updatedAt,
             lastSeenAt: updatedProfile.lastSeenAt,
+            // MFA fields
+            mfaEnabled: updatedProfile.mfaEnabled,
+            mfaSetupCompleted: updatedProfile.mfaSetupCompleted,
+            mfaVerifiedAt: updatedProfile.mfaVerifiedAt,
+            rememberDeviceEnabled: updatedProfile.rememberDeviceEnabled,
           },
           error: null,
         };
@@ -408,8 +438,8 @@ export class AuthService {
    */
   public async verifyOtp(params: { token_hash: string; type: 'signup' | 'invite' | 'magiclink' | 'recovery' | 'email_change' | 'email' }) {
     return this.supabase.auth.verifyOtp({
-      ...params,
-      type: params.type
+      token_hash: params.token_hash,
+      type: params.type as any // Type assertion to handle Supabase auth type compatibility
     });
   }
 

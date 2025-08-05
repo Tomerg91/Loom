@@ -113,7 +113,7 @@ export function AdminAnalyticsPage() {
   };
 
   const completionRate = analytics?.overview.completedSessions && analytics?.overview.totalSessions
-    ? (analytics.overview.completedSessions / analytics.overview.totalSessions) * 100
+    ? Math.round((analytics.overview.completedSessions / analytics.overview.totalSessions) * 100)
     : 0;
 
   return (
@@ -194,7 +194,7 @@ export function AdminAnalyticsPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{completionRate.toFixed(1)}%</div>
+            <div className="text-2xl font-bold">{completionRate}%</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-600">+2.1%</span> from last month
             </p>

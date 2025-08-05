@@ -10,7 +10,7 @@ import {
   Phone,
   MapPin,
 } from 'lucide-react';
-import { Session } from '../shared/types';
+import { Session } from '@/types';
 import { formatDateTime } from '../shared/utils';
 
 interface SessionInfoProps {

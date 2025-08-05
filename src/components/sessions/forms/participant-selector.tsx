@@ -8,7 +8,7 @@ import {
   X,
   Search,
 } from 'lucide-react';
-import { User, SessionFormData, SessionFormField } from '../shared/types';
+import { User, SessionFormData, SessionFormField } from '@/types';
 
 interface ParticipantSelectorProps {
   formData: SessionFormData;

@@ -156,7 +156,7 @@ export function NotificationSettingsCard() {
       },
     };
     
-    updateSettingsMutation.mutate(updatedSettings as NotificationSettings);
+    updateSettingsMutation.mutate(updatedSettings);
     setHasChanges(true);
   };
 

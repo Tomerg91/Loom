@@ -62,7 +62,7 @@ export const PUT = withErrorHandling(async (request: NextRequest, { params }: Ro
   return createSuccessResponse(updatedSession, 'Session updated successfully');
 });
 
-// DELETE /api/sessions/[id] - Delete session
+// DELETE /api/sessions/[id] - Cancel/Delete session with policy enforcement
 export const DELETE = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
   
@@ -78,10 +78,94 @@ export const DELETE = withErrorHandling(async (request: NextRequest, { params }:
     return createErrorResponse('Session not found', HTTP_STATUS.NOT_FOUND);
   }
   
-  // Delete session
-  await deleteSession(id);
+  // Check if session can be cancelled
+  if (!['scheduled', 'in_progress'].includes(existingSession.status)) {
+    return createErrorResponse(
+      `Cannot cancel session with status '${existingSession.status}'. Session must be scheduled or in progress.`, 
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
   
-  return createSuccessResponse(null, 'Session deleted successfully', HTTP_STATUS.NO_CONTENT);
+  // Get appropriate cancellation policy
+  const { getCancellationPolicy, validateCancellationRequest } = await import('@/lib/config/cancellation-policies');
+  
+  const policy = getCancellationPolicy();
+  const sessionCost = 150; // This could come from session data or pricing config
+  
+  // Parse request body for cancellation details
+  let cancellationData: {
+    reason?: string;
+    refundRequested?: boolean;
+    cancellationType?: 'coach' | 'client' | 'admin' | 'system';
+    notifyParticipants?: boolean;
+  } = {};
+  
+  const contentType = request.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      cancellationData = await request.json();
+    } catch (error) {
+      // If no body provided, continue with defaults
+    }
+  }
+  
+  // Validate cancellation request and calculate fees
+  const isPrivileged = ['admin', 'system'].includes(cancellationData.cancellationType || '');
+  const userRole = cancellationData.cancellationType || 'client';
+  
+  const validation = validateCancellationRequest(
+    existingSession.scheduledAt,
+    policy,
+    userRole,
+    sessionCost
+  );
+  
+  if (!validation.isValid) {
+    return createErrorResponse(
+      validation.errors.join('. '),
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
+  
+  const cancellationResult = validation.result;
+  
+  // Build cancellation reason
+  let reason = cancellationData.reason || 'Session cancelled';
+  if (cancellationData.cancellationType) {
+    reason = `${reason} (cancelled by ${cancellationData.cancellationType})`;
+  }
+  if (cancellationResult.type !== 'free') {
+    reason = `${reason} - ${cancellationResult.message}`;
+  }
+  
+  // Cancel the session using the workflow service
+  const { cancelSession } = await import('@/lib/database/sessions');
+  const success = await cancelSession(id, reason);
+  
+  if (!success) {
+    return createErrorResponse('Failed to cancel session', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  }
+  
+  // Get updated session data
+  const updatedSession = await getSessionById(id);
+  
+  // Calculate hours until session for response
+  const hoursUntilSession = (new Date(existingSession.scheduledAt).getTime() - new Date().getTime()) / (1000 * 60 * 60);
+  
+  // Return cancellation details
+  return createSuccessResponse({
+    session: updatedSession,
+    cancellationPolicy: {
+      type: cancellationResult.type,
+      feeAmount: cancellationResult.feeAmount,
+      refundPercentage: cancellationResult.refundPercentage,
+      message: cancellationResult.message,
+      hoursUntilSession: Math.max(0, hoursUntilSession),
+      isAllowed: cancellationResult.isAllowed,
+    },
+    refundRequested: cancellationData.refundRequested || false,
+    notifyParticipants: cancellationData.notifyParticipants !== false, // Default to true
+  }, cancellationResult.message);
 });
 
 // OPTIONS /api/sessions/[id] - Handle CORS preflight

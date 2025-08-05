@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, X, Trash2, Play, Square, Edit } from 'lucide-react';
-import { Session, User } from '../shared/types';
+import { Session, User } from '@/types';
 
 interface SessionActionsProps {
   session: Session;

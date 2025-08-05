@@ -13,7 +13,7 @@ import {
   Phone,
   MapPin,
 } from 'lucide-react';
-import { SessionFormData, SessionFormField } from '../shared/types';
+import { SessionFormData, SessionFormField } from '@/types';
 
 interface SessionTypeSelectorProps {
   formData: SessionFormData;

@@ -43,7 +43,7 @@ export function useLanguageSwitcher() {
       newPathname = `/${newLocale}${pathname}`;
     }
     
-    router.push(newPathname);
+    router.push(newPathname as any);
   };
 
   const getCurrentLanguage = () => {

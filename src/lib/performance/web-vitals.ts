@@ -1,4 +1,4 @@
-import { onCLS, onINP, onFCP, onLCP, onTTFB } from 'web-vitals';
+import { onCLS, onINP, onFCP, onLCP, onTTFB, type Metric } from 'web-vitals';
 import { trackWebVitals } from '@/lib/monitoring/analytics';
 
 // Web Vitals thresholds
@@ -31,9 +31,12 @@ interface WebVital {
   navigationType: string;
 }
 
+// Web Vitals metric type from the library
+type WebVitalsMetric = Metric;
+
 // Web Vitals collection
 export const collectWebVitals = (callback?: (metric: WebVital) => void) => {
-  const reportMetric = (metric: { name: string; value: number; delta: number; entries: PerformanceEntry[]; id: string; navigationType: string }) => {
+  const reportMetric = (metric: Metric) => {
     const enhancedMetric: WebVital = {
       ...metric,
       rating: getRating(metric.name, metric.value),
@@ -192,7 +195,7 @@ export const measureCustomMetric = (name: string, startTime: number) => {
     delta: duration,
     id: `custom_${name}_${Date.now()}`,
     navigationType: 'navigate',
-  } as never);
+  } as { name: string; value: number; rating: string; delta: number });
   
   return duration;
 };

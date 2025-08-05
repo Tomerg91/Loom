@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/lib/store/auth-store';
 import { useQuery } from '@tanstack/react-query';
+import { useRealtimeBookings } from '@/hooks/use-realtime-bookings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, ChevronLeft, ChevronRight, Clock, User } from 'lucide-react';
@@ -38,6 +39,9 @@ export function SessionCalendar({ coachId, clientId, onSessionClick }: SessionCa
   const user = useUser();
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // Enable real-time updates
+  useRealtimeBookings();
+
   // Calculate calendar boundaries
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -46,7 +50,7 @@ export function SessionCalendar({ coachId, clientId, onSessionClick }: SessionCa
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   // Fetch sessions for the current month
-  const { data: sessionsData, isLoading } = useQuery({
+  const { data: sessionsData, isLoading, error } = useQuery({
     queryKey: ['calendar-sessions', format(monthStart, 'yyyy-MM'), coachId, clientId],
     queryFn: async (): Promise<SessionsResponse> => {
       const params = new URLSearchParams({
@@ -64,10 +68,16 @@ export function SessionCalendar({ coachId, clientId, onSessionClick }: SessionCa
         params.append('clientId', clientId);
       }
 
-      const response = await fetch(`/api/sessions?${params}`);
+      const response = await fetch(`/api/sessions?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${user?.token || ''}`,
+        },
+      });
       if (!response.ok) throw new Error('Failed to fetch sessions');
       return response.json();
     },
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+    staleTime: 15000, // Consider data stale after 15 seconds
   });
 
   const sessions = sessionsData?.data || [];
@@ -141,7 +151,18 @@ export function SessionCalendar({ coachId, clientId, onSessionClick }: SessionCa
       </CardHeader>
 
       <CardContent>
-        {isLoading ? (
+        {error ? (
+          <div className="text-center py-8">
+            <p className="text-destructive mb-2">Failed to load calendar</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          </div>
+        ) : isLoading ? (
           <div className="grid grid-cols-7 gap-1 animate-pulse">
             {Array.from({ length: 42 }).map((_, i) => (
               <div key={i} className="h-24 bg-gray-200 rounded"></div>

@@ -418,7 +418,7 @@ export class SecurityMonitor {
     type: 'auth_failure' | 'rate_limit' | 'suspicious_input' | 'access_denied',
     details: Record<string, unknown>,
     request?: { ip?: string; userAgent?: string }
-  ) {
+  ): void {
     this.events.push({
       timestamp: new Date().toISOString(),
       type,
@@ -438,12 +438,18 @@ export class SecurityMonitor {
     }
   }
   
-  static getSecurityEvents(since?: string) {
+  static getSecurityEvents(since?: string): Array<{
+    timestamp: string;
+    type: 'auth_failure' | 'rate_limit' | 'suspicious_input' | 'access_denied';
+    details: Record<string, unknown>;
+    ipAddress?: string;
+    userAgent?: string;
+  }> {
     const sinceDate = since ? new Date(since) : new Date(Date.now() - 24 * 60 * 60 * 1000);
     return this.events.filter(event => new Date(event.timestamp) >= sinceDate);
   }
   
-  static detectAnomalies() {
+  static detectAnomalies(): string[] {
     const recentEvents = this.getSecurityEvents();
     const anomalies: string[] = [];
     

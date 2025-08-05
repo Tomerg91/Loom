@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SessionFormData, SessionFormField } from '../shared/types';
+import { SessionFormData, SessionFormField } from '@/types';
 
 interface SessionInformationFormProps {
   formData: SessionFormData;

@@ -58,6 +58,21 @@ export function AdminUsersPage() {
     },
   });
 
+  // Fetch user analytics for dashboard stats
+  const { data: userAnalytics } = useQuery({
+    queryKey: ['admin-user-analytics'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/users/analytics');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch user analytics');
+      }
+      
+      const result = await response.json();
+      return result.data;
+    },
+  });
+
   const users = usersData?.users || [];
 
   // Mutations
@@ -166,22 +181,24 @@ export function AdminUsersPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatsCard
           title="Total Users"
-          value={users?.length || 0}
+          value={userAnalytics?.totalUsers || users?.length || 0}
           icon={Users}
+          change={userAnalytics?.newUsersThisMonth ? `+${userAnalytics.newUsersThisMonth} this month` : undefined}
         />
         <StatsCard
           title="Active Users"
-          value={users?.filter((u: User) => u.status === 'active').length || 0}
+          value={userAnalytics?.activeUsers || users?.filter((u: User) => u.status === 'active').length || 0}
           icon={UserCheck}
+          change={userAnalytics?.newUsersThisWeek ? `+${userAnalytics.newUsersThisWeek} this week` : undefined}
         />
         <StatsCard
           title="Coaches"
-          value={users?.filter((u: User) => u.role === 'coach').length || 0}
+          value={userAnalytics?.usersByRole?.coach || users?.filter((u: User) => u.role === 'coach').length || 0}
           icon={Shield}
         />
         <StatsCard
           title="Clients"
-          value={users?.filter((u: User) => u.role === 'client').length || 0}
+          value={userAnalytics?.usersByRole?.client || users?.filter((u: User) => u.role === 'client').length || 0}
           icon={Users}
         />
       </div>

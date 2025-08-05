@@ -21,6 +21,8 @@ import {
   Globe
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { MfaManagementCard } from '@/components/auth/mfa/mfa-management-card';
+import type { SecurityEvent, TrustedDevice } from '@/components/auth/mfa/mfa-management-card';
 
 const connectedDevices = [
   {
@@ -51,6 +53,62 @@ const connectedDevices = [
 
 export function SecuritySettingsCard() {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+
+  // Mock MFA data
+  const mockBackupCodes = [
+    '12345678', '87654321', '11223344', '44332211',
+    '55667788', '88776655', '99001122', '22110099'
+  ];
+  
+  const mockUsedBackupCodes = ['12345678', '87654321']; // Two codes used
+  
+  const mockSecurityEvents: SecurityEvent[] = [
+    {
+      id: '1',
+      type: 'login',
+      timestamp: '2024-01-20T10:30:00Z',
+      location: 'New York, NY',
+      device: 'MacBook Pro',
+      ipAddress: '192.168.1.1'
+    },
+    {
+      id: '2',
+      type: 'backup_code_used',
+      timestamp: '2024-01-19T18:45:00Z',
+      location: 'New York, NY',
+      device: 'iPhone 15',
+      ipAddress: '192.168.1.2'
+    },
+    {
+      id: '3',
+      type: 'device_trusted',
+      timestamp: '2024-01-18T14:20:00Z',
+      location: 'Unknown Location',
+      device: 'Chrome Browser',
+      ipAddress: '192.168.1.3'
+    }
+  ];
+  
+  const mockTrustedDevices: TrustedDevice[] = [
+    {
+      id: '1',
+      name: 'MacBook Pro',
+      type: 'desktop',
+      lastUsed: '2024-01-20T10:30:00Z',
+      location: 'New York, NY',
+      ipAddress: '192.168.1.1',
+      current: true
+    },
+    {
+      id: '2',
+      name: 'iPhone 15',
+      type: 'mobile',
+      lastUsed: '2024-01-19T18:45:00Z',
+      location: 'New York, NY',
+      ipAddress: '192.168.1.2'
+    }
+  ];
 
   // Memoize formatted dates for device activity
   const deviceActivityDates = useMemo(() => {
@@ -60,15 +118,30 @@ export function SecuritySettingsCard() {
     }, {} as Record<string, string>);
   }, []);
 
+  // MFA handlers
+  const handleMfaToggle = async (enabled: boolean) => {
+    console.log('Toggling MFA:', enabled);
+    // In a real app, this would call your API
+    setMfaEnabled(enabled);
+  };
+
+  const handleMfaSetup = async () => {
+    console.log('MFA setup completed');
+    // In a real app, this would save the MFA configuration
+    setMfaEnabled(true);
+  };
+
+  const handleRegenerateBackupCodes = async () => {
+    console.log('Regenerating backup codes');
+    // In a real app, this would call your API to regenerate codes
+  };
+
+  const handleRemoveTrustedDevice = async (deviceId: string) => {
+    console.log('Removing trusted device:', deviceId);
+    // In a real app, this would call your API to remove the device
+  };
+
   const securityFeatures = [
-    {
-      id: 'twoFactor',
-      title: 'Two-Factor Authentication',
-      description: 'Add an extra layer of security to your account',
-      icon: Smartphone,
-      enabled: false,
-      status: 'recommended',
-    },
     {
       id: 'passwordExpiry',
       title: 'Password Expiry',
@@ -153,6 +226,19 @@ export function SecuritySettingsCard() {
           </Alert>
         </CardContent>
       </Card>
+
+      {/* Multi-Factor Authentication */}
+      <MfaManagementCard
+        isEnabled={mfaEnabled}
+        onToggle={handleMfaToggle}
+        onSetup={handleMfaSetup}
+        backupCodes={mfaEnabled ? mockBackupCodes : []}
+        usedBackupCodes={mfaEnabled ? mockUsedBackupCodes : []}
+        onRegenerateBackupCodes={handleRegenerateBackupCodes}
+        securityEvents={mfaEnabled ? mockSecurityEvents : []}
+        trustedDevices={mfaEnabled ? mockTrustedDevices : []}
+        onRemoveTrustedDevice={handleRemoveTrustedDevice}
+      />
 
       {/* Security Features */}
       <Card>

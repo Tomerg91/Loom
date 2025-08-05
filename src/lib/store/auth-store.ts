@@ -6,6 +6,11 @@ interface AuthState {
   user: AuthUser | null;
   isLoading: boolean;
   error: string | null;
+  // MFA state
+  mfaRequired: boolean;
+  mfaVerified: boolean;
+  mfaSessionToken: string | null;
+  isMfaSession: boolean;
 }
 
 interface AuthActions {
@@ -14,6 +19,12 @@ interface AuthActions {
   setError: (error: string | null) => void;
   clearAuth: () => void;
   updateUser: (updates: Partial<AuthUser>) => void;
+  // MFA actions
+  setMfaRequired: (required: boolean) => void;
+  setMfaVerified: (verified: boolean) => void;
+  setMfaSessionToken: (token: string | null) => void;
+  setMfaSession: (isSession: boolean) => void;
+  clearMfaState: () => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -25,6 +36,11 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isLoading: false,
       error: null,
+      // MFA state
+      mfaRequired: false,
+      mfaVerified: false,
+      mfaSessionToken: null,
+      isMfaSession: false,
 
       // Actions
       setUser: (user) => set({ user, error: null }),
@@ -33,7 +49,15 @@ export const useAuthStore = create<AuthStore>()(
       
       setError: (error) => set({ error, isLoading: false }),
       
-      clearAuth: () => set({ user: null, error: null, isLoading: false }),
+      clearAuth: () => set({ 
+        user: null, 
+        error: null, 
+        isLoading: false,
+        mfaRequired: false,
+        mfaVerified: false,
+        mfaSessionToken: null,
+        isMfaSession: false,
+      }),
       
       updateUser: (updates) => {
         const currentUser = get().user;
@@ -41,11 +65,30 @@ export const useAuthStore = create<AuthStore>()(
           set({ user: { ...currentUser, ...updates } });
         }
       },
+
+      // MFA actions
+      setMfaRequired: (mfaRequired) => set({ mfaRequired }),
+      
+      setMfaVerified: (mfaVerified) => set({ mfaVerified }),
+      
+      setMfaSessionToken: (mfaSessionToken) => set({ mfaSessionToken }),
+      
+      setMfaSession: (isMfaSession) => set({ isMfaSession }),
+      
+      clearMfaState: () => set({
+        mfaRequired: false,
+        mfaVerified: false,
+        mfaSessionToken: null,
+        isMfaSession: false,
+      }),
     }),
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ user: state.user }), // Only persist user data
+      partialize: (state) => ({ 
+        user: state.user 
+        // MFA session data is intentionally not persisted for security
+      }),
     }
   )
 );
@@ -54,3 +97,9 @@ export const useAuthStore = create<AuthStore>()(
 export const useUser = () => useAuthStore((state) => state.user);
 export const useAuthLoading = () => useAuthStore((state) => state.isLoading);
 export const useAuthError = () => useAuthStore((state) => state.error);
+
+// MFA selectors
+export const useMfaRequired = () => useAuthStore((state) => state.mfaRequired);
+export const useMfaVerified = () => useAuthStore((state) => state.mfaVerified);
+export const useMfaSessionToken = () => useAuthStore((state) => state.mfaSessionToken);
+export const useIsMfaSession = () => useAuthStore((state) => state.isMfaSession);

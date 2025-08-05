@@ -348,7 +348,7 @@ export class NotificationService {
   ): Notification {
     return {
       id: dbNotification.id,
-      userId: dbNotification.user_id,
+      userId: dbNotification.userId || dbNotification.user_id,
       type: dbNotification.type as NotificationType,
       title: dbNotification.title,
       message: dbNotification.message,
@@ -356,8 +356,8 @@ export class NotificationService {
       readAt: dbNotification.read_at || undefined,
       sentAt: dbNotification.sent_at || undefined,
       scheduledFor: dbNotification.scheduled_for,
-      createdAt: dbNotification.created_at,
-      updatedAt: dbNotification.updated_at,
+      createdAt: dbNotification.createdAt || dbNotification.created_at,
+      updatedAt: dbNotification.updatedAt || dbNotification.updated_at,
     };
   }
 
