@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useUser } from '@/lib/store/auth-store';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,8 +19,24 @@ import {
 } from 'lucide-react';
 import { SessionList } from '@/components/sessions/session-list';
 import { SessionCalendar } from '@/components/sessions/session-calendar';
+import { ReflectionsManagement } from '@/components/client/reflections-management';
 import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { Session } from '@/types';
+
+// Helper functions moved outside component to prevent re-creation
+const getMoodColor = (rating: number) => {
+  if (rating >= 8) return 'text-green-600';
+  if (rating >= 6) return 'text-yellow-600';
+  if (rating >= 4) return 'text-orange-600';
+  return 'text-red-600';
+};
+
+const getMoodEmoji = (rating: number) => {
+  if (rating >= 8) return '😊';
+  if (rating >= 6) return '😐';
+  if (rating >= 4) return '😕';
+  return '😔';
+};
 
 interface ClientStats {
   totalSessions: number;
@@ -51,17 +67,12 @@ export function ClientDashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['client-stats', user?.id],
     queryFn: async (): Promise<ClientStats> => {
-      // Mock data - replace with actual API call
-      return {
-        totalSessions: 24,
-        completedSessions: 18,
-        upcomingSessions: 3,
-        totalReflections: 16,
-        thisWeekSessions: 2,
-        averageMoodRating: 7.8,
-        goalsAchieved: 12,
-        currentStreak: 4,
-      };
+      const response = await fetch('/api/client/stats');
+      if (!response.ok) {
+        throw new Error('Failed to fetch client statistics');
+      }
+      const result = await response.json();
+      return result.data;
     },
     enabled: !!user?.id,
   });
@@ -82,57 +93,35 @@ export function ClientDashboard() {
   const { data: recentReflections } = useQuery({
     queryKey: ['recent-reflections', user?.id],
     queryFn: async (): Promise<RecentReflection[]> => {
-      // Mock data - replace with actual API call
-      return [
-        {
-          id: '1',
-          sessionId: 'session-1',
-          content: 'Today I learned about setting better boundaries with work. The techniques my coach shared really resonated with me.',
-          moodRating: 8,
-          createdAt: new Date().toISOString(),
-          sessionTitle: 'Work-Life Balance',
-        },
-        {
-          id: '2',
-          sessionId: 'session-2',
-          content: 'Working on my communication skills. I notice I&apos;m becoming more confident in expressing my needs.',
-          moodRating: 7,
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          sessionTitle: 'Communication Skills',
-        },
-        {
-          id: '3',
-          content: 'General reflection: I&apos;ve been more mindful about my reactions to stress this week. Small wins!',
-          moodRating: 6,
-          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      ];
+      const response = await fetch('/api/client/reflections?limit=5');
+      if (!response.ok) {
+        throw new Error('Failed to fetch recent reflections');
+      }
+      const result = await response.json();
+      return result.data;
     },
     enabled: !!user?.id,
   });
 
-  const getMoodColor = (rating: number) => {
-    if (rating >= 8) return 'text-green-600';
-    if (rating >= 6) return 'text-yellow-600';
-    if (rating >= 4) return 'text-orange-600';
-    return 'text-red-600';
-  };
-
-  const getMoodEmoji = (rating: number) => {
-    if (rating >= 8) return '😊';
-    if (rating >= 6) return '😐';
-    if (rating >= 4) return '😕';
-    return '😔';
-  };
-
-  const thisWeekStart = startOfWeek(new Date());
-  const thisWeekEnd = endOfWeek(new Date());
-  const thisWeekSessions = upcomingSessions?.filter(session =>
-    isWithinInterval(parseISO(session.scheduledAt), { start: thisWeekStart, end: thisWeekEnd })
-  ) || [];
+  // Memoize expensive calculations
+  const thisWeekSessions = useMemo(() => {
+    if (!upcomingSessions) return [];
+    
+    const thisWeekStart = startOfWeek(new Date());
+    const thisWeekEnd = endOfWeek(new Date());
+    
+    return upcomingSessions.filter(session =>
+      isWithinInterval(parseISO(session.scheduledAt), { start: thisWeekStart, end: thisWeekEnd })
+    );
+  }, [upcomingSessions]);
 
   return (
     <div className="space-y-6">
+      {/* Accessibility: Screen reader announcements */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {statsLoading ? 'Loading dashboard statistics...' : 'Dashboard loaded successfully'}
+      </div>
+      
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">My Coaching Journey</h1>
@@ -142,10 +131,10 @@ export function ClientDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="sessions">Sessions</TabsTrigger>
-          <TabsTrigger value="reflections">Reflections</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 max-w-md" role="tablist" aria-label="Dashboard navigation">
+          <TabsTrigger value="overview" aria-label="Overview dashboard">Overview</TabsTrigger>
+          <TabsTrigger value="sessions" aria-label="Sessions management">Sessions</TabsTrigger>
+          <TabsTrigger value="reflections" aria-label="Reflections journal">Reflections</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -243,7 +232,17 @@ export function ClientDashboard() {
                     {upcomingSessions.slice(0, 3).map((session) => (
                       <div
                         key={session.id}
-                        className="flex items-center justify-between p-3 border rounded-lg"
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+                        onClick={() => window.location.href = `/sessions/${session.id}`}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            window.location.href = `/sessions/${session.id}`;
+                          }
+                        }}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`View session: ${session.title} with ${session.coach.firstName} ${session.coach.lastName}`}
                       >
                         <div>
                           <h4 className="font-medium">{session.title}</h4>
@@ -389,8 +388,8 @@ export function ClientDashboard() {
               <SessionCalendar
                 clientId={user?.id}
                 onSessionClick={(session) => {
-                  // Handle session click
-                  console.log('Session clicked:', session);
+                  // Navigate to session details
+                  window.location.href = `/sessions/${session.id}`;
                 }}
               />
             </TabsContent>
@@ -398,20 +397,7 @@ export function ClientDashboard() {
         </TabsContent>
 
         <TabsContent value="reflections" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Reflections</CardTitle>
-              <CardDescription>
-                Document your thoughts and insights from your coaching journey
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Reflection management coming soon</p>
-              </div>
-            </CardContent>
-          </Card>
+          <ReflectionsManagement />
         </TabsContent>
       </Tabs>
     </div>

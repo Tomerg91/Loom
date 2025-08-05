@@ -99,35 +99,14 @@ export function AdminSystemPage() {
   const { data: systemHealth, isLoading: healthLoading } = useQuery<SystemHealth>({
     queryKey: ['system-health'],
     queryFn: async () => {
-      // Mock API call
-      return {
-        database: {
-          status: 'healthy',
-          connections: 45,
-          maxConnections: 100,
-          responseTime: 12,
-          lastBackup: '2024-01-20T02:00:00Z',
-        },
-        server: {
-          status: 'healthy',
-          uptime: 2592000, // 30 days in seconds
-          memory: {
-            used: 2.4,
-            total: 8.0,
-          },
-          cpu: 34,
-          storage: {
-            used: 45.2,
-            total: 100.0,
-          },
-        },
-        services: {
-          auth: 'online',
-          email: 'online',
-          storage: 'online',
-          notifications: 'online',
-        },
-      };
+      const response = await fetch('/api/admin/system');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch system health');
+      }
+      
+      const result = await response.json();
+      return result.data;
     },
     refetchInterval: 30000, // Refetch every 30 seconds
   });
@@ -135,36 +114,14 @@ export function AdminSystemPage() {
   const { data: systemSettings, isLoading: settingsLoading } = useQuery<SystemSettings>({
     queryKey: ['system-settings'],
     queryFn: async () => {
-      // Mock API call
-      return {
-        general: {
-          siteName: 'Loom Coaching Platform',
-          siteDescription: 'Professional coaching platform for personal and professional development',
-          maintenanceMode: false,
-          allowRegistration: true,
-          maxUsersPerCoach: 50,
-          sessionDuration: 60,
-        },
-        security: {
-          twoFactorRequired: false,
-          passwordMinLength: 8,
-          sessionTimeout: 1440, // 24 hours
-          maxLoginAttempts: 5,
-          ipWhitelist: [],
-        },
-        email: {
-          provider: 'SendGrid',
-          fromAddress: 'noreply@loom.com',
-          replyToAddress: 'support@loom.com',
-          templatesEnabled: true,
-        },
-        notifications: {
-          emailNotifications: true,
-          pushNotifications: true,
-          smsNotifications: false,
-          digestFrequency: 'daily',
-        },
-      };
+      const response = await fetch('/api/admin/system/settings');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch system settings');
+      }
+      
+      const result = await response.json();
+      return result.data;
     },
   });
 
@@ -248,7 +205,7 @@ export function AdminSystemPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-4 max-w-lg">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>

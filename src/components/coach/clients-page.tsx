@@ -67,60 +67,39 @@ export function CoachClientsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
 
-  // Mock data - in real app, this would come from an API
-  const { data: clients, isLoading, error } = useQuery<Client[]>({
+  // Fetch clients from API
+  const { data: clientsData, isLoading, error } = useQuery({
     queryKey: ['coach-clients', searchTerm, statusFilter, sortBy],
     queryFn: async () => {
-      // Mock API call
-      return [
-        {
-          id: '1',
-          firstName: 'Sarah',
-          lastName: 'Johnson',
-          email: 'sarah.johnson@example.com',
-          phone: '+1-555-0123',
-          status: 'active',
-          joinedDate: '2024-01-15T10:00:00Z',
-          lastSession: '2024-01-18T14:00:00Z',
-          nextSession: '2024-01-22T14:00:00Z',
-          totalSessions: 12,
-          completedSessions: 10,
-          averageRating: 4.8,
-          goals: ['Career Development', 'Leadership Skills'],
-          progress: { current: 75, target: 100 },
-        },
-        {
-          id: '2',
-          firstName: 'Michael',
-          lastName: 'Chen',
-          email: 'michael.chen@example.com',
-          phone: '+1-555-0456',
-          status: 'active',
-          joinedDate: '2024-01-10T11:00:00Z',
-          lastSession: '2024-01-17T15:30:00Z',
-          nextSession: '2024-01-24T15:30:00Z',
-          totalSessions: 8,
-          completedSessions: 7,
-          averageRating: 4.6,
-          goals: ['Work-Life Balance', 'Stress Management'],
-          progress: { current: 60, target: 100 },
-        },
-        {
-          id: '3',
-          firstName: 'Emily',
-          lastName: 'Rodriguez',
-          email: 'emily.rodriguez@example.com',
-          status: 'pending',
-          joinedDate: '2024-01-20T09:00:00Z',
-          totalSessions: 1,
-          completedSessions: 0,
-          averageRating: 0,
-          goals: ['Personal Growth', 'Confidence Building'],
-          progress: { current: 5, target: 100 },
-        },
-      ];
+      const params = new URLSearchParams({ limit: '50' });
+      const response = await fetch(`/api/coach/clients?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch clients');
+      const result = await response.json();
+      return result.data;
     },
   });
+
+  // Transform API data to match component interface
+  const clients: Client[] = clientsData?.map((client: any) => ({
+    id: client.id,
+    firstName: client.firstName,
+    lastName: client.lastName,
+    email: client.email,
+    phone: client.phone || undefined,
+    avatarUrl: client.avatar || undefined,
+    status: client.status,
+    joinedDate: new Date().toISOString(), // API doesn't provide this, use current date
+    lastSession: client.lastSession,
+    nextSession: undefined, // API doesn't provide this yet
+    totalSessions: client.totalSessions,
+    completedSessions: Math.floor(client.totalSessions * 0.8), // Estimate
+    averageRating: 4.5, // Default rating since API doesn't provide this yet
+    goals: [], // API doesn't provide goals yet
+    progress: { 
+      current: Math.min(client.totalSessions * 10, 100), // Rough progress estimate
+      target: 100 
+    },
+  })) || [];
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/lib/store/auth-store';
 import { useQuery } from '@tanstack/react-query';
@@ -21,8 +21,25 @@ import {
 } from 'lucide-react';
 import { SessionList } from '@/components/sessions/session-list';
 import { SessionCalendar } from '@/components/sessions/session-calendar';
+import { CoachClientsPage } from '@/components/coach/clients-page';
 import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { Session } from '@/types';
+
+// Helper function moved outside component to prevent re-creation
+const getActivityIcon = (type: RecentActivity['type']) => {
+  switch (type) {
+    case 'session_completed':
+      return <CheckCircle className="h-4 w-4 text-green-600" />;
+    case 'note_added':
+      return <MessageSquare className="h-4 w-4 text-blue-600" />;
+    case 'client_joined':
+      return <UserPlus className="h-4 w-4 text-purple-600" />;
+    case 'session_scheduled':
+      return <Calendar className="h-4 w-4 text-orange-600" />;
+    default:
+      return <Clock className="h-4 w-4 text-gray-600" />;
+  }
+};
 
 interface DashboardStats {
   totalSessions: number;
@@ -64,17 +81,12 @@ export function CoachDashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['coach-stats', user?.id],
     queryFn: async (): Promise<DashboardStats> => {
-      // Mock data - replace with actual API call
-      return {
-        totalSessions: 127,
-        completedSessions: 89,
-        upcomingSessions: 12,
-        totalClients: 24,
-        activeClients: 18,
-        thisWeekSessions: 8,
-        averageRating: 4.8,
-        totalRevenue: 15420,
-      };
+      const response = await fetch('/api/coach/stats');
+      if (!response.ok) {
+        throw new Error('Failed to fetch coach statistics');
+      }
+      const result = await response.json();
+      return result.data;
     },
     enabled: !!user?.id,
   });
@@ -95,36 +107,12 @@ export function CoachDashboard() {
   const { data: recentClients } = useQuery({
     queryKey: ['recent-clients', user?.id],
     queryFn: async (): Promise<Client[]> => {
-      // Mock data - replace with actual API call
-      return [
-        {
-          id: '1',
-          firstName: 'Sarah',
-          lastName: 'Johnson',
-          email: 'sarah@example.com',
-          lastSession: new Date().toISOString(),
-          totalSessions: 8,
-          status: 'active',
-        },
-        {
-          id: '2',
-          firstName: 'Michael',
-          lastName: 'Chen',
-          email: 'michael@example.com',
-          lastSession: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          totalSessions: 12,
-          status: 'active',
-        },
-        {
-          id: '3',
-          firstName: 'Emma',
-          lastName: 'Davis',
-          email: 'emma@example.com',
-          lastSession: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          totalSessions: 5,
-          status: 'active',
-        },
-      ];
+      const response = await fetch('/api/coach/clients?limit=5');
+      if (!response.ok) {
+        throw new Error('Failed to fetch recent clients');
+      }
+      const result = await response.json();
+      return result.data;
     },
     enabled: !!user?.id,
   });
@@ -133,57 +121,35 @@ export function CoachDashboard() {
   const { data: recentActivity } = useQuery({
     queryKey: ['recent-activity', user?.id],
     queryFn: async (): Promise<RecentActivity[]> => {
-      // Mock data - replace with actual API call
-      return [
-        {
-          id: '1',
-          type: 'session_completed',
-          description: 'Completed session with Sarah Johnson',
-          timestamp: new Date().toISOString(),
-          clientName: 'Sarah Johnson',
-        },
-        {
-          id: '2',
-          type: 'note_added',
-          description: 'Added progress note for Michael Chen',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          clientName: 'Michael Chen',
-        },
-        {
-          id: '3',
-          type: 'session_scheduled',
-          description: 'New session scheduled with Emma Davis',
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          clientName: 'Emma Davis',
-        },
-      ];
+      const response = await fetch('/api/coach/activity?limit=10');
+      if (!response.ok) {
+        throw new Error('Failed to fetch recent activity');
+      }
+      const result = await response.json();
+      return result.data;
     },
     enabled: !!user?.id,
   });
 
-  const getActivityIcon = (type: RecentActivity['type']) => {
-    switch (type) {
-      case 'session_completed':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'note_added':
-        return <MessageSquare className="h-4 w-4 text-blue-600" />;
-      case 'client_joined':
-        return <UserPlus className="h-4 w-4 text-purple-600" />;
-      case 'session_scheduled':
-        return <Calendar className="h-4 w-4 text-orange-600" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-600" />;
-    }
-  };
-
-  const thisWeekStart = startOfWeek(new Date());
-  const thisWeekEnd = endOfWeek(new Date());
-  const thisWeekSessions = upcomingSessions?.filter(session =>
-    isWithinInterval(parseISO(session.scheduledAt), { start: thisWeekStart, end: thisWeekEnd })
-  ) || [];
+  // Memoize expensive calculations
+  const thisWeekSessions = useMemo(() => {
+    if (!upcomingSessions) return [];
+    
+    const thisWeekStart = startOfWeek(new Date());
+    const thisWeekEnd = endOfWeek(new Date());
+    
+    return upcomingSessions.filter(session =>
+      isWithinInterval(parseISO(session.scheduledAt), { start: thisWeekStart, end: thisWeekEnd })
+    );
+  }, [upcomingSessions]);
 
   return (
     <div className="space-y-6">
+      {/* Accessibility: Screen reader announcements */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {statsLoading ? 'Loading coach dashboard statistics...' : 'Coach dashboard loaded successfully'}
+      </div>
+      
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Coach Dashboard</h1>
@@ -193,10 +159,10 @@ export function CoachDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="sessions">Sessions</TabsTrigger>
-          <TabsTrigger value="clients">Clients</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 max-w-md" role="tablist" aria-label="Coach dashboard navigation">
+          <TabsTrigger value="overview" aria-label="Overview dashboard">Overview</TabsTrigger>
+          <TabsTrigger value="sessions" aria-label="Sessions management">Sessions</TabsTrigger>
+          <TabsTrigger value="clients" aria-label="Client management">Clients</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -441,8 +407,8 @@ export function CoachDashboard() {
               <SessionCalendar
                 coachId={user?.id}
                 onSessionClick={(session) => {
-                  // Handle session click
-                  console.log('Session clicked:', session);
+                  // Navigate to session details
+                  window.location.href = `/sessions/${session.id}`;
                 }}
               />
             </TabsContent>
@@ -450,20 +416,7 @@ export function CoachDashboard() {
         </TabsContent>
 
         <TabsContent value="clients" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Clients</CardTitle>
-              <CardDescription>
-                Manage your coaching relationships
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Client management coming soon</p>
-              </div>
-            </CardContent>
-          </Card>
+          <CoachClientsPage />
         </TabsContent>
       </Tabs>
     </div>
