@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/lib/store/auth-store';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -47,6 +48,7 @@ interface NotificationsResponse {
 
 export function NotificationCenter() {
   const t = useTranslations('notifications');
+  const router = useRouter();
   const user = useUser();
   const queryClient = useQueryClient();
   
@@ -169,10 +171,26 @@ export function NotificationCenter() {
       markAsReadMutation.mutate(notification.id);
     }
 
+    // Close the notification panel
+    setIsOpen(false);
+
     // Handle notification action based on type and data
     if (notification.data?.sessionId) {
-      // Navigate to session or show session details
-      console.log('Navigate to session:', notification.data.sessionId);
+      // Navigate to session details page
+      router.push(`/sessions/${notification.data.sessionId}`);
+    } else if (notification.type === 'new_message') {
+      // Navigate to messages or coach/client page based on user role
+      if (user?.role === 'client') {
+        router.push('/client');
+      } else if (user?.role === 'coach') {
+        router.push('/coach/clients');
+      }
+    } else if (notification.type === 'system_update') {
+      // Navigate to settings or dashboard
+      router.push('/settings');
+    } else {
+      // Default navigation to dashboard
+      router.push('/dashboard');
     }
   };
 

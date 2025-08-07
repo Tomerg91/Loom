@@ -21,6 +21,7 @@ import {
   Volume2,
   VolumeX,
   Clock,
+  AlertCircle,
 } from 'lucide-react';
 import { useUser } from '@/lib/store/auth-store';
 
@@ -66,59 +67,46 @@ export function NotificationSettingsCard() {
   const queryClient = useQueryClient();
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Mock data - in real app, this would come from an API
-  const { data: settings, isLoading } = useQuery<NotificationSettings>({
+  // Fetch real notification preferences from API
+  const { data: settings, isLoading, error } = useQuery<NotificationSettings>({
     queryKey: ['notification-settings', user?.id],
     queryFn: async () => {
-      return {
-        email: {
-          enabled: true,
-          sessionReminders: true,
-          sessionUpdates: true,
-          messageNotifications: true,
-          marketing: false,
-          weeklyDigest: true,
-          frequency: 'immediate',
-        },
-        push: {
-          enabled: true,
-          sessionReminders: true,
-          sessionUpdates: false,
-          messageNotifications: true,
-          systemUpdates: false,
-          quietHours: {
-            enabled: true,
-            start: '22:00',
-            end: '08:00',
-          },
-        },
-        inApp: {
-          enabled: true,
-          sessionReminders: true,
-          messageNotifications: true,
-          systemNotifications: true,
-          sounds: true,
-          desktop: false,
-        },
-        preferences: {
-          language: 'en',
-          timezone: 'America/New_York',
-          reminderTiming: 15,
-        },
-      };
+      const response = await fetch('/api/notifications/preferences');
+      if (!response.ok) {
+        throw new Error('Failed to fetch notification preferences');
+      }
+      const result = await response.json();
+      return result.data;
     },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: NotificationSettings) => {
-      // Mock API call
-      console.log('Updating notification settings:', newSettings);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return newSettings;
+      const response = await fetch('/api/notifications/preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newSettings),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update notification preferences');
+      }
+
+      const result = await response.json();
+      return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notification-settings'] });
       setHasChanges(false);
+    },
+    onError: (error) => {
+      console.error('Failed to update notification settings:', error);
+      // You could add a toast notification here for user feedback
     },
   });
 
@@ -160,11 +148,37 @@ export function NotificationSettingsCard() {
     setHasChanges(true);
   };
 
-  if (isLoading || !settings) {
+  if (isLoading) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center h-64">
+          <div className="text-center space-y-2">
+            <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
+            <p className="text-destructive">Failed to load notification settings</p>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center h-64">
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">No notification settings found</p>
+          </div>
         </CardContent>
       </Card>
     );
