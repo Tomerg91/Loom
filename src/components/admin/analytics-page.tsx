@@ -25,6 +25,26 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { UserGrowthChart, SessionMetricsChart } from '@/components/charts/chart-components';
+import { EnhancedUserGrowthChart, EnhancedSessionMetricsChart } from '@/components/charts/enhanced-chart-components';
+import { ANALYTICS_CONFIG, getGrowthRateOrDefault } from '@/lib/config/analytics-constants';
+import { AnalyticsErrorBoundary, AnalyticsCardWrapper, ChartErrorFallback } from '@/components/error/analytics-error-boundary';
+import { analyticsExportService, type ExportFormat } from '@/lib/services/analytics-export-service';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useRouter } from 'next/navigation';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { SystemHealthDisplay } from './system-health-display';
 
 interface AnalyticsData {
   overview: {
@@ -34,6 +54,13 @@ interface AnalyticsData {
     completedSessions: number;
     revenue: number;
     averageRating: number;
+    // Previous month data for growth calculations
+    previousMonth?: {
+      totalUsers: number;
+      activeUsers: number;
+      totalSessions: number;
+      revenue: number;
+    };
   };
   userGrowth: Array<{
     date: string;
@@ -57,7 +84,11 @@ interface AnalyticsData {
 
 export function AdminAnalyticsPage() {
   const t = useTranslations('admin.analytics');
+  const router = useRouter();
   const [timeRange, setTimeRange] = useState('30d');
+  const [isExporting, setIsExporting] = useState(false);
+  const [systemHealthOpen, setSystemHealthOpen] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   const { data: analytics, isLoading, error, refetch } = useQuery<AnalyticsData>({
     queryKey: ['admin-analytics', timeRange],
@@ -72,6 +103,106 @@ export function AdminAnalyticsPage() {
       return result.data;
     },
   });
+
+  // Helper function to format growth percentage
+  const formatGrowthRate = (current: number, previous: number | undefined, fallbackKey: 'users' | 'sessions' | 'completion' | 'revenue') => {
+    if (!previous) {
+      const defaultGrowth = ANALYTICS_CONFIG.DEFAULT_GROWTH_RATES[fallbackKey];
+      return `+${defaultGrowth}%`;
+    }
+    
+    const growthRate = getGrowthRateOrDefault(current, previous, fallbackKey);
+    const sign = growthRate >= 0 ? '+' : '';
+    return `${sign}${growthRate}%`;
+  };
+
+  // Helper to get growth rate color
+  const getGrowthColor = (current: number, previous: number | undefined) => {
+    if (!previous) return 'text-green-600'; // Default to positive
+    const rate = (current - previous) / previous;
+    return rate >= 0 ? 'text-green-600' : 'text-red-600';
+  };
+
+  // Export handler
+  const handleExport = async (format: ExportFormat) => {
+    if (isExporting) return;
+    
+    setIsExporting(true);
+    try {
+      // Calculate date range based on timeRange
+      const endDate = new Date();
+      const startDate = new Date();
+      
+      switch (timeRange) {
+        case '7d':
+          startDate.setDate(endDate.getDate() - 7);
+          break;
+        case '30d':
+          startDate.setDate(endDate.getDate() - 30);
+          break;
+        case '90d':
+          startDate.setDate(endDate.getDate() - 90);
+          break;
+        case '1y':
+          startDate.setFullYear(endDate.getFullYear() - 1);
+          break;
+        default:
+          startDate.setDate(endDate.getDate() - 30);
+      }
+
+      const { blob, filename } = await analyticsExportService.exportData(startDate, endDate, format);
+      analyticsExportService.downloadFile(blob, filename);
+      
+      // Show success message (you could add a toast notification here)
+      console.log(`Analytics exported successfully as ${format.toUpperCase()}`);
+      
+    } catch (error) {
+      console.error('Export failed:', error);
+      // Show error message (you could add a toast notification here)
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Quick Action Handlers
+  const handleManageUsers = () => {
+    router.push('/admin/users');
+  };
+
+  const handleViewSessions = () => {
+    router.push('/sessions');
+  };
+
+  const handleGenerateReport = async () => {
+    if (isGeneratingReport) return;
+    
+    setIsGeneratingReport(true);
+    try {
+      // Generate a comprehensive report by exporting all formats
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - 30); // Last 30 days
+      
+      const formats: ExportFormat[] = ['json', 'csv', 'excel'];
+      
+      for (const format of formats) {
+        const { blob, filename } = await analyticsExportService.exportData(startDate, endDate, format);
+        analyticsExportService.downloadFile(blob, filename);
+        // Add small delay between downloads to prevent browser blocking
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      console.log('Comprehensive report generated successfully');
+    } catch (error) {
+      console.error('Report generation failed:', error);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const handleSystemHealth = () => {
+    setSystemHealthOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -112,13 +243,18 @@ export function AdminAnalyticsPage() {
     }).format(amount);
   };
 
-  const completionRate = analytics?.overview.completedSessions && analytics?.overview.totalSessions
-    ? Math.round((analytics.overview.completedSessions / analytics.overview.totalSessions) * 100)
-    : 0;
+  // Safely calculate completion rate with proper null checks
+  const completionRate = (() => {
+    if (!analytics?.overview) return 0;
+    const { completedSessions, totalSessions } = analytics.overview;
+    if (!totalSessions || totalSessions === 0) return 0;
+    return Math.round((completedSessions / totalSessions) * 100);
+  })();
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <AnalyticsErrorBoundary onRetry={() => refetch()}>
+      <div className="space-y-6">
+        {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">{t('title')}</h1>
@@ -140,10 +276,25 @@ export function AdminAnalyticsPage() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={isExporting}>
+                <Download className="mr-2 h-4 w-4" />
+                {isExporting ? 'Exporting...' : 'Export'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport('json')}>
+                Export as JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('csv')}>
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('excel')}>
+                Export as Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -157,7 +308,9 @@ export function AdminAnalyticsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{analytics?.overview.totalUsers}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+12%</span> from last month
+              <span className={getGrowthColor(analytics?.overview.totalUsers || 0, analytics?.overview.previousMonth?.totalUsers)}>
+                {formatGrowthRate(analytics?.overview.totalUsers || 0, analytics?.overview.previousMonth?.totalUsers, 'users')}
+              </span> from last month
             </p>
           </CardContent>
         </Card>
@@ -170,7 +323,9 @@ export function AdminAnalyticsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{analytics?.overview.activeUsers}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+8%</span> from last month
+              <span className={getGrowthColor(analytics?.overview.activeUsers || 0, analytics?.overview.previousMonth?.activeUsers)}>
+                {formatGrowthRate(analytics?.overview.activeUsers || 0, analytics?.overview.previousMonth?.activeUsers, 'users')}
+              </span> from last month
             </p>
           </CardContent>
         </Card>
@@ -183,7 +338,9 @@ export function AdminAnalyticsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{analytics?.overview.totalSessions}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+15%</span> from last month
+              <span className={getGrowthColor(analytics?.overview.totalSessions || 0, analytics?.overview.previousMonth?.totalSessions)}>
+                {formatGrowthRate(analytics?.overview.totalSessions || 0, analytics?.overview.previousMonth?.totalSessions, 'sessions')}
+              </span> from last month
             </p>
           </CardContent>
         </Card>
@@ -196,7 +353,9 @@ export function AdminAnalyticsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{completionRate}%</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+2.1%</span> from last month
+              <span className={getGrowthColor(completionRate || 0, analytics?.overview.previousMonth ? Math.round((analytics.overview.completedSessions / analytics.overview.previousMonth.totalSessions) * 100) : undefined)}>
+                {formatGrowthRate(completionRate || 0, analytics?.overview.previousMonth ? Math.round((analytics.overview.completedSessions / analytics.overview.previousMonth.totalSessions) * 100) : undefined, 'completion')}
+              </span> from last month
             </p>
           </CardContent>
         </Card>
@@ -209,7 +368,9 @@ export function AdminAnalyticsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(analytics?.overview.revenue || 0)}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+22%</span> from last month
+              <span className={getGrowthColor(analytics?.overview.revenue || 0, analytics?.overview.previousMonth?.revenue)}>
+                {formatGrowthRate(analytics?.overview.revenue || 0, analytics?.overview.previousMonth?.revenue, 'revenue')}
+              </span> from last month
             </p>
           </CardContent>
         </Card>
@@ -231,18 +392,46 @@ export function AdminAnalyticsPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* User Growth Chart */}
-        <UserGrowthChart 
-          data={analytics?.userGrowth || []}
-          loading={isLoading}
-          height={264}
-        />
+        <AnalyticsErrorBoundary 
+          fallback={<ChartErrorFallback onRetry={() => refetch()} />}
+          onRetry={() => refetch()}
+        >
+          <EnhancedUserGrowthChart 
+            data={analytics?.userGrowth || []}
+            loading={isLoading}
+            height={300}
+            enableExport={true}
+            enableZoom={true}
+            enableBrush={true}
+            showTrends={true}
+            onDataPointClick={(data, index) => {
+              console.log('User growth data point clicked:', data, index);
+              // Could show detailed breakdown modal
+            }}
+            ariaLabel={`User growth chart showing ${analytics?.userGrowth?.length || 0} data points over ${timeRange}`}
+          />
+        </AnalyticsErrorBoundary>
 
         {/* Session Metrics Chart */}
-        <SessionMetricsChart 
-          data={analytics?.sessionMetrics || []}
-          loading={isLoading}
-          height={264}
-        />
+        <AnalyticsErrorBoundary 
+          fallback={<ChartErrorFallback onRetry={() => refetch()} />}
+          onRetry={() => refetch()}
+        >
+          <EnhancedSessionMetricsChart 
+            data={analytics?.sessionMetrics || []}
+            loading={isLoading}
+            height={300}
+            enableExport={true}
+            enableZoom={true}
+            enableBrush={true}
+            showTrends={true}
+            onDataPointClick={(data, index) => {
+              console.log('Session metrics data point clicked:', data, index);
+              // Could navigate to sessions page with date filter
+            }}
+            ariaLabel={`Session metrics chart showing ${analytics?.sessionMetrics?.length || 0} data points over ${timeRange}`}
+          />
+        </AnalyticsErrorBoundary>
       </div>
 
       {/* Coach Performance Table */}
@@ -292,25 +481,52 @@ export function AdminAnalyticsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-20 flex-col">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col" 
+              onClick={handleManageUsers}
+            >
               <Users className="h-6 w-6 mb-2" />
               <span>Manage Users</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col" 
+              onClick={handleViewSessions}
+            >
               <Calendar className="h-6 w-6 mb-2" />
               <span>View Sessions</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col" 
+              onClick={handleGenerateReport}
+              disabled={isGeneratingReport}
+            >
               <BarChart3 className="h-6 w-6 mb-2" />
-              <span>Generate Report</span>
+              <span>{isGeneratingReport ? 'Generating...' : 'Generate Report'}</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col">
-              <Activity className="h-6 w-6 mb-2" />
-              <span>System Health</span>
-            </Button>
+            <Dialog open={systemHealthOpen} onOpenChange={setSystemHealthOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="h-20 flex-col">
+                  <Activity className="h-6 w-6 mb-2" />
+                  <span>System Health</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>System Health Status</DialogTitle>
+                  <DialogDescription>
+                    Current system health and performance metrics
+                  </DialogDescription>
+                </DialogHeader>
+                <SystemHealthDisplay />
+              </DialogContent>
+            </Dialog>
           </div>
         </CardContent>
       </Card>
     </div>
+    </AnalyticsErrorBoundary>
   );
 }

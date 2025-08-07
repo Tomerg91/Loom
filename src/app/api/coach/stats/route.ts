@@ -3,6 +3,7 @@ import { authService } from '@/lib/services/auth-service';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
 import { createServerClient } from '@/lib/supabase/server';
+import { getSessionRate, getDefaultCoachRating } from '@/lib/config/analytics-constants';
 
 interface DashboardStats {
   totalSessions: number;
@@ -64,10 +65,10 @@ export async function GET(request: NextRequest): Promise<Response> {
     );
     const activeClients = recentClientIds.size;
 
-    // For now, we'll use placeholder values for rating and revenue
-    // In a real implementation, these would come from ratings and payments tables
-    const averageRating = 4.7; // Placeholder
-    const totalRevenue = completedSessions * 85; // Placeholder: $85 per session
+    // For now, we'll use configurable values for rating and revenue
+    // TODO: In a real implementation, these would come from ratings and payments tables
+    const averageRating = getDefaultCoachRating();
+    const totalRevenue = completedSessions * getSessionRate(); // Using configurable session rate
 
     const stats: DashboardStats = {
       totalSessions,

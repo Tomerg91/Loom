@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
+import { ANALYTICS_CONFIG, getSessionRate, getDefaultCoachRating } from '@/lib/config/analytics-constants';
 
 export interface AdminAnalyticsOverview {
   totalUsers: number;
@@ -181,8 +182,8 @@ class AdminAnalyticsService {
         ? Math.round((totalSessions || 0) / totalUsers * 100) / 100
         : 0;
 
-      // Calculate estimated revenue (assuming $75 per completed session)
-      const revenue = (completedSessions || 0) * 75;
+      // Calculate estimated revenue using configurable session rate
+      const revenue = (completedSessions || 0) * getSessionRate();
 
       return {
         totalUsers: totalUsers || 0,
@@ -190,7 +191,7 @@ class AdminAnalyticsService {
         totalSessions: totalSessions || 0,
         completedSessions: completedSessions || 0,
         revenue,
-        averageRating: 4.7, // Placeholder - would need a ratings table
+        averageRating: getDefaultCoachRating(), // TODO: Calculate from actual ratings table
         newUsersThisMonth: newUsersThisMonth || 0,
         completionRate,
         totalCoaches: totalCoaches || 0,
@@ -221,6 +222,51 @@ class AdminAnalyticsService {
     try {
       const supabase = createServerClient();
 
+      // Use database function to get aggregated daily user data more efficiently
+      // This replaces the inefficient loop with a single database query
+      const { data: rawData, error } = await supabase.rpc('get_daily_user_growth', {
+        start_date: startDate.toISOString().split('T')[0],
+        end_date: endDate.toISOString().split('T')[0]
+      });
+
+      if (error) {
+        console.warn('Database function not available, falling back to optimized queries:', error.message);
+        return this.getUserGrowthFallback(startDate, endDate);
+      }
+
+      // Transform the data from the database function
+      return rawData?.map((row: any) => ({
+        date: row.date,
+        newUsers: row.new_users || 0,
+        activeUsers: row.active_users || 0,
+        totalUsers: row.total_users || 0,
+      })) || [];
+
+    } catch (error) {
+      console.error('Error fetching user growth analytics:', error);
+      return this.getUserGrowthFallback(startDate, endDate);
+    }
+  }
+
+  // Optimized fallback method that reduces database queries
+  private async getUserGrowthFallback(startDate: Date, endDate: Date): Promise<UserGrowthData[]> {
+    try {
+      const supabase = createServerClient();
+
+      // Get all users created in the date range with their creation dates
+      const { data: users } = await supabase
+        .from('users')
+        .select('created_at, last_seen_at')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .order('created_at');
+
+      // Get total users count up to start date for baseline
+      const { count: baselineUsers } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .lt('created_at', startDate.toISOString());
+
       // Generate date range
       const dates = [];
       const currentDate = new Date(startDate);
@@ -230,46 +276,42 @@ class AdminAnalyticsService {
       }
 
       const userGrowthData: UserGrowthData[] = [];
+      let runningTotal = baselineUsers || 0;
 
       for (const date of dates) {
         const dateStr = date.toISOString().split('T')[0];
         const nextDate = new Date(date);
         nextDate.setDate(nextDate.getDate() + 1);
 
-        // Get new users for this date
-        const { count: newUsers } = await supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', date.toISOString())
-          .lt('created_at', nextDate.toISOString());
+        // Count new users for this specific date from pre-loaded data
+        const newUsers = users?.filter(user => {
+          const createdAt = new Date(user.created_at);
+          return createdAt >= date && createdAt < nextDate;
+        }).length || 0;
 
-        // Get total users up to this date
-        const { count: totalUsers } = await supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true })
-          .lte('created_at', nextDate.toISOString());
+        runningTotal += newUsers;
 
-        // Get active users for this date (users who were seen within 7 days of this date)
+        // Count active users (seen within last 7 days) from pre-loaded data
         const sevenDaysBefore = new Date(date);
         sevenDaysBefore.setDate(sevenDaysBefore.getDate() - 7);
 
-        const { count: activeUsers } = await supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true })
-          .gte('last_seen_at', sevenDaysBefore.toISOString())
-          .lte('last_seen_at', nextDate.toISOString());
+        const activeUsers = users?.filter(user => {
+          if (!user.last_seen_at) return false;
+          const lastSeen = new Date(user.last_seen_at);
+          return lastSeen >= sevenDaysBefore && lastSeen <= nextDate;
+        }).length || 0;
 
         userGrowthData.push({
           date: dateStr,
-          newUsers: newUsers || 0,
-          activeUsers: activeUsers || 0,
-          totalUsers: totalUsers || 0,
+          newUsers,
+          activeUsers,
+          totalUsers: runningTotal,
         });
       }
 
       return userGrowthData;
     } catch (error) {
-      console.error('Error fetching user growth analytics:', error);
+      console.error('Error in fallback user growth analytics:', error);
       return [];
     }
   }
@@ -277,6 +319,46 @@ class AdminAnalyticsService {
   async getSessionMetrics(startDate: Date, endDate: Date): Promise<SessionMetricsData[]> {
     try {
       const supabase = createServerClient();
+
+      // Use database function for optimized session metrics
+      const { data: rawData, error } = await supabase.rpc('get_daily_session_metrics', {
+        start_date: startDate.toISOString().split('T')[0],
+        end_date: endDate.toISOString().split('T')[0]
+      });
+
+      if (error) {
+        console.warn('Database function not available, falling back to optimized queries:', error.message);
+        return this.getSessionMetricsFallback(startDate, endDate);
+      }
+
+      // Transform the data from the database function
+      return rawData?.map((row: any) => ({
+        date: row.date,
+        totalSessions: row.total_sessions || 0,
+        completedSessions: row.completed_sessions || 0,
+        cancelledSessions: row.cancelled_sessions || 0,
+        scheduledSessions: row.scheduled_sessions || 0,
+        completionRate: row.completion_rate || 0,
+      })) || [];
+
+    } catch (error) {
+      console.error('Error fetching session metrics analytics:', error);
+      return this.getSessionMetricsFallback(startDate, endDate);
+    }
+  }
+
+  // Optimized fallback method using a single query instead of multiple queries per date
+  private async getSessionMetricsFallback(startDate: Date, endDate: Date): Promise<SessionMetricsData[]> {
+    try {
+      const supabase = createServerClient();
+
+      // Get all sessions in the date range with their status and scheduled date
+      const { data: sessions } = await supabase
+        .from('sessions')
+        .select('scheduled_at, status')
+        .gte('scheduled_at', startDate.toISOString())
+        .lte('scheduled_at', endDate.toISOString())
+        .order('scheduled_at');
 
       // Generate date range
       const dates = [];
@@ -293,54 +375,35 @@ class AdminAnalyticsService {
         const nextDate = new Date(date);
         nextDate.setDate(nextDate.getDate() + 1);
 
-        // Get total sessions for this date
-        const { count: totalSessions } = await supabase
-          .from('sessions')
-          .select('*', { count: 'exact', head: true })
-          .gte('scheduled_at', date.toISOString())
-          .lt('scheduled_at', nextDate.toISOString());
+        // Filter sessions for this specific date from pre-loaded data
+        const dailySessions = sessions?.filter(session => {
+          const scheduledAt = new Date(session.scheduled_at);
+          return scheduledAt >= date && scheduledAt < nextDate;
+        }) || [];
 
-        // Get completed sessions for this date
-        const { count: completedSessions } = await supabase
-          .from('sessions')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'completed')
-          .gte('scheduled_at', date.toISOString())
-          .lt('scheduled_at', nextDate.toISOString());
+        // Count by status from in-memory data instead of separate database queries
+        const totalSessions = dailySessions.length;
+        const completedSessions = dailySessions.filter(s => s.status === 'completed').length;
+        const cancelledSessions = dailySessions.filter(s => s.status === 'cancelled').length;
+        const scheduledSessions = dailySessions.filter(s => s.status === 'scheduled').length;
 
-        // Get cancelled sessions for this date
-        const { count: cancelledSessions } = await supabase
-          .from('sessions')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'cancelled')
-          .gte('scheduled_at', date.toISOString())
-          .lt('scheduled_at', nextDate.toISOString());
-
-        // Get scheduled sessions for this date
-        const { count: scheduledSessions } = await supabase
-          .from('sessions')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'scheduled')
-          .gte('scheduled_at', date.toISOString())
-          .lt('scheduled_at', nextDate.toISOString());
-
-        const completionRate = totalSessions && totalSessions > 0 
-          ? Math.round((completedSessions || 0) / totalSessions * 100) 
+        const completionRate = totalSessions > 0 
+          ? Math.round((completedSessions / totalSessions) * 100) 
           : 0;
 
         sessionMetricsData.push({
           date: dateStr,
-          totalSessions: totalSessions || 0,
-          completedSessions: completedSessions || 0,
-          cancelledSessions: cancelledSessions || 0,
-          scheduledSessions: scheduledSessions || 0,
+          totalSessions,
+          completedSessions,
+          cancelledSessions,
+          scheduledSessions,
           completionRate,
         });
       }
 
       return sessionMetricsData;
     } catch (error) {
-      console.error('Error fetching session metrics analytics:', error);
+      console.error('Error in fallback session metrics analytics:', error);
       return [];
     }
   }
@@ -349,13 +412,15 @@ class AdminAnalyticsService {
     try {
       const supabase = createServerClient();
 
-      // Get coach performance with sessions in date range
-      const { data: coachData, error } = await supabase
-        .from('coach_statistics')
-        .select('*');
+      // Get all coaches from users table
+      const { data: coachData, error: coachError } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, email')
+        .eq('role', 'coach')
+        .eq('status', 'active');
 
-      if (error) {
-        throw error;
+      if (coachError) {
+        throw coachError;
       }
 
       if (!coachData || coachData.length === 0) {
@@ -370,41 +435,48 @@ class AdminAnalyticsService {
         const { count: totalSessions } = await supabase
           .from('sessions')
           .select('*', { count: 'exact', head: true })
-          .eq('coach_id', coach.coach_id)
+          .eq('coach_id', coach.id)
           .gte('scheduled_at', startDate.toISOString())
           .lte('scheduled_at', endDate.toISOString());
 
         const { count: completedSessions } = await supabase
           .from('sessions')
           .select('*', { count: 'exact', head: true })
-          .eq('coach_id', coach.coach_id)
+          .eq('coach_id', coach.id)
           .eq('status', 'completed')
           .gte('scheduled_at', startDate.toISOString())
           .lte('scheduled_at', endDate.toISOString());
 
-        // Get unique clients in date range
+        // Get unique clients in date range using distinct
         const { data: clientsData } = await supabase
           .from('sessions')
           .select('client_id')
-          .eq('coach_id', coach.coach_id)
+          .eq('coach_id', coach.id)
           .gte('scheduled_at', startDate.toISOString())
-          .lte('scheduled_at', endDate.toISOString())
-          .distinct('client_id');
+          .lte('scheduled_at', endDate.toISOString());
 
-        const activeClients = clientsData?.length || 0;
+        // Count unique client IDs
+        const uniqueClients = new Set(clientsData?.map(session => session.client_id) || []);
+        const activeClients = uniqueClients.size;
+        
         const completionRate = totalSessions && totalSessions > 0 
           ? Math.round((completedSessions || 0) / totalSessions * 100) 
           : 0;
 
-        // Calculate revenue (assuming $75 per completed session)
-        const revenue = (completedSessions || 0) * 75;
+        // Use configurable session rate
+        const revenue = (completedSessions || 0) * getSessionRate();
+
+        // Use default coach rating (TODO: Calculate from actual ratings)
+        const averageRating = getDefaultCoachRating();
+
+        const coachName = [coach.first_name, coach.last_name].filter(Boolean).join(' ') || coach.email;
 
         coachPerformance.push({
-          coachId: coach.coach_id,
-          coachName: coach.coach_name || 'Unknown Coach',
+          coachId: coach.id,
+          coachName,
           totalSessions: totalSessions || 0,
           completedSessions: completedSessions || 0,
-          averageRating: coach.average_rating || 4.5,
+          averageRating,
           revenue,
           activeClients,
           completionRate,
