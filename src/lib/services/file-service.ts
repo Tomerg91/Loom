@@ -1,4 +1,5 @@
 import { ApiError } from '@/lib/api/errors';
+import { createClient } from '@/lib/supabase/server';
 
 interface FileValidationOptions {
   maxSize: number;
@@ -24,9 +25,85 @@ interface FileUploadResult {
   success: boolean;
   url?: string;
   error?: string;
+  retryable?: boolean;
+}
+
+enum StorageErrorType {
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  QUOTA_EXCEEDED = 'QUOTA_EXCEEDED',
+  PERMISSION_DENIED = 'PERMISSION_DENIED',
+  FILE_TOO_LARGE = 'FILE_TOO_LARGE',
+  INVALID_FILE_TYPE = 'INVALID_FILE_TYPE',
+  STORAGE_UNAVAILABLE = 'STORAGE_UNAVAILABLE',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR'
 }
 
 class FileService {
+  private readonly MAX_RETRY_ATTEMPTS = 3;
+  private readonly RETRY_DELAY_MS = 1000;
+
+  private classifyStorageError(error: any): { type: StorageErrorType; retryable: boolean } {
+    const errorMessage = error?.message?.toLowerCase() || '';
+    const errorCode = error?.error_code || error?.code || '';
+
+    // Network-related errors (retryable)
+    if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('connection')) {
+      return { type: StorageErrorType.NETWORK_ERROR, retryable: true };
+    }
+
+    // Storage quota exceeded
+    if (errorMessage.includes('quota') || errorMessage.includes('storage limit') || errorCode === 'INSUFFICIENT_STORAGE') {
+      return { type: StorageErrorType.QUOTA_EXCEEDED, retryable: false };
+    }
+
+    // Permission denied
+    if (errorMessage.includes('permission') || errorMessage.includes('unauthorized') || errorCode === 'UNAUTHORIZED') {
+      return { type: StorageErrorType.PERMISSION_DENIED, retryable: false };
+    }
+
+    // File too large
+    if (errorMessage.includes('file size') || errorMessage.includes('too large') || errorCode === 'PAYLOAD_TOO_LARGE') {
+      return { type: StorageErrorType.FILE_TOO_LARGE, retryable: false };
+    }
+
+    // Invalid file type
+    if (errorMessage.includes('file type') || errorMessage.includes('invalid format') || errorCode === 'INVALID_FILE_TYPE') {
+      return { type: StorageErrorType.INVALID_FILE_TYPE, retryable: false };
+    }
+
+    // Storage service unavailable (retryable)
+    if (errorMessage.includes('service unavailable') || errorMessage.includes('server error') || errorCode === 'SERVICE_UNAVAILABLE') {
+      return { type: StorageErrorType.STORAGE_UNAVAILABLE, retryable: true };
+    }
+
+    // Default: unknown error (potentially retryable)
+    return { type: StorageErrorType.UNKNOWN_ERROR, retryable: true };
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private getUserFriendlyErrorMessage(errorType: StorageErrorType): string {
+    switch (errorType) {
+      case StorageErrorType.NETWORK_ERROR:
+        return 'Network connection error. Please check your internet connection and try again.';
+      case StorageErrorType.QUOTA_EXCEEDED:
+        return 'Storage quota exceeded. Please contact support or upgrade your plan.';
+      case StorageErrorType.PERMISSION_DENIED:
+        return 'Permission denied. You do not have access to upload files to this location.';
+      case StorageErrorType.FILE_TOO_LARGE:
+        return 'File is too large. Please choose a smaller file and try again.';
+      case StorageErrorType.INVALID_FILE_TYPE:
+        return 'File type not allowed. Please choose a supported file format.';
+      case StorageErrorType.STORAGE_UNAVAILABLE:
+        return 'Storage service is temporarily unavailable. Please try again in a few moments.';
+      case StorageErrorType.UNKNOWN_ERROR:
+      default:
+        return 'An unexpected error occurred during file upload. Please try again.';
+    }
+  }
+
   validateFile(file: File, options: FileValidationOptions): FileValidationResult {
     try {
       // Check file size
@@ -182,40 +259,243 @@ class FileService {
   }
 
   private async uploadToSupabaseStorage(file: File, fileName: string, options: FileUploadOptions): Promise<FileUploadResult> {
-    try {
-      // This would integrate with Supabase Storage in production
-      // For now, simulate successful upload
-      console.log('Uploading to Supabase Storage:', fileName);
-      
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In production, this would be the actual Supabase Storage URL
-      const publicUrl = `https://your-project.supabase.co/storage/v1/object/public/uploads/${fileName}`;
-      
-      return {
-        success: true,
-        url: publicUrl,
-      };
-    } catch (error) {
-      console.error('Supabase upload error:', error);
-      return {
-        success: false,
-        error: 'Storage upload failed',
-      };
+    let lastError: any = null;
+    
+    for (let attempt = 1; attempt <= this.MAX_RETRY_ATTEMPTS; attempt++) {
+      try {
+        // Get the Supabase client
+        const supabase = await createClient();
+        
+        // Convert File to ArrayBuffer for Supabase Storage
+        const fileBuffer = await file.arrayBuffer();
+        
+        // Determine the bucket name based on file type and directory
+        const bucketName = this.getBucketName(options.directory);
+        
+        // Upload to Supabase Storage
+        const { data, error } = await supabase.storage
+          .from(bucketName)
+          .upload(fileName, fileBuffer, {
+            contentType: file.type,
+            cacheControl: '3600', // Cache for 1 hour
+            upsert: false, // Don't overwrite existing files
+          });
+
+        if (error) {
+          lastError = error;
+          
+          // Classify the error to determine if we should retry
+          const { type, retryable } = this.classifyStorageError(error);
+          
+          console.error(`Supabase storage upload error (attempt ${attempt}/${this.MAX_RETRY_ATTEMPTS}):`, {
+            error,
+            type,
+            retryable
+          });
+
+          // If error is not retryable, fail immediately
+          if (!retryable) {
+            return {
+              success: false,
+              error: this.getUserFriendlyErrorMessage(type),
+              retryable: false,
+            };
+          }
+
+          // If this was the last attempt, fail with the classified error
+          if (attempt === this.MAX_RETRY_ATTEMPTS) {
+            return {
+              success: false,
+              error: this.getUserFriendlyErrorMessage(type),
+              retryable: retryable,
+            };
+          }
+
+          // Wait before retrying (exponential backoff)
+          await this.sleep(this.RETRY_DELAY_MS * Math.pow(2, attempt - 1));
+          continue;
+        }
+
+        // Success - get the public URL for the uploaded file
+        const { data: publicUrlData } = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(fileName);
+
+        console.log(`File uploaded successfully on attempt ${attempt}:`, fileName);
+        
+        return {
+          success: true,
+          url: publicUrlData.publicUrl,
+          retryable: false,
+        };
+
+      } catch (error) {
+        lastError = error;
+        
+        // Classify the error to determine if we should retry
+        const { type, retryable } = this.classifyStorageError(error);
+        
+        console.error(`Supabase upload error (attempt ${attempt}/${this.MAX_RETRY_ATTEMPTS}):`, {
+          error,
+          type,
+          retryable
+        });
+
+        // If error is not retryable, fail immediately
+        if (!retryable) {
+          return {
+            success: false,
+            error: this.getUserFriendlyErrorMessage(type),
+            retryable: false,
+          };
+        }
+
+        // If this was the last attempt, fail
+        if (attempt === this.MAX_RETRY_ATTEMPTS) {
+          return {
+            success: false,
+            error: this.getUserFriendlyErrorMessage(type),
+            retryable: retryable,
+          };
+        }
+
+        // Wait before retrying (exponential backoff)
+        await this.sleep(this.RETRY_DELAY_MS * Math.pow(2, attempt - 1));
+      }
+    }
+
+    // Fallback (should not reach here)
+    const { type } = this.classifyStorageError(lastError);
+    return {
+      success: false,
+      error: this.getUserFriendlyErrorMessage(type),
+      retryable: false,
+    };
+  }
+
+  private getBucketName(directory: string): string {
+    // Map directories to appropriate Supabase Storage buckets
+    switch (directory) {
+      case 'avatars':
+        return 'avatars';
+      case 'documents':
+        return 'documents';
+      case 'sessions':
+        return 'session-files';
+      case 'uploads':
+      default:
+        return 'uploads';
     }
   }
 
   async deleteFile(url: string): Promise<void> {
     try {
-      // In a real application, this would delete the file from storage
-      console.log('Deleting file:', url);
+      // Extract bucket name and file path from the URL
+      const urlParts = new URL(url);
+      const pathParts = urlParts.pathname.split('/');
       
-      // Simulate deletion
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Expected format: /storage/v1/object/public/{bucketName}/{filePath}
+      const bucketIndex = pathParts.indexOf('public') + 1;
+      if (bucketIndex === 0 || bucketIndex >= pathParts.length) {
+        throw new Error('Invalid storage URL format');
+      }
+      
+      const bucketName = pathParts[bucketIndex];
+      const filePath = pathParts.slice(bucketIndex + 1).join('/');
+      
+      // Get the Supabase client
+      const supabase = await createClient();
+      
+      // Delete the file from Supabase Storage
+      const { error } = await supabase.storage
+        .from(bucketName)
+        .remove([filePath]);
+      
+      if (error) {
+        console.error('Supabase storage deletion error:', error);
+        throw new ApiError('FILE_DELETE_FAILED', error.message || 'Failed to delete file from storage');
+      }
+      
+      console.log('File deleted successfully:', filePath);
     } catch (error) {
       console.error('File deletion error:', error);
-      throw new ApiError('FILE_DELETE_FAILED', 'Failed to delete file');
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError('FILE_DELETE_FAILED', error instanceof Error ? error.message : 'Failed to delete file');
+    }
+  }
+
+  async getFileMetadata(url: string): Promise<{ size: number; lastModified: Date } | null> {
+    try {
+      // Extract bucket name and file path from the URL
+      const urlParts = new URL(url);
+      const pathParts = urlParts.pathname.split('/');
+      
+      const bucketIndex = pathParts.indexOf('public') + 1;
+      if (bucketIndex === 0 || bucketIndex >= pathParts.length) {
+        return null;
+      }
+      
+      const bucketName = pathParts[bucketIndex];
+      const filePath = pathParts.slice(bucketIndex + 1).join('/');
+      
+      // Get the Supabase client
+      const supabase = await createClient();
+      
+      // Get file info from Supabase Storage
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .list(filePath.split('/').slice(0, -1).join('/'), {
+          search: filePath.split('/').pop(),
+        });
+      
+      if (error || !data || data.length === 0) {
+        return null;
+      }
+      
+      const fileInfo = data[0];
+      return {
+        size: fileInfo.metadata?.size || 0,
+        lastModified: new Date(fileInfo.updated_at || fileInfo.created_at),
+      };
+    } catch (error) {
+      console.error('Error getting file metadata:', error);
+      return null;
+    }
+  }
+
+  async createSignedUrl(url: string, expiresIn: number = 3600): Promise<string | null> {
+    try {
+      // Extract bucket name and file path from the URL
+      const urlParts = new URL(url);
+      const pathParts = urlParts.pathname.split('/');
+      
+      const bucketIndex = pathParts.indexOf('public') + 1;
+      if (bucketIndex === 0 || bucketIndex >= pathParts.length) {
+        return null;
+      }
+      
+      const bucketName = pathParts[bucketIndex];
+      const filePath = pathParts.slice(bucketIndex + 1).join('/');
+      
+      // Get the Supabase client
+      const supabase = await createClient();
+      
+      // Create a signed URL for secure access
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .createSignedUrl(filePath, expiresIn);
+      
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        return null;
+      }
+      
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error creating signed URL:', error);
+      return null;
     }
   }
 }

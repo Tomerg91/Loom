@@ -16,6 +16,7 @@ import { SessionParticipants } from './display/session-participants';
 import { SessionRating } from './display/session-rating';
 import { SessionActions } from './display/session-actions';
 import { SessionDialogs } from './display/session-dialogs';
+import { SessionFileManager } from './session-file-manager';
 import { Session } from '@/types';
 
 interface SessionDetailsPageProps {
@@ -154,6 +155,12 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
           <SessionGoalsDisplay goals={session.goals} />
           <SessionNotesDisplay notes={session.notes} />
           <SessionActionItems actionItems={session.actionItems} />
+          <SessionFileManager 
+            sessionId={sessionId}
+            sessionTitle={session.title}
+            userRole={user?.role || 'client'}
+            userId={user?.id || ''}
+          />
         </div>
 
         {/* Sidebar */}

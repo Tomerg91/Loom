@@ -27,6 +27,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useUser } from '@/lib/store/auth-store';
+import { SessionFileManager } from './session-file-manager';
 
 interface Session {
   id: string;
@@ -541,6 +542,14 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Session Files */}
+            <SessionFileManager 
+              sessionId={sessionId}
+              sessionTitle={session.title}
+              userRole={user?.role || 'client'}
+              userId={user?.id || ''}
+            />
           </div>
         </div>
 
