@@ -10,11 +10,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch all unique tags from coach's notes
+    // Get user profile to determine role
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Determine table and owner field based on user role
+    const tableName = profile.role === 'coach' ? 'coach_notes' : 'client_notes';
+    const ownerField = profile.role === 'coach' ? 'coach_id' : 'client_id';
+
+    // Fetch all unique tags from user's notes
     const { data: notes, error } = await supabase
-      .from('coach_notes')
+      .from(tableName)
       .select('tags')
-      .eq('coach_id', user.id)
+      .eq(ownerField, user.id)
       .not('tags', 'is', null);
 
     if (error) {

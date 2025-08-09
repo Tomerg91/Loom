@@ -82,6 +82,10 @@ export interface User {
 
 // Session types
 export type SessionStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
+export type SessionType = 'video' | 'phone' | 'in-person';
+export type SessionSortBy = 'date' | 'duration' | 'coach' | 'status' | 'title';
+export type SortOrder = 'asc' | 'desc';
+export type ViewMode = 'list' | 'calendar' | 'timeline';
 
 export interface Session {
   id: string;
@@ -93,7 +97,7 @@ export interface Session {
   duration: number; // Duration in minutes
   durationMinutes: number; // Alias for backwards compatibility
   status: SessionStatus;
-  sessionType?: 'video' | 'phone' | 'in-person';
+  sessionType?: SessionType;
   location?: string;
   meetingUrl?: string;
   notes?: string;
@@ -101,6 +105,12 @@ export interface Session {
   feedback?: string;
   actionItems?: string[];
   goals?: string[];
+  attachments?: SessionAttachment[];
+  progressNotes?: SessionProgressNote[];
+  cancellationReason?: string;
+  rescheduledFromId?: string;
+  rescheduledToId?: string;
+  timezone?: string;
   createdAt: string;
   updatedAt: string;
   coach: {
@@ -117,6 +127,79 @@ export interface Session {
     lastName: string;
     avatarUrl?: string;
   };
+}
+
+export interface SessionAttachment {
+  id: string;
+  sessionId: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  fileUrl: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  description?: string;
+}
+
+export interface SessionProgressNote {
+  id: string;
+  sessionId: string;
+  clientId: string;
+  content: string;
+  isPrivate: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionFilters {
+  status?: SessionStatus[];
+  dateRange?: {
+    from: Date;
+    to: Date;
+  };
+  coachId?: string;
+  sessionType?: SessionType[];
+  search?: string;
+}
+
+export interface SessionListOptions {
+  filters?: SessionFilters;
+  sortBy?: SessionSortBy;
+  sortOrder?: SortOrder;
+  page?: number;
+  limit?: number;
+  viewMode?: ViewMode;
+}
+
+export interface SessionRating {
+  id: string;
+  sessionId: string;
+  clientId: string;
+  rating: number; // 1-5 scale
+  feedback?: string;
+  categories?: {
+    communication: number;
+    helpfulness: number;
+    preparation: number;
+    overall: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionRescheduleRequest {
+  sessionId: string;
+  newDateTime: string;
+  reason?: string;
+  timezone?: string;
+}
+
+export interface SessionCancellation {
+  sessionId: string;
+  reason: string;
+  refundAmount?: number;
+  cancellationFee?: number;
+  policyApplied?: string;
 }
 
 // Coach Notes types
@@ -259,6 +342,114 @@ export interface AppError {
   code: string;
   message: string;
   details?: Record<string, unknown>;
+}
+
+// Messaging types
+export type ConversationType = 'direct' | 'group';
+export type MessageType = 'text' | 'file' | 'system';
+export type MessageStatus = 'sent' | 'delivered' | 'read';
+export type AttachmentType = 'image' | 'document' | 'video' | 'audio' | 'other';
+
+export interface Conversation {
+  id: string;
+  type: ConversationType;
+  title?: string;
+  createdBy: string;
+  isArchived: boolean;
+  isMuted: boolean;
+  lastMessageAt: string;
+  createdAt: string;
+  updatedAt: string;
+  participants: User[];
+  unreadCount: number;
+  lastMessage?: Message;
+}
+
+export interface ConversationParticipant {
+  id: string;
+  conversationId: string;
+  userId: string;
+  role: string;
+  joinedAt: string;
+  leftAt?: string;
+  isMuted: boolean;
+  isArchived: boolean;
+  lastReadAt: string;
+  createdAt: string;
+  updatedAt: string;
+  user?: User;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  replyToId?: string;
+  type: MessageType;
+  content: string;
+  metadata?: Record<string, unknown>;
+  status: MessageStatus;
+  isEdited: boolean;
+  editedAt?: string;
+  deliveredAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  sender: User;
+  replyTo?: Message;
+  reactions?: MessageReaction[];
+  attachments?: MessageAttachment[];
+}
+
+export interface MessageReaction {
+  id: string;
+  messageId: string;
+  userId: string;
+  emoji: string;
+  createdAt: string;
+  user: User;
+}
+
+export interface MessageAttachment {
+  id: string;
+  messageId: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  attachmentType: AttachmentType;
+  url: string;
+  thumbnailUrl?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MessageReadReceipt {
+  id: string;
+  messageId: string;
+  userId: string;
+  readAt: string;
+}
+
+export interface TypingIndicator {
+  id: string;
+  conversationId: string;
+  userId: string;
+  startedAt: string;
+  expiresAt: string;
+  user?: User;
+}
+
+// Messaging form types
+export interface MessageForm {
+  content: string;
+  attachments: File[];
+  replyToId?: string;
+}
+
+export interface ConversationSettings {
+  isArchived: boolean;
+  isMuted: boolean;
+  title?: string;
 }
 
 // Global window type declarations

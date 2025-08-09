@@ -1,6 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createSessionService } from '@/lib/database';
-import type { Session, SessionStatus } from '@/types';
+import type { 
+  Session, 
+  SessionStatus, 
+  SessionFilters, 
+  SessionListOptions, 
+  SessionRating,
+  SessionRescheduleRequest,
+  SessionCancellation,
+  SessionAttachment,
+  SessionProgressNote
+} from '@/types';
 
 // Query keys
 export const sessionKeys = {
@@ -16,6 +26,12 @@ export const sessionKeys = {
   availability: (coachId: string, date: string) => [...sessionKeys.all, 'availability', coachId, date] as const,
   search: (query: string, userId?: string, status?: SessionStatus) => 
     [...sessionKeys.all, 'search', { query, userId, status }] as const,
+  attachments: (sessionId: string) => [...sessionKeys.all, 'attachments', sessionId] as const,
+  progressNotes: (sessionId: string) => [...sessionKeys.all, 'progressNotes', sessionId] as const,
+  ratings: (sessionId: string) => [...sessionKeys.all, 'ratings', sessionId] as const,
+  history: (clientId: string) => [...sessionKeys.all, 'history', clientId] as const,
+  analytics: (userId: string, dateRange: { from: Date; to: Date }) => 
+    [...sessionKeys.all, 'analytics', userId, dateRange] as const,
 };
 
 // Hooks
@@ -108,6 +124,108 @@ export function useSearchSessions(query: string, userId?: string, status?: Sessi
   });
 }
 
+// Enhanced session list with comprehensive filtering
+export function useFilteredSessions(clientId: string, options: SessionListOptions = {}) {
+  return useQuery({
+    queryKey: sessionKeys.list({ clientId, ...options }),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append('clientId', clientId);
+      
+      if (options.filters?.status?.length) {
+        options.filters.status.forEach(status => params.append('status', status));
+      }
+      
+      if (options.filters?.dateRange) {
+        params.append('dateFrom', options.filters.dateRange.from.toISOString());
+        params.append('dateTo', options.filters.dateRange.to.toISOString());
+      }
+      
+      if (options.filters?.coachId) {
+        params.append('coachId', options.filters.coachId);
+      }
+      
+      if (options.filters?.sessionType?.length) {
+        options.filters.sessionType.forEach(type => params.append('sessionType', type));
+      }
+      
+      if (options.filters?.search) {
+        params.append('search', options.filters.search);
+      }
+      
+      if (options.sortBy) {
+        params.append('sortBy', options.sortBy);
+      }
+      
+      if (options.sortOrder) {
+        params.append('sortOrder', options.sortOrder);
+      }
+      
+      if (options.page) {
+        params.append('page', options.page.toString());
+      }
+      
+      if (options.limit) {
+        params.append('limit', options.limit.toString());
+      }
+      
+      const response = await fetch(`/api/sessions?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch sessions');
+      return response.json();
+    },
+    enabled: !!clientId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+}
+
+// Session attachments
+export function useSessionAttachments(sessionId: string) {
+  return useQuery({
+    queryKey: sessionKeys.attachments(sessionId),
+    queryFn: async (): Promise<SessionAttachment[]> => {
+      const response = await fetch(`/api/sessions/${sessionId}/files`);
+      if (!response.ok) throw new Error('Failed to fetch session attachments');
+      return response.json();
+    },
+    enabled: !!sessionId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// Session progress notes
+export function useSessionProgressNotes(sessionId: string) {
+  return useQuery({
+    queryKey: sessionKeys.progressNotes(sessionId),
+    queryFn: async (): Promise<SessionProgressNote[]> => {
+      const response = await fetch(`/api/sessions/${sessionId}/notes`);
+      if (!response.ok) throw new Error('Failed to fetch session progress notes');
+      return response.json();
+    },
+    enabled: !!sessionId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// Session history for analytics
+export function useSessionHistory(clientId: string, dateRange?: { from: Date; to: Date }) {
+  return useQuery({
+    queryKey: dateRange ? sessionKeys.analytics(clientId, dateRange) : sessionKeys.history(clientId),
+    queryFn: async () => {
+      const params = new URLSearchParams({ clientId });
+      if (dateRange) {
+        params.append('from', dateRange.from.toISOString());
+        params.append('to', dateRange.to.toISOString());
+      }
+      
+      const response = await fetch(`/api/sessions/analytics?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch session history');
+      return response.json();
+    },
+    enabled: !!clientId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
 // Mutations
 export function useCreateSession() {
   const queryClient = useQueryClient();
@@ -189,6 +307,7 @@ export function useUpdateSessionStatus() {
   });
 }
 
+// Keep the existing simple cancel session for backward compatibility
 export function useCancelSession() {
   const queryClient = useQueryClient();
   const sessionService = createSessionService(false);
@@ -218,6 +337,140 @@ export function useCompleteSession() {
         queryClient.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) });
         queryClient.invalidateQueries({ queryKey: sessionKeys.lists() });
       }
+    },
+  });
+}
+
+// Enhanced mutations
+export function useRescheduleSession() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: SessionRescheduleRequest) => {
+      const response = await fetch(`/api/sessions/${data.sessionId}/reschedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to reschedule session');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (_, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) });
+      queryClient.invalidateQueries({ queryKey: sessionKeys.lists() });
+    },
+  });
+}
+
+export function useRateSession() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (rating: Omit<SessionRating, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const response = await fetch(`/api/sessions/${rating.sessionId}/rate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rating),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to rate session');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (_, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) });
+      queryClient.invalidateQueries({ queryKey: sessionKeys.ratings(sessionId) });
+    },
+  });
+}
+
+export function useAddProgressNote() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (note: Omit<SessionProgressNote, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const response = await fetch(`/api/sessions/${note.sessionId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(note),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to add progress note');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (_, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: sessionKeys.progressNotes(sessionId) });
+      queryClient.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) });
+    },
+  });
+}
+
+export function useUploadSessionFile() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ sessionId, file, description }: { 
+      sessionId: string; 
+      file: File; 
+      description?: string; 
+    }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (description) {
+        formData.append('description', description);
+      }
+      
+      const response = await fetch(`/api/sessions/${sessionId}/files`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to upload file');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (_, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: sessionKeys.attachments(sessionId) });
+    },
+  });
+}
+
+export function useCancelSessionWithPolicy() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (cancellation: SessionCancellation) => {
+      const response = await fetch(`/api/sessions/${cancellation.sessionId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cancellation),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to cancel session');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (_, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) });
+      queryClient.invalidateQueries({ queryKey: sessionKeys.lists() });
     },
   });
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/lib/store/auth-store';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 import { 
   Bell, 
   BellRing, 
@@ -20,22 +21,69 @@ import {
   AlertCircle,
   Settings,
   Trash2,
-  MoreHorizontal
+  MoreHorizontal,
+  Search,
+  Filter,
+  Archive,
+  Download,
+  Clock,
+  Volume2,
+  VolumeX,
+  Star,
+  Loader2,
+  ExternalLink,
+  RotateCcw,
+  Pause,
+  Play,
+  ChevronDown,
+  Group,
+  SortAsc,
+  SortDesc
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { format, parseISO, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { format, parseISO, isToday, isYesterday, formatDistanceToNow, startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
 import { useToast } from '@/components/ui/toast-provider';
 import { useOfflineNotificationQueue } from '@/lib/notifications/offline-queue';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import type { Notification, NotificationType } from '@/types';
 
 interface NotificationsResponse {
@@ -48,6 +96,45 @@ interface NotificationsResponse {
   };
 }
 
+type NotificationPriority = 'high' | 'medium' | 'low';
+type NotificationImportance = 'urgent' | 'important' | 'normal';
+type SortOption = 'newest' | 'oldest' | 'unread' | 'priority' | 'type';
+type GroupByOption = 'none' | 'type' | 'date' | 'importance';
+type FilterOption = 'all' | 'unread' | 'read' | 'today' | 'week';
+
+interface NotificationWithEnhancement extends Notification {
+  priority?: NotificationPriority;
+  importance?: NotificationImportance;
+  isArchived?: boolean;
+  snoozeUntil?: string;
+  category?: string;
+  threadId?: string;
+  relatedNotifications?: string[];
+}
+
+interface NotificationGroup {
+  key: string;
+  label: string;
+  notifications: NotificationWithEnhancement[];
+  unreadCount: number;
+}
+
+interface NotificationAction {
+  id: string;
+  type: 'mark_read' | 'delete' | 'archive' | 'snooze' | 'mark_all_read' | 'delete_all' | 'export';
+  notificationId?: string;
+  data?: any;
+  timestamp: string;
+}
+
+interface NotificationAnalytics {
+  clickedAt: string;
+  notificationId: string;
+  type: NotificationType;
+  action: string;
+  metadata?: Record<string, any>;
+}
+
 export function NotificationCenter() {
   const t = useTranslations('notifications');
   const router = useRouter();
@@ -57,9 +144,125 @@ export function NotificationCenter() {
   const offlineQueue = useOfflineNotificationQueue();
   
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [groupBy, setGroupBy] = useState<GroupByOption>('date');
+  const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set());
+  const [showFilters, setShowFilters] = useState(false);
+  const [notificationSounds, setNotificationSounds] = useState(true);
+  const [navigationHistory, setNavigationHistory] = useState<string[]>([]);
+  const [loadingActions, setLoadingActions] = useState<Set<string>>(new Set());
+  const [previewNotification, setPreviewNotification] = useState<NotificationWithEnhancement | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    action: () => void;
+  }>({ isOpen: false, title: '', description: '', action: () => {} });
+  
+  // Focus management refs
+  const bellButtonRef = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const notificationListRef = useRef<HTMLDivElement>(null);
+  
+  // Debounced search query
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  
+  // Auto-focus search when opening notification center
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      const timer = setTimeout(() => searchInputRef.current?.focus(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+  
+  // Handle keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        bellButtonRef.current?.focus();
+      } else if (event.key === 'f' && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+  
+  // Play notification sound
+  const playNotificationSound = useCallback(() => {
+    if (notificationSounds && typeof window !== 'undefined') {
+      try {
+        const audio = new Audio('/sounds/notification.mp3');
+        audio.volume = 0.3;
+        audio.play().catch(() => {
+          // Fallback to system notification if audio fails
+          if ('vibrate' in navigator) {
+            navigator.vibrate([200, 100, 200]);
+          }
+        });
+      } catch (error) {
+        console.warn('Could not play notification sound:', error);
+      }
+    }
+  }, [notificationSounds]);
+  
+  // Analytics tracking
+  const trackNotificationClick = useCallback((notification: NotificationWithEnhancement, action: string) => {
+    const analyticsData: NotificationAnalytics = {
+      clickedAt: new Date().toISOString(),
+      notificationId: notification.id,
+      type: notification.type,
+      action,
+      metadata: {
+        isRead: !!notification.readAt,
+        priority: notification.priority,
+        importance: notification.importance,
+        category: notification.category,
+        userRole: user?.role,
+      }
+    };
+    
+    // Track with analytics service
+    if (typeof window !== 'undefined' && window.posthog) {
+      window.posthog.capture('notification_clicked', analyticsData);
+    }
+    
+    // Store in navigation history
+    setNavigationHistory(prev => [
+      `${action}:${notification.id}:${new Date().toISOString()}`,
+      ...prev.slice(0, 49) // Keep last 50 entries
+    ]);
+  }, [user?.role]);
+  
+  // Action loading state management
+  const setActionLoading = useCallback((actionId: string, loading: boolean) => {
+    setLoadingActions(prev => {
+      const newSet = new Set(prev);
+      if (loading) {
+        newSet.add(actionId);
+      } else {
+        newSet.delete(actionId);
+      }
+      return newSet;
+    });
+  }, []);
 
-  // Enable real-time notifications
-  const { isConnected } = useRealtimeNotifications();
+  // Enable real-time notifications with enhanced status
+  const { 
+    isConnected, 
+    connectionStatus, 
+    lastError, 
+    fallbackPollingActive, 
+    reconnect, 
+    resetConnectionState 
+  } = useRealtimeNotifications();
 
   // Fetch notifications
   const { data: notificationsData, isLoading, error: fetchError } = useQuery({
@@ -70,7 +273,7 @@ export function NotificationCenter() {
       return response.json();
     },
     enabled: !!user?.id,
-    refetchInterval: isConnected ? false : 30000, // Only poll when not connected to real-time
+    refetchInterval: isConnected && !fallbackPollingActive ? false : 30000, // Poll when disconnected or using fallback
     retry: (failureCount, error) => {
       // Retry up to 3 times for network errors, but not for auth errors
       if (failureCount >= 3) return false;
@@ -287,16 +490,11 @@ export function NotificationCenter() {
         // Navigate to session details page
         targetPath = `/sessions/${notification.data.sessionId}`;
       } else if (notification.type === 'new_message') {
-        // Navigate to messages based on user role and notification data
-        if (notification.data?.coachId && user?.role === 'client') {
-          targetPath = `/client/coach/${notification.data.coachId}`;
-        } else if (notification.data?.clientId && user?.role === 'coach') {
-          targetPath = `/coach/clients/${notification.data.clientId}`;
-        } else if (notification.data?.noteId && user?.role === 'client') {
-          targetPath = `/client/notes`;
-        } else {
-          // Fallback based on user role
-          targetPath = user?.role === 'client' ? '/client' : '/coach/clients';
+        // Navigate to messages page
+        targetPath = '/messages';
+        // If conversation ID is provided, we could add it as a query parameter
+        if (notification.data?.conversationId) {
+          targetPath = `/messages?conversation=${notification.data.conversationId}`;
         }
       } else if (notification.type === 'session_reminder' || notification.type === 'session_confirmation') {
         // Navigate to appropriate dashboard or session view
@@ -318,13 +516,201 @@ export function NotificationCenter() {
     }
   };
 
-  const notifications = notificationsData?.data || [];
-  const unreadCount = notificationsData?.pagination.unreadCount || 0;
+  // Enhanced notification processing with filtering, sorting, and grouping
+  const enhancedNotifications = useMemo(() => {
+    const baseNotifications: NotificationWithEnhancement[] = (notificationsData?.data || []).map(n => ({
+      ...n,
+      priority: (n.data?.priority as NotificationPriority) || 'medium',
+      importance: (n.data?.importance as NotificationImportance) || 'normal',
+      isArchived: n.data?.isArchived || false,
+      snoozeUntil: n.data?.snoozeUntil,
+      category: n.data?.category || n.type,
+      threadId: n.data?.threadId,
+      relatedNotifications: n.data?.relatedNotifications || [],
+    }));
+    
+    // Apply search filter
+    let filteredNotifications = baseNotifications;
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
+      filteredNotifications = baseNotifications.filter(n => 
+        n.title.toLowerCase().includes(query) ||
+        n.message.toLowerCase().includes(query) ||
+        getNotificationTypeLabel(n.type).toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply status filter
+    switch (filterBy) {
+      case 'unread':
+        filteredNotifications = filteredNotifications.filter(n => !n.readAt);
+        break;
+      case 'read':
+        filteredNotifications = filteredNotifications.filter(n => !!n.readAt);
+        break;
+      case 'today':
+        filteredNotifications = filteredNotifications.filter(n => 
+          isToday(parseISO(n.createdAt))
+        );
+        break;
+      case 'week':
+        const weekStart = startOfWeek(new Date());
+        const weekEnd = endOfWeek(new Date());
+        filteredNotifications = filteredNotifications.filter(n => {
+          const date = parseISO(n.createdAt);
+          return date >= weekStart && date <= weekEnd;
+        });
+        break;
+    }
+    
+    // Apply sorting
+    filteredNotifications.sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case 'unread':
+          if (!a.readAt && b.readAt) return -1;
+          if (a.readAt && !b.readAt) return 1;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'priority': {
+          const priorityOrder = { high: 3, medium: 2, low: 1 };
+          const importanceOrder = { urgent: 5, important: 4, normal: 3 };
+          const aScore = (importanceOrder[a.importance!] || 3) + (priorityOrder[a.priority!] || 2);
+          const bScore = (importanceOrder[b.importance!] || 3) + (priorityOrder[b.priority!] || 2);
+          return bScore - aScore;
+        }
+        case 'type':
+          return a.type.localeCompare(b.type);
+        case 'newest':
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+    
+    return filteredNotifications;
+  }, [notificationsData?.data, debouncedSearchQuery, filterBy, sortBy]);
+  
+  // Group notifications
+  const groupedNotifications = useMemo(() => {
+    if (groupBy === 'none') {
+      return [{
+        key: 'all',
+        label: 'All Notifications',
+        notifications: enhancedNotifications,
+        unreadCount: enhancedNotifications.filter(n => !n.readAt).length,
+      }] as NotificationGroup[];
+    }
+    
+    const groups: Record<string, NotificationGroup> = {};
+    
+    enhancedNotifications.forEach(notification => {
+      let groupKey: string;
+      let groupLabel: string;
+      
+      switch (groupBy) {
+        case 'type':
+          groupKey = notification.type;
+          groupLabel = getNotificationTypeLabel(notification.type);
+          break;
+        case 'date': {
+          const date = parseISO(notification.createdAt);
+          if (isToday(date)) {
+            groupKey = 'today';
+            groupLabel = 'Today';
+          } else if (isYesterday(date)) {
+            groupKey = 'yesterday';
+            groupLabel = 'Yesterday';
+          } else {
+            groupKey = format(date, 'yyyy-MM-dd');
+            groupLabel = format(date, 'MMMM d, yyyy');
+          }
+          break;
+        }
+        case 'importance':
+          groupKey = notification.importance || 'normal';
+          groupLabel = (notification.importance || 'normal').charAt(0).toUpperCase() + 
+                      (notification.importance || 'normal').slice(1);
+          break;
+        default:
+          groupKey = 'all';
+          groupLabel = 'All Notifications';
+      }
+      
+      if (!groups[groupKey]) {
+        groups[groupKey] = {
+          key: groupKey,
+          label: groupLabel,
+          notifications: [],
+          unreadCount: 0,
+        };
+      }
+      
+      groups[groupKey].notifications.push(notification);
+      if (!notification.readAt) {
+        groups[groupKey].unreadCount++;
+      }
+    });
+    
+    return Object.values(groups).sort((a, b) => {
+      // Sort groups by importance for importance grouping
+      if (groupBy === 'importance') {
+        const order = { urgent: 3, important: 2, normal: 1 };
+        return (order[b.key as keyof typeof order] || 1) - (order[a.key as keyof typeof order] || 1);
+      }
+      // Sort by date for date grouping
+      if (groupBy === 'date') {
+        if (a.key === 'today') return -1;
+        if (b.key === 'today') return 1;
+        if (a.key === 'yesterday') return -1;
+        if (b.key === 'yesterday') return 1;
+        return b.key.localeCompare(a.key);
+      }
+      // Default alphabetical sort
+      return a.label.localeCompare(b.label);
+    });
+  }, [enhancedNotifications, groupBy]);
+  
+  const notifications = enhancedNotifications;
+  const unreadCount = notifications.filter(n => !n.readAt).length;
+  
+  // Selection management
+  const handleSelectNotification = useCallback((notificationId: string, selected: boolean) => {
+    setSelectedNotifications(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(notificationId);
+      } else {
+        newSet.delete(notificationId);
+      }
+      return newSet;
+    });
+  }, []);
+  
+  const handleSelectAll = useCallback((selected: boolean) => {
+    if (selected) {
+      setSelectedNotifications(new Set(notifications.map(n => n.id)));
+    } else {
+      setSelectedNotifications(new Set());
+    }
+  }, [notifications]);
+  
+  const selectedCount = selectedNotifications.size;
+  const allSelected = selectedCount > 0 && selectedCount === notifications.length;
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative" data-testid="notification-bell">
+    <TooltipProvider>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                ref={bellButtonRef}
+                variant="ghost" 
+                size="sm" 
+                className="relative" 
+                data-testid="notification-bell"
+                aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+              >
           {unreadCount > 0 ? (
             <BellRing className="h-5 w-5" />
           ) : (
@@ -338,58 +724,337 @@ export function NotificationCenter() {
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
-          )}
-        </Button>
-      </PopoverTrigger>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {unreadCount > 0 
+                  ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}` 
+                  : 'No unread notifications'
+                }
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </PopoverTrigger>
       
-      <PopoverContent className="w-80 p-0" align="end" data-testid="notification-dropdown">
+        <PopoverContent 
+          className="w-96 p-0" 
+          align="end" 
+          data-testid="notification-dropdown"
+          onOpenAutoFocus={(e) => {
+            // Prevent auto focus on popover open to maintain keyboard navigation
+            e.preventDefault();
+          }}
+        >
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Notifications</CardTitle>
-              <div className="flex items-center gap-2">
-                {unreadCount > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => markAllAsReadMutation.mutate()}
-                    disabled={markAllAsReadMutation.isPending}
-                  >
-                    <CheckCheck className="h-4 w-4 mr-1" />
-                    Mark all read
-                  </Button>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Notifications
+                {selectedCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedCount} selected
+                  </Badge>
                 )}
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    setIsOpen(false);
-                    router.push('/settings?tab=notifications');
-                  }}
-                  title="Notification Settings"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-                {/* Real-time indicator */}
-                <div className="flex items-center gap-1">
-                  <div 
-                    className={`w-2 h-2 rounded-full ${
-                      isConnected ? 'bg-green-500' : 'bg-gray-400'
-                    }`}
-                    title={isConnected ? 'Real-time updates active' : 'Real-time updates inactive'}
-                  />
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                {/* Sound toggle */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setNotificationSounds(!notificationSounds)}
+                      className="h-8 w-8 p-0"
+                      aria-label={`${notificationSounds ? 'Disable' : 'Enable'} notification sounds`}
+                    >
+                      {notificationSounds ? (
+                        <Volume2 className="h-4 w-4" />
+                      ) : (
+                        <VolumeX className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{notificationSounds ? 'Disable' : 'Enable'} notification sounds</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                {/* Bulk actions */}
+                {selectedCount > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" disabled={loadingActions.has('bulk-action')}>
+                        {loadingActions.has('bulk-action') ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <MoreHorizontal className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleBulkAction('mark_read', Array.from(selectedNotifications))}
+                      >
+                        <Check className="h-4 w-4 mr-2" />
+                        Mark as read
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleBulkAction('archive', Array.from(selectedNotifications))}
+                      >
+                        <Archive className="h-4 w-4 mr-2" />
+                        Archive
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setConfirmDialog({
+                            isOpen: true,
+                            title: 'Delete Notifications',
+                            description: `Are you sure you want to delete ${selectedCount} notification${selectedCount !== 1 ? 's' : ''}? This action cannot be undone.`,
+                            action: () => handleBulkAction('delete', Array.from(selectedNotifications))
+                          });
+                        }}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete selected
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                
+                {unreadCount > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => markAllAsReadMutation.mutate()}
+                        disabled={markAllAsReadMutation.isPending}
+                        aria-label="Mark all notifications as read"
+                      >
+                        {markAllAsReadMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        ) : (
+                          <CheckCheck className="h-4 w-4 mr-1" />
+                        )}
+                        Mark all read
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Mark all {unreadCount} notifications as read</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                
+                {/* Export notifications */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          disabled={exportNotificationsMutation.isPending}
+                          aria-label="Export notifications"
+                        >
+                          {exportNotificationsMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Export notification history</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => exportNotificationsMutation.mutate('json')}
+                    >
+                      Export as JSON
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => exportNotificationsMutation.mutate('csv')}
+                    >
+                      Export as CSV
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setIsOpen(false);
+                        router.push('/settings?tab=notifications');
+                      }}
+                      className="h-8 w-8 p-0"
+                      aria-label="Notification settings"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Notification settings</p>
+                  </TooltipContent>
+                </Tooltip>
+                {/* Enhanced real-time indicator with status details */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <div 
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        isConnected 
+                          ? 'bg-green-500 animate-pulse' 
+                          : fallbackPollingActive
+                          ? 'bg-yellow-500'
+                          : 'bg-red-400'
+                      }`}
+                      title={
+                        isConnected 
+                          ? 'Real-time updates active' 
+                          : fallbackPollingActive
+                          ? 'Using fallback polling - real-time connection lost'
+                          : 'Real-time updates inactive'
+                      }
+                    />
+                    {connectionStatus.reconnectionAttempts > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        ({connectionStatus.reconnectionAttempts})
+                      </span>
+                    )}
+                  </div>
+                  {(!isConnected || lastError) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={reconnect}
+                      title="Reconnect to real-time updates"
+                      className="p-1 h-auto"
+                    >
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
-            {unreadCount > 0 && (
-              <CardDescription>
-                You have {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
-              </CardDescription>
-            )}
+            {/* Search and filters */}
+            <div className="space-y-3 mt-3">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search notifications... (Ctrl+F)"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 h-8"
+                    aria-label="Search notifications"
+                  />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="h-8 w-8 p-0"
+                  aria-label="Toggle filters"
+                >
+                  <Filter className={`h-4 w-4 ${showFilters ? 'text-blue-600' : ''}`} />
+                </Button>
+              </div>
+              
+              {showFilters && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Select value={filterBy} onValueChange={(value) => setFilterBy(value as FilterOption)}>
+                    <SelectTrigger className="w-24 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="unread">Unread</SelectItem>
+                      <SelectItem value="read">Read</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">This Week</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                    <SelectTrigger className="w-24 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest</SelectItem>
+                      <SelectItem value="oldest">Oldest</SelectItem>
+                      <SelectItem value="unread">Unread</SelectItem>
+                      <SelectItem value="priority">Priority</SelectItem>
+                      <SelectItem value="type">Type</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByOption)}>
+                    <SelectTrigger className="w-20 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="date">Date</SelectItem>
+                      <SelectItem value="type">Type</SelectItem>
+                      <SelectItem value="importance">Priority</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            
+            <CardDescription className="flex items-center justify-between mt-3">
+              <span className="flex items-center gap-2">
+                {notifications.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSelectAll(!allSelected)}
+                    className="h-6 px-1 text-xs"
+                    aria-label={allSelected ? 'Deselect all' : 'Select all'}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={() => {}}
+                      className="mr-1"
+                      aria-hidden="true"
+                    />
+                    {allSelected ? 'Deselect all' : 'Select all'}
+                  </Button>
+                )}
+                <span>
+                  {unreadCount > 0 
+                    ? `${unreadCount} unread` 
+                    : 'All read'
+                  } • {notifications.length} total
+                </span>
+              </span>
+              <div className="flex items-center gap-2">
+                {fallbackPollingActive && (
+                  <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                    Polling mode
+                  </Badge>
+                )}
+              </div>
+            </CardDescription>
           </CardHeader>
           
           <CardContent className="p-0">
-            <ScrollArea className="h-96">
+            <ScrollArea className="h-96" ref={notificationListRef}>
               {isLoading ? (
                 <div className="p-4 space-y-3">
                   {Array.from({ length: 3 }).map((_, i) => (
@@ -411,18 +1076,45 @@ export function NotificationCenter() {
                   <p className="text-sm text-muted-foreground mb-4">
                     {fetchError.message || 'Please try again later'}
                   </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => queryClient.invalidateQueries({ queryKey: ['notifications'] })}
-                  >
-                    Try Again
-                  </Button>
+                  {lastError && (
+                    <p className="text-xs text-muted-foreground mb-4 p-2 bg-muted rounded">
+                      Connection issue: {lastError}
+                    </p>
+                  )}
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => queryClient.invalidateQueries({ queryKey: ['notifications'] })}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Retry
+                    </Button>
+                    {(!isConnected || lastError) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          resetConnectionState();
+                          reconnect();
+                        }}
+                      >
+                        Reconnect
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="p-6 text-center">
                   <Bell className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground">No notifications yet</p>
+                  <p className="text-muted-foreground mb-2">
+                    {debouncedSearchQuery ? 'No notifications found' : 'No notifications yet'}
+                  </p>
+                  {debouncedSearchQuery && (
+                    <p className="text-sm text-muted-foreground">
+                      Try adjusting your search or filters
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -506,6 +1198,38 @@ export function NotificationCenter() {
           </CardContent>
         </Card>
       </PopoverContent>
+      
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmDialog.isOpen} onOpenChange={(open) => 
+        setConfirmDialog(prev => ({ ...prev, isOpen: open }))
+      }>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDialog.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                confirmDialog.action();
+                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
     </Popover>
+    </TooltipProvider>
   );
 }

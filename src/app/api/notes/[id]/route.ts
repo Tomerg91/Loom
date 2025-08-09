@@ -5,8 +5,11 @@ import { z } from 'zod';
 const updateNoteSchema = z.object({
   title: z.string().min(1).max(100).optional(),
   content: z.string().min(1).max(10000).optional(),
-  privacyLevel: z.enum(['private', 'shared_with_client']).optional(),
+  privacyLevel: z.enum(['private', 'shared_with_coach']).optional(),
   tags: z.array(z.string()).optional(),
+  category: z.string().optional(),
+  isFavorite: z.boolean().optional(),
+  isArchived: z.boolean().optional(),
 });
 
 interface RouteParams {
@@ -25,21 +28,39 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get user profile to determine role
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Determine table and owner field based on user role
+    const tableName = profile.role === 'coach' ? 'coach_notes' : 'client_notes';
+    const ownerField = profile.role === 'coach' ? 'coach_id' : 'client_id';
+
     const { data: note, error } = await supabase
-      .from('coach_notes')
+      .from(tableName)
       .select(`
         id,
-        client_id,
+        ${profile.role === 'coach' ? 'client_id,' : ''}
         session_id,
         title,
         content,
         privacy_level,
         tags,
+        category,
+        is_favorite,
+        is_archived,
         created_at,
         updated_at
       `)
       .eq('id', id)
-      .eq('coach_id', user.id)
+      .eq(ownerField, user.id)
       .single();
 
     if (error || !note) {
@@ -49,12 +70,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Transform response
     const transformedNote = {
       id: note.id,
-      clientId: note.client_id,
+      ...(profile.role === 'coach' && note.client_id && { clientId: note.client_id }),
       sessionId: note.session_id,
       title: note.title,
       content: note.content,
       privacyLevel: note.privacy_level,
       tags: note.tags || [],
+      category: note.category,
+      isFavorite: note.is_favorite || false,
+      isArchived: note.is_archived || false,
       createdAt: note.created_at,
       updatedAt: note.updated_at,
     };
@@ -76,38 +100,73 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get user profile to determine role
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     const body = await request.json();
     const validatedData = updateNoteSchema.parse(body);
 
+    // Determine table and owner field based on user role
+    const tableName = profile.role === 'coach' ? 'coach_notes' : 'client_notes';
+    const ownerField = profile.role === 'coach' ? 'coach_id' : 'client_id';
+
     // Verify note exists and belongs to user
     const { data: existingNote, error: fetchError } = await supabase
-      .from('coach_notes')
-      .select('id, coach_id')
+      .from(tableName)
+      .select(`id, ${ownerField}`)
       .eq('id', id)
-      .eq('coach_id', user.id)
+      .eq(ownerField, user.id)
       .single();
 
     if (fetchError || !existingNote) {
       return NextResponse.json({ error: 'Note not found' }, { status: 404 });
     }
 
+    // Prepare update data
+    const updateData: any = {
+      ...validatedData,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Convert frontend field names to database field names
+    if (validatedData.isFavorite !== undefined) {
+      updateData.is_favorite = validatedData.isFavorite;
+      delete updateData.isFavorite;
+    }
+    if (validatedData.isArchived !== undefined) {
+      updateData.is_archived = validatedData.isArchived;
+      delete updateData.isArchived;
+    }
+    if (validatedData.privacyLevel !== undefined) {
+      updateData.privacy_level = validatedData.privacyLevel;
+      delete updateData.privacyLevel;
+    }
+
     // Update note
     const { data: note, error } = await supabase
-      .from('coach_notes')
-      .update({
-        ...validatedData,
-        updated_at: new Date().toISOString(),
-      })
+      .from(tableName)
+      .update(updateData)
       .eq('id', id)
-      .eq('coach_id', user.id)
+      .eq(ownerField, user.id)
       .select(`
         id,
-        client_id,
+        ${profile.role === 'coach' ? 'client_id,' : ''}
         session_id,
         title,
         content,
         privacy_level,
         tags,
+        category,
+        is_favorite,
+        is_archived,
         created_at,
         updated_at
       `)
@@ -121,12 +180,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     // Transform response
     const transformedNote = {
       id: note.id,
-      clientId: note.client_id,
+      ...(profile.role === 'coach' && note.client_id && { clientId: note.client_id }),
       sessionId: note.session_id,
       title: note.title,
       content: note.content,
       privacyLevel: note.privacy_level,
       tags: note.tags || [],
+      category: note.category,
+      isFavorite: note.is_favorite || false,
+      isArchived: note.is_archived || false,
       createdAt: note.created_at,
       updatedAt: note.updated_at,
     };
@@ -155,12 +217,27 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get user profile to determine role
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Determine table and owner field based on user role
+    const tableName = profile.role === 'coach' ? 'coach_notes' : 'client_notes';
+    const ownerField = profile.role === 'coach' ? 'coach_id' : 'client_id';
+
     // Verify note exists and belongs to user
     const { data: existingNote, error: fetchError } = await supabase
-      .from('coach_notes')
+      .from(tableName)
       .select('id')
       .eq('id', id)
-      .eq('coach_id', user.id)
+      .eq(ownerField, user.id)
       .single();
 
     if (fetchError || !existingNote) {
@@ -169,10 +246,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     // Delete note
     const { error } = await supabase
-      .from('coach_notes')
+      .from(tableName)
       .delete()
       .eq('id', id)
-      .eq('coach_id', user.id);
+      .eq(ownerField, user.id);
 
     if (error) {
       console.error('Error deleting note:', error);

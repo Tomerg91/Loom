@@ -3,12 +3,15 @@ import { createServerClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 const createNoteSchema = z.object({
-  clientId: z.string().min(1),
+  clientId: z.string().min(1).optional(),
   sessionId: z.string().optional(),
   title: z.string().min(1).max(100),
   content: z.string().min(1).max(10000),
-  privacyLevel: z.enum(['private', 'shared_with_client']),
+  privacyLevel: z.enum(['private', 'shared_with_coach']).optional(),
   tags: z.array(z.string()).optional(),
+  category: z.string().optional(),
+  isFavorite: z.boolean().optional(),
+  isArchived: z.boolean().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -18,6 +21,17 @@ export async function GET(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user profile to determine role
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Get query parameters
@@ -30,33 +44,52 @@ export async function GET(request: NextRequest) {
     const privacyLevel = searchParams.get('privacyLevel');
     const search = searchParams.get('search');
     const tags = searchParams.get('tags');
+    const category = searchParams.get('category');
+    const isArchived = searchParams.get('isArchived') === 'true';
+    const isFavorite = searchParams.get('isFavorite') === 'true';
 
     const offset = (page - 1) * limit;
 
+    // Determine which table to query based on user role
+    const tableName = profile.role === 'coach' ? 'coach_notes' : 'client_notes';
+    const ownerField = profile.role === 'coach' ? 'coach_id' : 'client_id';
+
     // Build query
     let query = supabase
-      .from('coach_notes')
+      .from(tableName)
       .select(`
         id,
-        client_id,
+        ${profile.role === 'coach' ? 'client_id,' : ''}
         session_id,
         title,
         content,
         privacy_level,
         tags,
+        category,
+        is_favorite,
+        is_archived,
         created_at,
         updated_at
       `)
-      .eq('coach_id', user.id)
+      .eq(ownerField, user.id)
       .order(sortBy, { ascending: sortOrder === 'asc' })
       .range(offset, offset + limit - 1);
 
     // Apply filters
-    if (clientId) {
+    if (clientId && profile.role === 'coach') {
       query = query.eq('client_id', clientId);
     }
-    if (privacyLevel && (privacyLevel === 'private' || privacyLevel === 'shared_with_client')) {
+    if (privacyLevel && (privacyLevel === 'private' || privacyLevel === 'shared_with_coach')) {
       query = query.eq('privacy_level', privacyLevel);
+    }
+    if (category) {
+      query = query.eq('category', category);
+    }
+    if (isArchived !== undefined) {
+      query = query.eq('is_archived', isArchived);
+    }
+    if (isFavorite) {
+      query = query.eq('is_favorite', true);
     }
     if (search) {
       // Sanitize search input to prevent SQL injection
@@ -81,15 +114,24 @@ export async function GET(request: NextRequest) {
 
     // Get total count for pagination
     let countQuery = supabase
-      .from('coach_notes')
+      .from(tableName)
       .select('id', { count: 'exact', head: true })
-      .eq('coach_id', user.id);
+      .eq(ownerField, user.id);
 
-    if (clientId) {
+    if (clientId && profile.role === 'coach') {
       countQuery = countQuery.eq('client_id', clientId);
     }
-    if (privacyLevel && (privacyLevel === 'private' || privacyLevel === 'shared_with_client')) {
+    if (privacyLevel && (privacyLevel === 'private' || privacyLevel === 'shared_with_coach')) {
       countQuery = countQuery.eq('privacy_level', privacyLevel);
+    }
+    if (category) {
+      countQuery = countQuery.eq('category', category);
+    }
+    if (isArchived !== undefined) {
+      countQuery = countQuery.eq('is_archived', isArchived);
+    }
+    if (isFavorite) {
+      countQuery = countQuery.eq('is_favorite', true);
     }
     if (search) {
       // Sanitize search input to prevent SQL injection
@@ -111,12 +153,15 @@ export async function GET(request: NextRequest) {
     // Transform data to match frontend interface
     const transformedNotes = notes?.map(note => ({
       id: note.id,
-      clientId: note.client_id,
+      ...(profile.role === 'coach' && note.client_id && { clientId: note.client_id }),
       sessionId: note.session_id,
       title: note.title,
       content: note.content,
       privacyLevel: note.privacy_level,
       tags: note.tags || [],
+      category: note.category,
+      isFavorite: note.is_favorite || false,
+      isArchived: note.is_archived || false,
       createdAt: note.created_at,
       updatedAt: note.updated_at,
     })) || [];
@@ -150,56 +195,79 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createNoteSchema.parse(body);
 
-    // Verify user is a coach
+    // Get user profile
     const { data: profile } = await supabase
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'coach') {
-      return NextResponse.json({ error: 'Only coaches can create notes' }, { status: 403 });
+    if (!profile) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Verify client exists and coach has access
-    const { data: clientExists } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', validatedData.clientId)
-      .eq('role', 'client')
-      .single();
+    // Determine table and prepare data based on user role
+    const tableName = profile.role === 'coach' ? 'coach_notes' : 'client_notes';
+    const ownerField = profile.role === 'coach' ? 'coach_id' : 'client_id';
 
-    if (!clientExists) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-    }
-
-    // If sessionId provided, verify it exists and belongs to the coach and client
-    if (validatedData.sessionId) {
-      const { data: sessionExists } = await supabase
-        .from('sessions')
+    // For coach notes, verify client exists and coach has access
+    if (profile.role === 'coach' && validatedData.clientId) {
+      const { data: clientExists } = await supabase
+        .from('users')
         .select('id')
-        .eq('id', validatedData.sessionId)
-        .eq('coach_id', user.id)
-        .eq('client_id', validatedData.clientId)
+        .eq('id', validatedData.clientId)
+        .eq('role', 'client')
         .single();
+
+      if (!clientExists) {
+        return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+      }
+    }
+
+    // If sessionId provided, verify it exists and belongs to the user
+    if (validatedData.sessionId) {
+      let sessionQuery = supabase
+        .from('sessions')
+        .select('id');
+
+      if (profile.role === 'coach') {
+        sessionQuery = sessionQuery.eq('coach_id', user.id);
+        if (validatedData.clientId) {
+          sessionQuery = sessionQuery.eq('client_id', validatedData.clientId);
+        }
+      } else {
+        sessionQuery = sessionQuery.eq('client_id', user.id);
+      }
+
+      const { data: sessionExists } = await sessionQuery.eq('id', validatedData.sessionId).single();
 
       if (!sessionExists) {
         return NextResponse.json({ error: 'Session not found or access denied' }, { status: 404 });
       }
     }
 
+    // Prepare insert data
+    const insertData: any = {
+      [ownerField]: user.id,
+      session_id: validatedData.sessionId || null,
+      title: validatedData.title,
+      content: validatedData.content,
+      privacy_level: validatedData.privacyLevel || 'private',
+      tags: validatedData.tags || [],
+      category: validatedData.category || null,
+      is_favorite: validatedData.isFavorite || false,
+      is_archived: validatedData.isArchived || false,
+    };
+
+    // Add client_id for coach notes
+    if (profile.role === 'coach' && validatedData.clientId) {
+      insertData.client_id = validatedData.clientId;
+    }
+
     // Create note
     const { data: note, error } = await supabase
-      .from('coach_notes')
-      .insert({
-        coach_id: user.id,
-        client_id: validatedData.clientId,
-        session_id: validatedData.sessionId || null,
-        title: validatedData.title,
-        content: validatedData.content,
-        privacy_level: validatedData.privacyLevel,
-        tags: validatedData.tags || [],
-      })
+      .from(tableName)
+      .insert(insertData)
       .select()
       .single();
 
@@ -211,12 +279,15 @@ export async function POST(request: NextRequest) {
     // Transform response
     const transformedNote = {
       id: note.id,
-      clientId: note.client_id,
+      ...(profile.role === 'coach' && note.client_id && { clientId: note.client_id }),
       sessionId: note.session_id,
       title: note.title,
       content: note.content,
       privacyLevel: note.privacy_level,
       tags: note.tags || [],
+      category: note.category,
+      isFavorite: note.is_favorite || false,
+      isArchived: note.is_archived || false,
       createdAt: note.created_at,
       updatedAt: note.updated_at,
     };

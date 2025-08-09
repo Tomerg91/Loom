@@ -1,1 +1,79 @@
-'use client';\n\nimport { useEffect, useState } from 'react';\nimport { FileManagementPage } from '@/components/files/file-management-page';\nimport { createClient } from '@/lib/supabase/client';\nimport { useRouter } from 'next/navigation';\nimport { LoadingSpinner } from '@/components/ui/loading-spinner';\n\ninterface User {\n  id: string;\n  role: 'coach' | 'client' | 'admin';\n}\n\nexport default function FilesPage() {\n  const [user, setUser] = useState<User | null>(null);\n  const [loading, setLoading] = useState(true);\n  const router = useRouter();\n  const supabase = createClient();\n\n  useEffect(() => {\n    const getUser = async () => {\n      try {\n        const { data: { user: authUser }, error } = await supabase.auth.getUser();\n        \n        if (error || !authUser) {\n          router.push('/login');\n          return;\n        }\n\n        // Get user profile with role\n        const { data: profile, error: profileError } = await supabase\n          .from('users')\n          .select('id, role')\n          .eq('id', authUser.id)\n          .single();\n\n        if (profileError || !profile) {\n          console.error('Error getting user profile:', profileError);\n          router.push('/login');\n          return;\n        }\n\n        setUser({\n          id: profile.id,\n          role: profile.role as 'coach' | 'client' | 'admin',\n        });\n      } catch (error) {\n        console.error('Error in getUser:', error);\n        router.push('/login');\n      } finally {\n        setLoading(false);\n      }\n    };\n\n    getUser();\n  }, [router, supabase]);\n\n  if (loading) {\n    return (\n      <div className=\"flex items-center justify-center h-screen\">\n        <LoadingSpinner size=\"lg\" />\n      </div>\n    );\n  }\n\n  if (!user) {\n    return null; // Will redirect to login\n  }\n\n  return (\n    <div className=\"h-screen flex flex-col\">\n      <FileManagementPage\n        userId={user.id}\n        userRole={user.role}\n        className=\"flex-1\"\n      />\n    </div>\n  );\n}\n
+'use client';
+
+import { useEffect, useState } from 'react';
+import { FileManagementPage } from '@/components/files/file-management-page';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+
+interface User {
+  id: string;
+  role: 'coach' | 'client' | 'admin';
+}
+
+export default function FilesPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const supabase = createClient();
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data: { user: authUser }, error } = await supabase.auth.getUser();
+        
+        if (error || !authUser) {
+          router.push('/login');
+          return;
+        }
+
+        // Get user profile with role
+        const { data: profile, error: profileError } = await supabase
+          .from('users')
+          .select('id, role')
+          .eq('id', authUser.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error('Error getting user profile:', profileError);
+          router.push('/login');
+          return;
+        }
+
+        setUser({
+          id: profile.id,
+          role: profile.role as 'coach' | 'client' | 'admin',
+        });
+      } catch (error) {
+        console.error('Error in getUser:', error);
+        router.push('/login');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getUser();
+  }, [router, supabase]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Will redirect to login
+  }
+
+  return (
+    <div className="h-screen flex flex-col">
+      <FileManagementPage
+        userId={user.id}
+        userRole={user.role}
+        className="flex-1"
+      />
+    </div>
+  );
+}
