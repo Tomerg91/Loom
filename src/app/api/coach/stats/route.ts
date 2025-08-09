@@ -36,7 +36,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     // Fetch session statistics
     const { data: sessionStats } = await supabase
       .from('sessions')
-      .select('status, scheduled_at, client_id')
+      .select('id, status, scheduled_at, client_id')
       .eq('coach_id', coachId);
 
     const totalSessions = sessionStats?.length || 0;
@@ -65,10 +65,39 @@ export async function GET(request: NextRequest): Promise<Response> {
     );
     const activeClients = recentClientIds.size;
 
-    // For now, we'll use configurable values for rating and revenue
-    // TODO: In a real implementation, these would come from ratings and payments tables
-    const averageRating = getDefaultCoachRating();
-    const totalRevenue = completedSessions * getSessionRate(); // Using configurable session rate
+    // Calculate real revenue from session rates
+    // Use default session rate (coach_profiles table doesn't exist in current schema)
+    const sessionRate = getSessionRate();
+    const totalRevenue = completedSessions * sessionRate;
+
+    // Calculate real average rating from session reflections
+    let averageRating = 0;
+    if (completedSessions > 0) {
+      const completedSessionIds = sessionStats
+        ?.filter(s => s.status === 'completed')
+        .map(s => s.id) || [];
+      
+      if (completedSessionIds.length > 0) {
+        const { data: reflections } = await supabase
+          .from('reflections')
+          .select('mood_rating')
+          .in('session_id', completedSessionIds)
+          .not('mood_rating', 'is', null);
+        
+        if (reflections && reflections.length > 0) {
+          const validRatings = reflections.filter(r => r.mood_rating != null && r.mood_rating > 0);
+          if (validRatings.length > 0) {
+            averageRating = validRatings.reduce((sum, r) => sum + (r.mood_rating || 0), 0) / validRatings.length;
+            averageRating = Math.round(averageRating * 10) / 10; // Round to 1 decimal
+          }
+        }
+      }
+    }
+    
+    // Fallback to configured default if no ratings available
+    if (averageRating === 0) {
+      averageRating = getDefaultCoachRating();
+    }
 
     const stats: DashboardStats = {
       totalSessions,

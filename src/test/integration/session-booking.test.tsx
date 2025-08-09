@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { renderWithProviders, mockUser, mockCoachUser, createMockSession, mockFetch } from '@/test/utils';
-import { SessionBookingForm } from '@/components/sessions/session-booking-form';
+import { SessionBookingForm } from '@/components/sessions/booking';
 import { SessionList } from '@/components/sessions/session-list';
 
 // Mock auth store

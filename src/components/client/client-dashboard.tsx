@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/lib/store/auth-store';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,6 +61,7 @@ interface RecentReflection {
 
 export function ClientDashboard() {
   const user = useUser();
+  const router = useRouter();
   
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -114,6 +116,11 @@ export function ClientDashboard() {
       isWithinInterval(parseISO(session.scheduledAt), { start: thisWeekStart, end: thisWeekEnd })
     );
   }, [upcomingSessions]);
+
+  // Navigation handlers
+  const handleSessionClick = useCallback((sessionId: string) => {
+    router.push(`/sessions/${sessionId}`);
+  }, [router]);
 
   return (
     <div className="space-y-6">
@@ -233,11 +240,11 @@ export function ClientDashboard() {
                       <div
                         key={session.id}
                         className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
-                        onClick={() => window.location.href = `/sessions/${session.id}`}
+                        onClick={() => handleSessionClick(session.id)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            window.location.href = `/sessions/${session.id}`;
+                            handleSessionClick(session.id);
                           }
                         }}
                         tabIndex={0}
@@ -388,8 +395,7 @@ export function ClientDashboard() {
               <SessionCalendar
                 clientId={user?.id}
                 onSessionClick={(session) => {
-                  // Navigate to session details
-                  window.location.href = `/sessions/${session.id}`;
+                  handleSessionClick(session.id);
                 }}
               />
             </TabsContent>

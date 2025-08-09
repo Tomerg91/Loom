@@ -9,6 +9,7 @@ import { uuidSchema } from '@/lib/api/validation';
 import { getCoachAvailability, setCoachAvailability } from '@/lib/database/availability';
 import { createServerClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 const availabilitySlotSchema = z.object({
   dayOfWeek: z.number().min(0).max(6),
@@ -123,13 +124,6 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
 });
 
 // OPTIONS /api/coaches/[id]/availability - Handle CORS preflight
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return createCorsResponse(request);
 }

@@ -118,12 +118,23 @@ export interface SystemHealthData {
 class AdminAnalyticsService {
   async getOverview(startDate: Date, endDate: Date): Promise<AdminAnalyticsOverview> {
     try {
+      return this.getOverviewFallback(startDate, endDate);
+    } catch (error) {
+      console.error('Error fetching overview analytics:', error);
+      throw new Error('Unable to fetch analytics data: Database connection or query failed');
+    }
+  }
+
+  // Fallback method with individual queries if database functions fail
+  private async getOverviewFallback(startDate: Date, endDate: Date): Promise<AdminAnalyticsOverview> {
+    try {
       const supabase = createServerClient();
 
       // Get total users
       const { count: totalUsers } = await supabase
         .from('users')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
 
       // Get active users (users who have logged in within the last 30 days)
       const { count: activeUsers } = await supabase
@@ -157,21 +168,38 @@ class AdminAnalyticsService {
       const { count: totalCoaches } = await supabase
         .from('users')
         .select('*', { count: 'exact', head: true })
-        .eq('role', 'coach');
+        .eq('role', 'coach')
+        .eq('status', 'active');
 
       const { count: totalClients } = await supabase
         .from('users')
         .select('*', { count: 'exact', head: true })
-        .eq('role', 'client');
+        .eq('role', 'client')
+        .eq('status', 'active');
 
-      // Get active coaches (who have had sessions in the last 30 days)
+      // Get active coaches (who have had sessions in the date range)
       const { data: activeCoachesData } = await supabase
         .from('sessions')
         .select('coach_id')
-        .gte('scheduled_at', thirtyDaysAgo.toISOString())
-        .distinct('coach_id');
+        .gte('scheduled_at', startDate.toISOString())
+        .lte('scheduled_at', endDate.toISOString());
 
-      const activeCoaches = activeCoachesData?.length || 0;
+      const uniqueActiveCoaches = new Set(activeCoachesData?.map(s => s.coach_id) || []);
+      const activeCoaches = uniqueActiveCoaches.size;
+
+      // Calculate real average rating from reflections table
+      const { data: ratingData, error: ratingError } = await supabase
+        .from('reflections')
+        .select('mood_rating')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .not('mood_rating', 'is', null);
+
+      let averageRating = getDefaultCoachRating();
+      if (ratingData && ratingData.length > 0) {
+        const totalRating = ratingData.reduce((acc, curr) => acc + curr.mood_rating, 0);
+        averageRating = totalRating / ratingData.length;
+      }
 
       // Calculate metrics
       const completionRate = totalSessions && totalSessions > 0 
@@ -182,7 +210,7 @@ class AdminAnalyticsService {
         ? Math.round((totalSessions || 0) / totalUsers * 100) / 100
         : 0;
 
-      // Calculate estimated revenue using configurable session rate
+      // Calculate revenue using configurable session rate
       const revenue = (completedSessions || 0) * getSessionRate();
 
       return {
@@ -191,7 +219,7 @@ class AdminAnalyticsService {
         totalSessions: totalSessions || 0,
         completedSessions: completedSessions || 0,
         revenue,
-        averageRating: getDefaultCoachRating(), // TODO: Calculate from actual ratings table
+        averageRating: parseFloat(averageRating) || 0,
         newUsersThisMonth: newUsersThisMonth || 0,
         completionRate,
         totalCoaches: totalCoaches || 0,
@@ -200,51 +228,18 @@ class AdminAnalyticsService {
         averageSessionsPerUser,
       };
     } catch (error) {
-      console.error('Error fetching overview analytics:', error);
-      return {
-        totalUsers: 0,
-        activeUsers: 0,
-        totalSessions: 0,
-        completedSessions: 0,
-        revenue: 0,
-        averageRating: 0,
-        newUsersThisMonth: 0,
-        completionRate: 0,
-        totalCoaches: 0,
-        totalClients: 0,
-        activeCoaches: 0,
-        averageSessionsPerUser: 0,
-      };
+      console.error('Error in fallback overview analytics:', error);
+      // Return error state rather than empty data to signal issues
+      throw new Error('Unable to fetch analytics data: Database connection or query failed');
     }
   }
 
   async getUserGrowth(startDate: Date, endDate: Date): Promise<UserGrowthData[]> {
     try {
-      const supabase = createServerClient();
-
-      // Use database function to get aggregated daily user data more efficiently
-      // This replaces the inefficient loop with a single database query
-      const { data: rawData, error } = await supabase.rpc('get_daily_user_growth', {
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0]
-      });
-
-      if (error) {
-        console.warn('Database function not available, falling back to optimized queries:', error.message);
-        return this.getUserGrowthFallback(startDate, endDate);
-      }
-
-      // Transform the data from the database function
-      return rawData?.map((row: any) => ({
-        date: row.date,
-        newUsers: row.new_users || 0,
-        activeUsers: row.active_users || 0,
-        totalUsers: row.total_users || 0,
-      })) || [];
-
+      return this.getUserGrowthFallback(startDate, endDate);
     } catch (error) {
       console.error('Error fetching user growth analytics:', error);
-      return this.getUserGrowthFallback(startDate, endDate);
+      return [];
     }
   }
 
@@ -318,32 +313,10 @@ class AdminAnalyticsService {
 
   async getSessionMetrics(startDate: Date, endDate: Date): Promise<SessionMetricsData[]> {
     try {
-      const supabase = createServerClient();
-
-      // Use database function for optimized session metrics
-      const { data: rawData, error } = await supabase.rpc('get_daily_session_metrics', {
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0]
-      });
-
-      if (error) {
-        console.warn('Database function not available, falling back to optimized queries:', error.message);
-        return this.getSessionMetricsFallback(startDate, endDate);
-      }
-
-      // Transform the data from the database function
-      return rawData?.map((row: any) => ({
-        date: row.date,
-        totalSessions: row.total_sessions || 0,
-        completedSessions: row.completed_sessions || 0,
-        cancelledSessions: row.cancelled_sessions || 0,
-        scheduledSessions: row.scheduled_sessions || 0,
-        completionRate: row.completion_rate || 0,
-      })) || [];
-
+      return this.getSessionMetricsFallback(startDate, endDate);
     } catch (error) {
       console.error('Error fetching session metrics analytics:', error);
-      return this.getSessionMetricsFallback(startDate, endDate);
+      return [];
     }
   }
 
@@ -410,6 +383,16 @@ class AdminAnalyticsService {
 
   async getCoachPerformance(startDate: Date, endDate: Date): Promise<CoachPerformanceData[]> {
     try {
+      return this.getCoachPerformanceFallback(startDate, endDate);
+    } catch (error) {
+      console.error('Error fetching coach performance analytics:', error);
+      return [];
+    }
+  }
+
+  // Fallback method for coach performance if database functions fail
+  private async getCoachPerformanceFallback(startDate: Date, endDate: Date): Promise<CoachPerformanceData[]> {
+    try {
       const supabase = createServerClient();
 
       // Get all coaches from users table
@@ -466,8 +449,14 @@ class AdminAnalyticsService {
         // Use configurable session rate
         const revenue = (completedSessions || 0) * getSessionRate();
 
-        // Use default coach rating (TODO: Calculate from actual ratings)
-        const averageRating = getDefaultCoachRating();
+        // Get real average rating for this coach
+        const { data: coachRatingData } = await supabase.rpc('get_coach_average_rating', {
+          p_coach_id: coach.id,
+          start_date: startDate.toISOString().split('T')[0],
+          end_date: endDate.toISOString().split('T')[0]
+        });
+
+        const averageRating = coachRatingData || getDefaultCoachRating();
 
         const coachName = [coach.first_name, coach.last_name].filter(Boolean).join(' ') || coach.email;
 
@@ -476,7 +465,7 @@ class AdminAnalyticsService {
           coachName,
           totalSessions: totalSessions || 0,
           completedSessions: completedSessions || 0,
-          averageRating,
+          averageRating: parseFloat(averageRating) || 0,
           revenue,
           activeClients,
           completionRate,
@@ -486,7 +475,7 @@ class AdminAnalyticsService {
       // Sort by total sessions descending
       return coachPerformance.sort((a, b) => b.totalSessions - a.totalSessions);
     } catch (error) {
-      console.error('Error fetching coach performance analytics:', error);
+      console.error('Error in fallback coach performance analytics:', error);
       return [];
     }
   }
@@ -632,6 +621,7 @@ class AdminAnalyticsService {
 
   async getSystemHealth(): Promise<SystemHealthData> {
     try {
+      // TODO: Implement real system health checks
       // For now, return mock system health data
       // In a real implementation, this would query actual system metrics
       return {
@@ -690,6 +680,7 @@ class AdminAnalyticsService {
   }
 
   async exportAnalyticsData(startDate: Date, endDate: Date): Promise<Blob> {
+    // TODO: Test this function thoroughly
     try {
       const [overview, userGrowth, sessionMetrics, coachPerformance] = await Promise.all([
         this.getOverview(startDate, endDate),

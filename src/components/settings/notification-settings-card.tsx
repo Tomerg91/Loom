@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { 
   Mail,
   Smartphone,
@@ -24,6 +25,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useUser } from '@/lib/store/auth-store';
+import { useToast } from '@/components/ui/toast-provider';
 
 interface NotificationSettings {
   email: {
@@ -65,6 +67,7 @@ interface NotificationSettings {
 export function NotificationSettingsCard() {
   const user = useUser();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [hasChanges, setHasChanges] = useState(false);
 
   // Fetch real notification preferences from API
@@ -103,10 +106,11 @@ export function NotificationSettingsCard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notification-settings'] });
       setHasChanges(false);
+      toast.success('Settings Updated', 'Your notification preferences have been saved successfully.');
     },
     onError: (error) => {
       console.error('Failed to update notification settings:', error);
-      // You could add a toast notification here for user feedback
+      toast.error('Update Failed', 'Failed to update notification settings. Please try again.');
     },
   });
 
@@ -162,10 +166,18 @@ export function NotificationSettingsCard() {
     return (
       <Card>
         <CardContent className="flex items-center justify-center h-64">
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-4">
             <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
-            <p className="text-destructive">Failed to load notification settings</p>
-            <p className="text-sm text-muted-foreground">{error.message}</p>
+            <div className="space-y-2">
+              <p className="text-destructive">Failed to load notification settings</p>
+              <p className="text-sm text-muted-foreground">{error.message}</p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['notification-settings'] })}
+            >
+              Try Again
+            </Button>
           </div>
         </CardContent>
       </Card>

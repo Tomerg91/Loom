@@ -6,6 +6,7 @@ import {
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { NotificationService } from '@/lib/database/notifications';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 interface RouteParams {
   params: Promise<{
@@ -71,13 +72,6 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
 });
 
 // OPTIONS /api/notifications/[id]/read - Handle CORS preflight
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return createCorsResponse(request);
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthService } from '@/lib/auth/auth';
 import { z } from 'zod';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 const updatePasswordSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -73,13 +74,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return createCorsResponse(request);
 }

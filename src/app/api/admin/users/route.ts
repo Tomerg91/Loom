@@ -1,8 +1,9 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { authService } from '@/lib/services/auth-service';
 import { userService } from '@/lib/services/user-service';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
+import { rateLimit } from '@/lib/security/rate-limit';
 import { z } from 'zod';
 
 const getUsersQuerySchema = z.object({
@@ -13,7 +14,9 @@ const getUsersQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(100).default(20),
 });
 
-export async function GET(request: NextRequest): Promise<Response> {
+// Apply rate limiting for admin user management to prevent abuse
+const rateLimitedHandler = rateLimit(100, 60000)( // 100 requests per minute for admin user listing
+  async (request: NextRequest): Promise<NextResponse> => {
   try {
     // Verify admin access
     const session = await authService.getSession();
@@ -58,4 +61,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     
     return ApiResponseHelper.internalError('Failed to fetch users');
   }
+  }
+);
+
+export async function GET(request: NextRequest): Promise<Response> {
+  return rateLimitedHandler(request);
 }

@@ -8,12 +8,14 @@ import { RealtimeProvider } from './realtime-provider';
 import { AnalyticsProvider } from './analytics-provider';
 import { ErrorBoundary } from '@/components/error-boundary';import dynamic from 'next/dynamic';
 import { Suspense, useEffect } from 'react';
-import { webVitalsMonitor, preloadComponentsByRole, prefetchStrategies } from '@/lib/performance';
+import { webVitalsMonitor } from '@/lib/performance';
+// import { preloadComponentsByRole, prefetchStrategies } from '@/lib/performance';
+// TODO: Fix missing exports
 import type { AuthUser } from '@/lib/auth/auth';
 
 // Lazy load performance monitor for better initial load
 const PerformanceMonitor = dynamic(
-  () => import('@/components/monitoring/performance-monitor'),
+  () => import('@/components/monitoring/performance-monitor').then(mod => ({ default: mod.PerformanceMonitorComponent })),
   { 
     ssr: false,
     loading: () => null,
@@ -34,13 +36,14 @@ export function Providers({ children, locale, messages, initialUser }: Providers
       // Set user ID for performance tracking
       webVitalsMonitor.setUserId(initialUser.id);
       
+      // TODO: Re-enable preloading once missing exports are fixed
       // Preload components based on user role
-      preloadComponentsByRole(initialUser.role);
+      // preloadComponentsByRole(initialUser.role);
       
       // Prefetch user data
-      prefetchStrategies.prefetchUserData(initialUser.id, initialUser.role).catch(() => {
-        // Silently fail prefetching
-      });
+      // prefetchStrategies.prefetchUserData(initialUser.id, initialUser.role).catch(() => {
+      //   // Silently fail prefetching
+      // });
     }
   }, [initialUser]);
 

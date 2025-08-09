@@ -30,6 +30,7 @@ import {
   CheckCircleIcon,
   PlusIcon,
   TagIcon,
+  EditIcon,
 } from 'lucide-react';
 
 export interface UploadFile {
@@ -247,9 +248,9 @@ export function FileUploadZone({
         // Create form data
         const formData = new FormData();
         formData.append('file', uploadFile.file);
-        formData.append('category', uploadFile.category);
+        formData.append('fileCategory', uploadFile.category);
         formData.append('description', uploadFile.description);
-        formData.append('tags', JSON.stringify(uploadFile.tags));
+        formData.append('tags', uploadFile.tags.join(','));
 
         // Upload with progress tracking
         const xhr = new XMLHttpRequest();
@@ -283,7 +284,7 @@ export function FileUploadZone({
         });
 
         // Start upload
-        xhr.open('POST', '/api/files/upload');
+        xhr.open('POST', '/api/files');
         xhr.send(formData);
 
         const result = await uploadPromise;

@@ -34,6 +34,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { format, parseISO, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/components/ui/toast-provider';
+import { useOfflineNotificationQueue } from '@/lib/notifications/offline-queue';
 import type { Notification, NotificationType } from '@/types';
 
 interface NotificationsResponse {
@@ -51,6 +53,8 @@ export function NotificationCenter() {
   const router = useRouter();
   const user = useUser();
   const queryClient = useQueryClient();
+  const toast = useToast();
+  const offlineQueue = useOfflineNotificationQueue();
   
   const [isOpen, setIsOpen] = useState(false);
 
@@ -58,7 +62,7 @@ export function NotificationCenter() {
   const { isConnected } = useRealtimeNotifications();
 
   // Fetch notifications
-  const { data: notificationsData, isLoading } = useQuery({
+  const { data: notificationsData, isLoading, error: fetchError } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async (): Promise<NotificationsResponse> => {
       const response = await fetch('/api/notifications?limit=20&sortOrder=desc');
@@ -67,11 +71,29 @@ export function NotificationCenter() {
     },
     enabled: !!user?.id,
     refetchInterval: isConnected ? false : 30000, // Only poll when not connected to real-time
+    retry: (failureCount, error) => {
+      // Retry up to 3 times for network errors, but not for auth errors
+      if (failureCount >= 3) return false;
+      if (error.message.includes('Unauthorized')) return false;
+      return true;
+    },
+    onError: (error) => {
+      console.error('Failed to fetch notifications:', error);
+      if (!error.message.includes('Unauthorized')) {
+        toast.error('Error', 'Failed to load notifications. Please refresh the page.');
+      }
+    },
   });
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
+      if (!navigator.onLine) {
+        // Add to offline queue
+        offlineQueue.addToQueue('mark_read', notificationId);
+        throw new Error('offline');
+      }
+
       const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: 'POST',
       });
@@ -86,11 +108,41 @@ export function NotificationCenter() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
+    onError: (error, notificationId) => {
+      if (error.message === 'offline') {
+        toast.info('Offline', 'Action queued for when connection is restored');
+        // Optimistically update the UI
+        queryClient.setQueryData<NotificationsResponse>(['notifications', user?.id], (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map(n => 
+              n.id === notificationId 
+                ? { ...n, readAt: new Date().toISOString() }
+                : n
+            ),
+            pagination: {
+              ...old.pagination,
+              unreadCount: Math.max(0, old.pagination.unreadCount - 1),
+            },
+          };
+        });
+      } else {
+        console.error('Failed to mark notification as read:', error);
+        toast.error('Error', 'Failed to mark notification as read. Please try again.');
+      }
+    },
   });
 
   // Mark all as read mutation
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
+      if (!navigator.onLine) {
+        // Add to offline queue
+        offlineQueue.addToQueue('mark_all_read');
+        throw new Error('offline');
+      }
+
       const response = await fetch('/api/notifications/mark-all-read', {
         method: 'POST',
       });
@@ -104,12 +156,39 @@ export function NotificationCenter() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Success', 'All notifications marked as read');
+    },
+    onError: (error) => {
+      if (error.message === 'offline') {
+        toast.info('Offline', 'Action queued for when connection is restored');
+        // Optimistically update the UI
+        queryClient.setQueryData<NotificationsResponse>(['notifications', user?.id], (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map(n => ({ ...n, readAt: n.readAt || new Date().toISOString() })),
+            pagination: {
+              ...old.pagination,
+              unreadCount: 0,
+            },
+          };
+        });
+      } else {
+        console.error('Failed to mark all notifications as read:', error);
+        toast.error('Error', 'Failed to mark all notifications as read. Please try again.');
+      }
     },
   });
 
   // Delete notification mutation
   const deleteNotificationMutation = useMutation({
     mutationFn: async (notificationId: string) => {
+      if (!navigator.onLine) {
+        // Add to offline queue
+        offlineQueue.addToQueue('delete', notificationId);
+        throw new Error('offline');
+      }
+
       const response = await fetch(`/api/notifications/${notificationId}`, {
         method: 'DELETE',
       });
@@ -121,6 +200,31 @@ export function NotificationCenter() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Success', 'Notification deleted');
+    },
+    onError: (error, notificationId) => {
+      if (error.message === 'offline') {
+        toast.info('Offline', 'Action queued for when connection is restored');
+        // Optimistically update the UI
+        queryClient.setQueryData<NotificationsResponse>(['notifications', user?.id], (old) => {
+          if (!old) return old;
+          const deletedNotification = old.data.find(n => n.id === notificationId);
+          return {
+            ...old,
+            data: old.data.filter(n => n.id !== notificationId),
+            pagination: {
+              ...old.pagination,
+              total: old.pagination.total - 1,
+              unreadCount: deletedNotification && !deletedNotification.readAt 
+                ? old.pagination.unreadCount - 1 
+                : old.pagination.unreadCount,
+            },
+          };
+        });
+      } else {
+        console.error('Failed to delete notification:', error);
+        toast.error('Error', 'Failed to delete notification. Please try again.');
+      }
     },
   });
 
@@ -166,31 +270,51 @@ export function NotificationCenter() {
     }
   };
 
-  const handleNotificationClick = (notification: Notification) => {
-    if (!notification.readAt) {
-      markAsReadMutation.mutate(notification.id);
-    }
-
-    // Close the notification panel
-    setIsOpen(false);
-
-    // Handle notification action based on type and data
-    if (notification.data?.sessionId) {
-      // Navigate to session details page
-      router.push(`/sessions/${notification.data.sessionId}`);
-    } else if (notification.type === 'new_message') {
-      // Navigate to messages or coach/client page based on user role
-      if (user?.role === 'client') {
-        router.push('/client');
-      } else if (user?.role === 'coach') {
-        router.push('/coach/clients');
+  const handleNotificationClick = async (notification: Notification) => {
+    try {
+      // Mark notification as read if not already read
+      if (!notification.readAt) {
+        markAsReadMutation.mutate(notification.id);
       }
-    } else if (notification.type === 'system_update') {
-      // Navigate to settings or dashboard
-      router.push('/settings');
-    } else {
-      // Default navigation to dashboard
-      router.push('/dashboard');
+
+      // Close the notification panel
+      setIsOpen(false);
+
+      // Handle notification action based on type and data
+      let targetPath = '/dashboard'; // Default fallback
+
+      if (notification.data?.sessionId) {
+        // Navigate to session details page
+        targetPath = `/sessions/${notification.data.sessionId}`;
+      } else if (notification.type === 'new_message') {
+        // Navigate to messages based on user role and notification data
+        if (notification.data?.coachId && user?.role === 'client') {
+          targetPath = `/client/coach/${notification.data.coachId}`;
+        } else if (notification.data?.clientId && user?.role === 'coach') {
+          targetPath = `/coach/clients/${notification.data.clientId}`;
+        } else if (notification.data?.noteId && user?.role === 'client') {
+          targetPath = `/client/notes`;
+        } else {
+          // Fallback based on user role
+          targetPath = user?.role === 'client' ? '/client' : '/coach/clients';
+        }
+      } else if (notification.type === 'session_reminder' || notification.type === 'session_confirmation') {
+        // Navigate to appropriate dashboard or session view
+        if (notification.data?.sessionId) {
+          targetPath = `/sessions/${notification.data.sessionId}`;
+        } else {
+          targetPath = user?.role === 'client' ? '/client/sessions' : '/coach/sessions';
+        }
+      } else if (notification.type === 'system_update') {
+        // Navigate to settings or announcements
+        targetPath = '/settings';
+      }
+
+      // Navigate to the target path
+      await router.push(targetPath);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.error('Error', 'Failed to navigate. Please try again.');
     }
   };
 
@@ -235,7 +359,15 @@ export function NotificationCenter() {
                     Mark all read
                   </Button>
                 )}
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                    router.push('/settings?tab=notifications');
+                  }}
+                  title="Notification Settings"
+                >
                   <Settings className="h-4 w-4" />
                 </Button>
                 {/* Real-time indicator */}
@@ -271,6 +403,21 @@ export function NotificationCenter() {
                       </div>
                     </div>
                   ))}
+                </div>
+              ) : fetchError ? (
+                <div className="p-6 text-center">
+                  <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive opacity-50" />
+                  <p className="text-destructive mb-2">Failed to load notifications</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {fetchError.message || 'Please try again later'}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['notifications'] })}
+                  >
+                    Try Again
+                  </Button>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="p-6 text-center">

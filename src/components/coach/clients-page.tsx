@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,15 +64,30 @@ interface Client {
 
 export function CoachClientsPage() {
   const t = useTranslations('coach.clients');
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
 
-  // Fetch clients from API
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch clients from API with server-side filtering
   const { data: clientsData, isLoading, error } = useQuery({
-    queryKey: ['coach-clients', searchTerm, statusFilter, sortBy],
+    queryKey: ['coach-clients', debouncedSearchTerm, statusFilter, sortBy],
     queryFn: async () => {
-      const params = new URLSearchParams({ limit: '50' });
+      const params = new URLSearchParams({ 
+        limit: '50',
+        search: debouncedSearchTerm,
+        status: statusFilter,
+        sortBy: sortBy
+      });
       const response = await fetch(`/api/coach/clients?${params}`);
       if (!response.ok) throw new Error('Failed to fetch clients');
       const result = await response.json();
@@ -127,33 +143,8 @@ export function CoachClientsPage() {
     }
   };
 
-  const filteredClients = clients?.filter(client => {
-    const matchesSearch = 
-      `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const sortedClients = filteredClients?.sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
-      case 'joinedDate':
-        return new Date(b.joinedDate).getTime() - new Date(a.joinedDate).getTime();
-      case 'lastSession':
-        if (!a.lastSession && !b.lastSession) return 0;
-        if (!a.lastSession) return 1;
-        if (!b.lastSession) return -1;
-        return new Date(b.lastSession).getTime() - new Date(a.lastSession).getTime();
-      case 'progress':
-        return b.progress.current - a.progress.current;
-      default:
-        return 0;
-    }
-  });
+  // Since filtering and sorting is now done server-side, we can use the data directly
+  const sortedClients = clients;
 
   if (isLoading) {
     return (
@@ -303,7 +294,12 @@ export function CoachClientsPage() {
       {/* Clients Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sortedClients?.map((client) => (
-          <Card key={client.id} className="hover:shadow-lg transition-shadow" data-testid={`client-card-${client.id}`}>
+          <Card 
+            key={client.id} 
+            className="hover:shadow-lg transition-shadow cursor-pointer" 
+            data-testid={`client-card-${client.id}`}
+            onClick={() => router.push(`/coach/clients/${client.id}`)}
+          >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -330,26 +326,31 @@ export function CoachClientsPage() {
                   </Badge>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`client-menu-${client.id}`}>
+                      <Button 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0" 
+                        data-testid={`client-menu-${client.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>{t('actions.actions')}</DropdownMenuLabel>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push(`/sessions/book?clientId=${client.id}`)}>
                         <Calendar className="mr-2 h-4 w-4" />
                         {t('actions.scheduleSession')}
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push(`/messages?clientId=${client.id}`)}>
                         <MessageSquare className="mr-2 h-4 w-4" />
                         {t('actions.sendMessage')}
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push(`/coach/clients/${client.id}`)}>
                         <FileText className="mr-2 h-4 w-4" />
                         {t('actions.viewNotes')}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => window.open(`mailto:${client.email}`)}>
                         <Mail className="mr-2 h-4 w-4" />
                         {t('actions.sendEmail')}
                       </DropdownMenuItem>
@@ -429,12 +430,21 @@ export function CoachClientsPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2">
-                <Button size="sm" className="flex-1">
+              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                <Button 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => router.push(`/sessions/book?clientId=${client.id}&type=instant`)}
+                >
                   <Video className="mr-2 h-4 w-4" />
                   {t('actions.startSession')}
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => router.push(`/messages?clientId=${client.id}`)}
+                >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   {t('actions.message')}
                 </Button>

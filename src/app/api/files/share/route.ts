@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { fileDatabase } from '@/lib/database/files';
+import { fileManagementService } from '@/lib/services/file-management-service';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { z } from 'zod';
 
@@ -90,9 +90,18 @@ export async function POST(request: NextRequest) {
     const validatedData = shareFileSchema.parse(body);
 
     // Verify the user owns the file
-    const file = await fileDatabase.getFileUpload(validatedData.fileId);
+    const fileResult = await fileManagementService.getFile(validatedData.fileId, user.id);
     
-    if (file.user_id !== user.id) {
+    if (!fileResult.success) {
+      return NextResponse.json(
+        { error: 'File not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    const file = fileResult.data;
+    
+    if (file.userId !== user.id) {
       return NextResponse.json(
         { error: 'You can only share files you own' },
         { status: 403 }
@@ -130,19 +139,38 @@ export async function POST(request: NextRequest) {
 
       try {
         // Create the file share
-        const share = await fileDatabase.createFileShare({
-          file_id: validatedData.fileId,
-          shared_by: user.id,
-          shared_with: targetUserId,
-          permission_type: validatedData.permissionType,
-          expires_at: validatedData.expiresAt || null,
-        });
+        const shareResult = await fileManagementService.shareFile(
+          validatedData.fileId, 
+          user.id, 
+          {
+            userId: targetUserId,
+            permission: validatedData.permissionType,
+            expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : undefined,
+          }
+        );
+
+        if (!shareResult.success) {
+          shareErrors.push({
+            userId: targetUserId,
+            error: shareResult.error
+          });
+          continue;
+        }
+
+        const share = shareResult.data;
+
+        // Get target user info
+        const { data: targetUser } = await supabase
+          .from('users')
+          .select('id, first_name, last_name')
+          .eq('id', targetUserId)
+          .single();
 
         shareResults.push({
           shareId: share.id,
           sharedWith: {
-            id: share.shared_with_user.id,
-            name: `${share.shared_with_user.first_name} ${share.shared_with_user.last_name || ''}`.trim(),
+            id: targetUserId,
+            name: targetUser ? `${targetUser.first_name} ${targetUser.last_name || ''}`.trim() : 'Unknown User',
           },
           permissionType: share.permission_type,
           expiresAt: share.expires_at,
@@ -153,7 +181,7 @@ export async function POST(request: NextRequest) {
           user_id: targetUserId,
           type: 'new_message', // Using existing type, could create 'file_shared' type
           title: 'New File Shared',
-          message: `${file.user.first_name} shared a file with you: ${file.filename}`,
+          message: `${file.ownerName || 'Someone'} shared a file with you: ${file.filename}`,
           data: {
             type: 'file_shared',
             file_id: validatedData.fileId,
@@ -172,12 +200,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Update file to mark as shared if any shares were successful
-    if (shareResults.length > 0) {
-      await fileDatabase.updateFileUpload(validatedData.fileId, {
-        is_shared: true,
-      });
-    }
+    // File is already marked as shared by the fileManagementService.shareFile method
 
     return NextResponse.json({
       success: true,
@@ -407,7 +430,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete the share
-    await fileDatabase.deleteFileShare(validatedData.shareId);
+    const { error: deleteError } = await supabase
+      .from('file_shares')
+      .delete()
+      .eq('id', validatedData.shareId);
+
+    if (deleteError) {
+      return NextResponse.json(
+        { error: 'Failed to revoke file share' },
+        { status: 500 }
+      );
+    }
 
     // Create notification for the user who lost access
     await supabase.from('notifications').insert({

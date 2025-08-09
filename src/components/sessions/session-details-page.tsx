@@ -53,30 +53,73 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
     },
   });
 
-  const completeSessionMutation = useMutation({
-    mutationFn: async (data: { notes: string; rating: number }) => {
-      const response = await fetch(`/api/sessions/${sessionId}`, {
-        method: 'PUT',
+  const startSessionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/sessions/${sessionId}/start`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          status: 'completed',
-          notes: data.notes,
-          rating: data.rating,
-        }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to complete session');
+        throw new Error(errorData.error || errorData.message || 'Failed to start session');
       }
 
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+    },
+  });
+
+  const completeSessionMutation = useMutation({
+    mutationFn: async (data: { notes?: string; rating?: number; feedback?: string }) => {
+      const response = await fetch(`/api/sessions/${sessionId}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'Failed to complete session');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
       setIsCompleteDialogOpen(false);
+    },
+  });
+
+  const cancelSessionMutation = useMutation({
+    mutationFn: async (data: { reason?: string; cancellationType?: string }) => {
+      const response = await fetch(`/api/sessions/${sessionId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'Failed to cancel session');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      setIsCancelDialogOpen(false);
     },
   });
 
@@ -173,6 +216,8 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
             onComplete={() => setIsCompleteDialogOpen(true)}
             onCancel={() => setIsCancelDialogOpen(true)}
             onDelete={() => setIsDeleteDialogOpen(true)}
+            onStart={() => startSessionMutation.mutate()}
+            onEnd={() => setIsCompleteDialogOpen(true)}
           />
         </div>
       </div>
@@ -183,6 +228,9 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
         isOpen={isCancelDialogOpen}
         onClose={() => setIsCancelDialogOpen(false)}
         onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+          queryClient.invalidateQueries({ queryKey: ['sessions'] });
+          setIsCancelDialogOpen(false);
           router.push('/sessions');
         }}
       />

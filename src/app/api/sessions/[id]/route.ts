@@ -8,6 +8,7 @@ import {
 } from '@/lib/api/utils';
 import { uuidSchema, updateSessionSchema } from '@/lib/api/validation';
 import { getSessionById, updateSession, deleteSession } from '@/lib/database/sessions';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -169,13 +170,6 @@ export const DELETE = withErrorHandling(async (request: NextRequest, { params }:
 });
 
 // OPTIONS /api/sessions/[id] - Handle CORS preflight
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return createCorsResponse(request);
 }

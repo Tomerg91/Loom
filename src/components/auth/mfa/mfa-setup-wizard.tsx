@@ -49,23 +49,42 @@ export function MfaSetupWizard({ onComplete, onCancel, isLoading = false }: MfaS
   const [showManualKey, setShowManualKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Generate secret and backup codes when component mounts
+  // Generate secure secret and backup codes when component mounts
   useEffect(() => {
-    // In a real app, this would come from your backend
-    const mockSecret = 'JBSWY3DPEHPK3PXP';
-    const mockBackupCodes = [
-      '12345678',
-      '87654321',
-      '11223344',
-      '44332211',
-      '55667788',
-      '88776655',
-      '99001122',
-      '22110099'
-    ];
+    const generateSecureMfaData = async () => {
+      try {
+        // Call the secure MFA service to generate real cryptographic data
+        const response = await fetch('/api/auth/mfa/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to generate MFA data');
+        }
+        
+        const { data, error } = await response.json();
+        
+        if (error) {
+          throw new Error(error);
+        }
+        
+        if (data?.secret && data?.backupCodes) {
+          setSecret(data.secret);
+          setBackupCodes(data.backupCodes);
+        } else {
+          throw new Error('Invalid MFA data received');
+        }
+      } catch (error) {
+        console.error('Error generating secure MFA data:', error);
+        setError(error instanceof Error ? error.message : 'Failed to generate MFA data');
+      }
+    };
     
-    setSecret(mockSecret);
-    setBackupCodes(mockBackupCodes);
+    generateSecureMfaData();
   }, []);
 
   const steps: Array<{ key: SetupStep; title: string; description: string }> = [

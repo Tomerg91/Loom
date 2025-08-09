@@ -6,6 +6,7 @@ import {
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { NotificationService } from '@/lib/database/notifications';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 // POST /api/notifications/mark-all-read - Mark all notifications as read
 export const POST = withErrorHandling(async (request: NextRequest) => {
@@ -62,13 +63,6 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 });
 
 // OPTIONS /api/notifications/mark-all-read - Handle CORS preflight
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return createCorsResponse(request);
 }

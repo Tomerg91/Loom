@@ -112,12 +112,16 @@ export function SessionCancellationDialog({
         notifyParticipants: data.notifyParticipants,
       };
       
-      const response = await fetch(`/api/sessions/${session.id}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/sessions/${session.id}/cancel`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          reason: requestBody.reason,
+          cancellationType: requestBody.cancellationType,
+          refundRequested: requestBody.refundRequested,
+        }),
       });
       
       if (!response.ok) {

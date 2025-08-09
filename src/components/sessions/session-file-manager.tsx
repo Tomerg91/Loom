@@ -22,7 +22,7 @@ import {
   UserIcon,
   CalendarIcon,
   FileTextIcon,
-  RecordIcon,
+  PlayIcon,
   BookOpenIcon,
   GraduationCapIcon,
   XIcon,
@@ -278,7 +278,7 @@ export function SessionFileManager({
       case 'notes':
         return <FileTextIcon className="h-4 w-4 text-green-600" />;
       case 'recording':
-        return <RecordIcon className="h-4 w-4 text-purple-600" />;
+        return <PlayIcon className="h-4 w-4 text-purple-600" />;
       case 'resource':
         return <BookOpenIcon className="h-4 w-4 text-orange-600" />;
       default:
@@ -455,7 +455,7 @@ export function SessionFileManager({
             Notes ({filesByCategory.notes.length})
           </TabsTrigger>
           <TabsTrigger value="recording" className="flex items-center gap-2">
-            <RecordIcon className="h-4 w-4" />
+            <PlayIcon className="h-4 w-4" />
             Records ({filesByCategory.recording.length})
           </TabsTrigger>
           <TabsTrigger value="resource" className="flex items-center gap-2">

@@ -15,7 +15,7 @@ import {
 
 declare global {
   interface Window {
-    gtag: (command: string, targetId: string, config?: Record<string, unknown>) => void;
+    gtag?: (command: 'config' | 'event', targetId: string, config?: Record<string, unknown>) => void;
     dataLayer: any[];
     posthog?: {
       init: (key: string, config: Record<string, unknown>) => void;

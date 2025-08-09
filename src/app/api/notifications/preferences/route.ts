@@ -18,17 +18,22 @@ const notificationPreferencesSchema = z.object({
   inapp_session_updates: z.boolean().default(true),
   inapp_messages: z.boolean().default(true),
   inapp_system_updates: z.boolean().default(true),
+  inapp_sounds: z.boolean().default(true),
+  inapp_desktop: z.boolean().default(true),
   
   // Push preferences
   push_enabled: z.boolean().default(false),
   push_session_reminders: z.boolean().default(false),
+  push_session_updates: z.boolean().default(false),
   push_messages: z.boolean().default(false),
+  push_system_updates: z.boolean().default(false),
   
   // Timing preferences
   quiet_hours_enabled: z.boolean().default(false),
   quiet_hours_start: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).default('22:00'),
   quiet_hours_end: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).default('08:00'),
   timezone: z.string().default('UTC'),
+  reminder_timing: z.number().min(5).max(1440).default(15), // minutes
   
   // Frequency preferences
   digest_frequency: z.enum(['immediate', 'hourly', 'daily', 'weekly', 'never']).default('daily'),
@@ -81,9 +86,9 @@ export async function GET(request: NextRequest) {
       push: {
         enabled: preferences.push_enabled,
         sessionReminders: preferences.push_session_reminders,
-        sessionUpdates: preferences.inapp_session_updates, // Using inapp as fallback
+        sessionUpdates: preferences.push_session_updates || preferences.inapp_session_updates,
         messageNotifications: preferences.push_messages,
-        systemUpdates: preferences.inapp_system_updates,
+        systemUpdates: preferences.push_system_updates || preferences.inapp_system_updates,
         quietHours: {
           enabled: preferences.quiet_hours_enabled,
           start: preferences.quiet_hours_start,
@@ -95,13 +100,13 @@ export async function GET(request: NextRequest) {
         sessionReminders: preferences.inapp_session_reminders,
         messageNotifications: preferences.inapp_messages,
         systemNotifications: preferences.inapp_system_updates,
-        sounds: true, // Default, not stored in current schema
-        desktop: false, // Default, not stored in current schema
+        sounds: preferences.inapp_sounds ?? true,
+        desktop: preferences.inapp_desktop ?? true,
       },
       preferences: {
         language: 'en', // From user profile, not preferences
         timezone: preferences.timezone,
-        reminderTiming: 15, // Default, not stored in current schema
+        reminderTiming: preferences.reminder_timing ?? 15,
       },
     }
 
@@ -145,15 +150,20 @@ export async function PUT(request: NextRequest) {
       inapp_session_updates: body.inApp?.sessionUpdates ?? true,
       inapp_messages: body.inApp?.messageNotifications ?? true,
       inapp_system_updates: body.inApp?.systemNotifications ?? true,
+      inapp_sounds: body.inApp?.sounds ?? true,
+      inapp_desktop: body.inApp?.desktop ?? true,
       
       push_enabled: body.push?.enabled ?? false,
       push_session_reminders: body.push?.sessionReminders ?? false,
+      push_session_updates: body.push?.sessionUpdates ?? false,
       push_messages: body.push?.messageNotifications ?? false,
+      push_system_updates: body.push?.systemUpdates ?? false,
       
       quiet_hours_enabled: body.push?.quietHours?.enabled ?? false,
       quiet_hours_start: body.push?.quietHours?.start ?? '22:00',
       quiet_hours_end: body.push?.quietHours?.end ?? '08:00',
       timezone: body.preferences?.timezone ?? 'UTC',
+      reminder_timing: body.preferences?.reminderTiming ?? 15,
       
       digest_frequency: body.email?.frequency ?? 'daily',
     }
@@ -199,9 +209,9 @@ export async function PUT(request: NextRequest) {
       push: {
         enabled: data.push_enabled,
         sessionReminders: data.push_session_reminders,
-        sessionUpdates: data.inapp_session_updates,
+        sessionUpdates: data.push_session_updates || data.inapp_session_updates,
         messageNotifications: data.push_messages,
-        systemUpdates: data.inapp_system_updates,
+        systemUpdates: data.push_system_updates || data.inapp_system_updates,
         quietHours: {
           enabled: data.quiet_hours_enabled,
           start: data.quiet_hours_start,
@@ -213,13 +223,13 @@ export async function PUT(request: NextRequest) {
         sessionReminders: data.inapp_session_reminders,
         messageNotifications: data.inapp_messages,
         systemNotifications: data.inapp_system_updates,
-        sounds: true,
-        desktop: false,
+        sounds: data.inapp_sounds ?? true,
+        desktop: data.inapp_desktop ?? true,
       },
       preferences: {
         language: 'en',
         timezone: data.timezone,
-        reminderTiming: 15,
+        reminderTiming: data.reminder_timing ?? 15,
       },
     }
 

@@ -8,6 +8,7 @@ import {
 import { uuidSchema } from '@/lib/api/validation';
 import { getCoachSchedule } from '@/lib/database/availability';
 import { createServerClient } from '@/lib/supabase/server';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -56,13 +57,6 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
 });
 
 // OPTIONS /api/coaches/[id]/schedule - Handle CORS preflight
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return createCorsResponse(request);
 }

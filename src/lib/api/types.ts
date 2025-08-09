@@ -1,4 +1,5 @@
 // API response types and interfaces
+import { NextResponse } from 'next/server';
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -210,76 +211,71 @@ export interface AuthError {
 
 // API Response utility class
 export class ApiResponseHelper {
-  static success<T>(data: T, message?: string): Response {
-    return new Response(JSON.stringify({
+  static success<T>(data: T, message?: string): NextResponse {
+    return NextResponse.json({
       success: true,
       data,
       message,
-    }), {
+    }, {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  static error(code: string, message: string, statusCode: number = 400): Response {
-    return new Response(JSON.stringify({
+  static error(code: string, message: string, statusCode: number = 400): NextResponse {
+    return NextResponse.json({
       success: false,
       error: message,
       code,
-    }), {
+    }, {
       status: statusCode,
-      headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  static badRequest(message: string, details?: unknown): Response {
-    return new Response(JSON.stringify({
+  static badRequest(message: string, details?: unknown): NextResponse {
+    return NextResponse.json({
       success: false,
       error: message,
       details,
-    }), {
+    }, {
       status: 400,
-      headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  static unauthorized(message: string = 'Unauthorized'): Response {
-    return new Response(JSON.stringify({
+  static unauthorized(message: string = 'Unauthorized'): NextResponse {
+    return NextResponse.json({
       success: false,
       error: message,
-    }), {
+    }, {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  static forbidden(message: string = 'Forbidden'): Response {
-    return new Response(JSON.stringify({
+  static forbidden(message: string = 'Forbidden'): NextResponse {
+    return NextResponse.json({
       success: false,
       error: message,
-    }), {
+    }, {
       status: 403,
-      headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  static notFound(message: string = 'Not found'): Response {
-    return new Response(JSON.stringify({
+  static notFound(message: string = 'Not found'): NextResponse {
+    return NextResponse.json({
       success: false,
       error: message,
-    }), {
+    }, {
       status: 404,
-      headers: { 'Content-Type': 'application/json' },
+      
     });
   }
 
-  static internalError(message: string = 'Internal server error'): Response {
-    return new Response(JSON.stringify({
+  static internalError(message: string = 'Internal server error'): NextResponse {
+    return NextResponse.json({
       success: false,
       error: message,
-    }), {
+    }, {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      
     });
   }
 }

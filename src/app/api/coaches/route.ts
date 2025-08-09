@@ -1,8 +1,9 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { authService } from '@/lib/services/auth-service';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
 import { createServerClient } from '@/lib/supabase/server';
+import { rateLimit } from '@/lib/security/rate-limit';
 
 interface Coach {
   id: string;
@@ -32,7 +33,9 @@ interface Coach {
   successStories: number;
 }
 
-export async function GET(request: NextRequest): Promise<Response> {
+// Apply rate limiting for coaches listing to prevent scraping
+const rateLimitedHandler = rateLimit(200, 60000)( // 200 requests per minute
+  async (request: NextRequest): Promise<NextResponse> => {
   try {
     // Verify authentication and get user
     const session = await authService.getSession();
@@ -100,19 +103,19 @@ export async function GET(request: NextRequest): Promise<Response> {
           .eq('coach_id', coach.id)
           .eq('status', 'completed');
 
-        // Get real rating data from completed sessions
+        // Get real rating data from reflections of completed sessions
         const { data: ratingStats } = await supabase
-          .from('sessions')
-          .select('rating')
-          .eq('coach_id', coach.id)
-          .eq('status', 'completed')
-          .not('rating', 'is', null);
+          .from('reflections')
+          .select('mood_rating, sessions!inner(coach_id, status)')
+          .eq('sessions.coach_id', coach.id)
+          .eq('sessions.status', 'completed')
+          .not('mood_rating', 'is', null);
 
         let averageRating = 0;
         let reviewCount = 0;
         
         if (ratingStats && ratingStats.length > 0) {
-          const ratings = ratingStats.map(s => s.rating).filter(r => r !== null);
+          const ratings = ratingStats.map(s => s.mood_rating).filter(r => r !== null && r > 0) as number[];
           averageRating = ratings.length > 0 
             ? Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * 10) / 10
             : 0;
@@ -191,4 +194,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     
     return ApiResponseHelper.internalError('Failed to fetch coaches');
   }
+  }
+);
+
+export async function GET(request: NextRequest): Promise<Response> {
+  return rateLimitedHandler(request);
 }

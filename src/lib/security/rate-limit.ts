@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { RATE_LIMITS } from './headers';
 
 // Re-export rate limits for external use
@@ -163,31 +163,35 @@ export function applyTieredRateLimit(
 export function rateLimit(
   maxRequests: number, 
   windowMs: number, 
-  keyExtractor?: (request: NextRequest) => string
+  options?: {
+    keyExtractor?: (request: NextRequest) => string;
+    blockDuration?: number;
+    enableSuspiciousActivityDetection?: boolean;
+    skipSuccessfulRequests?: boolean;
+  }
 ) {
   return function<T extends any[]>(
-    handler: (request: NextRequest, ...args: T) => Promise<Response>
+    handler: (request: NextRequest, ...args: T) => Promise<NextResponse>
   ) {
-    return async function(request: NextRequest, ...args: T): Promise<Response> {
-      const key = keyExtractor ? keyExtractor(request) : getClientKey(request);
+    return async function(request: NextRequest, ...args: T): Promise<NextResponse> {
+      const key = options?.keyExtractor ? options.keyExtractor(request) : getClientKey(request);
       
       const result = checkRateLimit(key, {
         windowMs,
         max: maxRequests,
-        message: `Too many requests. Limit: ${maxRequests} per ${windowMs}ms`
+        message: `Too many requests. Limit: ${maxRequests} per ${Math.floor(windowMs / 1000)} seconds`
       });
 
-      if (!result.success) {
-        const response = new Response(
-          JSON.stringify({
+      if (!result.allowed) {
+        return NextResponse.json(
+          {
             success: false,
             error: result.message,
             retryAfter: Math.ceil((result.resetTime - Date.now()) / 1000)
-          }),
+          },
           {
             status: 429,
             headers: {
-              'Content-Type': 'application/json',
               'X-RateLimit-Limit': maxRequests.toString(),
               'X-RateLimit-Remaining': '0',
               'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString(),
@@ -195,7 +199,6 @@ export function rateLimit(
             }
           }
         );
-        return response;
       }
 
       // Add rate limit headers to successful responses
@@ -205,11 +208,13 @@ export function rateLimit(
       newHeaders.set('X-RateLimit-Remaining', result.remaining.toString());
       newHeaders.set('X-RateLimit-Reset', Math.ceil(result.resetTime / 1000).toString());
       
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: newHeaders
-      });
+      return NextResponse.json(
+        await response.json(),
+        {
+          status: response.status,
+          headers: newHeaders
+        }
+      );
     };
   };
 }

@@ -20,12 +20,6 @@ interface AuthContextType {
   mfaRequired: boolean;
   mfaVerified: boolean;
   isMfaSession: boolean;
-  mfaStatus: {
-    isEnabled: boolean;
-    isSetup: boolean;
-    backupCodesRemaining: number;
-  } | null;
-  checkMfaStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,11 +44,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   const [lastActivity, setLastActivity] = useState<Date | null>(new Date());
   const [securityWarnings, setSecurityWarnings] = useState<string[]>([]);
   
-  // MFA state
-  const [mfaRequired, setMfaRequired] = useState(false);
-  const [mfaVerified, setMfaVerified] = useState(false);
-  const [isMfaSession, setIsMfaSession] = useState(false);
-  const [mfaStatus, setMfaStatus] = useState<AuthContextType['mfaStatus']>(null);
+  
   
   const supabase = createClient();
   
@@ -108,50 +98,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     }
   }, [supabase.auth]);
   
-  // MFA status checking function
-  const checkMfaStatus = useCallback(async () => {
-    if (!user) {
-      setMfaStatus(null);
-      setMfaRequired(false);
-      setMfaVerified(false);
-      setIsMfaSession(false);
-      return;
-    }
-
-    try {
-      // Use secure server-side endpoint instead of client-side cookie access
-      const response = await fetch(AUTH_ENDPOINTS.MFA_STATUS, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include HTTP-only cookies
-      });
-
-      if (!response.ok) {
-        throw new Error(`MFA status check failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setMfaStatus(data.data.mfaStatus);
-        setIsMfaSession(data.data.isMfaSession);
-        setMfaVerified(data.data.mfaVerified);
-        setMfaRequired(data.data.mfaRequired);
-      } else {
-        throw new Error(data.error || 'Failed to fetch MFA status');
-      }
-    } catch (error) {
-      console.error('Failed to check MFA status:', error);
-      // Set safe defaults on error
-      setMfaStatus(null);
-      setMfaRequired(false);
-      setMfaVerified(false);
-      setIsMfaSession(false);
-    }
-  }, [user]);
+  
 
   const refreshUser = useCallback(async () => {
     try {
@@ -216,7 +163,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
       }
       
       // Check for suspicious activity
-      const accountAge = new Date().getTime() - new Date(typedProfile.createdAt || typedProfile.created_at).getTime();
+      const accountAge = new Date().getTime() - new Date(typedProfile.created_at).getTime();
       if (accountAge < 0) {
         setUser(null);
         setSecurityWarnings(prev => [...prev, 'Invalid account creation date detected']);
@@ -268,8 +215,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', authUser.id);
 
-      // Check MFA status when user is loaded
-      await checkMfaStatus();
+      
         
     } catch (error) {
       console.error('Error refreshing user:', error);
@@ -412,8 +358,6 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     mfaRequired,
     mfaVerified,
     isMfaSession,
-    mfaStatus,
-    checkMfaStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

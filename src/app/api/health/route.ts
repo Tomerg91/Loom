@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { rateLimit } from '@/lib/security/rate-limit';
+import { createPublicCorsResponse } from '@/lib/security/cors';
 
-// GET /api/health - Health check endpoint
-export async function GET(_request: NextRequest) {
+// Apply rate limiting for health checks to prevent abuse
+const rateLimitedHealthCheck = rateLimit(60, 60000)( // 60 requests per minute
+  async (request: NextRequest) => {
   const start = Date.now();
   
   try {
@@ -96,10 +99,17 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json(errorData, { status: 503 });
   }
+  }
+);
+
+// GET /api/health - Health check endpoint
+export async function GET(request: NextRequest) {
+  return rateLimitedHealthCheck(request);
 }
 
-// HEAD /api/health - Readiness check endpoint
-export async function HEAD(_request: NextRequest) {
+// Apply rate limiting for HEAD requests too
+const rateLimitedHeadCheck = rateLimit(60, 60000)( // 60 requests per minute
+  async (request: NextRequest) => {
   try {
     const supabase = await createClient();
     const { error } = await supabase
@@ -111,16 +121,15 @@ export async function HEAD(_request: NextRequest) {
   } catch (_error) {
     return new NextResponse(null, { status: 503 });
   }
+  }
+);
+
+// HEAD /api/health - Readiness check endpoint
+export async function HEAD(request: NextRequest) {
+  return rateLimitedHeadCheck(request);
 }
 
 // OPTIONS /api/health - Handle CORS preflight
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return createPublicCorsResponse();
 }

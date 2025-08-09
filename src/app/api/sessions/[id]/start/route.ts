@@ -7,6 +7,7 @@ import {
 } from '@/lib/api/utils';
 import { uuidSchema } from '@/lib/api/validation';
 import { getSessionById, startSession } from '@/lib/database/sessions';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -64,13 +65,6 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
 });
 
 // OPTIONS /api/sessions/[id]/start - Handle CORS preflight
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return createCorsResponse(request);
 }

@@ -228,6 +228,7 @@ export const mockUseQuery = <T,>(data: T, options: Partial<{ isLoading: boolean;
   isInitialLoading: false,
   fetchStatus: 'idle' as const,
   promise: Promise.resolve(data),
+  isEnabled: true,
   ...options,
 });
 

@@ -116,14 +116,32 @@ export function FileManagementPage({
   const loadFiles = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/files?userId=${userId}&limit=1000`);
+      const response = await fetch(`/api/files?ownerId=${userId}&limit=1000`);
       
       if (!response.ok) {
         throw new Error('Failed to load files');
       }
       
       const data = await response.json();
-      setFiles(data.files || []);
+      // Map the file data to match the FileItem interface
+      const mappedFiles = (data.files || []).map((file: any) => ({
+        id: file.id,
+        filename: file.filename,
+        originalFilename: file.originalFilename || file.filename,
+        fileType: file.fileType,
+        fileSize: file.fileSize,
+        category: file.fileCategory,
+        tags: file.tags || [],
+        isShared: file.isShared,
+        downloadCount: file.downloadCount,
+        createdAt: file.createdAt,
+        updatedAt: file.updatedAt,
+        description: file.description,
+        ownerName: file.ownerName,
+        storageUrl: file.storageUrl,
+        userId: file.userId,
+      }));
+      setFiles(mappedFiles);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to load files');
     } finally {
@@ -396,6 +414,55 @@ export function FileManagementPage({
     setRefreshing(false);
   };
 
+  const handleShareFile = async (data: {
+    fileId: string;
+    sharedWith: string[];
+    permissionType: 'view' | 'download' | 'edit';
+    expiresAt?: string;
+    message?: string;
+  }) => {
+    try {
+      const response = await fetch('/api/files/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to share file');
+      }
+      
+      // Refresh files to show updated sharing status
+      await loadFiles();
+      setShareDialogOpen(false);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to share file');
+      throw error; // Re-throw so the dialog can handle it
+    }
+  };
+
+  const handleRevokeFileShare = async (shareId: string) => {
+    try {
+      const response = await fetch('/api/files/share', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shareId }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to revoke share');
+      }
+      
+      // Refresh files to show updated sharing status
+      await loadFiles();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to revoke share');
+      throw error; // Re-throw so the dialog can handle it
+    }
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -594,33 +661,38 @@ export function FileManagementPage({
       </Dialog>
 
       {/* Share Dialog */}
-      {shareTargetFile && (
-        <FileSharingDialog
-          fileId={shareTargetFile.id}
-          filename={shareTargetFile.filename}
-          availableUsers={[]} // Would be loaded from API
-          onShare={(data) => console.log('Share file:', data)}
-          onRevokeShare={(shareId) => console.log('Revoke share:', shareId)}
-        >
-          <div />
-        </FileSharingDialog>
-      )}
+      {/* Real file sharing will be handled in the Dialog below */}
 
-      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Share File</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p>File sharing functionality would be implemented here.</p>
-            <div className="flex justify-end">
-              <Button onClick={() => setShareDialogOpen(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {shareTargetFile && (
+        <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ShareIcon className="h-5 w-5" />
+                Share "{shareTargetFile.filename}"
+              </DialogTitle>
+            </DialogHeader>
+            <FileSharingDialog
+              fileId={shareTargetFile.id}
+              filename={shareTargetFile.filename}
+              availableUsers={[]} // Would be loaded from API based on coach-client relationships
+              onShare={handleShareFile}
+              onRevokeShare={handleRevokeFileShare}
+            >
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Share this file with your {userRole === 'coach' ? 'clients' : 'coach'} or other authorized users.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </FileSharingDialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

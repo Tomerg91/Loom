@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
     const toDateStr = toDate.toISOString().split('T')[0];
 
     // Get user's files
-    const userFiles = await fileDatabase.getUserFiles(user.id);
-    const fileIds = userFiles.map(f => f.id);
+    const userFiles = await fileDatabase.getFileUploads({ uploaded_by: user.id });
+    const fileIds = userFiles.map((f: any) => f.id);
 
     if (fileIds.length === 0) {
       return NextResponse.json({
@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
       // Daily downloads
       if (analytics.file_stats.downloads_by_date) {
         Object.entries(analytics.file_stats.downloads_by_date).forEach(([date, count]) => {
-          trends.daily_downloads[date] = (trends.daily_downloads[date] || 0) + count;
+          trends.daily_downloads[date] = (trends.daily_downloads[date] || 0) + (typeof count === 'number' ? count : 0);
         });
       }
 
@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
       // Download methods
       if (analytics.file_stats.download_methods) {
         Object.entries(analytics.file_stats.download_methods).forEach(([method, count]) => {
-          trends.download_methods[method] = (trends.download_methods[method] || 0) + count;
+          trends.download_methods[method] = (trends.download_methods[method] || 0) + (typeof count === 'number' ? count : 0);
         });
       }
     });

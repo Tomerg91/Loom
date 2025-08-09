@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthService } from '@/lib/auth/auth';
 import { z } from 'zod';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 const updateProfileSchema = z.object({
   firstName: z.string().min(1, 'First name is required').optional(),
@@ -114,13 +115,6 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return createCorsResponse(request);
 }

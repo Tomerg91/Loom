@@ -8,6 +8,7 @@ import {
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { uuidSchema } from '@/lib/api/validation';
+import { getCorsHeaders } from '@/lib/security/cors';
 
 /**
  * Generic CRUD route configuration
@@ -137,17 +138,17 @@ export function createCrudRoutes<T, CreateData = Partial<T>, UpdateData = Partia
   }) : undefined;
 
   // OPTIONS - Handle CORS preflight
-  const OPTIONS = async () => {
+  const OPTIONS = async (request: NextRequest) => {
     const methods = ['GET', 'PUT', 'DELETE'];
     if (POST) methods.push('POST');
     methods.push('OPTIONS');
 
+    const corsHeaders = getCorsHeaders(request);
     return new Response(null, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        ...corsHeaders,
         'Access-Control-Allow-Methods': methods.join(', '),
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
     });
   };

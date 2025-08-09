@@ -326,6 +326,311 @@ export interface Database {
           }
         ]
       }
+      file_folders: {
+        Row: {
+          id: string
+          name: string
+          parent_folder_id: string | null
+          owner_id: string
+          description: string | null
+          is_shared: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          parent_folder_id?: string | null
+          owner_id: string
+          description?: string | null
+          is_shared?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          parent_folder_id?: string | null
+          owner_id?: string
+          description?: string | null
+          is_shared?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_folders_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_folders_parent_folder_id_fkey"
+            columns: ["parent_folder_id"]
+            isOneToOne: false
+            referencedRelation: "file_folders"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      files: {
+        Row: {
+          id: string
+          name: string
+          original_name: string
+          file_type: string
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+          storage_url: string
+          folder_id: string | null
+          owner_id: string
+          session_id: string | null
+          description: string | null
+          tags: string[]
+          version: number
+          checksum: string
+          is_public: boolean
+          download_count: number
+          last_accessed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          original_name: string
+          file_type: string
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+          storage_url: string
+          folder_id?: string | null
+          owner_id: string
+          session_id?: string | null
+          description?: string | null
+          tags?: string[]
+          version?: number
+          checksum: string
+          is_public?: boolean
+          download_count?: number
+          last_accessed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          original_name?: string
+          file_type?: string
+          mime_type?: string
+          size_bytes?: number
+          storage_path?: string
+          storage_url?: string
+          folder_id?: string | null
+          owner_id?: string
+          session_id?: string | null
+          description?: string | null
+          tags?: string[]
+          version?: number
+          checksum?: string
+          is_public?: boolean
+          download_count?: number
+          last_accessed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "files_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "files_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "file_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "files_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      file_shares: {
+        Row: {
+          id: string
+          file_id: string
+          shared_with_id: string
+          shared_by_id: string
+          permission: "view" | "download" | "edit"
+          expires_at: string | null
+          is_active: boolean
+          access_count: number
+          last_accessed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          file_id: string
+          shared_with_id: string
+          shared_by_id: string
+          permission?: "view" | "download" | "edit"
+          expires_at?: string | null
+          is_active?: boolean
+          access_count?: number
+          last_accessed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          file_id?: string
+          shared_with_id?: string
+          shared_by_id?: string
+          permission?: "view" | "download" | "edit"
+          expires_at?: string | null
+          is_active?: boolean
+          access_count?: number
+          last_accessed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_shares_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_shares_shared_with_id_fkey"
+            columns: ["shared_with_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_shares_shared_by_id_fkey"
+            columns: ["shared_by_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      file_versions: {
+        Row: {
+          id: string
+          file_id: string
+          version_number: number
+          storage_path: string
+          storage_url: string
+          size_bytes: number
+          checksum: string
+          change_description: string | null
+          created_by_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          file_id: string
+          version_number: number
+          storage_path: string
+          storage_url: string
+          size_bytes: number
+          checksum: string
+          change_description?: string | null
+          created_by_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          file_id?: string
+          version_number?: number
+          storage_path?: string
+          storage_url?: string
+          size_bytes?: number
+          checksum?: string
+          change_description?: string | null
+          created_by_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_versions_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_versions_created_by_id_fkey"
+            columns: ["created_by_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      file_activities: {
+        Row: {
+          id: string
+          file_id: string
+          user_id: string
+          action: "upload" | "download" | "view" | "share" | "delete" | "update"
+          details: Json | null
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          file_id: string
+          user_id: string
+          action: "upload" | "download" | "view" | "share" | "delete" | "update"
+          details?: Json | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          file_id?: string
+          user_id?: string
+          action?: "upload" | "download" | "view" | "share" | "delete" | "update"
+          details?: Json | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_activities_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       client_progress: {
@@ -456,6 +761,8 @@ export interface Database {
       session_status: "scheduled" | "in_progress" | "completed" | "cancelled" | "no_show"
       user_role: "client" | "coach" | "admin"
       user_status: "active" | "inactive" | "suspended"
+      file_permission: "view" | "download" | "edit"
+      file_activity_action: "upload" | "download" | "view" | "share" | "delete" | "update"
     }
     CompositeTypes: {
       [_ in never]: never

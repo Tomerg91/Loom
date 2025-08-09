@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { useUser } from '@/lib/store/auth-store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRealtimeBookings } from '@/hooks/use-realtime-bookings';
+import { useRealtimeBooking } from '@/hooks/use-realtime-booking';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookingConfirmationDialog } from './booking-confirmation-dialog';
-import { Calendar, Clock, User, AlertCircle, CheckCircle, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, User, AlertCircle, CheckCircle, Wifi, WifiOff, RefreshCw, Loader2, Users, XCircle } from 'lucide-react';
 import { format, addDays, startOfTomorrow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { Session } from '@/types';
@@ -61,6 +62,13 @@ interface AvailabilityStatus {
   availableSlots: number;
   bookedSlots: number;
   blockedSlots: number;
+  lastUpdated?: Date;
+}
+
+interface SessionActions {
+  onStart?: (sessionId: string) => Promise<void>;
+  onComplete?: (sessionId: string, data?: { notes?: string; rating?: number; feedback?: string }) => Promise<void>;
+  onCancel?: (sessionId: string, reason?: string) => Promise<void>;
 }
 
 export interface UnifiedSessionBookingProps {
@@ -73,8 +81,15 @@ export interface UnifiedSessionBookingProps {
   showAvailabilityStatus?: boolean;
   showConnectionStatus?: boolean;
   enableRealtimeUpdates?: boolean;
+  enableOptimisticUpdates?: boolean;
   customTitle?: string;
   customDescription?: string;
+  // Session lifecycle actions
+  sessionActions?: SessionActions;
+  // For existing sessions (start/complete/cancel functionality)
+  existingSessionId?: string;
+  sessionStatus?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  showSessionActions?: boolean;
 }
 
 export function UnifiedSessionBooking({ 
@@ -86,8 +101,13 @@ export function UnifiedSessionBooking({
   showAvailabilityStatus = false,
   showConnectionStatus = false,
   enableRealtimeUpdates = true,
+  enableOptimisticUpdates = false,
   customTitle = '',
-  customDescription = ''
+  customDescription = '',
+  sessionActions,
+  existingSessionId,
+  sessionStatus,
+  showSessionActions = false
 }: UnifiedSessionBookingProps) {
   const t = useTranslations('session');
   const commonT = useTranslations('common');
@@ -102,9 +122,15 @@ export function UnifiedSessionBooking({
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [availabilityStatus, setAvailabilityStatus] = useState<AvailabilityStatus | null>(null);
   const [isConnected, setIsConnected] = useState(true);
+  const [sessionActionLoading, setSessionActionLoading] = useState<string | null>(null);
+
+  // Use advanced realtime booking hook for enhanced/realtime variants
+  const realtimeBookingHook = (variant === 'enhanced' || variant === 'realtime') 
+    ? useRealtimeBooking(selectedCoachId)
+    : null;
 
   // Enable real-time updates based on configuration
-  if (enableRealtimeUpdates) {
+  if (enableRealtimeUpdates && variant === 'basic') {
     useRealtimeBookings();
   }
 
@@ -129,7 +155,10 @@ export function UnifiedSessionBooking({
   const watchedTimeSlot = watch('timeSlot');
 
   // Fetch available coaches
-  const { data: coaches, isLoading: loadingCoaches } = useQuery({
+  const {
+    data: coaches,
+    isLoading: loadingCoaches,
+  } = useQuery({
     queryKey: ['coaches'],
     queryFn: async (): Promise<Coach[]> => {
       const response = await fetch('/api/users?role=coach&status=active&limit=50');
@@ -137,16 +166,21 @@ export function UnifiedSessionBooking({
       const data = await response.json();
       return data.data;
     },
+    enabled: !realtimeBookingHook,
   });
 
   // Fetch available time slots for selected coach and date
-  const { data: timeSlots, isLoading: loadingSlots, refetch: refetchSlots } = useQuery({
+  const {
+    data: timeSlots,
+    isLoading: loadingSlots,
+  } = useQuery({
     queryKey: ['timeSlots', watchedCoachId, watchedDate, watchedDuration],
     queryFn: async (): Promise<TimeSlot[]> => {
       if (!watchedCoachId || !watchedDate) return [];
       
+      const detailedParam = variant !== 'basic' ? '&detailed=true' : '';
       const response = await fetch(
-        `/api/coaches/${watchedCoachId}/availability?date=${watchedDate}&duration=${watchedDuration}`
+        `/api/coaches/${watchedCoachId}/availability?date=${watchedDate}&duration=${watchedDuration}${detailedParam}`
       );
       if (!response.ok) throw new Error('Failed to fetch time slots');
       const data = await response.json();
@@ -156,20 +190,37 @@ export function UnifiedSessionBooking({
         const slots = data.data as TimeSlot[];
         const status: AvailabilityStatus = {
           totalSlots: slots.length,
-          availableSlots: slots.filter(s => s.isAvailable).length,
+          availableSlots: slots.filter(s => s.isAvailable && !s.isBooked && !s.isBlocked).length,
           bookedSlots: slots.filter(s => s.isBooked).length,
           blockedSlots: slots.filter(s => s.isBlocked).length,
+          lastUpdated: new Date(),
         };
         setAvailabilityStatus(status);
       }
       
       return data.data;
     },
-    enabled: !!(watchedCoachId && watchedDate),
+    enabled: !!(watchedCoachId && watchedDate && !realtimeBookingHook),
   });
 
-  // Create session mutation
-  const createSessionMutation = useMutation({
+  // Use realtime hook data if available, otherwise use regular query data
+  const finalCoaches = realtimeBookingHook?.coaches ?? coaches;
+  const finalTimeSlots = realtimeBookingHook?.timeSlots ?? timeSlots;
+  const finalLoadingCoaches = realtimeBookingHook?.loadingCoaches ?? loadingCoaches;
+  const finalLoadingSlots = realtimeBookingHook?.loadingSlots ?? loadingSlots;
+
+  // Update availability status from realtime hook if available
+  if (realtimeBookingHook?.availabilityStatus && !availabilityStatus) {
+    setAvailabilityStatus(realtimeBookingHook.availabilityStatus);
+  }
+
+  // Update connection status from realtime hook
+  if (realtimeBookingHook?.isConnected !== undefined) {
+    setIsConnected(realtimeBookingHook.isConnected);
+  }
+
+  // Create session mutation - use realtime hook if available for optimistic updates
+  const createSessionMutation = realtimeBookingHook?.createSessionMutation ?? useMutation({
     mutationFn: async (formData: BookingFormData) => {
       const scheduledAtDateTime = `${formData.date}T${formData.timeSlot}:00`;
       
@@ -195,6 +246,34 @@ export function UnifiedSessionBooking({
       const result = await response.json();
       return result.data;
     },
+    onMutate: enableOptimisticUpdates ? async (formData) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['timeSlots'] });
+      
+      // Optimistically update the time slot as booked
+      const queryKey = ['timeSlots', formData.coachId, formData.date, formData.duration];
+      const previousSlots = queryClient.getQueryData(queryKey);
+      
+      queryClient.setQueryData(queryKey, (oldSlots: TimeSlot[] | undefined) => {
+        if (!oldSlots) return [];
+        return oldSlots.map(slot => 
+          slot.startTime === formData.timeSlot 
+            ? { ...slot, isAvailable: false, isBooked: true, clientName: `${user?.firstName} ${user?.lastName}` }
+            : slot
+        );
+      });
+      
+      return { previousSlots, queryKey };
+    } : undefined,
+    onError: (error, formData, context) => {
+      console.error('Session booking failed:', error);
+      setBookingError(error.message || 'Failed to book session. Please try again.');
+      
+      // Revert optimistic update on error
+      if (enableOptimisticUpdates && context?.previousSlots) {
+        queryClient.setQueryData(context.queryKey, context.previousSlots);
+      }
+    },
     onSuccess: (sessionData) => {
       // Clear any previous errors
       setBookingError(null);
@@ -218,20 +297,77 @@ export function UnifiedSessionBooking({
       // Call success callback
       onSuccess?.(sessionData);
     },
-    onError: (error) => {
-      console.error('Session booking failed:', error);
-      setBookingError(error.message || 'Failed to book session. Please try again.');
-    },
   });
+
+  // Session action handlers
+  const handleSessionAction = async (action: 'start' | 'complete' | 'cancel', data?: any) => {
+    if (!existingSessionId) return;
+    
+    setSessionActionLoading(action);
+    
+    try {
+      let response;
+      
+      switch (action) {
+        case 'start':
+          response = await fetch(`/api/sessions/${existingSessionId}/start`, {
+            method: 'POST',
+          });
+          break;
+        case 'complete':
+          response = await fetch(`/api/sessions/${existingSessionId}/complete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data || {}),
+          });
+          break;
+        case 'cancel':
+          response = await fetch(`/api/sessions/${existingSessionId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data || {}),
+          });
+          break;
+      }
+      
+      if (!response?.ok) {
+        const errorData = await response?.json();
+        throw new Error(errorData?.message || `Failed to ${action} session`);
+      }
+      
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['session', existingSessionId] });
+      
+      // Call specific action handler if provided
+      if (action === 'start' && sessionActions?.onStart) {
+        await sessionActions.onStart(existingSessionId);
+      } else if (action === 'complete' && sessionActions?.onComplete) {
+        await sessionActions.onComplete(existingSessionId, data);
+      } else if (action === 'cancel' && sessionActions?.onCancel) {
+        await sessionActions.onCancel(existingSessionId, data?.reason);
+      }
+      
+    } catch (error) {
+      console.error(`Failed to ${action} session:`, error);
+      setBookingError(`Failed to ${action} session: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setSessionActionLoading(null);
+    }
+  };
 
   const onSubmit = (data: BookingFormData) => {
     createSessionMutation.mutate(data);
   };
 
-  const refreshAvailability = async () => {
+  const refreshAvailability = realtimeBookingHook?.refreshAvailability ?? (async () => {
     setLastRefresh(new Date());
-    await refetchSlots();
-  };
+    queryClient.invalidateQueries({ queryKey: ['timeSlots', watchedCoachId, watchedDate] });
+  });
+
+  const reconnect = realtimeBookingHook?.reconnect ?? (() => {
+    setIsConnected(true);
+  });
 
   // Generate next 30 days for date selection
   const availableDates = Array.from({ length: 30 }, (_, i) => {
@@ -242,56 +378,172 @@ export function UnifiedSessionBooking({
     };
   });
 
-  const selectedCoachData = coaches?.find(coach => coach.id === selectedCoach);
-  const hasError = bookingError || createSessionMutation.error;
-  const isLoading = isSubmitting || createSessionMutation.isPending;
+  const selectedCoachData = realtimeBookingHook?.selectedCoachData ?? finalCoaches?.find(coach => coach.id === selectedCoach);
+  const hasError = bookingError || createSessionMutation.error || realtimeBookingHook?.bookingError;
+  const isLoading = isSubmitting || createSessionMutation.isPending || realtimeBookingHook?.isBooking;
+
+  // Time slot status helpers for enhanced variants
+  const getSlotStatusIcon = (slot: TimeSlot) => {
+    if (slot.isBooked) return <XCircle className="h-3 w-3 text-destructive" />;
+    if (slot.isBlocked) return <XCircle className="h-3 w-3 text-muted-foreground" />;
+    if (slot.isAvailable) return <CheckCircle className="h-3 w-3 text-green-500" />;
+    return <XCircle className="h-3 w-3 text-muted-foreground" />;
+  };
+
+  const getSlotStatusText = (slot: TimeSlot) => {
+    if (slot.isBooked) return slot.clientName ? `Booked by ${slot.clientName}` : 'Booked';
+    if (slot.isBlocked) return slot.conflictReason || 'Blocked';
+    if (slot.isAvailable) return 'Available';
+    return 'Unavailable';
+  };
 
   return (
-    <Card className={cn("w-full max-w-2xl mx-auto", className)}>
+    <Card className={cn("w-full", variant === 'basic' ? 'max-w-2xl mx-auto' : 'max-w-4xl mx-auto', className)}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          {customTitle || t('bookSession')}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            <CardTitle>{customTitle || t('bookSession')}</CardTitle>
+          </div>
           {showConnectionStatus && (
-            <Badge variant={isConnected ? "default" : "destructive"} className="ml-auto">
-              {isConnected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </Badge>
-          )}
-        </CardTitle>
-        <CardDescription>
-          {customDescription || t('selectCoachAndTime')}
-          {variant !== 'basic' && showAvailabilityStatus && availabilityStatus && (
-            <div className="flex gap-2 mt-2">
-              <Badge variant="outline">
-                {availabilityStatus.availableSlots} available
+            <div className="flex items-center gap-2">
+              <Badge variant={isConnected ? "default" : "destructive"}>
+                {isConnected ? <Wifi className="h-3 w-3 mr-1" /> : <WifiOff className="h-3 w-3 mr-1" />}
+                {isConnected ? 'Live Updates' : 'Offline'}
               </Badge>
-              <Badge variant="secondary">
-                {availabilityStatus.bookedSlots} booked
-              </Badge>
-              {availabilityStatus.blockedSlots > 0 && (
-                <Badge variant="destructive">
-                  {availabilityStatus.blockedSlots} blocked
-                </Badge>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={reconnect}
+                disabled={isConnected}
+              >
+                {!isConnected && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                Reconnect
+              </Button>
             </div>
           )}
+        </div>
+        <CardDescription>
+          {customDescription || t('selectCoachAndTime')}
+          {variant === 'realtime' && ' - Real-time availability with live updates'}
         </CardDescription>
+        
+        {/* Availability Status Overview for enhanced/realtime variants */}
+        {variant !== 'basic' && showAvailabilityStatus && availabilityStatus && (
+          <Card className="p-4 bg-blue-50 dark:bg-blue-900/20 mt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <h4 className="font-medium">Availability Overview</h4>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={refreshAvailability}
+                disabled={finalLoadingSlots}
+                className="h-8"
+              >
+                {finalLoadingSlots ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                Refresh
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="text-center">
+                <div className="font-semibold text-lg">{availabilityStatus.totalSlots}</div>
+                <div className="text-muted-foreground">Total Slots</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-lg text-green-600">{availabilityStatus.availableSlots}</div>
+                <div className="text-muted-foreground">Available</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-lg text-red-600">{availabilityStatus.bookedSlots}</div>
+                <div className="text-muted-foreground">Booked</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-lg text-muted-foreground">{availabilityStatus.blockedSlots}</div>
+                <div className="text-muted-foreground">Blocked</div>
+              </div>
+            </div>
+            {availabilityStatus.lastUpdated && (
+              <div className="text-xs text-muted-foreground mt-2">
+                Last updated: {availabilityStatus.lastUpdated.toLocaleTimeString()}
+              </div>
+            )}
+          </Card>
+        )}
+        
         {variant !== 'basic' && (
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Last updated: {format(lastRefresh, 'HH:mm:ss')}</span>
+          <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
+            <span>Last updated: {format(realtimeBookingHook?.lastRefresh || lastRefresh, 'HH:mm:ss')}</span>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={refreshAvailability}
-              disabled={loadingSlots}
+              disabled={finalLoadingSlots}
             >
-              <RefreshCw className={cn("h-4 w-4", loadingSlots && "animate-spin")} />
+              <RefreshCw className={cn("h-4 w-4", finalLoadingSlots && "animate-spin")} />
             </Button>
           </div>
         )}
       </CardHeader>
       <CardContent>
+        {/* Connection Warning for realtime variants */}
+        {variant !== 'basic' && !isConnected && (
+          <Alert className="mb-6">
+            <WifiOff className="h-4 w-4" />
+            <AlertDescription>
+              Real-time updates are currently unavailable. Time slots may not reflect the latest availability.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {/* Session Actions for existing sessions */}
+        {showSessionActions && existingSessionId && sessionStatus && (
+          <Card className="p-4 mb-6 bg-muted">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Session Actions</h4>
+              <div className="flex gap-2">
+                {sessionStatus === 'scheduled' && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleSessionAction('start')}
+                    disabled={sessionActionLoading === 'start'}
+                  >
+                    {sessionActionLoading === 'start' && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                    Start Session
+                  </Button>
+                )}
+                {sessionStatus === 'in_progress' && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleSessionAction('complete')}
+                    disabled={sessionActionLoading === 'complete'}
+                  >
+                    {sessionActionLoading === 'complete' && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                    Complete Session
+                  </Button>
+                )}
+                {['scheduled', 'in_progress'].includes(sessionStatus) && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleSessionAction('cancel', { reason: 'Session cancelled by user' })}
+                    disabled={sessionActionLoading === 'cancel'}
+                  >
+                    {sessionActionLoading === 'cancel' && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                    Cancel Session
+                  </Button>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
+        
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Coach Selection */}
           <fieldset className="space-y-2">
@@ -313,12 +565,12 @@ export function UnifiedSessionBooking({
                 <SelectValue placeholder={t('selectCoach')} />
               </SelectTrigger>
               <SelectContent>
-                {loadingCoaches ? (
+                {finalLoadingCoaches ? (
                   <SelectItem value="" disabled>
                     {commonT('loading')}
                   </SelectItem>
                 ) : (
-                  coaches?.map((coach) => (
+                  finalCoaches?.map((coach) => (
                     <SelectItem key={coach.id} value={coach.id}>
                       <div className="flex items-center gap-2">
                         {(coach.avatar || coach.avatarUrl) && (
@@ -332,7 +584,7 @@ export function UnifiedSessionBooking({
                         )}
                         <span>{coach.firstName} {coach.lastName}</span>
                         {variant !== 'basic' && coach.isOnline && (
-                          <Badge variant="secondary" className="ml-auto">Online</Badge>
+                          <div className="w-2 h-2 bg-green-500 rounded-full" title="Online" />
                         )}
                       </div>
                     </SelectItem>
@@ -358,13 +610,17 @@ export function UnifiedSessionBooking({
                     className="w-12 h-12 rounded-full"
                   />
                 )}
-                <div>
-                  <h4 className="font-medium">
-                    {selectedCoachData.firstName} {selectedCoachData.lastName}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium">
+                      {selectedCoachData.firstName} {selectedCoachData.lastName}
+                    </h4>
                     {variant !== 'basic' && selectedCoachData.isOnline && (
-                      <Badge variant="secondary" className="ml-2">Online</Badge>
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        Online
+                      </Badge>
                     )}
-                  </h4>
+                  </div>
                   {selectedCoachData.bio && (
                     <p className="text-sm text-muted-foreground mt-1">
                       {selectedCoachData.bio}
@@ -419,6 +675,9 @@ export function UnifiedSessionBooking({
               onValueChange={(value) => {
                 setValue('duration', parseInt(value));
                 setValue('timeSlot', ''); // Reset time slot when duration changes
+                if (variant !== 'basic') {
+                  refreshAvailability(); // Refresh when duration changes
+                }
               }}
             >
               <SelectTrigger data-testid="session-type-select">
@@ -436,7 +695,7 @@ export function UnifiedSessionBooking({
 
           {/* Time Slot Selection */}
           {watchedCoachId && watchedDate && (
-            <fieldset className="space-y-2">
+            <fieldset className="space-y-3">
               <legend className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4" aria-hidden="true" />
@@ -444,43 +703,79 @@ export function UnifiedSessionBooking({
                 </div>
               </legend>
               
-              {loadingSlots ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  {commonT('loading')}
+              {finalLoadingSlots ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {variant === 'realtime' ? (
+                    <>
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                      Loading available time slots...
+                    </>
+                  ) : (
+                    commonT('loading')
+                  )}
                 </div>
-              ) : timeSlots && timeSlots.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {timeSlots.map((slot) => (
-                    <Button
-                      key={slot.startTime}
-                      type="button"
-                      variant={watchedTimeSlot === slot.startTime ? 'default' : 'outline'}
-                      disabled={!slot.isAvailable}
-                      onClick={() => setValue('timeSlot', slot.startTime)}
-                      className="h-auto py-2"
-                      aria-pressed={watchedTimeSlot === slot.startTime}
-                      aria-label={`Select time slot from ${slot.startTime} to ${slot.endTime}${!slot.isAvailable ? ' (unavailable)' : ''}`}
-                      data-testid="time-slot"
-                    >
-                      <div className="text-center">
-                        <div className="font-medium">{slot.startTime} - {slot.endTime}</div>
-                        {!slot.isAvailable && (
-                          <div className="text-xs opacity-70">
-                            {slot.conflictReason || 'Unavailable'}
+              ) : finalTimeSlots && finalTimeSlots.length > 0 ? (
+                <div className={cn(
+                  "grid gap-2",
+                  variant === 'basic' ? "grid-cols-2 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                )}>
+                  {finalTimeSlots.map((slot) => {
+                    const isAvailable = slot.isAvailable && !slot.isBooked && !slot.isBlocked;
+                    const isSelected = watchedTimeSlot === slot.startTime;
+                    
+                    return (
+                      <Button
+                        key={slot.startTime}
+                        type="button"
+                        variant={isSelected ? 'default' : 'outline'}
+                        disabled={!isAvailable}
+                        onClick={() => isAvailable && setValue('timeSlot', slot.startTime)}
+                        className={cn(
+                          variant === 'basic' ? "h-auto py-2" : "h-auto p-4 flex flex-col items-start gap-2 text-left",
+                          !isAvailable && "opacity-50 cursor-not-allowed",
+                          variant !== 'basic' && slot.isBooked && "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20",
+                          variant !== 'basic' && slot.isBlocked && "border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/20"
+                        )}
+                        aria-pressed={isSelected}
+                        aria-label={`${slot.startTime} to ${slot.endTime} - ${variant !== 'basic' ? getSlotStatusText(slot) : (!slot.isAvailable ? ' (unavailable)' : '')}`}
+                        data-testid="time-slot"
+                      >
+                        {variant === 'basic' ? (
+                          <div className="text-center">
+                            <div className="font-medium">{slot.startTime} - {slot.endTime}</div>
+                            {!slot.isAvailable && (
+                              <div className="text-xs opacity-70">
+                                {slot.conflictReason || 'Unavailable'}
+                              </div>
+                            )}
                           </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 w-full">
+                              {getSlotStatusIcon(slot)}
+                              <span className="font-medium">
+                                {slot.startTime} - {slot.endTime}
+                              </span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {getSlotStatusText(slot)}
+                            </span>
+                            {slot.sessionTitle && (
+                              <span className="text-xs text-muted-foreground italic">
+                                "{slot.sessionTitle}"
+                              </span>
+                            )}
+                          </>
                         )}
-                        {variant !== 'basic' && slot.isBooked && (
-                          <div className="text-xs opacity-70">Booked</div>
-                        )}
-                        {variant !== 'basic' && slot.isBlocked && (
-                          <div className="text-xs opacity-70">Blocked</div>
-                        )}
-                      </div>
-                    </Button>
-                  ))}
+                      </Button>
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-8 text-muted-foreground">
+                  {variant !== 'basic' && (
+                    <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  )}
                   No available time slots for this date
                 </div>
               )}
@@ -510,7 +805,7 @@ export function UnifiedSessionBooking({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">{t('description')} ({commonT('optional')})</Label>
+              <Label htmlFor="description">{t('description')} (optional)</Label>
               <Input
                 id="description"
                 {...register('description')}
@@ -526,17 +821,37 @@ export function UnifiedSessionBooking({
 
           {/* Submit Button */}
           <div className="flex gap-2 justify-end">
-            <Button type="submit" disabled={isLoading} data-testid="book-session-submit">
-              {isLoading ? commonT('loading') : t('bookSession')}
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              data-testid="book-session-submit"
+              className={variant !== 'basic' ? "min-w-[140px]" : ""}
+            >
+              {isLoading ? (
+                variant !== 'basic' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Booking...
+                  </>
+                ) : (
+                  commonT('loading')
+                )
+              ) : (
+                t('bookSession')
+              )}
             </Button>
           </div>
 
           {/* Error Display */}
           {hasError && (
             <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
+              {variant === 'basic' ? (
+                <AlertCircle className="h-4 w-4" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              )}
               <AlertDescription>
-                {bookingError || createSessionMutation.error?.message}
+                {bookingError || createSessionMutation.error?.message || realtimeBookingHook?.bookingError?.message}
               </AlertDescription>
             </Alert>
           )}
@@ -559,5 +874,33 @@ export function UnifiedSessionBooking({
         />
       )}
     </Card>
+  );
+}
+
+// Export convenience components for specific use cases
+export function BasicSessionBooking(props: Omit<UnifiedSessionBookingProps, 'variant'>) {
+  return <UnifiedSessionBooking {...props} variant="basic" />;
+}
+
+export function EnhancedSessionBooking(props: Omit<UnifiedSessionBookingProps, 'variant'>) {
+  return (
+    <UnifiedSessionBooking 
+      {...props} 
+      variant="enhanced" 
+      showAvailabilityStatus={props.showAvailabilityStatus ?? true}
+      showConnectionStatus={props.showConnectionStatus ?? true}
+    />
+  );
+}
+
+export function RealtimeSessionBooking(props: Omit<UnifiedSessionBookingProps, 'variant'>) {
+  return (
+    <UnifiedSessionBooking 
+      {...props} 
+      variant="realtime" 
+      showAvailabilityStatus={props.showAvailabilityStatus ?? true}
+      showConnectionStatus={props.showConnectionStatus ?? true}
+      enableOptimisticUpdates={props.enableOptimisticUpdates ?? true}
+    />
   );
 }

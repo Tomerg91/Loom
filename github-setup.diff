@@ -1,0 +1,513 @@
+diff --git a/.github/PULL_REQUEST_TEMPLATE.md b/.github/PULL_REQUEST_TEMPLATE.md
+new file mode 100644
+index 0000000..59d4478
+--- /dev/null
++++ b/.github/PULL_REQUEST_TEMPLATE.md
+@@ -0,0 +1,26 @@
++## What
++- Short summary of changes
++
++## Why
++- Link issues (e.g., Closes #123)
++
++## How
++- Key implementation notes
++- DB migrations / ENV changes (if any)
++
++## Tests
++- Unit:
++- Integration:
++- E2E:
++
++## Risks & Rollback
++- Risks:
++- Rollback plan:
++
++## Screenshots / Notes
++- Before/After (if UI)
++- Perf numbers (if relevant)
++
++## Checklist
++- [ ] Meets DoD (security, tests, perf)
++- [ ] Updated docs where needed
+diff --git a/.github/labeler.yml b/.github/labeler.yml
+new file mode 100644
+index 0000000..cde2a43
+--- /dev/null
++++ b/.github/labeler.yml
+@@ -0,0 +1,27 @@
++area:security:
++  - any: ["src/lib/**", "middleware.ts", "nginx.conf"]
++area:features:
++  - any: ["src/components/**", "src/app/api/**"]
++area:ux:
++  - any: ["src/components/**"]
++area:i18n:
++  - any: ["src/i18n/**"]
++area:performance:
++  - any: ["components/**", "api/**"]
++area:docs:
++  - any: ["docs/**", "*.md"]
++area:ops:
++  - any: [".github/**", "Dockerfile", "docker-compose.yml", "vercel.json"]
++area:build:
++  - any: ["tsconfig.json", "eslint.config.*", "package.json", "vitest.config.*", "playwright.config.*"]
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+index 0000000..3d1b5f1
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,108 @@
++name: CI
++on:
++  push:
++    branches: [main]
++  pull_request:
++
++permissions:
++  contents: read
++
++jobs:
++  typecheck:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 20
++      - run: corepack enable
++      - run: pnpm install --frozen-lockfile
++      - run: pnpm exec tsc --noEmit
++
++  lint:
++    runs-on: ubuntu-latest
++    needs: [typecheck]
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 20
++      - run: corepack enable
++      - run: pnpm install --frozen-lockfile
++      - run: pnpm exec eslint . --max-warnings=0
++
++  unit:
++    runs-on: ubuntu-latest
++    needs: [lint]
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 20
++      - run: corepack enable
++      - run: pnpm install --frozen-lockfile
++      - run: pnpm exec vitest run --coverage
++
++  e2e:
++    runs-on: ubuntu-latest
++    needs: [unit]
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 20
++      - run: corepack enable
++      - run: pnpm install --frozen-lockfile
++      - name: Install Playwright Browsers
++        run: npx playwright install --with-deps
++      - name: Build & Start
++        env:
++          NODE_ENV: production
++        run: |
++          pnpm build
++          pnpm start & npx wait-on http://localhost:3000
++      - name: Run Playwright
++        run: npx playwright test
++
++  lighthouse:
++    runs-on: ubuntu-latest
++    needs: [e2e]
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 20
++      - run: corepack enable
++      - run: pnpm install --frozen-lockfile
++      - name: Build & Serve
++        env:
++          NODE_ENV: production
++        run: |
++          pnpm build
++          pnpm start & npx wait-on http://localhost:3000
++      - name: Lighthouse CI
++        run: npx lhci autorun --upload.target=temporary-public-storage
+diff --git a/.github/workflows/codeql.yml b/.github/workflows/codeql.yml
+new file mode 100644
+index 0000000..f3b4f50
+--- /dev/null
++++ b/.github/workflows/codeql.yml
+@@ -0,0 +1,35 @@
++name: CodeQL
++on:
++  push:
++    branches: [main]
++  pull_request:
++  schedule:
++    - cron: '0 2 * * 1'
++
++permissions:
++  contents: read
++  security-events: write
++
++jobs:
++  analyze:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: github/codeql-action/init@v3
++        with:
++          languages: javascript
++          queries: security-extended,security-and-quality
++      - uses: github/codeql-action/autobuild@v3
++      - uses: github/codeql-action/analyze@v3
+diff --git a/.github/workflows/labeler.yml b/.github/workflows/labeler.yml
+new file mode 100644
+index 0000000..f7c3c2a
+--- /dev/null
++++ b/.github/workflows/labeler.yml
+@@ -0,0 +1,18 @@
++name: PR Labeler
++on:
++  pull_request:
++    types: [opened, synchronize, reopened]
++permissions:
++  contents: read
++  pull-requests: write
++jobs:
++  label:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/labeler@v5
++        with:
++          repo-token: ${{ secrets.GITHUB_TOKEN }}
++          sync-labels: true
+diff --git a/.github/workflows/project-triage.yml b/.github/workflows/project-triage.yml
+new file mode 100644
+index 0000000..9a9a7b3
+--- /dev/null
++++ b/.github/workflows/project-triage.yml
+@@ -0,0 +1,19 @@
++name: Project Triage
++on:
++  issues:
++    types: [opened]
++permissions:
++  contents: read
++  issues: write
++jobs:
++  add_to_project:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/add-to-project@v1.0.2
++        with:
++          # Replace with your actual project URL after creation
++          project-url: https://github.com/users/Tomerg91/projects
++          github-token: ${{ secrets.GITHUB_TOKEN }}
+diff --git a/CODEOWNERS b/CODEOWNERS
+new file mode 100644
+index 0000000..f5c0d78
+--- /dev/null
++++ b/CODEOWNERS
+@@ -0,0 +1 @@
++*       @Tomerg91
+diff --git a/SECURITY.md b/SECURITY.md
+new file mode 100644
+index 0000000..2b4b3c2
+--- /dev/null
++++ b/SECURITY.md
+@@ -0,0 +1,18 @@
++# Security Policy
++
++Please report vulnerabilities via private email or GitHub security advisory, not public issues.
++Do not include secrets or PII in reproduction steps.
++
++**Scope:** Next.js/TS app, Supabase SQL & RLS policies, API routes, nginx.
++
++**Expectations**
++- Acknowledge reports promptly and triage severity.
++- Prioritize P0 issues for immediate fix and patch release.
++- Coordinate disclosure timeline with reporter.
+diff --git a/docs/agent_master_prompt.md b/docs/agent_master_prompt.md
+new file mode 100644
+index 0000000..f8bf87b
+--- /dev/null
++++ b/docs/agent_master_prompt.md
+@@ -0,0 +1,61 @@
++# Loom Agent Master Prompt
++
++You are a senior full-stack engineer working on the “Loom” app (Next.js + React + TypeScript + Supabase).
++Your objective: make the app **PRODUCTION-READY** for paying users.
++
++## Guardrails
++- Prioritize P0 security issues, then core functionality (P0), then P1, P2, P3.
++- No architectural rewrites unless required to meet security/DoD.
++- Replace all mock/hardcoded data with real DB calls (Supabase). Enforce RLS.
++- Keep secrets server-side only. No sensitive data in clients, logs, or git.
++- Add/modify tests as you implement; aim for 80%+ coverage on critical paths.
++- Use feature branches per ticket; open small PRs with tests and migration notes.
++- If info is missing, propose a minimal decision and proceed (don’t block).
++
++## Deliverables per Ticket
++1) Code + migrations + env var updates (if any)  
++2) Tests (unit/integration/E2E as relevant)  
++3) PR description with risks and rollback steps  
++4) Update docs/README
++
++## Tech Notes (must-do)
++- API hardening: strict CORS (env allowlist), rate limiting on auth/session/user endpoints, server-only auth flows, httpOnly secure cookies.
++- MFA: real cryptographic/TOTP or WebAuthn, no test bypass. Validate all tokens server-side.
++- File uploads: Supabase Storage with signed URLs + RLS; no public buckets for PII.
++- Performance: cache API responses where safe; memoize heavy components.
++
++Execute the backlog in `docs/backlog.yml` in the stated order. Ask only blocking questions.
+diff --git a/docs/backlog.yml b/docs/backlog.yml
+new file mode 100644
+index 0000000..c1a6f2d
+--- /dev/null
++++ b/docs/backlog.yml
+@@ -0,0 +1,196 @@
++project: Loom App
++last_updated: 2025-08-08
++tech_stack: [Next.js, React, TypeScript, Supabase]
++
++execution_order:
++  - phase: 1
++    name: Security Hardening (P0)
++    order: ["T1(minimal)", "S1", "S2", "S3", "S4"]
++  - phase: 2
++    name: Core Functionality (P0)
++    order: ["F1", "F2", "F3"]
++  - phase: 3
++    name: High Priority (P1)
++    order: ["A1", "F4", "T1(rest)"]
++  - phase: 4
++    name: Polish (P2)
++    order: ["UX1", "UX2", "P1"]
++  - phase: 5
++    name: Enhancements (P3)
++    order: ["D1", "M1"]
++
++tickets:
++  - id: T1
++    title: Resolve TypeScript compilation errors (unblock security scans → zero)
++    priority: P1
++    phase: [1,3]
++    area: build
++    files: ["**/*.ts", "**/*.tsx", "tsconfig.json"]
++    description: >
++      First fix the minimal blocking set for CodeQL, then complete the rest after P0.
++      Avoid large refactors; prefer minimal, typed fixes.
++    acceptance:
++      - "pnpm exec tsc --noEmit" passes with 0 errors
++      - ESLint passes on changed files
++      - CI type-check job green
++
++  - id: S1
++    title: Remove MFA service backdoor and implement real MFA
++    priority: P0
++    phase: 1
++    area: security
++    files: ["src/lib/services/mfa-service.ts"]
++    description: >
++      Eliminate hardcoded test data and any bypass paths. Implement TOTP or WebAuthn.
++      Verify server-side with rate limiting and audit logging.
++    acceptance:
++      - No hardcoded secrets/test users in repo
++      - MFA verify endpoint validates cryptographically and logs attempts
++      - E2E: login + MFA success/failure; no client-side bypass
++
++  - id: S2
++    title: Add API rate limiting to critical endpoints
++    priority: P0
++    phase: 1
++    area: security
++    files: ["src/app/api/sessions/route.ts", "src/app/api/users/route.ts"]
++    description: >
++      Add IP/user rate limits to login/MFA/session/user endpoints. Return 429 with
++      Retry-After, and log bursts.
++    acceptance:
++      - Documented limits (e.g., 5/min per IP+user for auth)
++      - E2E: brute-force simulation returns 429
++      - No bypass via alternate routes
++
++  - id: S3
++    title: Tighten CORS (no wildcard)
++    priority: P0
++    phase: 1
++    area: security
++    files: ["**/route.ts", "nginx.conf", "middleware.ts"]
++    description: >
++      Replace Access-Control-Allow-Origin:* with env-driven allowlist (CORS_ALLOW_ORIGINS).
++      Deny credentials for non-allowlisted origins and validate preflight handling.
++    acceptance:
++      - Only allowlisted origins accepted
++      - Correct preflight headers
++      - Integration tests block non-allowlisted origins
++
++  - id: S4
++    title: Remove client-side auth/session exposure
++    priority: P0
++    phase: 1
++    area: security
++    files: ["src/lib/auth/auth-context.tsx", "app/**"]
++    description: >
++      Ensure sensitive session/MFA tokens never reach the client. Use server-only checks,
++      httpOnly secure cookies; minimize JWT claims; redact logs.
++    acceptance:
++      - No sensitive tokens in React state/network traces
++      - Server-only verification for auth/MFA
++      - E2E confirms tokens not visible via DevTools
++
++  - id: F1
++    title: Complete Client Dashboard
++    priority: P0
++    phase: 2
++    area: features
++    files: ["src/components/client/client-dashboard.tsx"]
++    description: >
++      Replace placeholders and mock data with real Supabase queries (RLS-enforced).
++      Fix session navigation; implement empty/error states.
++    acceptance:
++      - Real data displayed; no mocks/hardcodes
++      - Session navigation works end-to-end
++      - Loading/error/empty states covered by tests
++
++  - id: F2
++    title: Complete Coach Dashboard
++    priority: P0
++    phase: 2
++    area: features
++    files: ["src/components/coach/coach-dashboard.tsx"]
++    description: >
++      Implement client roster management, real revenue metrics via DB views,
++      and basic filters. Remove hardcoded values.
++    acceptance:
++      - Role-based access enforced
++      - Revenue widget from DB view
++      - Integration + E2E for coach flow
++
++  - id: F3
++    title: Fix Admin Analytics + Data Export
++    priority: P0
++    phase: 2
++    area: features
++    files: ["src/lib/database/admin-analytics.ts"]
++    description: >
++      Create/align tables or materialized views powering analytics. Implement CSV export
++      endpoint with auth + rate limit.
++    acceptance:
++      - Admin charts load from real tables/views
++      - CSV export auth-protected and rate-limited
++      - No references to non-existent tables
++
++  - id: A1
++    title: Consolidate session booking forms
++    priority: P1
++    phase: 3
++    area: ux
++    files: ["src/components/sessions/_deprecated/**", "src/components/sessions/**"]
++    description: >
++      Merge three inconsistent forms into a single component with shared validation + server
++      action. Remove deprecated directory.
++    acceptance:
++      - One reusable booking component
++      - Legacy forms deleted
++      - E2E booking flow green
++
++  - id: F4
++    title: File upload & sharing system
++    priority: P1
++    phase: 3
++    area: features
++    files: ["src/lib/services/file-service.ts", "api/files/**", "components/files/**"]
++    description: >
++      Implement Supabase Storage with signed URLs, object-level RLS, size/type validation,
++      and expiry-based sharing links. No public buckets for PII.
++    acceptance:
++      - Upload/download/delete within role permissions
++      - Signed URLs expire and are scoped
++      - Type/MIME checks + size limits
++
++  - id: UX1
++    title: Notifications system polish
++    priority: P2
++    phase: 4
++    area: ux
++    files: ["src/components/notifications/notification-center.tsx"]
++    description: >
++      Make notification clicks deep-link correctly; wire settings to backend; add realtime
++      updates via Supabase Realtime.
++    acceptance:
++      - Click-through navigates to target
++      - Settings persist
++      - Real-time updates verified
++
++  - id: UX2
++    title: Internationalization defaults + RTL audit
++    priority: P2
++    phase: 4
++    area: i18n
++    files: ["src/i18n/routing.ts", "app/**"]
++    description: >
++      Set default language to Hebrew; verify RTL layouts and typography in all major views.
++    acceptance:
++      - Hebrew default
++      - RTL verified on dashboards/flows
++      - No layout regressions
++
++  - id: P1
++    title: Performance optimizations
++    priority: P2
++    phase: 4
++    area: performance
++    files: ["components/**", "api/**"]
++    description: >
++      Add API caching where safe; memoize expensive components; remove unnecessary re-renders.
++    acceptance:
++      - Lighthouse perf > 90
++      - Reduced re-renders (React profiler)
++      - Faster median API latency on hot paths
++
++  - id: D1
++    title: Generate OpenAPI/Swagger for APIs
++    priority: P3
++    phase: 5
++    area: docs
++    files: ["openapi.yaml", "scripts/generate-openapi.ts"]
++    description: >
++      Provide a complete OpenAPI spec for endpoints; publish to /api/docs (protected).
++    acceptance:
++      - Spec validates
++      - CI job checks spec consistency
++
++  - id: M1
++    title: Enhanced monitoring & analytics
++    priority: P3
++    phase: 5
++    area: ops
++    files: ["scripts/observability/**", "api/**"]
++    description: >
++      Add audit logs for auth-sensitive actions; basic APM and error reporting; dashboards
++      for rate limits and 4xx/5xx.
++    acceptance:
++      - Audit events visible per user/admin
++      - Alerting for auth abuse/error spikes
+diff --git a/docs/definition_of_done.md b/docs/definition_of_done.md
+new file mode 100644
+index 0000000..a0d9b1f
+--- /dev/null
++++ b/docs/definition_of_done.md
+@@ -0,0 +1,44 @@
+# Definition of Done (Project-wide)
+...

@@ -6,33 +6,78 @@ import {
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { createServerClient } from '@/lib/supabase/server';
+import { rateLimit } from '@/lib/security/rate-limit';
 import { z } from 'zod';
 import { isCoachAvailable } from '@/lib/database/availability';
 import { sessionNotificationService } from '@/lib/notifications/session-notifications';
 import type { Session } from '@/types';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 const bookSessionSchema = z.object({
-  coachId: z.string().min(1),
-  title: z.string().min(1).max(100),
-  description: z.string().max(500).optional(),
-  scheduledAt: z.string(),
-  durationMinutes: z.number().min(15).max(240),
+  coachId: z.string().uuid('Invalid coach ID format'),
+  title: z.string()
+    .min(1, 'Title is required')
+    .max(100, 'Title must be less than 100 characters'),
+  description: z.string()
+    .max(500, 'Description must be less than 500 characters')
+    .optional(),
+  scheduledAt: z.string()
+    .min(1, 'Scheduled date and time is required'),
+  durationMinutes: z.number()
+    .min(15, 'Session must be at least 15 minutes')
+    .max(240, 'Session cannot be longer than 4 hours'),
+});
+
+// Apply rate limiting for session booking to prevent abuse
+const rateLimitedHandler = rateLimit(10, 60000, { // 10 bookings per minute
+  blockDuration: 10 * 60 * 1000, // 10 minutes block
+  enableSuspiciousActivityDetection: true,
 });
 
 // POST /api/sessions/book - Book a new session with notifications
-export const POST = withErrorHandling(async (request: NextRequest) => {
-  const supabase = createServerClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+export const POST = withErrorHandling(
+  rateLimitedHandler(async (request: NextRequest) => {
+    const supabase = createServerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    return createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
-  }
+    if (authError || !user) {
+      return createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+    }
 
-  const body = await request.json();
-  const validatedData = bookSessionSchema.parse(body);
+    // Parse and validate request body
+    const body = await request.json();
+    
+    let validatedData;
+    try {
+      validatedData = bookSessionSchema.parse(body);
+    } catch (error) {
+      // Log invalid booking attempt
+      console.warn('Invalid session booking attempt:', {
+        userId: user.id,
+        ip: request.headers.get('x-forwarded-for') || 'unknown',
+        userAgent: request.headers.get('user-agent'),
+        timestamp: new Date().toISOString(),
+        validationError: error
+      });
+      
+      return createErrorResponse(
+        error instanceof z.ZodError ? error.errors[0].message : 'Invalid request data',
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
 
-  // Verify user is a client
-  const { data: profile } = await supabase
+    // Log session booking attempt for auditing
+    console.info('Session booking attempted:', {
+      userId: user.id,
+      coachId: validatedData.coachId,
+      scheduledAt: validatedData.scheduledAt,
+      duration: validatedData.durationMinutes,
+      timestamp: new Date().toISOString(),
+      ip: request.headers.get('x-forwarded-for') || 'unknown'
+    });
+
+    // Verify user is a client
+    const { data: profile } = await supabase
     .from('users')
     .select('role, first_name, last_name')
     .eq('id', user.id)
@@ -131,17 +176,21 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     // Don't fail the session creation if notifications fail
   }
 
-  return createSuccessResponse(transformedSession, 'Session booked successfully', HTTP_STATUS.CREATED);
-});
+    // Log successful session booking for auditing
+    console.info('Session booked successfully:', {
+      sessionId: transformedSession.id,
+      userId: user.id,
+      coachId: validatedData.coachId,
+      scheduledAt: validatedData.scheduledAt,
+      timestamp: new Date().toISOString(),
+      ip: request.headers.get('x-forwarded-for') || 'unknown'
+    });
+
+    return createSuccessResponse(transformedSession, 'Session booked successfully', HTTP_STATUS.CREATED);
+  })
+);
 
 // OPTIONS /api/sessions/book - Handle CORS preflight
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return createCorsResponse(request);
 }

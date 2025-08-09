@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/lib/store/auth-store';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +18,8 @@ import {
   MessageSquare,
   Star,
   ArrowUpRight,
-  UserPlus
+  UserPlus,
+  DollarSign
 } from 'lucide-react';
 import { SessionList } from '@/components/sessions/session-list';
 import { SessionCalendar } from '@/components/sessions/session-calendar';
@@ -74,8 +76,13 @@ interface RecentActivity {
 export function CoachDashboard() {
   const t = useTranslations('dashboard');
   const user = useUser();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Refresh data every 5 minutes
+  const refreshInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
 
   // Fetch dashboard stats
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -89,6 +96,9 @@ export function CoachDashboard() {
       return result.data;
     },
     enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000, // Data is fresh for 2 minutes
+    refetchInterval: refreshInterval, // Auto-refresh every 5 minutes
+    refetchIntervalInBackground: true,
   });
 
   // Fetch upcoming sessions
@@ -101,6 +111,8 @@ export function CoachDashboard() {
       return data.data;
     },
     enabled: !!user?.id,
+    staleTime: 1 * 60 * 1000, // Sessions are fresh for 1 minute
+    refetchInterval: refreshInterval,
   });
 
   // Fetch recent clients
@@ -115,6 +127,8 @@ export function CoachDashboard() {
       return result.data;
     },
     enabled: !!user?.id,
+    staleTime: 3 * 60 * 1000, // Client data is fresh for 3 minutes
+    refetchInterval: refreshInterval,
   });
 
   // Fetch recent activity
@@ -129,7 +143,18 @@ export function CoachDashboard() {
       return result.data;
     },
     enabled: !!user?.id,
+    staleTime: 1 * 60 * 1000, // Activity is fresh for 1 minute
+    refetchInterval: refreshInterval,
   });
+
+  // Callback to refresh data when actions are taken
+  const refreshDashboardData = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['coach-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+    queryClient.invalidateQueries({ queryKey: ['recent-clients'] });
+    queryClient.invalidateQueries({ queryKey: ['recent-activity'] });
+    queryClient.invalidateQueries({ queryKey: ['coach-clients'] });
+  }, [queryClient]);
 
   // Memoize expensive calculations
   const thisWeekSessions = useMemo(() => {
@@ -167,7 +192,7 @@ export function CoachDashboard() {
 
         <TabsContent value="overview" className="space-y-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <Card data-testid="upcoming-sessions">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -219,7 +244,7 @@ export function CoachDashboard() {
               </CardContent>
             </Card>
 
-            <Card data-testid="monthly-revenue">
+            <Card data-testid="average-rating">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Average Rating
@@ -232,6 +257,23 @@ export function CoachDashboard() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   from client feedback
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card data-testid="total-revenue">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Total Revenue
+                </CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {statsLoading ? '...' : `$${(stats?.totalRevenue || 0).toLocaleString()}`}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  from {stats?.completedSessions || 0} completed sessions
                 </p>
               </CardContent>
             </Card>
@@ -408,7 +450,7 @@ export function CoachDashboard() {
                 coachId={user?.id}
                 onSessionClick={(session) => {
                   // Navigate to session details
-                  window.location.href = `/sessions/${session.id}`;
+                  router.push(`/sessions/${session.id}`);
                 }}
               />
             </TabsContent>

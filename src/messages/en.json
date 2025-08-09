@@ -609,6 +609,17 @@
     "lowMood": "Low",
     "poorMood": "Poor"
   },
+  "reflections": {
+    "myReflections": "My Reflections",
+    "reflectionsDescription": "Capture your thoughts, insights, and progress after each session",
+    "addReflection": "Add Reflection",
+    "editReflection": "Edit Reflection",
+    "addReflectionDescription": "Reflect on your recent coaching session and track your progress",
+    "editReflectionDescription": "Update your reflection with new insights or corrections",
+    "confirmDelete": "Are you sure you want to delete this reflection? This action cannot be undone.",
+    "reflectionDeleted": "Reflection deleted successfully",
+    "reflectionSaved": "Reflection saved successfully"
+  },
   "notification": {
     "notifications": "Notifications",
     "markAsRead": "Mark as Read",

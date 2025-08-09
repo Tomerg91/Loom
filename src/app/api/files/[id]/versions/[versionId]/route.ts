@@ -15,9 +15,11 @@ const updateVersionSchema = z.object({
 // GET /api/files/[id]/versions/[versionId] - Get specific version details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; versionId: string } }
+  { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
   try {
+    const { id, versionId } = await params;
+    
     // Get authenticated user
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -30,11 +32,11 @@ export async function GET(
     }
 
     // Verify user has access to the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     // Check if user owns the file or it's shared with them
     if (file.user_id !== user.id) {
-      const userShares = await fileDatabase.getFileShares(params.id, user.id);
+      const userShares = await fileDatabase.getFileShares(id, user.id);
       const hasFileAccess = userShares.some(share => 
         share.shared_with === user.id && 
         (!share.expires_at || new Date(share.expires_at) > new Date())
@@ -49,9 +51,9 @@ export async function GET(
     }
 
     // Get specific version
-    const version = await fileVersionsDatabase.getFileVersion(params.versionId);
+    const version = await fileVersionsDatabase.getFileVersion(versionId);
 
-    if (version.file_id !== params.id) {
+    if (version.file_id !== id) {
       return NextResponse.json(
         { error: 'Version does not belong to this file' },
         { status: 400 }
@@ -96,9 +98,11 @@ export async function GET(
 // PUT /api/files/[id]/versions/[versionId] - Update version metadata
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; versionId: string } }
+  { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
   try {
+    const { id, versionId } = await params;
+    
     // Apply rate limiting
     const rateLimitResult = await fileModificationRateLimit(request);
     if (rateLimitResult) {
@@ -117,7 +121,7 @@ export async function PUT(
     }
 
     // Verify user owns the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     if (file.user_id !== user.id) {
       return NextResponse.json(
@@ -127,9 +131,9 @@ export async function PUT(
     }
 
     // Get and validate the version
-    const version = await fileVersionsDatabase.getFileVersion(params.versionId);
+    const version = await fileVersionsDatabase.getFileVersion(versionId);
 
-    if (version.file_id !== params.id) {
+    if (version.file_id !== id) {
       return NextResponse.json(
         { error: 'Version does not belong to this file' },
         { status: 400 }
@@ -150,7 +154,7 @@ export async function PUT(
 
     // Update version
     const updatedVersion = await fileVersionsDatabase.updateFileVersion(
-      params.versionId,
+      versionId,
       validatedData
     );
 
@@ -193,9 +197,11 @@ export async function PUT(
 // DELETE /api/files/[id]/versions/[versionId] - Delete a version
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; versionId: string } }
+  { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
   try {
+    const { id, versionId } = await params;
+    
     // Apply rate limiting
     const rateLimitResult = await fileModificationRateLimit(request);
     if (rateLimitResult) {
@@ -214,7 +220,7 @@ export async function DELETE(
     }
 
     // Verify user owns the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     if (file.user_id !== user.id) {
       return NextResponse.json(
@@ -224,9 +230,9 @@ export async function DELETE(
     }
 
     // Get and validate the version
-    const version = await fileVersionsDatabase.getFileVersion(params.versionId);
+    const version = await fileVersionsDatabase.getFileVersion(versionId);
 
-    if (version.file_id !== params.id) {
+    if (version.file_id !== id) {
       return NextResponse.json(
         { error: 'Version does not belong to this file' },
         { status: 400 }
@@ -260,7 +266,7 @@ export async function DELETE(
     }
 
     // Delete from database
-    await fileVersionsDatabase.deleteFileVersion(params.versionId);
+    await fileVersionsDatabase.deleteFileVersion(versionId);
 
     return NextResponse.json({
       success: true,

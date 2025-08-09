@@ -10,6 +10,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
 import { createAuthService } from '@/lib/auth/auth';
+import { 
+  createSuccessResponse, 
+  createErrorResponse, 
+  withErrorHandling,
+  HTTP_STATUS
+} from '@/lib/api/utils';
+import { rateLimit } from '@/lib/security/rate-limit';
 import { z } from 'zod';
 
 // Request validation schema
@@ -22,72 +29,113 @@ const verifyRequestSchema = z.object({
   method: z.enum(['totp', 'backup_code']).default('totp'),
 });
 
-export async function POST(request: NextRequest) {
-  try {
-    // Parse and validate request body
-    let requestData;
+// Apply strict rate limiting for MFA verification to prevent brute force attacks
+const rateLimitedHandler = rateLimit(10, 60000, { // 10 attempts per minute
+  blockDuration: 30 * 60 * 1000, // 30 minutes block for failed attempts
+  enableSuspiciousActivityDetection: true,
+  skipSuccessfulRequests: false // Count all MFA attempts
+});
+
+export const POST = withErrorHandling(
+  rateLimitedHandler(async (request: NextRequest) => {
     try {
-      const body = await request.json();
-      requestData = await verifyRequestSchema.parseAsync(body);
-    } catch (validationError) {
-      return NextResponse.json(
-        { 
-          error: 'Invalid request format',
-          details: validationError instanceof z.ZodError ? validationError.errors : undefined
-        },
-        { status: 400 }
-      );
-    }
-
-    // Extract client information for audit logging
-    const ipAddress = getClientIP(request);
-    const userAgent = getUserAgent(request);
-
-    // Initialize MFA service
-    const mfaService = createMfaService(true);
-
-    // Check if user requires MFA
-    const requiresMFA = await mfaService.requiresMFA(requestData.userId);
-    if (!requiresMFA) {
-      return NextResponse.json(
-        { error: 'MFA is not enabled for this user' },
-        { status: 400 }
-      );
-    }
-
-    // Verify the MFA code
-    const result = await mfaService.verifyMFA(
-      requestData.userId,
-      requestData.code,
-      requestData.method,
-      ipAddress,
-      userAgent
-    );
-
-    if (!result.success) {
-      // Return specific error messages for different failure scenarios
-      let status = 400;
-      let errorMessage = result.error || 'MFA verification failed';
-      
-      if (errorMessage.includes('Too many attempts')) {
-        status = 429; // Rate limited
-      } else if (errorMessage.includes('not enabled')) {
-        status = 403; // Forbidden
+      // Parse and validate request body
+      let requestData;
+      try {
+        const body = await request.json();
+        requestData = await verifyRequestSchema.parseAsync(body);
+      } catch (validationError) {
+        // Log invalid MFA verification attempt
+        console.warn('Invalid MFA verification attempt:', {
+          ip: request.headers.get('x-forwarded-for') || 'unknown',
+          userAgent: request.headers.get('user-agent'),
+          timestamp: new Date().toISOString(),
+          validationError: validationError instanceof z.ZodError ? validationError.errors : validationError
+        });
+        
+        return createErrorResponse(
+          'Invalid request format',
+          HTTP_STATUS.BAD_REQUEST
+        );
       }
 
-      return NextResponse.json(
-        { error: errorMessage },
-        { status }
+      // Extract client information for audit logging
+      const ipAddress = getClientIP(request);
+      const userAgent = getUserAgent(request);
+
+      // Log MFA verification attempt for security monitoring
+      console.info('MFA verification attempt:', {
+        userId: requestData.userId,
+        method: requestData.method,
+        ipAddress,
+        userAgent,
+        timestamp: new Date().toISOString()
+      });
+
+      // Initialize MFA service
+      const mfaService = createMfaService(true);
+
+      // Check if user requires MFA
+      const requiresMFA = await mfaService.requiresMFA(requestData.userId);
+      if (!requiresMFA) {
+        console.warn('MFA verification attempted for user without MFA:', {
+          userId: requestData.userId,
+          ipAddress,
+          timestamp: new Date().toISOString()
+        });
+        
+        return createErrorResponse(
+          'MFA is not enabled for this user',
+          HTTP_STATUS.BAD_REQUEST
+        );
+      }
+
+      // Verify the MFA code
+      const result = await mfaService.verifyMFA(
+        requestData.userId,
+        requestData.code,
+        requestData.method,
+        ipAddress,
+        userAgent
       );
-    }
 
-    // Get updated MFA status (e.g., remaining backup codes)
-    const mfaStatus = await mfaService.getMFAStatus(requestData.userId);
+      if (!result.success) {
+        // Log failed MFA verification for security monitoring
+        console.warn('MFA verification failed:', {
+          userId: requestData.userId,
+          method: requestData.method,
+          error: result.error,
+          ipAddress,
+          userAgent,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Return specific error messages for different failure scenarios
+        let status: number = HTTP_STATUS.BAD_REQUEST;
+        let errorMessage = result.error || 'MFA verification failed';
+        
+        if (errorMessage.includes('Too many attempts')) {
+          status = HTTP_STATUS.TOO_MANY_REQUESTS;
+        } else if (errorMessage.includes('not enabled')) {
+          status = HTTP_STATUS.FORBIDDEN;
+        }
 
-    return NextResponse.json({
-      success: true,
-      message: 'MFA verification successful',
-      data: {
+        return createErrorResponse(errorMessage, status);
+      }
+
+      // Get updated MFA status (e.g., remaining backup codes)
+      const mfaStatus = await mfaService.getMFAStatus(requestData.userId);
+
+      // Log successful MFA verification for auditing
+      console.info('MFA verification successful:', {
+        userId: requestData.userId,
+        method: requestData.method,
+        backupCodesRemaining: mfaStatus.backupCodesRemaining,
+        ipAddress,
+        timestamp: new Date().toISOString()
+      });
+
+      return createSuccessResponse({
         verified: true,
         method: requestData.method,
         backupCodesRemaining: mfaStatus.backupCodesRemaining,
@@ -95,82 +143,90 @@ export async function POST(request: NextRequest) {
         warning: mfaStatus.backupCodesRemaining > 0 && mfaStatus.backupCodesRemaining <= 2 
           ? 'You have few backup codes remaining. Consider generating new ones.' 
           : undefined,
-      },
-    });
+      }, 'MFA verification successful');
 
-  } catch (error) {
-    console.error('MFA verify error:', error);
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to verify MFA code',
-        details: process.env.NODE_ENV === 'development' ? error : undefined 
-      },
-      { status: 500 }
-    );
-  }
-}
+    } catch (error) {
+      // Log error for monitoring
+      console.error('MFA verify error:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+        ip: request.headers.get('x-forwarded-for') || 'unknown'
+      });
+      
+      return createErrorResponse(
+        'Failed to verify MFA code',
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      );
+    }
+  })
+);
+
+// Apply rate limiting to GET endpoint as well to prevent enumeration
+const rateLimitedGetHandler = rateLimit(30, 60000); // 30 requests per minute
 
 // GET endpoint to check MFA requirement for a user
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+export const GET = withErrorHandling(
+  rateLimitedGetHandler(async (request: NextRequest) => {
+    try {
+      const { searchParams } = new URL(request.url);
+      const userId = searchParams.get('userId');
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Missing userId parameter' },
-        { status: 400 }
-      );
-    }
+      if (!userId) {
+        return createErrorResponse(
+          'Missing userId parameter',
+          HTTP_STATUS.BAD_REQUEST
+        );
+      }
 
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(userId)) {
-      return NextResponse.json(
-        { error: 'Invalid userId format' },
-        { status: 400 }
-      );
-    }
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(userId)) {
+        console.warn('Invalid MFA status check attempt:', {
+          userId,
+          ip: request.headers.get('x-forwarded-for') || 'unknown',
+          timestamp: new Date().toISOString()
+        });
+        
+        return createErrorResponse(
+          'Invalid userId format',
+          HTTP_STATUS.BAD_REQUEST
+        );
+      }
 
-    const mfaService = createMfaService(true);
-    const requiresMFA = await mfaService.requiresMFA(userId);
-    const mfaStatus = await mfaService.getMFAStatus(userId);
+      const mfaService = createMfaService(true);
+      const requiresMFA = await mfaService.requiresMFA(userId);
+      const mfaStatus = await mfaService.getMFAStatus(userId);
 
-    return NextResponse.json({
-      success: true,
-      data: {
+      return createSuccessResponse({
         requiresMFA,
         isEnabled: mfaStatus.isEnabled,
         isSetup: mfaStatus.isSetup,
         backupCodesAvailable: mfaStatus.backupCodesRemaining > 0,
-      },
-    });
+      }, 'MFA status retrieved successfully');
 
-  } catch (error) {
-    console.error('MFA status check error:', error);
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to check MFA status',
-        details: process.env.NODE_ENV === 'development' ? error : undefined 
-      },
-      { status: 500 }
-    );
-  }
-}
+    } catch (error) {
+      // Log error for monitoring
+      console.error('MFA status check error:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+        ip: request.headers.get('x-forwarded-for') || 'unknown'
+      });
+      
+      return createErrorResponse(
+        'Failed to check MFA status',
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      );
+    }
+  })
+);
 
 // Prevent other HTTP methods
 export async function PUT() {
-  return NextResponse.json(
-    { error: 'Method not allowed' },
-    { status: 405 }
-  );
+  return createErrorResponse('Method not allowed', HTTP_STATUS.METHOD_NOT_ALLOWED);
 }
 
 export async function DELETE() {
-  return NextResponse.json(
-    { error: 'Method not allowed' },
-    { status: 405 }
-  );
+  return createErrorResponse('Method not allowed', HTTP_STATUS.METHOD_NOT_ALLOWED);
 }

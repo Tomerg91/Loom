@@ -1,15 +1,18 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { authService } from '@/lib/services/auth-service';
 import { analyticsService } from '@/lib/services/analytics-service';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
+import { rateLimit } from '@/lib/security/rate-limit';
 import { z } from 'zod';
 
 const analyticsQuerySchema = z.object({
   timeRange: z.enum(['7d', '30d', '90d', '1y']).default('30d'),
 });
 
-export async function GET(request: NextRequest): Promise<Response> {
+// Apply rate limiting for admin analytics to prevent abuse
+const rateLimitedHandler = rateLimit(30, 60000)( // 30 requests per minute for admin analytics
+  async (request: NextRequest): Promise<NextResponse> => {
   try {
     // Verify admin access
     const session = await authService.getSession();
@@ -49,18 +52,31 @@ export async function GET(request: NextRequest): Promise<Response> {
         break;
     }
 
-    // Fetch analytics data
-    const [
-      overview,
-      userGrowth,
-      sessionMetrics,
-      coachPerformance
-    ] = await Promise.all([
+    // Fetch analytics data with robust error handling
+    const results = await Promise.allSettled([
       analyticsService.getOverview(startDate, endDate),
       analyticsService.getUserGrowth(startDate, endDate),
       analyticsService.getSessionMetrics(startDate, endDate),
       analyticsService.getCoachPerformance(startDate, endDate),
     ]);
+
+    // Handle partial failures gracefully
+    const overview = results[0].status === 'fulfilled' ? results[0].value : {
+      totalUsers: 0, activeUsers: 0, totalSessions: 0, completedSessions: 0,
+      revenue: 0, averageRating: 0
+    };
+    
+    const userGrowth = results[1].status === 'fulfilled' ? results[1].value : [];
+    const sessionMetrics = results[2].status === 'fulfilled' ? results[2].value : [];
+    const coachPerformance = results[3].status === 'fulfilled' ? results[3].value : [];
+
+    // Log any failures for monitoring
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        const operation = ['overview', 'userGrowth', 'sessionMetrics', 'coachPerformance'][index];
+        console.error(`Analytics API - Failed to fetch ${operation}:`, result.reason);
+      }
+    });
 
     const analyticsData = {
       overview,
@@ -82,4 +98,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     
     return ApiResponseHelper.internalError('Failed to fetch analytics data');
   }
+  }
+);
+
+export async function GET(request: NextRequest): Promise<Response> {
+  return rateLimitedHandler(request);
 }

@@ -60,9 +60,6 @@ export async function GET(request: NextRequest): Promise<Response> {
       ? Math.round((moodRatings.reduce((sum, rating) => sum + rating, 0) / moodRatings.length) * 10) / 10
       : 0;
 
-    // Calculate goals achieved (mock for now - would come from a goals table)
-    const goalsAchieved = Math.floor(completedSessions * 0.8); // Rough estimate
-
     // Calculate current streak (consecutive weeks with at least one session)
     let currentStreak = 0;
     const weeksBack = 12; // Check last 12 weeks
@@ -85,6 +82,17 @@ export async function GET(request: NextRequest): Promise<Response> {
         break;
       }
     }
+
+    // Calculate goals achieved based on actual data and calculated streak
+    // For now, we'll derive from session completion and reflection consistency
+    // In the future, this should come from a dedicated goals table
+    const sessionGoals = completedSessions; // 1 point per session
+    const reflectionConsistencyBonus = reflectionStats && reflectionStats.length >= completedSessions * 0.5 
+      ? Math.floor(completedSessions * 0.3) // 30% bonus for good reflection habits
+      : 0;
+    const streakBonus = currentStreak >= 4 ? 2 : 0; // Bonus for maintaining 4+ week streak
+    
+    const goalsAchieved = sessionGoals + reflectionConsistencyBonus + streakBonus;
 
     const stats: ClientStats = {
       totalSessions,

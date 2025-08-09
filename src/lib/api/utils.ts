@@ -7,7 +7,7 @@ import { config } from '@/lib/config';
 import { hasPermission, requirePermission as requirePermissionCheck, canAccessResource, type Permission, type Role } from '@/lib/auth/permissions';
 
 type UserRole = Database['public']['Tables']['users']['Row']['role'];
-type AuthenticatedUser = {
+export type AuthenticatedUser = {
   id: string;
   email: string;
   role: UserRole;

@@ -38,7 +38,7 @@ interface SessionDetail {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ): Promise<Response> {
   try {
     // Verify authentication and get user
@@ -47,6 +47,7 @@ export async function GET(
       return ApiResponseHelper.forbidden('Coach access required');
     }
 
+    const params = await context.params;
     const coachId = session.user.id;
     const clientId = params.id;
 
@@ -100,7 +101,6 @@ export async function GET(
         duration_minutes,
         status,
         meeting_url,
-        session_type,
         created_at
       `)
       .eq('coach_id', coachId)
@@ -134,7 +134,7 @@ export async function GET(
     // Calculate average rating from reflections
     const ratingsWithValues = reflections?.filter(r => r.mood_rating && r.mood_rating > 0) || [];
     const averageRating = ratingsWithValues.length > 0 
-      ? ratingsWithValues.reduce((sum, r) => sum + r.mood_rating, 0) / ratingsWithValues.length
+      ? ratingsWithValues.reduce((sum, r) => sum + (r.mood_rating || 0), 0) / ratingsWithValues.length
       : 0;
 
     // Determine client status based on recent activity
@@ -156,7 +156,7 @@ export async function GET(
         status: session.status as 'completed' | 'scheduled' | 'cancelled',
         rating: reflection?.mood_rating || undefined,
         notes: session.description || undefined,
-        type: session.session_type === 'video' ? 'video' : 'in-person',
+        type: 'video', // Default to video for now since session_type doesn't exist in schema
         title: session.title || undefined,
       };
     }) || [];
@@ -200,7 +200,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ): Promise<Response> {
   try {
     // Verify authentication and get user
@@ -209,6 +209,7 @@ export async function PUT(
       return ApiResponseHelper.forbidden('Coach access required');
     }
 
+    const params = await context.params;
     const coachId = session.user.id;
     const clientId = params.id;
 

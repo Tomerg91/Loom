@@ -177,8 +177,7 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
           <Button 
             data-testid="start-session-button"
             onClick={() => {
-              // TODO: Implement video session start functionality
-              alert('Starting video session - Feature coming soon!');
+              router.push(`/sessions/book?clientId=${clientId}&type=instant`);
             }}
           >
             <Video className="h-4 w-4 mr-2" />
@@ -188,8 +187,7 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
             variant="outline" 
             data-testid="message-client-button"
             onClick={() => {
-              // TODO: Implement messaging functionality
-              alert('Opening message thread - Feature coming soon!');
+              router.push(`/messages?clientId=${clientId}`);
             }}
           >
             <MessageSquare className="h-4 w-4 mr-2" />
@@ -205,8 +203,7 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
               <DropdownMenuItem 
                 data-testid="edit-client"
                 onClick={() => {
-                  // TODO: Implement client editing functionality
-                  alert('Opening client editor - Feature coming soon!');
+                  router.push(`/coach/clients/${clientId}/edit`);
                 }}
               >
                 <Edit className="h-4 w-4 mr-2" />
@@ -215,8 +212,7 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
               <DropdownMenuItem 
                 data-testid="schedule-session"
                 onClick={() => {
-                  // TODO: Implement session scheduling functionality
-                  router.push(`/coach/sessions/book?clientId=${clientId}`);
+                  router.push(`/sessions/book?clientId=${clientId}`);
                 }}
               >
                 <Calendar className="h-4 w-4 mr-2" />

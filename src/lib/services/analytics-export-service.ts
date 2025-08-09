@@ -6,7 +6,7 @@ import type {
   CoachPerformanceData 
 } from '@/lib/database/admin-analytics';
 
-export type ExportFormat = 'json' | 'csv' | 'excel';
+export type ExportFormat = 'json' | 'csv' | 'excel' | 'pdf';
 
 export interface ExportData {
   overview: AdminAnalyticsOverview;
@@ -38,33 +38,68 @@ class AnalyticsExportService {
         return this.exportAsCsv(data);
       case 'excel':
         return this.exportAsExcel(data);
+      case 'pdf':
+        return this.exportAsPdf(data);
       default:
         throw new Error(`Unsupported export format: ${format}`);
     }
   }
 
   /**
-   * Get structured export data
+   * Get structured export data with error handling
    */
   private async getExportData(startDate: Date, endDate: Date): Promise<ExportData> {
-    const [overview, userGrowth, sessionMetrics, coachPerformance] = await Promise.all([
-      adminAnalyticsService.getOverview(startDate, endDate),
-      adminAnalyticsService.getUserGrowth(startDate, endDate),
-      adminAnalyticsService.getSessionMetrics(startDate, endDate),
-      adminAnalyticsService.getCoachPerformance(startDate, endDate),
-    ]);
+    try {
+      // Validate date range
+      if (startDate > endDate) {
+        throw new Error('Start date cannot be after end date');
+      }
+      
+      if (startDate > new Date()) {
+        throw new Error('Start date cannot be in the future');
+      }
 
-    return {
-      overview,
-      userGrowth,
-      sessionMetrics,
-      coachPerformance,
-      generatedAt: new Date().toISOString(),
-      dateRange: {
-        start: startDate.toISOString(),
-        end: endDate.toISOString(),
-      },
-    };
+      const results = await Promise.allSettled([
+        adminAnalyticsService.getOverview(startDate, endDate),
+        adminAnalyticsService.getUserGrowth(startDate, endDate),
+        adminAnalyticsService.getSessionMetrics(startDate, endDate),
+        adminAnalyticsService.getCoachPerformance(startDate, endDate),
+      ]);
+
+      // Handle individual failures gracefully
+      const overview = results[0].status === 'fulfilled' ? results[0].value : {
+        totalUsers: 0, activeUsers: 0, totalSessions: 0, completedSessions: 0,
+        revenue: 0, averageRating: 0, newUsersThisMonth: 0, completionRate: 0,
+        totalCoaches: 0, totalClients: 0, activeCoaches: 0, averageSessionsPerUser: 0
+      };
+
+      const userGrowth = results[1].status === 'fulfilled' ? results[1].value : [];
+      const sessionMetrics = results[2].status === 'fulfilled' ? results[2].value : [];
+      const coachPerformance = results[3].status === 'fulfilled' ? results[3].value : [];
+
+      // Log any failed operations
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const operation = ['overview', 'userGrowth', 'sessionMetrics', 'coachPerformance'][index];
+          console.error(`Failed to fetch ${operation} data:`, result.reason);
+        }
+      });
+
+      return {
+        overview,
+        userGrowth,
+        sessionMetrics,
+        coachPerformance,
+        generatedAt: new Date().toISOString(),
+        dateRange: {
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+        },
+      };
+    } catch (error) {
+      console.error('Error getting export data:', error);
+      throw new Error(`Failed to gather analytics data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
@@ -85,41 +120,41 @@ class AnalyticsExportService {
     let csvContent = '';
 
     // Overview section
-    csvContent += 'ANALYTICS OVERVIEW\\n';
-    csvContent += `Generated At,${data.generatedAt}\\n`;
-    csvContent += `Date Range,${data.dateRange.start} to ${data.dateRange.end}\\n\\n`;
+    csvContent += 'ANALYTICS OVERVIEW\n';
+    csvContent += `Generated At,${data.generatedAt}\n`;
+    csvContent += `Date Range,${data.dateRange.start} to ${data.dateRange.end}\n\n`;
     
-    csvContent += 'Metric,Value\\n';
-    csvContent += `Total Users,${data.overview.totalUsers}\\n`;
-    csvContent += `Active Users,${data.overview.activeUsers}\\n`;
-    csvContent += `Total Sessions,${data.overview.totalSessions}\\n`;
-    csvContent += `Completed Sessions,${data.overview.completedSessions}\\n`;
-    csvContent += `Revenue,${data.overview.revenue}\\n`;
-    csvContent += `Average Rating,${data.overview.averageRating}\\n`;
-    csvContent += `Total Coaches,${data.overview.totalCoaches}\\n`;
-    csvContent += `Total Clients,${data.overview.totalClients}\\n\\n`;
+    csvContent += 'Metric,Value\n';
+    csvContent += `Total Users,${data.overview.totalUsers}\n`;
+    csvContent += `Active Users,${data.overview.activeUsers}\n`;
+    csvContent += `Total Sessions,${data.overview.totalSessions}\n`;
+    csvContent += `Completed Sessions,${data.overview.completedSessions}\n`;
+    csvContent += `Revenue,${data.overview.revenue}\n`;
+    csvContent += `Average Rating,${data.overview.averageRating}\n`;
+    csvContent += `Total Coaches,${data.overview.totalCoaches}\n`;
+    csvContent += `Total Clients,${data.overview.totalClients}\n\n`;
 
     // User Growth section
-    csvContent += 'USER GROWTH DATA\\n';
-    csvContent += 'Date,New Users,Active Users,Total Users\\n';
+    csvContent += 'USER GROWTH DATA\n';
+    csvContent += 'Date,New Users,Active Users,Total Users\n';
     data.userGrowth.forEach(row => {
-      csvContent += `${row.date},${row.newUsers},${row.activeUsers},${row.totalUsers}\\n`;
+      csvContent += `${row.date},${row.newUsers},${row.activeUsers},${row.totalUsers}\n`;
     });
-    csvContent += '\\n';
+    csvContent += '\n';
 
     // Session Metrics section
-    csvContent += 'SESSION METRICS\\n';
-    csvContent += 'Date,Total Sessions,Completed Sessions,Cancelled Sessions,Scheduled Sessions,Completion Rate\\n';
+    csvContent += 'SESSION METRICS\n';
+    csvContent += 'Date,Total Sessions,Completed Sessions,Cancelled Sessions,Scheduled Sessions,Completion Rate\n';
     data.sessionMetrics.forEach(row => {
-      csvContent += `${row.date},${row.totalSessions},${row.completedSessions},${row.cancelledSessions},${row.scheduledSessions},${row.completionRate || 0}%\\n`;
+      csvContent += `${row.date},${row.totalSessions},${row.completedSessions},${row.cancelledSessions},${row.scheduledSessions},${row.completionRate || 0}%\n`;
     });
-    csvContent += '\\n';
+    csvContent += '\n';
 
     // Coach Performance section
-    csvContent += 'COACH PERFORMANCE\\n';
-    csvContent += 'Coach Name,Total Sessions,Completed Sessions,Average Rating,Revenue,Active Clients,Completion Rate\\n';
+    csvContent += 'COACH PERFORMANCE\n';
+    csvContent += 'Coach Name,Total Sessions,Completed Sessions,Average Rating,Revenue,Active Clients,Completion Rate\n';
     data.coachPerformance.forEach(row => {
-      csvContent += `${row.coachName},${row.totalSessions},${row.completedSessions},${row.averageRating},${row.revenue},${row.activeClients},${row.completionRate}%\\n`;
+      csvContent += `${row.coachName},${row.totalSessions},${row.completedSessions},${row.averageRating},${row.revenue},${row.activeClients},${row.completionRate}%\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -138,45 +173,237 @@ class AnalyticsExportService {
     let content = '';
     
     // Overview sheet
-    content += 'Analytics Overview\\t\\t\\t\\n';
-    content += `Generated At\\t${data.generatedAt}\\t\\t\\n`;
-    content += `Date Range\\t${data.dateRange.start} to ${data.dateRange.end}\\t\\t\\n`;
-    content += '\\n';
+    content += 'Analytics Overview\t\t\t\n';
+    content += `Generated At\t${data.generatedAt}\t\t\n`;
+    content += `Date Range\t${data.dateRange.start} to ${data.dateRange.end}\t\t\n`;
+    content += '\n';
     
-    content += 'Metric\\tValue\\t\\t\\n';
-    content += `Total Users\\t${data.overview.totalUsers}\\t\\t\\n`;
-    content += `Active Users\\t${data.overview.activeUsers}\\t\\t\\n`;
-    content += `Total Sessions\\t${data.overview.totalSessions}\\t\\t\\n`;
-    content += `Completed Sessions\\t${data.overview.completedSessions}\\t\\t\\n`;
-    content += `Revenue\\t${data.overview.revenue}\\t\\t\\n`;
-    content += `Average Rating\\t${data.overview.averageRating}\\t\\t\\n`;
-    content += '\\n\\n';
+    content += 'Metric\tValue\t\t\n';
+    content += `Total Users\t${data.overview.totalUsers}\t\t\n`;
+    content += `Active Users\t${data.overview.activeUsers}\t\t\n`;
+    content += `Total Sessions\t${data.overview.totalSessions}\t\t\n`;
+    content += `Completed Sessions\t${data.overview.completedSessions}\t\t\n`;
+    content += `Revenue\t${data.overview.revenue}\t\t\n`;
+    content += `Average Rating\t${data.overview.averageRating}\t\t\n`;
+    content += '\n\n';
 
     // User Growth data
-    content += 'User Growth Data\\t\\t\\t\\n';
-    content += 'Date\\tNew Users\\tActive Users\\tTotal Users\\n';
+    content += 'User Growth Data\t\t\t\n';
+    content += 'Date\tNew Users\tActive Users\tTotal Users\n';
     data.userGrowth.forEach(row => {
-      content += `${row.date}\\t${row.newUsers}\\t${row.activeUsers}\\t${row.totalUsers}\\n`;
+      content += `${row.date}\t${row.newUsers}\t${row.activeUsers}\t${row.totalUsers}\n`;
     });
-    content += '\\n';
+    content += '\n';
 
     // Session Metrics data  
-    content += 'Session Metrics\\t\\t\\t\\t\\t\\n';
-    content += 'Date\\tTotal Sessions\\tCompleted\\tCancelled\\tScheduled\\tCompletion Rate\\n';
+    content += 'Session Metrics\t\t\t\t\t\n';
+    content += 'Date\tTotal Sessions\tCompleted\tCancelled\tScheduled\tCompletion Rate\n';
     data.sessionMetrics.forEach(row => {
-      content += `${row.date}\\t${row.totalSessions}\\t${row.completedSessions}\\t${row.cancelledSessions}\\t${row.scheduledSessions}\\t${row.completionRate || 0}%\\n`;
+      content += `${row.date}\t${row.totalSessions}\t${row.completedSessions}\t${row.cancelledSessions}\t${row.scheduledSessions}\t${row.completionRate || 0}%\n`;
     });
-    content += '\\n';
+    content += '\n';
 
     // Coach Performance data
-    content += 'Coach Performance\\t\\t\\t\\t\\t\\t\\n';
-    content += 'Coach Name\\tTotal Sessions\\tCompleted\\tRating\\tRevenue\\tActive Clients\\tCompletion Rate\\n';
+    content += 'Coach Performance\t\t\t\t\t\t\n';
+    content += 'Coach Name\tTotal Sessions\tCompleted\tRating\tRevenue\tActive Clients\tCompletion Rate\n';
     data.coachPerformance.forEach(row => {
-      content += `${row.coachName}\\t${row.totalSessions}\\t${row.completedSessions}\\t${row.averageRating}\\t${row.revenue}\\t${row.activeClients}\\t${row.completionRate}%\\n`;
+      content += `${row.coachName}\t${row.totalSessions}\t${row.completedSessions}\t${row.averageRating}\t${row.revenue}\t${row.activeClients}\t${row.completionRate}%\n`;
     });
 
     const blob = new Blob([content], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     const filename = `analytics-export-${this.getDateString()}.xls`;
+    
+    return { blob, filename };
+  }
+
+  /**
+   * Export as PDF (simplified HTML to PDF approach)
+   * For production use, consider using jsPDF or a proper PDF generation library
+   */
+  private exportAsPdf(data: ExportData): { blob: Blob; filename: string } {
+    const formatCurrency = (amount: number) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(amount);
+    };
+
+    const formatDate = (dateStr: string) => {
+      return new Date(dateStr).toLocaleDateString('en-US');
+    };
+
+    // Generate HTML content for PDF
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Analytics Report</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+        .header h1 { color: #2563eb; margin-bottom: 10px; }
+        .metadata { color: #666; font-size: 14px; }
+        .section { margin: 30px 0; }
+        .section h2 { color: #1e40af; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        .overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
+        .metric-card { background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #2563eb; }
+        .metric-card h3 { margin: 0 0 5px 0; color: #1e40af; font-size: 14px; }
+        .metric-card .value { font-size: 24px; font-weight: bold; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f1f5f9; font-weight: 600; color: #1e40af; }
+        tr:hover { background-color: #f8fafc; }
+        .text-right { text-align: right; }
+        .chart-placeholder { background: #f8fafc; padding: 40px; text-align: center; color: #666; border-radius: 8px; margin: 20px 0; }
+        @media print {
+          body { margin: 0; }
+          .section { page-break-inside: avoid; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Analytics Report</h1>
+        <div class="metadata">
+          <p>Generated: ${formatDate(data.generatedAt)}</p>
+          <p>Date Range: ${formatDate(data.dateRange.start)} - ${formatDate(data.dateRange.end)}</p>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>System Overview</h2>
+        <div class="overview-grid">
+          <div class="metric-card">
+            <h3>Total Users</h3>
+            <div class="value">${data.overview.totalUsers.toLocaleString()}</div>
+          </div>
+          <div class="metric-card">
+            <h3>Active Users</h3>
+            <div class="value">${data.overview.activeUsers.toLocaleString()}</div>
+          </div>
+          <div class="metric-card">
+            <h3>Total Sessions</h3>
+            <div class="value">${data.overview.totalSessions.toLocaleString()}</div>
+          </div>
+          <div class="metric-card">
+            <h3>Completed Sessions</h3>
+            <div class="value">${data.overview.completedSessions.toLocaleString()}</div>
+          </div>
+          <div class="metric-card">
+            <h3>Revenue</h3>
+            <div class="value">${formatCurrency(data.overview.revenue)}</div>
+          </div>
+          <div class="metric-card">
+            <h3>Average Rating</h3>
+            <div class="value">${data.overview.averageRating.toFixed(1)}⭐</div>
+          </div>
+          <div class="metric-card">
+            <h3>Total Coaches</h3>
+            <div class="value">${data.overview.totalCoaches.toLocaleString()}</div>
+          </div>
+          <div class="metric-card">
+            <h3>Total Clients</h3>
+            <div class="value">${data.overview.totalClients.toLocaleString()}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>User Growth Trends</h2>
+        <div class="chart-placeholder">
+          User Growth Chart (${data.userGrowth.length} data points)
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="text-right">New Users</th>
+              <th class="text-right">Active Users</th>
+              <th class="text-right">Total Users</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.userGrowth.slice(0, 10).map(row => `
+              <tr>
+                <td>${formatDate(row.date)}</td>
+                <td class="text-right">${row.newUsers.toLocaleString()}</td>
+                <td class="text-right">${row.activeUsers.toLocaleString()}</td>
+                <td class="text-right">${row.totalUsers.toLocaleString()}</td>
+              </tr>
+            `).join('')}
+            ${data.userGrowth.length > 10 ? `<tr><td colspan="4" style="text-align: center; color: #666;">... and ${data.userGrowth.length - 10} more rows</td></tr>` : ''}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Session Metrics</h2>
+        <div class="chart-placeholder">
+          Session Metrics Chart (${data.sessionMetrics.length} data points)
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="text-right">Total</th>
+              <th class="text-right">Completed</th>
+              <th class="text-right">Cancelled</th>
+              <th class="text-right">Scheduled</th>
+              <th class="text-right">Completion Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.sessionMetrics.slice(0, 10).map(row => `
+              <tr>
+                <td>${formatDate(row.date)}</td>
+                <td class="text-right">${row.totalSessions.toLocaleString()}</td>
+                <td class="text-right">${row.completedSessions.toLocaleString()}</td>
+                <td class="text-right">${row.cancelledSessions.toLocaleString()}</td>
+                <td class="text-right">${row.scheduledSessions.toLocaleString()}</td>
+                <td class="text-right">${row.completionRate || 0}%</td>
+              </tr>
+            `).join('')}
+            ${data.sessionMetrics.length > 10 ? `<tr><td colspan="6" style="text-align: center; color: #666;">... and ${data.sessionMetrics.length - 10} more rows</td></tr>` : ''}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Coach Performance</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Coach Name</th>
+              <th class="text-right">Sessions</th>
+              <th class="text-right">Completed</th>
+              <th class="text-right">Rating</th>
+              <th class="text-right">Revenue</th>
+              <th class="text-right">Active Clients</th>
+              <th class="text-right">Completion Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.coachPerformance.map(row => `
+              <tr>
+                <td>${row.coachName}</td>
+                <td class="text-right">${row.totalSessions.toLocaleString()}</td>
+                <td class="text-right">${row.completedSessions.toLocaleString()}</td>
+                <td class="text-right">${row.averageRating.toFixed(1)}⭐</td>
+                <td class="text-right">${formatCurrency(row.revenue)}</td>
+                <td class="text-right">${row.activeClients.toLocaleString()}</td>
+                <td class="text-right">${row.completionRate}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </body>
+    </html>
+    `;
+
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+    const filename = `analytics-report-${this.getDateString()}.html`;
     
     return { blob, filename };
   }

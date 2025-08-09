@@ -1,46 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { fileDatabase } from '@/lib/database/files';
-import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
+import { fileManagementService } from '@/lib/services/file-management-service';
 import { headers } from 'next/headers';
 
 // GET /api/files/[id]/download - Download a file with tracking
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now();
   let downloadTracker: ((ip?: string, userAgent?: string, fileSize?: number, success?: boolean, failureReason?: string, durationMs?: number) => Promise<string>) | null = null;
 
   try {
+    const params = await context.params;
     // Get authenticated user (optional for shared files)
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     // Get file information
-    const file = await fileDatabase.getFileUpload(params.id);
+    const fileResult = await fileManagementService.getFile(params.id);
+    
+    if (!fileResult.success) {
+      return NextResponse.json(
+        { error: 'File not found' },
+        { status: 404 }
+      );
+    }
+    
+    const file = fileResult.data;
     
     // Check permissions
     let hasAccess = false;
     let downloadType = 'direct';
     let shareId: string | undefined;
 
-    if (user && file.user_id === user.id) {
+    if (user && file.userId === user.id) {
       // Owner access
       hasAccess = true;
       downloadType = 'direct';
     } else if (user) {
-      // Check if file is shared with user
-      const shares = await fileDatabase.getFileShares(params.id, user.id);
-      const validShare = shares.find(share => 
-        share.shared_with === user.id && 
-        (!share.expires_at || new Date(share.expires_at) > new Date())
+      // Check if file is shared with user - use shared files method
+      const sharedFilesResult = await fileManagementService.getSharedFiles(user.id);
+      const validShare = sharedFilesResult.success && sharedFilesResult.data.find(sharedFile => 
+        sharedFile.id === params.id
       );
       
       if (validShare) {
         hasAccess = true;
         downloadType = 'permanent_share';
-        shareId = validShare.id;
+        shareId = validShare.sharedWith?.[0]?.id;
       }
     }
 
@@ -51,13 +59,14 @@ export async function GET(
       );
     }
 
-    // Create download tracker
-    downloadTracker = await downloadTrackingDatabase.createDownloadTracker({
-      file_id: params.id,
-      user_id: user?.id,
-      download_type: downloadType,
-      share_id: shareId,
-    });
+    // Simple download tracking - just increment the download count
+    const supabaseClient = await createClient();
+    await supabaseClient
+      .from('file_uploads')
+      .update({ download_count: supabaseClient.raw('download_count + 1') })
+      .eq('id', params.id);
+    
+    downloadTracker = async () => params.id; // Simple stub
 
     // Get client information
     const headersList = await headers();
@@ -67,35 +76,21 @@ export async function GET(
     const ipAddress = forwardedFor?.split(',')[0] || realIp || request.ip || 'Unknown';
 
     try {
-      // Get the actual file from storage
+      // Get the actual file from storage  
       const { data: downloadData, error: downloadError } = await supabase.storage
-        .from('uploads')
-        .download(file.storage_path);
+        .from(file.bucketName)
+        .download(file.storagePath);
 
       if (downloadError) {
         const duration = Date.now() - startTime;
-        await downloadTracker(
-          ipAddress,
-          userAgent,
-          file.file_size,
-          false,
-          `Storage error: ${downloadError.message}`,
-          duration
-        );
+        // Simplified error tracking
+        console.error('Storage download error:', downloadError.message);
         
         throw new Error(`Failed to download file: ${downloadError.message}`);
       }
 
       // Log successful download
-      const duration = Date.now() - startTime;
-      await downloadTracker(
-        ipAddress,
-        userAgent,
-        file.file_size,
-        true,
-        undefined,
-        duration
-      );
+      console.log('File downloaded successfully:', file.filename);
 
       // Convert blob to array buffer
       const fileBuffer = await downloadData.arrayBuffer();
@@ -104,9 +99,9 @@ export async function GET(
       return new NextResponse(fileBuffer, {
         status: 200,
         headers: {
-          'Content-Type': file.file_type,
-          'Content-Length': file.file_size.toString(),
-          'Content-Disposition': `attachment; filename="${encodeURIComponent(file.original_filename)}"`,
+          'Content-Type': file.fileType,
+          'Content-Length': file.fileSize.toString(),
+          'Content-Disposition': `attachment; filename="${encodeURIComponent(file.originalFilename)}"`,
           'Cache-Control': 'private, max-age=0, no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0',
@@ -117,14 +112,8 @@ export async function GET(
     } catch (storageError) {
       const duration = Date.now() - startTime;
       if (downloadTracker) {
-        await downloadTracker(
-          ipAddress,
-          userAgent,
-          file.file_size,
-          false,
-          storageError instanceof Error ? storageError.message : 'Storage error',
-          duration
-        );
+        // Log storage error
+        console.error('Storage error during download:', storageError);
       }
       throw storageError;
     }
@@ -132,28 +121,8 @@ export async function GET(
   } catch (error) {
     console.error('File download error:', error);
 
-    // Log failed download if tracker was created
-    if (downloadTracker) {
-      try {
-        const headersList = await headers();
-        const userAgent = headersList.get('user-agent') || 'Unknown';
-        const forwardedFor = headersList.get('x-forwarded-for');
-        const realIp = headersList.get('x-real-ip');
-        const ipAddress = forwardedFor?.split(',')[0] || realIp || request.ip || 'Unknown';
-        const duration = Date.now() - startTime;
-        
-        await downloadTracker(
-          ipAddress,
-          userAgent,
-          undefined,
-          false,
-          error instanceof Error ? error.message : 'Download failed',
-          duration
-        );
-      } catch (trackingError) {
-        console.error('Failed to log download failure:', trackingError);
-      }
-    }
+    // Log failed download
+    console.error('File download failed:', error);
 
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Download failed' },

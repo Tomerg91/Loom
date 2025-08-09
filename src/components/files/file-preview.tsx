@@ -1,0 +1,311 @@
+'use client';
+
+import React from 'react';
+import { 
+  X, 
+  Download, 
+  Share2, 
+  Edit3, 
+  Trash2, 
+  ExternalLink,
+  File,
+  Image as ImageIcon,
+  FileText,
+  Video,
+  Music
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { FileMetadata } from '@/lib/services/file-management-service';
+
+interface FilePreviewProps {
+  file: FileMetadata;
+  open: boolean;
+  onClose: () => void;
+  onShare?: (file: FileMetadata) => void;
+  onDelete?: (fileId: string) => void;
+}
+
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
+  const { fileType, mimeType, storageUrl, name } = file;
+
+  // Image preview
+  if (fileType === 'image') {
+    return (
+      <div className="flex items-center justify-center bg-gray-100 rounded-lg p-4">
+        <img 
+          src={storageUrl} 
+          alt={name}
+          className="max-w-full max-h-96 object-contain rounded"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9ImZlYXRoZXIgZmVhdGhlci1pbWFnZSI+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iMiIgcnk9IjIiLz48Y2lyY2xlIGN4PSI4LjUiIGN5PSI4LjUiIHI9IjEuNSIvPjxwb2x5bGluZSBwb2ludHM9IjIxLDE1IDEyLDcgMyw5Ii8+PC9zdmc+';
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Video preview
+  if (fileType === 'video') {
+    return (
+      <div className="flex items-center justify-center bg-gray-100 rounded-lg p-4">
+        <video 
+          controls 
+          className="max-w-full max-h-96 rounded"
+          preload="metadata"
+        >
+          <source src={storageUrl} type={mimeType} />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    );
+  }
+
+  // Audio preview
+  if (fileType === 'audio') {
+    return (
+      <div className="flex items-center justify-center bg-gray-100 rounded-lg p-8">
+        <div className="text-center">
+          <Music className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <audio controls className="w-full max-w-sm">
+            <source src={storageUrl} type={mimeType} />
+            Your browser does not support the audio tag.
+          </audio>
+        </div>
+      </div>
+    );
+  }
+
+  // PDF preview (would need PDF.js or similar in production)
+  if (fileType === 'pdf') {
+    return (
+      <div className="flex items-center justify-center bg-gray-100 rounded-lg p-8">
+        <div className="text-center">
+          <FileText className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <p className="text-gray-600 mb-4">PDF Preview</p>
+          <Button asChild>
+            <a href={storageUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open in New Tab
+            </a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Text file preview
+  if (fileType === 'text' || mimeType.startsWith('text/')) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-4">
+        <div className="text-center text-gray-600 mb-4">
+          <FileText className="h-12 w-12 mx-auto mb-2" />
+          <p>Text file preview would be shown here</p>
+          <p className="text-sm">In production, fetch and display file contents</p>
+        </div>
+        <Button asChild>
+          <a href={storageUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Open in New Tab
+          </a>
+        </Button>
+      </div>
+    );
+  }
+
+  // Default preview for other file types
+  return (
+    <div className="flex items-center justify-center bg-gray-100 rounded-lg p-8">
+      <div className="text-center">
+        <File className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-600 mb-2">No preview available</p>
+        <p className="text-sm text-gray-500 mb-4">
+          {fileType} • {formatFileSize(file.sizeBytes)}
+        </p>
+        <Button asChild>
+          <a href={storageUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Open in New Tab
+          </a>
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export function FilePreview({ file, open, onClose, onShare, onDelete }: FilePreviewProps) {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="truncate">{file.name}</span>
+              {file.isPublic && (
+                <Badge variant="secondary">Public</Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2 ml-4">
+              <Button variant="outline" size="sm" asChild>
+                <a href={file.storageUrl} download={file.originalName}>
+                  <Download className="h-4 w-4" />
+                </a>
+              </Button>
+              {onShare && (
+                <Button variant="outline" size="sm" onClick={() => onShare(file)}>
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onDelete(file.id)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+            {/* File preview */}
+            <div className="lg:col-span-2">
+              <ScrollArea className="h-full">
+                <FilePreviewContent file={file} />
+              </ScrollArea>
+            </div>
+
+            {/* File details */}
+            <div className="border-l pl-6">
+              <ScrollArea className="h-full">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold mb-2">File Details</h3>
+                    <dl className="space-y-2 text-sm">
+                      <div>
+                        <dt className="font-medium text-gray-600">Original name:</dt>
+                        <dd className="break-all">{file.originalName}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-gray-600">Size:</dt>
+                        <dd>{formatFileSize(file.sizeBytes)}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-gray-600">Type:</dt>
+                        <dd>{file.mimeType}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-gray-600">Created:</dt>
+                        <dd>{formatDate(file.createdAt)}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-gray-600">Modified:</dt>
+                        <dd>{formatDate(file.updatedAt)}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-gray-600">Downloads:</dt>
+                        <dd>{file.downloadCount}</dd>
+                      </div>
+                      {file.lastAccessedAt && (
+                        <div>
+                          <dt className="font-medium text-gray-600">Last accessed:</dt>
+                          <dd>{formatDate(file.lastAccessedAt)}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+
+                  {file.description && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Description</h3>
+                      <p className="text-sm text-gray-600">{file.description}</p>
+                    </div>
+                  )}
+
+                  {file.tags.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Tags</h3>
+                      <div className="flex flex-wrap gap-1">
+                        {file.tags.map(tag => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {file.ownerName && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Owner</h3>
+                      <p className="text-sm text-gray-600">{file.ownerName}</p>
+                    </div>
+                  )}
+
+                  {file.folderName && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Folder</h3>
+                      <p className="text-sm text-gray-600">{file.folderName}</p>
+                    </div>
+                  )}
+
+                  {file.sharedWith && file.sharedWith.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Shared with</h3>
+                      <p className="text-sm text-gray-600">
+                        {file.sharedWith.length} user(s)
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <h3 className="font-semibold mb-2">Versions</h3>
+                    <p className="text-sm text-gray-600">
+                      Version {file.version}
+                      {file.versions && file.versions.length > 0 && (
+                        <span> • {file.versions.length} older version(s)</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

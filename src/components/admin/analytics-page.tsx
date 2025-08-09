@@ -158,7 +158,18 @@ export function AdminAnalyticsPage() {
       
     } catch (error) {
       console.error('Export failed:', error);
-      // Show error message (you could add a toast notification here)
+      // Create error notification
+      const errorMessage = error instanceof Error ? error.message : 'Unknown export error';
+      
+      // Create an error blob for download as fallback
+      const errorBlob = new Blob([
+        `Export Error Report\n\nTimestamp: ${new Date().toISOString()}\nFormat: ${format.toUpperCase()}\nError: ${errorMessage}\n\nPlease contact support if this issue persists.`
+      ], { type: 'text/plain' });
+      
+      const errorFilename = `export-error-${Date.now()}.txt`;
+      analyticsExportService.downloadFile(errorBlob, errorFilename);
+      
+      alert(`Export failed: ${errorMessage}\nAn error report has been downloaded for support.`);
     } finally {
       setIsExporting(false);
     }
@@ -183,7 +194,7 @@ export function AdminAnalyticsPage() {
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - 30); // Last 30 days
       
-      const formats: ExportFormat[] = ['json', 'csv', 'excel'];
+      const formats: ExportFormat[] = ['json', 'csv', 'excel', 'pdf'];
       
       for (const format of formats) {
         const { blob, filename } = await analyticsExportService.exportData(startDate, endDate, format);
@@ -228,10 +239,40 @@ export function AdminAnalyticsPage() {
             <h1 className="text-3xl font-bold">{t('title')}</h1>
             <p className="text-muted-foreground">{t('description')}</p>
           </div>
+          <Button variant="outline" onClick={() => refetch()}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
         </div>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-destructive">Error loading analytics</p>
-        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center h-64 text-center">
+            <div className="text-destructive mb-4">
+              <Activity className="h-12 w-12 mx-auto mb-2" />
+              <h3 className="text-lg font-semibold">Analytics Data Unavailable</h3>
+            </div>
+            <p className="text-muted-foreground mb-4 max-w-md">
+              We're experiencing issues loading analytics data. This could be due to:
+            </p>
+            <ul className="text-sm text-muted-foreground text-left space-y-1 mb-4">
+              <li>• Database connection issues</li>
+              <li>• Missing database functions</li>
+              <li>• Insufficient permissions</li>
+              <li>• Network connectivity problems</li>
+            </ul>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => refetch()}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry Loading
+              </Button>
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                Refresh Page
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-4">
+              Error: {error instanceof Error ? error.message : 'Unknown error'}
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -292,6 +333,9 @@ export function AdminAnalyticsPage() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport('excel')}>
                 Export as Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                Export as PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

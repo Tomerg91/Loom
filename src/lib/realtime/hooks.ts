@@ -6,6 +6,59 @@ import { useQueryClient } from '@tanstack/react-query';
 import { realtimeClient } from './realtime-client';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
+// Browser notification helpers
+const requestNotificationPermission = async (): Promise<NotificationPermission> => {
+  if (!('Notification' in window)) {
+    console.warn('This browser does not support notifications');
+    return 'denied';
+  }
+
+  if (Notification.permission === 'granted') {
+    return 'granted';
+  }
+
+  if (Notification.permission !== 'denied') {
+    const permission = await Notification.requestPermission();
+    return permission;
+  }
+
+  return Notification.permission;
+};
+
+const showBrowserNotification = (title: string, message: string, icon?: string) => {
+  if (Notification.permission === 'granted') {
+    const notification = new Notification(title, {
+      body: message,
+      icon: icon || '/favicon.ico',
+      badge: '/favicon.ico',
+      tag: 'loom-notification',
+      silent: false,
+      requireInteraction: false,
+    });
+
+    // Auto-close after 5 seconds
+    setTimeout(() => {
+      notification.close();
+    }, 5000);
+
+    return notification;
+  }
+  return null;
+};
+
+const playNotificationSound = () => {
+  try {
+    // Create audio element for notification sound
+    const audio = new Audio('/sounds/notification.wav');
+    audio.volume = 0.5;
+    audio.play().catch(error => {
+      console.warn('Could not play notification sound:', error);
+    });
+  } catch (error) {
+    console.warn('Could not play notification sound:', error);
+  }
+};
+
 /**
  * Hook for real-time notifications
  */
@@ -13,23 +66,60 @@ export function useRealtimeNotifications() {
   const user = useUser();
   const queryClient = useQueryClient();
   const subscriptionRef = useRef<string | null>(null);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+
+  // Request notification permission on mount
+  useEffect(() => {
+    const getPermission = async () => {
+      const permission = await requestNotificationPermission();
+      setNotificationPermission(permission);
+    };
+    getPermission();
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
 
-    const handleNotificationChange = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+    const handleNotificationChange = async (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
       console.log('Notification change:', payload);
       
       // Invalidate notifications query to refetch data
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       
-      // You could also update the cache directly for better performance
+      // Handle new notifications
       if (payload.eventType === 'INSERT') {
-        // Show toast notification for new notifications
         const notification = payload.new;
         if (notification && !notification.read_at) {
-          // You could integrate with a toast library here
           console.log('New notification received:', notification.title);
+          
+          // Get user's notification preferences
+          try {
+            const prefsResponse = await fetch('/api/notifications/preferences');
+            const prefsData = await prefsResponse.json();
+            const preferences = prefsData.data;
+
+            // Check if we should show browser notification
+            if (preferences?.inApp?.desktop && notificationPermission === 'granted') {
+              showBrowserNotification(
+                notification.title as string,
+                notification.message as string
+              );
+            }
+
+            // Check if we should play sound
+            if (preferences?.inApp?.sounds) {
+              playNotificationSound();
+            }
+          } catch (error) {
+            console.warn('Could not fetch notification preferences:', error);
+            // Fallback - show browser notification if permission granted
+            if (notificationPermission === 'granted') {
+              showBrowserNotification(
+                notification.title as string,
+                notification.message as string
+              );
+            }
+          }
         }
       }
     };
@@ -44,11 +134,13 @@ export function useRealtimeNotifications() {
         realtimeClient.unsubscribe(subscriptionRef.current);
       }
     };
-  }, [user?.id, queryClient]);
+  }, [user?.id, queryClient, notificationPermission]);
 
   return {
     isConnected: realtimeClient.getConnectionStatus(),
     reconnect: () => realtimeClient.reconnect(),
+    notificationPermission,
+    requestPermission: requestNotificationPermission,
   };
 }
 
