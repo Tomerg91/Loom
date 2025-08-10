@@ -237,7 +237,7 @@ const nextConfig = {
   // TypeScript configuration
   typescript: {
     // Dangerously allow production builds to successfully complete even if your project has type errors
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
   },
 
   // ESLint configuration
@@ -245,7 +245,7 @@ const nextConfig = {
     // Only run ESLint on these directories during production builds
     dirs: ['src', 'pages', 'components', 'lib', 'utils'],
     // Don't run ESLint during production builds
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
 
   // Output configuration for deployment

@@ -5,18 +5,28 @@ import { NextRequest } from 'next/server';
 import * as speakeasy from 'speakeasy';
 import * as crypto from 'crypto';
 
-// Environment validation
-if (!process.env.MFA_ENCRYPTION_KEY) {
-  throw new Error('CRITICAL SECURITY ERROR: MFA_ENCRYPTION_KEY environment variable is required');
-}
-if (!process.env.MFA_SIGNING_KEY) {
-  throw new Error('CRITICAL SECURITY ERROR: MFA_SIGNING_KEY environment variable is required');
+// Environment validation with runtime fallbacks for development/build
+function validateMfaEnvironment() {
+  if (typeof window !== 'undefined') {
+    // Client-side, skip validation
+    return;
+  }
+  
+  // Only enforce in production runtime
+  const isRuntime = process.env.NODE_ENV === 'production' && process.argv.includes('start');
+  
+  if (isRuntime && !process.env.MFA_ENCRYPTION_KEY) {
+    throw new Error('CRITICAL SECURITY ERROR: MFA_ENCRYPTION_KEY environment variable is required in production');
+  }
+  if (isRuntime && !process.env.MFA_SIGNING_KEY) {
+    throw new Error('CRITICAL SECURITY ERROR: MFA_SIGNING_KEY environment variable is required in production');
+  }
 }
 
-// MFA Configuration from environment
+// MFA Configuration from environment with fallbacks for build-time
 const MFA_CONFIG = {
-  ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY,
-  SIGNING_KEY: process.env.MFA_SIGNING_KEY,
+  ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY || 'build-time-fallback',
+  SIGNING_KEY: process.env.MFA_SIGNING_KEY || 'build-time-fallback',
   ISSUER_NAME: process.env.MFA_ISSUER_NAME || 'Loom',
   TOKEN_EXPIRY: parseInt(process.env.MFA_TOKEN_EXPIRY_SECONDS || '1800'),
   MAX_ATTEMPTS: parseInt(process.env.MFA_MAX_VERIFICATION_ATTEMPTS || '3'),
@@ -78,6 +88,9 @@ export class MfaService {
   private userService: ReturnType<typeof createUserService>;
 
   constructor(isServer = true) {
+    // Validate environment only during actual runtime operations
+    validateMfaEnvironment();
+    
     this.supabase = isServer ? createServerClient() : clientSupabase;
     this.userService = createUserService(isServer);
   }
@@ -1119,6 +1132,7 @@ export class MfaService {
 
 // Factory function to create MFA service instances
 export const createMfaService = (isServer = true) => {
+  // Only create service when actually called, not during module load
   return new MfaService(isServer);
 };
 

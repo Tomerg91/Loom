@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/lib/store/auth-store';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -31,6 +31,133 @@ import {
 import { format, parseISO, isFuture } from 'date-fns';
 import type { Session, SessionStatus } from '@/types';
 
+// Memoized SessionCard component for better performance
+const SessionCard = React.memo(({
+  session,
+  user,
+  getStatusColor,
+  getStatusLabel,
+  canJoinSession,
+  canCancelSession,
+  handleStatusUpdate,
+  handleCancelSession,
+  t
+}: {
+  session: Session;
+  user: any;
+  getStatusColor: (status: SessionStatus) => string;
+  getStatusLabel: (status: SessionStatus) => string;
+  canJoinSession: (session: Session) => boolean;
+  canCancelSession: (session: Session) => boolean;
+  handleStatusUpdate: (sessionId: string, status: SessionStatus) => void;
+  handleCancelSession: (sessionId: string) => void;
+  t: any;
+}) => {
+  const formattedDate = React.useMemo(() => format(parseISO(session.scheduledAt), 'PPP'), [session.scheduledAt]);
+  const formattedTime = React.useMemo(() => format(parseISO(session.scheduledAt), 'p'), [session.scheduledAt]);
+  const participantName = React.useMemo(() => {
+    return user?.role === 'client' ? 
+      `${session.coach.firstName} ${session.coach.lastName}` :
+      `${session.client.firstName} ${session.client.lastName}`;
+  }, [user?.role, session.coach, session.client]);
+  
+  return (
+    <Card className="hover:shadow-md transition-shadow" data-testid="session-item">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2">
+              {session.title}
+              <Badge className={getStatusColor(session.status)}>
+                {getStatusLabel(session.status)}
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              {session.description}
+            </CardDescription>
+          </div>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              
+              {canJoinSession(session) && session.meetingUrl && (
+                <DropdownMenuItem asChild>
+                  <a href={session.meetingUrl} target="_blank" rel="noopener noreferrer">
+                    <Video className="h-4 w-4 mr-2" />
+                    {t('joinSession')}
+                  </a>
+                </DropdownMenuItem>
+              )}
+              
+              {user?.role === 'coach' && session.status === 'scheduled' && (
+                <DropdownMenuItem
+                  onClick={() => handleStatusUpdate(session.id, 'in_progress')}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  {t('startSession')}
+                </DropdownMenuItem>
+              )}
+              
+              {user?.role === 'coach' && session.status === 'in_progress' && (
+                <DropdownMenuItem
+                  onClick={() => handleStatusUpdate(session.id, 'completed')}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  {t('endSession')}
+                </DropdownMenuItem>
+              )}
+              
+              {canCancelSession(session) && (
+                <DropdownMenuItem
+                  onClick={() => handleCancelSession(session.id)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {t('cancelSession')}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span>{formattedDate}</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span>{formattedTime} ({session.duration} {t('minutes')})</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span>{participantName}</span>
+          </div>
+        </div>
+
+        {session.notes && (
+          <div className="mt-4 p-3 bg-muted rounded-md">
+            <p className="text-sm">{session.notes}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+});
+
+SessionCard.displayName = 'SessionCard';
+
 interface SessionListProps {
   showFilters?: boolean;
   limit?: number;
@@ -50,7 +177,7 @@ interface SessionsResponse {
   };
 }
 
-export function SessionList({ 
+function SessionListComponent({ 
   showFilters = true, 
   limit = 10,
   coachId,
@@ -134,7 +261,7 @@ export function SessionList({
     },
   });
 
-  const getStatusColor = (status: SessionStatus): string => {
+  const getStatusColor = React.useCallback((status: SessionStatus): string => {
     switch (status) {
       case 'scheduled':
         return 'bg-blue-100 text-blue-800';
@@ -147,11 +274,11 @@ export function SessionList({
       default:
         return 'bg-gray-100 text-gray-800';
     }
-  };
+  }, []);
 
-  const getStatusLabel = (status: SessionStatus): string => {
+  const getStatusLabel = React.useCallback((status: SessionStatus): string => {
     return t(status);
-  };
+  }, [t]);
 
   const canJoinSession = (session: Session): boolean => {
     const sessionTime = parseISO(session.scheduledAt);
@@ -167,18 +294,18 @@ export function SessionList({
     return session.status === 'scheduled' && isFuture(sessionTime);
   };
 
-  const handleStatusUpdate = (sessionId: string, status: SessionStatus) => {
+  const handleStatusUpdate = React.useCallback((sessionId: string, status: SessionStatus) => {
     updateSessionMutation.mutate({ sessionId, status });
-  };
+  }, [updateSessionMutation]);
 
-  const handleCancelSession = (sessionId: string) => {
+  const handleCancelSession = React.useCallback((sessionId: string) => {
     if (confirm(t('confirmCancel'))) {
       cancelSessionMutation.mutate(sessionId);
     }
-  };
+  }, [t, cancelSessionMutation]);
 
-  const sessions = sessionsData?.data || [];
-  const pagination = sessionsData?.pagination;
+  const sessions = React.useMemo(() => sessionsData?.data || [], [sessionsData?.data]);
+  const pagination = React.useMemo(() => sessionsData?.pagination, [sessionsData?.pagination]);
 
   if (isLoading) {
     return (
@@ -269,110 +396,18 @@ export function SessionList({
       ) : (
         <div className="space-y-4">
           {sessions.map((session) => (
-            <Card key={session.id} className="hover:shadow-md transition-shadow" data-testid="session-item">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="flex items-center gap-2">
-                      {session.title}
-                      <Badge className={getStatusColor(session.status)}>
-                        {getStatusLabel(session.status)}
-                      </Badge>
-                    </CardTitle>
-                    <CardDescription>
-                      {session.description}
-                    </CardDescription>
-                  </div>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      
-                      {canJoinSession(session) && session.meetingUrl && (
-                        <DropdownMenuItem asChild>
-                          <a href={session.meetingUrl} target="_blank" rel="noopener noreferrer">
-                            <Video className="h-4 w-4 mr-2" />
-                            {t('joinSession')}
-                          </a>
-                        </DropdownMenuItem>
-                      )}
-                      
-                      {user?.role === 'coach' && session.status === 'scheduled' && (
-                        <>
-                          <DropdownMenuItem
-                            onClick={() => handleStatusUpdate(session.id, 'in_progress')}
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            {t('startSession')}
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                      
-                      {user?.role === 'coach' && session.status === 'in_progress' && (
-                        <DropdownMenuItem
-                          onClick={() => handleStatusUpdate(session.id, 'completed')}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          {t('endSession')}
-                        </DropdownMenuItem>
-                      )}
-                      
-                      {canCancelSession(session) && (
-                        <DropdownMenuItem
-                          onClick={() => handleCancelSession(session.id)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          {t('cancelSession')}
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {format(parseISO(session.scheduledAt), 'PPP')}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {format(parseISO(session.scheduledAt), 'p')} 
-                      ({session.duration} {t('minutes')})
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {user?.role === 'client' ? (
-                        `${session.coach.firstName} ${session.coach.lastName}`
-                      ) : (
-                        `${session.client.firstName} ${session.client.lastName}`
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                {session.notes && (
-                  <div className="mt-4 p-3 bg-muted rounded-md">
-                    <p className="text-sm">{session.notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <SessionCard
+              key={session.id}
+              session={session}
+              user={user}
+              getStatusColor={getStatusColor}
+              getStatusLabel={getStatusLabel}
+              canJoinSession={canJoinSession}
+              canCancelSession={canCancelSession}
+              handleStatusUpdate={handleStatusUpdate}
+              handleCancelSession={handleCancelSession}
+              t={t}
+            />
           ))}
         </div>
       )}
@@ -409,3 +444,7 @@ export function SessionList({
     </div>
   );
 }
+
+// Export the memoized version
+export const SessionList = React.memo(SessionListComponent);
+SessionList.displayName = 'SessionList';

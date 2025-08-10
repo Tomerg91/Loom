@@ -1,5 +1,8 @@
 'use client';
 
+// Force dynamic rendering to avoid prerender issues with React Query
+export const dynamic = 'force-dynamic';
+
 import { useState, Suspense } from 'react';
 import { useUser } from '@/lib/store/auth-store';
 import { useFilteredSessions, useSessionHistory } from '@/lib/queries/sessions';

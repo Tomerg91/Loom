@@ -1,5 +1,8 @@
 'use client';
 
+// Force dynamic rendering to avoid prerender issues with React Query
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import { useUser } from '@/lib/store/auth-store';
 import { useQuery } from '@tanstack/react-query';

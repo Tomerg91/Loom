@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { getCachedData, CacheKeys, CacheTTL, CacheInvalidation } from '@/lib/performance/cache';
 
 const createReflectionSchema = z.object({
   sessionId: z.string().optional(),
@@ -66,35 +67,45 @@ export async function GET(request: NextRequest) {
       query = query.lte('mood_rating', parseInt(moodMax));
     }
 
-    const { data: reflections, error } = await query;
+    // Create cache key for reflections
+    const filterKey = JSON.stringify({ page, limit, sortBy, sortOrder, sessionId, search, moodMin, moodMax });
+    const cacheKey = CacheKeys.reflections(user.id, filterKey);
+    
+    const { reflections, totalCount } = await getCachedData(
+      cacheKey,
+      async () => {
+        const { data: reflections, error } = await query;
 
-    if (error) {
-      console.error('Error fetching reflections:', error);
-      return NextResponse.json({ error: 'Failed to fetch reflections' }, { status: 500 });
-    }
+        if (error) {
+          throw new Error(`Failed to fetch reflections: ${error.message}`);
+        }
 
-    // Get total count for pagination
-    let countQuery = supabase
-      .from('reflections')
-      .select('id', { count: 'exact', head: true })
-      .eq('client_id', user.id);
+        // Get total count for pagination
+        let countQuery = supabase
+          .from('reflections')
+          .select('id', { count: 'exact', head: true })
+          .eq('client_id', user.id);
 
-    if (sessionId) {
-      countQuery = countQuery.eq('session_id', sessionId);
-    }
-    if (search) {
-      // Sanitize search input to prevent SQL injection
-      const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&').replace(/'/g, "''");
-      countQuery = countQuery.or(`content.ilike.%${sanitizedSearch}%,insights.ilike.%${sanitizedSearch}%,goals_for_next_session.ilike.%${sanitizedSearch}%`);
-    }
-    if (moodMin) {
-      countQuery = countQuery.gte('mood_rating', parseInt(moodMin));
-    }
-    if (moodMax) {
-      countQuery = countQuery.lte('mood_rating', parseInt(moodMax));
-    }
+        if (sessionId) {
+          countQuery = countQuery.eq('session_id', sessionId);
+        }
+        if (search) {
+          // Sanitize search input to prevent SQL injection
+          const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&').replace(/'/g, "''");
+          countQuery = countQuery.or(`content.ilike.%${sanitizedSearch}%,insights.ilike.%${sanitizedSearch}%,goals_for_next_session.ilike.%${sanitizedSearch}%`);
+        }
+        if (moodMin) {
+          countQuery = countQuery.gte('mood_rating', parseInt(moodMin));
+        }
+        if (moodMax) {
+          countQuery = countQuery.lte('mood_rating', parseInt(moodMax));
+        }
 
-    const { count: totalCount } = await countQuery;
+        const { count: totalCount } = await countQuery;
+        return { reflections, totalCount };
+      },
+      CacheTTL.MEDIUM
+    );
 
     const totalPages = Math.ceil((totalCount || 0) / limit);
 
@@ -183,6 +194,9 @@ export async function POST(request: NextRequest) {
       console.error('Error creating reflection:', error);
       return NextResponse.json({ error: 'Failed to create reflection' }, { status: 500 });
     }
+    
+    // Invalidate cache for this user's reflections
+    CacheInvalidation.user(user.id);
 
     // Transform response
     const transformedReflection = {

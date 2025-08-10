@@ -17,6 +17,7 @@ import {
   createSession 
 } from '@/lib/database/sessions';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { getCachedData, CacheKeys, CacheTTL, CacheInvalidation } from '@/lib/performance/cache';
 
 // GET /api/sessions - List sessions with pagination and filters
 export const GET = withErrorHandling(
@@ -34,21 +35,29 @@ export const GET = withErrorHandling(
   
   const offset = (page - 1) * limit;
   
-  // Fetch sessions from database
-  const [sessions, total] = await Promise.all([
-    getSessionsPaginated({
-      limit,
-      offset,
-      sortBy,
-      sortOrder,
-      status,
-      coachId,
-      clientId,
-      from,
-      to,
-    }),
-    getSessionsCount({ status, coachId, clientId, from, to }),
-  ]);
+  // Create cache key based on user and filters
+  const filterKey = JSON.stringify({ page, limit, sortBy, sortOrder, status, coachId, clientId, from, to });
+  const cacheKey = CacheKeys.sessions(user.id, filterKey);
+  
+  // Fetch sessions from cache or database
+  const [sessions, total] = await getCachedData(
+    cacheKey,
+    async () => Promise.all([
+      getSessionsPaginated({
+        limit,
+        offset,
+        sortBy,
+        sortOrder,
+        status,
+        coachId,
+        clientId,
+        from,
+        to,
+      }),
+      getSessionsCount({ status, coachId, clientId, from, to }),
+    ]),
+    CacheTTL.MEDIUM
+  );
   
   // Calculate pagination metadata
   const totalPages = Math.ceil(total / limit);
@@ -92,6 +101,12 @@ export const POST = withErrorHandling(
       
       // Create session
       const session = await createSession(validation.data);
+      
+      // Invalidate relevant caches
+      CacheInvalidation.user(user.id);
+      if (validation.data.clientId) {
+        CacheInvalidation.user(validation.data.clientId);
+      }
       
       return createSuccessResponse(session, 'Session created successfully', HTTP_STATUS.CREATED);
     })

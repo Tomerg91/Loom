@@ -7,6 +7,7 @@ import { getServerUser } from '@/lib/auth/auth';
 import { routing } from '@/i18n/routing';
 import { PerformanceMonitorComponent } from '@/components/monitoring/performance-monitor';
 import { initSentry } from '@/lib/monitoring/sentry';
+import { SkipLink } from '@/components/ui/skip-link';
 import '../globals.css';
 
 // Force dynamic rendering to avoid prerender issues with event handlers in client components
@@ -72,58 +73,12 @@ export default async function LocaleLayout({
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         {/* Skip navigation links for keyboard users */}
-        <a
-          href="#main-content"
-          className="skip-link sr-only-focusable"
-          style={{
-            position: 'absolute',
-            top: '-40px',
-            left: '6px',
-            background: 'hsl(var(--primary))',
-            color: 'hsl(var(--primary-foreground))',
-            padding: '8px 12px',
-            textDecoration: 'none',
-            borderRadius: '4px',
-            zIndex: 100,
-            fontWeight: 600,
-            fontSize: '14px',
-            transition: 'top 0.2s ease-in-out',
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.top = '6px';
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.top = '-40px';
-          }}
-        >
+        <SkipLink href="#main-content">
           {locale === 'he' ? 'עבור לתוכן הראשי' : 'Skip to main content'}
-        </a>
-        <a
-          href="#main-navigation"
-          className="skip-link sr-only-focusable"
-          style={{
-            position: 'absolute',
-            top: '-40px',
-            left: '140px',
-            background: 'hsl(var(--primary))',
-            color: 'hsl(var(--primary-foreground))',
-            padding: '8px 12px',
-            textDecoration: 'none',
-            borderRadius: '4px',
-            zIndex: 100,
-            fontWeight: 600,
-            fontSize: '14px',
-            transition: 'top 0.2s ease-in-out',
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.top = '6px';
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.top = '-40px';
-          }}
-        >
+        </SkipLink>
+        <SkipLink href="#main-navigation" className="left-32">
           {locale === 'he' ? 'עבור לניווט' : 'Skip to navigation'}
-        </a>
+        </SkipLink>
         <Providers 
           locale={locale} 
           messages={messages} 

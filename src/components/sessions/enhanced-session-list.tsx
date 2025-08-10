@@ -26,7 +26,7 @@ import {
   Download,
   Grid3X3,
   List,
-  Timeline,
+  BarChart3,
   ChevronDown,
   X
 } from 'lucide-react';
@@ -265,7 +265,7 @@ export function EnhancedSessionList({
                 <span className="hidden sm:inline">Calendar</span>
               </TabsTrigger>
               <TabsTrigger value="timeline" className="flex items-center gap-1 sm:gap-2">
-                <Timeline className="h-4 w-4" />
+                <BarChart3 className="h-4 w-4" />
                 <span className="hidden sm:inline">Timeline</span>
               </TabsTrigger>
             </TabsList>

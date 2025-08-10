@@ -7,30 +7,6 @@ export * from './database-optimization';
 
 // Re-export commonly used optimizations
 export { 
-  // Lazy loading
-  LazyComponents,
-  preloadComponentsByRole,
-  preloadRouteComponents,
-  
-  // Caching
-  cachedSessionOperations,
-  cachedUserOperations,
-  cachedAnalyticsOperations,
-  cachedNotificationOperations,
-  ClientCache,
-  invalidateCache,
-  invalidateUserCache,
-  invalidateSessionCache,
-  
-  // Database optimization
-  dbOptimizer,
-  withDatabaseOptimization,
-  
-  // Web vitals monitoring
-  webVitalsMonitor,
-  measurePerformance,
-  usePerformanceTracking,
-  
   // General optimizations
   debounce,
   throttle,

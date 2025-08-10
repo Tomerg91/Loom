@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerUser } from '@/lib/auth/auth';
 import { createClient } from '@/lib/supabase/server';
 import { ApiResponse } from '@/lib/api/types';
+import { getCachedData, CacheKeys, CacheTTL } from '@/lib/performance/cache';
 
 export interface SessionWidget {
   id: string;
@@ -42,66 +43,74 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     const limit = parseInt(searchParams.get('limit') || '10');
     const status = searchParams.get('status');
     const timeframe = searchParams.get('timeframe'); // 'upcoming', 'past', 'all'
-
-    let query = supabase
-      .from('sessions')
-      .select(`
-        id,
-        title,
-        scheduled_at,
-        duration_minutes,
-        status,
-        notes,
-        coach:coach_id(first_name, last_name, avatar_url),
-        client:client_id(first_name, last_name, avatar_url)
-      `);
-
-    // Filter based on user role
-    if (user.role === 'coach') {
-      query = query.eq('coach_id', user.id);
-    } else if (user.role === 'client') {
-      query = query.eq('client_id', user.id);
-    } else if (user.role === 'admin') {
-      // Admin can see all sessions - no additional filter needed
-    }
-
-    // Apply status filter
-    if (status) {
-      query = query.eq('status', status);
-    }
-
-    // Apply timeframe filter
-    const now = new Date().toISOString();
-    if (timeframe === 'upcoming') {
-      query = query.gte('scheduled_at', now);
-    } else if (timeframe === 'past') {
-      query = query.lt('scheduled_at', now);
-    }
-
-    // Order by scheduled_at
-    query = query.order('scheduled_at', { ascending: timeframe === 'upcoming' });
-
-    const { data: sessions, error: sessionsError } = await query.limit(limit);
-
-    if (sessionsError) throw sessionsError;
-
-    // Get session-related data for enhanced information
-    const sessionIds = sessions?.map(s => s.id) || [];
     
-    // Get coach notes for sessions (to extract insights and action items)
-    const { data: notes } = await supabase
-      .from('coach_notes')
-      .select('session_id, content, title')
-      .in('session_id', sessionIds);
+    // Create cache key for session widget data
+    const paramsKey = JSON.stringify({ limit, status, timeframe });
+    const cacheKey = CacheKeys.sessionWidget(user.id, paramsKey);
+    
+    const response = await getCachedData(
+      cacheKey,
+      async () => {
+        const supabase = await createClient();
+        let query = supabase
+          .from('sessions')
+          .select(`
+            id,
+            title,
+            scheduled_at,
+            duration_minutes,
+            status,
+            notes,
+            coach:coach_id(first_name, last_name, avatar_url),
+            client:client_id(first_name, last_name, avatar_url)
+          `);
 
-    // Get reflections to potentially extract rating information
-    const { data: reflections } = await supabase
-      .from('reflections')
-      .select('session_id, mood_rating, insights')
-      .in('session_id', sessionIds);
+        // Filter based on user role
+        if (user.role === 'coach') {
+          query = query.eq('coach_id', user.id);
+        } else if (user.role === 'client') {
+          query = query.eq('client_id', user.id);
+        } else if (user.role === 'admin') {
+          // Admin can see all sessions - no additional filter needed
+        }
 
-    // Transform data to match widget interface
-    const transformedSessions: SessionWidget[] = (sessions || []).map(session => {
+        // Apply status filter
+        if (status) {
+          query = query.eq('status', status);
+        }
+
+        // Apply timeframe filter
+        const now = new Date().toISOString();
+        if (timeframe === 'upcoming') {
+          query = query.gte('scheduled_at', now);
+        } else if (timeframe === 'past') {
+          query = query.lt('scheduled_at', now);
+        }
+
+        // Order by scheduled_at
+        query = query.order('scheduled_at', { ascending: timeframe === 'upcoming' });
+
+        const { data: sessions, error: sessionsError } = await query.limit(limit);
+
+        if (sessionsError) throw sessionsError;
+
+        // Get session-related data for enhanced information
+        const sessionIds = sessions?.map(s => s.id) || [];
+        
+        // Batch fetch related data for better performance
+        const [notes, reflections] = await Promise.all([
+          supabase
+            .from('coach_notes')
+            .select('session_id, content, title')
+            .in('session_id', sessionIds),
+          supabase
+            .from('reflections')
+            .select('session_id, mood_rating, insights')
+            .in('session_id', sessionIds)
+        ]);
+
+        // Transform data to match widget interface
+        const transformedSessions: SessionWidget[] = (sessions || []).map(session => {
       const coach = session.coach as any;
       const client = session.client as any;
       const sessionNotes = notes?.filter((n: any) => (n.sessionId || n.session_id) === session.id) || [];
@@ -168,19 +177,22 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       };
     });
 
-    // Calculate summary statistics
-    const totalSessions = transformedSessions.length;
-    const completedSessions = transformedSessions.filter(s => s.status === 'completed').length;
-    const upcomingSessions = transformedSessions.filter(s => s.status === 'upcoming').length;
-    const cancelledSessions = transformedSessions.filter(s => s.status === 'cancelled').length;
+        // Calculate summary statistics
+        const totalSessions = transformedSessions.length;
+        const completedSessions = transformedSessions.filter(s => s.status === 'completed').length;
+        const upcomingSessions = transformedSessions.filter(s => s.status === 'upcoming').length;
+        const cancelledSessions = transformedSessions.filter(s => s.status === 'cancelled').length;
 
-    const response: SessionsResponse = {
-      sessions: transformedSessions,
-      totalSessions,
-      completedSessions,
-      upcomingSessions,
-      cancelledSessions
-    };
+        return {
+          sessions: transformedSessions,
+          totalSessions,
+          completedSessions,
+          upcomingSessions,
+          cancelledSessions
+        };
+      },
+      CacheTTL.DASHBOARD
+    );
 
     return NextResponse.json({
       success: true,

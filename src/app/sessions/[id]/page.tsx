@@ -1,5 +1,8 @@
 'use client';
 
+// Force dynamic rendering to avoid prerender issues with React Query
+export const dynamic = 'force-dynamic';
+
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

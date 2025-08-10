@@ -86,38 +86,63 @@ export const createServerClientWithRequest = (request: NextRequest, response: Ne
 export const createClient = async () => {
   validateSupabaseEnv();
   
-  const { cookies } = await import('next/headers');
-  const cookieStore = await cookies();
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   
-  return createSupabaseServerClient<Database>(
-    supabaseUrl,
-    supabaseKey,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookies) => {
-          cookies.forEach(({ name, value, options }) => {
+  // Check if we're in a server context with cookies available
+  try {
+    // Dynamic import to avoid issues during build
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    
+    return createSupabaseServerClient<Database>(
+      supabaseUrl,
+      supabaseKey,
+      {
+        cookies: {
+          getAll: () => {
             try {
-              const sameSiteValue = options?.sameSite === true 
-                ? 'strict' as const
-                : (options?.sameSite === false 
-                    ? 'none' as const 
-                    : options?.sameSite as 'strict' | 'lax' | 'none' | undefined);
-              
-              cookieStore.set(name, value, {
-                ...options,
-                sameSite: sameSiteValue
-              });
+              return cookieStore.getAll();
             } catch (error) {
-              console.warn('Failed to set cookie:', error);
+              console.warn('Failed to get cookies:', error);
+              return [];
             }
-          });
+          },
+          setAll: (cookies) => {
+            cookies.forEach(({ name, value, options }) => {
+              try {
+                const sameSiteValue = options?.sameSite === true 
+                  ? 'strict' as const
+                  : (options?.sameSite === false 
+                      ? 'none' as const 
+                      : options?.sameSite as 'strict' | 'lax' | 'none' | undefined);
+                
+                cookieStore.set(name, value, {
+                  ...options,
+                  sameSite: sameSiteValue
+                });
+              } catch (error) {
+                console.warn('Failed to set cookie:', error);
+              }
+            });
+          },
         },
-      },
-    }
-  );
+      }
+    );
+  } catch (error) {
+    // Fallback for build-time or non-server contexts
+    console.warn('Cookies not available, falling back to cookieless client:', error);
+    return createSupabaseServerClient<Database>(
+      supabaseUrl,
+      supabaseKey,
+      {
+        cookies: {
+          getAll: () => [],
+          setAll: () => {},
+        },
+      }
+    );
+  }
 };
 
 // Admin client with service role key for administrative operations

@@ -1,5 +1,3 @@
-'use server';
-
 import { createClient } from '@/lib/supabase/server';
 import { ApiError } from '@/lib/api/errors';
 import { Result } from '@/lib/types/result';
@@ -135,7 +133,7 @@ class FileManagementService {
         return Result.error(`Failed to create file record: ${insertError.message}`);
       }
 
-      return Result.success(this.mapFileUploadRow(fileRecord));
+      return Result.success(await this.mapFileUploadRow(fileRecord));
     } catch (error) {
       console.error('File upload error:', error);
       return Result.error(error instanceof Error ? error.message : 'File upload failed');
@@ -220,7 +218,7 @@ class FileManagementService {
 
       const { count } = await countQuery;
 
-      const mappedFiles = files?.map(this.mapFileUploadRowWithJoins) || [];
+      const mappedFiles = files ? await Promise.all(files.map(f => this.mapFileUploadRowWithJoins(f))) : [];
 
       return Result.success({
         files: mappedFiles,
@@ -264,7 +262,7 @@ class FileManagementService {
         .select('*')
         .eq('file_id', fileId);
 
-      const fileData = this.mapFileUploadRowWithJoins(file);
+      const fileData = await this.mapFileUploadRowWithJoins(file);
       if (shares) {
         fileData.sharedWith = shares;
       }
@@ -415,11 +413,13 @@ class FileManagementService {
         return Result.error(`Failed to get session files: ${error.message}`);
       }
 
-      const files = sessionFiles?.map(sf => {
+      const sessionFileMappings = sessionFiles?.map(async (sf) => {
         const file = sf.file_uploads;
         if (!file) return null;
-        return this.mapFileUploadRowWithJoins(file);
-      }).filter(Boolean) as FileMetadata[];
+        return await this.mapFileUploadRowWithJoins(file);
+      });
+      
+      const files = sessionFileMappings ? (await Promise.all(sessionFileMappings)).filter(Boolean) as FileMetadata[] : [];
 
       return Result.success(files);
     } catch (error) {
@@ -497,7 +497,7 @@ class FileManagementService {
         return Result.error(`Failed to update file: ${error.message}`);
       }
 
-      return Result.success(this.mapFileUploadRow(updatedFile));
+      return Result.success(await this.mapFileUploadRow(updatedFile));
     } catch (error) {
       console.error('Update file error:', error);
       return Result.error(error instanceof Error ? error.message : 'Failed to update file');
@@ -527,14 +527,16 @@ class FileManagementService {
         return Result.error(`Failed to get shared files: ${error.message}`);
       }
 
-      const files = shares?.map(share => {
+      const fileMappings = shares?.map(async (share) => {
         const file = share.file_uploads;
         if (!file) return null;
         
-        const mappedFile = this.mapFileUploadRowWithJoins(file);
+        const mappedFile = await this.mapFileUploadRowWithJoins(file);
         mappedFile.sharedWith = [share as FileShareRow];
         return mappedFile;
-      }).filter(Boolean) as FileMetadata[];
+      });
+      
+      const files = fileMappings ? (await Promise.all(fileMappings)).filter(Boolean) as FileMetadata[] : [];
 
       return Result.success(files || []);
     } catch (error) {
@@ -631,8 +633,8 @@ class FileManagementService {
     }
   }
 
-  private mapFileUploadRow = (row: FileUploadRow): FileMetadata => {
-    const supabase = createClient();
+  private mapFileUploadRow = async (row: FileUploadRow): Promise<FileMetadata> => {
+    const supabase = await createClient();
     const publicUrl = supabase.storage
       .from(row.bucket_name)
       .getPublicUrl(row.storage_path);
@@ -658,8 +660,8 @@ class FileManagementService {
     };
   }
 
-  private mapFileUploadRowWithJoins = (row: any): FileMetadata => {
-    const base = this.mapFileUploadRow(row);
+  private mapFileUploadRowWithJoins = async (row: any): Promise<FileMetadata> => {
+    const base = await this.mapFileUploadRow(row);
     
     if (row.users) {
       base.ownerName = `${row.users.first_name || ''} ${row.users.last_name || ''}`.trim();
@@ -669,4 +671,23 @@ class FileManagementService {
   }
 }
 
-export const fileManagementService = new FileManagementService();
+// Factory function for creating service instances
+export async function createFileManagementService() {
+  return new FileManagementService();
+}
+
+// Create singleton instance - for compatibility with existing code
+let serviceInstance: FileManagementService | null = null;
+
+export function getFileManagementService(): FileManagementService {
+  if (!serviceInstance) {
+    serviceInstance = new FileManagementService();
+  }
+  return serviceInstance;
+}
+
+// Backward compatibility export
+export const fileManagementService = getFileManagementService();
+
+// Class export for type checking
+export const FileManagementServiceClass = FileManagementService;

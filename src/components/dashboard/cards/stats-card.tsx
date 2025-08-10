@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DashboardStats } from '../shared/types';
 import { LucideIcon } from 'lucide-react';
@@ -14,14 +15,14 @@ interface StatsCardProps {
   testId?: string;
 }
 
-export function StatsCard({ 
+export const StatsCard = React.memo(({ 
   title, 
   value, 
   icon: Icon, 
   trend, 
   description,
   testId 
-}: StatsCardProps) {
+}: StatsCardProps) => {
   return (
     <Card className="transition-all duration-200 hover:shadow-md hover:scale-[1.02] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -36,19 +37,19 @@ export function StatsCard({
         <div 
           className="text-xl sm:text-2xl font-bold truncate" 
           data-testid={testId}
-          title={typeof value === 'string' ? value : value.toString()}
+          title={React.useMemo(() => typeof value === 'string' ? value : value.toString(), [value])}
         >
           {value}
         </div>
         {trend && (
           <div className="flex items-center space-x-1">
             <span 
-              className={`text-xs font-medium ${
+              className={React.useMemo(() => `text-xs font-medium ${
                 trend.isPositive 
                   ? 'text-green-600 dark:text-green-400' 
                   : 'text-red-600 dark:text-red-400'
-              }`}
-              aria-label={`${trend.isPositive ? 'Positive' : 'Negative'} trend: ${trend.value}`}
+              }`, [trend.isPositive])}
+              aria-label={React.useMemo(() => `${trend.isPositive ? 'Positive' : 'Negative'} trend: ${trend.value}`, [trend])}
             >
               {trend.value}
             </span>
@@ -67,4 +68,6 @@ export function StatsCard({
       </CardContent>
     </Card>
   );
-}
+});
+
+StatsCard.displayName = 'StatsCard';
