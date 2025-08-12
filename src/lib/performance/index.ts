@@ -1,7 +1,6 @@
 // Performance optimization exports
 export * from './optimization';
 export * from './lazy-loading'; 
-export * from './caching';
 export * from './web-vitals-monitor';
 export * from './database-optimization';
 

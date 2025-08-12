@@ -533,48 +533,51 @@ export function useNotificationToast() {
 export function useAsyncToast() {
   const { toast, update } = useToast();
 
-  return useCallback(async <T>(
-    promise: Promise<T>,
-    options: {
-      loading?: string;
-      success?: string | ((data: T) => string);
-      error?: string | ((error: Error) => string);
-    }
-  ) => {
-    const toastId = toast.loading(options.loading || 'Loading...', { 
-      persistent: true 
-    });
-
-    try {
-      const result = await promise;
-      
-      const successMessage = typeof options.success === 'function' 
-        ? options.success(result) 
-        : options.success || 'Success';
-
-      update(toastId, {
-        type: 'success',
-        description: successMessage,
-        persistent: false,
-        duration: 5000,
+  return useCallback(
+    async (
+      promise: Promise<any>,
+      options: {
+        loading?: string;
+        success?: string | ((data: any) => string);
+        error?: string | ((error: Error) => string);
+      }
+    ) => {
+      const toastId = toast.loading(options.loading || 'Loading...', { 
+        persistent: true 
       });
 
-      return result;
-    } catch (error) {
-      const errorMessage = typeof options.error === 'function' 
-        ? options.error(error as Error) 
-        : options.error || 'Something went wrong';
+      try {
+        const result = await promise;
+        
+        const successMessage = typeof options.success === 'function' 
+          ? options.success(result) 
+          : options.success || 'Success';
 
-      update(toastId, {
-        type: 'error',
-        description: errorMessage,
-        persistent: false,
-        duration: 7000,
-      });
+        update(toastId, {
+          type: 'success',
+          description: successMessage,
+          persistent: false,
+          duration: 5000,
+        });
 
-      throw error;
-    }
-  }, [toast, update]);
+        return result;
+      } catch (error) {
+        const errorMessage = typeof options.error === 'function' 
+          ? options.error(error as Error) 
+          : options.error || 'Something went wrong';
+
+        update(toastId, {
+          type: 'error',
+          description: errorMessage,
+          persistent: false,
+          duration: 7000,
+        });
+
+        throw error;
+      }
+    }, 
+    [toast, update]
+  );
 }
 
 export type { Toast, ToastAction, ToastType };

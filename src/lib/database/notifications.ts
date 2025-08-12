@@ -356,7 +356,7 @@ export class NotificationService {
         data: this.supabase.rpc('jsonb_set', { 
           target: 'data', 
           path: '{isArchived}', 
-          value: 'true'::jsonb 
+          value: JSON.stringify(true) 
         }),
         read_at: now
       })

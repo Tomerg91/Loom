@@ -26,6 +26,21 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-query')>();
   return {
     ...actual,
+    QueryClient: vi.fn(() => ({
+      invalidateQueries: vi.fn(),
+      setQueryData: vi.fn(),
+      getQueryData: vi.fn(),
+      removeQueries: vi.fn(),
+      clear: vi.fn(),
+      mount: vi.fn(),
+      unmount: vi.fn(),
+      isFetching: vi.fn(),
+      isMutating: vi.fn(),
+      getDefaultOptions: vi.fn(() => ({})),
+      setDefaultOptions: vi.fn(),
+      getMutationCache: vi.fn(),
+      getQueryCache: vi.fn(),
+    })),
     useQuery: vi.fn(),
     useMutation: vi.fn(),
     useInfiniteQuery: vi.fn(),
