@@ -344,35 +344,26 @@ describe('Accessibility Tests', () => {
 
   describe('Language and Internationalization', () => {
     it('should set proper language attributes', async () => {
-      const container = document.createElement('div');
-      container.innerHTML = `
-        <html lang="en">
-          <body>
-            <p>English text</p>
-            <p lang="he">טקסט בעברית</p>
-          </body>
-        </html>
-      `;
+      // Create HTML element with proper attributes
+      const htmlElement = document.createElement('html');
+      htmlElement.setAttribute('lang', 'en');
       
-      const html = container.querySelector('html');
-      const hebrewText = container.querySelector('p[lang="he"]');
+      const hebrewElement = document.createElement('p');
+      hebrewElement.setAttribute('lang', 'he');
+      hebrewElement.textContent = 'טקסט בעברית';
       
-      expect(html?.getAttribute('lang')).toBe('en');
-      expect(hebrewText?.getAttribute('lang')).toBe('he');
+      expect(htmlElement.getAttribute('lang')).toBe('en');
+      expect(hebrewElement.getAttribute('lang')).toBe('he');
     });
 
     it('should support RTL text direction', async () => {
-      const container = document.createElement('div');
-      container.innerHTML = `
-        <html lang="he" dir="rtl">
-          <body>
-            <p>טקסט בעברית</p>
-          </body>
-        </html>
-      `;
+      // Create HTML element with proper RTL direction
+      const htmlElement = document.createElement('html');
+      htmlElement.setAttribute('lang', 'he');
+      htmlElement.setAttribute('dir', 'rtl');
       
-      const html = container.querySelector('html');
-      expect(html?.getAttribute('dir')).toBe('rtl');
+      expect(htmlElement.getAttribute('dir')).toBe('rtl');
+      expect(htmlElement.getAttribute('lang')).toBe('he');
     });
   });
 

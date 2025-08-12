@@ -56,30 +56,40 @@ export function RouteGuard({
   useEffect(() => {
     if (isLoading) return; // Wait for auth to load
 
-    // Check if authentication is required
-    if (requireAuth && !user) {
-      const loginPath = redirectTo || '/auth/signin';
-      router.push(loginPath as '/auth/signin');
-      return;
-    }
+    // Batch all redirect logic to reduce effect runs
+    const checkAuthAndRedirect = () => {
+      // Check if authentication is required
+      if (requireAuth && !user) {
+        const loginPath = redirectTo || '/auth/signin';
+        router.push(loginPath as '/auth/signin');
+        return;
+      }
 
-    // If no user and auth not required, allow access
-    if (!user && !requireAuth) {
-      return;
-    }
+      // If no user and auth not required, allow access
+      if (!user && !requireAuth) {
+        return;
+      }
 
-    // Check role requirements
-    if ((requireRole || requireAnyRole) && !hasRequiredRole) {
-      const unauthorizedPath = redirectTo || '/dashboard';
-      router.push(unauthorizedPath as '/dashboard');
-      return;
-    }
+      // Check role requirements
+      if ((requireRole || requireAnyRole) && !hasRequiredRole) {
+        const unauthorizedPath = redirectTo || '/dashboard';
+        router.push(unauthorizedPath as '/dashboard');
+        return;
+      }
 
-    // Check permission requirements
-    if (!permissionSatisfied || !anyPermissionSatisfied) {
-      const unauthorizedPath = redirectTo || '/dashboard';
-      router.push(unauthorizedPath as '/dashboard');
-      return;
+      // Check permission requirements
+      if (!permissionSatisfied || !anyPermissionSatisfied) {
+        const unauthorizedPath = redirectTo || '/dashboard';
+        router.push(unauthorizedPath as '/dashboard');
+        return;
+      }
+    };
+
+    // Use requestIdleCallback to defer non-critical checks
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(checkAuthAndRedirect);
+    } else {
+      setTimeout(checkAuthAndRedirect, 0);
     }
   }, [
     isLoading,
@@ -96,16 +106,30 @@ export function RouteGuard({
     router,
   ]);
 
-  // Show loading state
+  // Show loading state with skeleton to reduce LCP
   if (isLoading && showLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin mr-3" />
-            <span className="text-lg">Loading...</span>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="h-16 bg-card border-b flex items-center px-4">
+          <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+          <div className="ml-auto flex items-center space-x-4">
+            <div className="h-8 w-24 bg-muted rounded animate-pulse" />
+            <div className="h-8 w-8 bg-muted rounded-full animate-pulse" />
+          </div>
+        </div>
+        <main className="flex-1 p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="h-8 w-64 bg-muted rounded animate-pulse mb-6" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 bg-card border rounded-lg p-4">
+                  <div className="h-4 w-24 bg-muted rounded animate-pulse mb-2" />
+                  <div className="h-8 w-16 bg-muted rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
       </div>
     );
   }

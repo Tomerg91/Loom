@@ -28,6 +28,7 @@ export const LayoutStabilizer = React.memo(({
   const style = React.useMemo(() => ({
     minHeight: typeof minHeight === 'number' ? `${minHeight}px` : minHeight,
     ...(reserveSpace && { 
+      contain: 'layout size',
       containIntrinsicSize: 'layout-size',
       contentVisibility: 'auto'
     })
@@ -128,3 +129,69 @@ export const DashboardGridSkeleton = React.memo(() => (
 ));
 
 DashboardGridSkeleton.displayName = 'DashboardGridSkeleton';
+
+// Image with dimensions to prevent CLS
+export const StableImage = React.memo(({
+  src,
+  alt,
+  width,
+  height,
+  className,
+  ...props
+}: {
+  src?: string | null;
+  alt: string;
+  width: number;
+  height: number;
+  className?: string;
+  [key: string]: any;
+}) => {
+  return (
+    <div 
+      className={cn('relative overflow-hidden', className)}
+      style={{ width, height }}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={alt}
+          width={width}
+          height={height}
+          className="w-full h-full object-cover"
+          loading="lazy"
+          {...props}
+        />
+      ) : (
+        <div 
+          className="w-full h-full bg-muted flex items-center justify-center"
+          role="img"
+          aria-label={alt}
+        />
+      )}
+    </div>
+  );
+});
+
+StableImage.displayName = 'StableImage';
+
+// Navigation placeholder to prevent mobile menu CLS
+export const NavigationPlaceholder = React.memo(() => (
+  <nav 
+    className="bg-card border-b border-border sticky top-0 z-50" 
+    style={{ height: '64px' }}
+    aria-hidden="true"
+  >
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex justify-between h-16 items-center">
+        <div className="flex items-center space-x-8">
+          <div className="h-8 w-20 bg-muted rounded" />
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="h-8 w-8 bg-muted rounded-full" />
+        </div>
+      </div>
+    </div>
+  </nav>
+));
+
+NavigationPlaceholder.displayName = 'NavigationPlaceholder';

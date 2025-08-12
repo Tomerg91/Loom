@@ -25,14 +25,20 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function DashboardPage({ params }: DashboardPageProps) {
   const { locale } = await params;
   
-  // Require authentication
-  const user = await getServerUser();
+  // Load translations and user in parallel for better TTFB
+  const [translationsResult, commonTranslationsResult, userResult] = await Promise.allSettled([
+    getTranslations({ locale, namespace: 'dashboard' }),
+    getTranslations({ locale, namespace: 'common' }),
+    getServerUser()
+  ]);
+  
+  const user = userResult.status === 'fulfilled' ? userResult.value : null;
   if (!user) {
     redirect(`/${locale}/auth/signin`);
   }
 
-  const t = await getTranslations({ locale, namespace: 'dashboard' });
-  const commonT = await getTranslations({ locale, namespace: 'common' });
+  const t = translationsResult.status === 'fulfilled' ? translationsResult.value : (() => (key: string) => key)();
+  const commonT = commonTranslationsResult.status === 'fulfilled' ? commonTranslationsResult.value : (() => (key: string) => key)();
 
   // Mock data - will be replaced with real data from database
   const mockStats = {

@@ -45,7 +45,7 @@ export function SessionInformationForm({ formData, onFieldChange }: SessionInfor
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="scheduledAt">Date &amp; Time</Label>
             <Input

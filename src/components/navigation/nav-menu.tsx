@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { StableImage } from '@/components/layout/layout-stabilizer';
 import { 
   Home, 
   Calendar, 
@@ -239,9 +240,12 @@ export function NavMenu() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full" data-testid="user-menu">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage 
-                      src={user.avatarUrl} 
-                      alt={`${getUserDisplayName(user)} profile picture - ${t(`roles.${user.role}`)}`} 
+                    <StableImage
+                      src={user.avatarUrl}
+                      alt={`${getUserDisplayName(user)} profile picture - ${t(`roles.${user.role}`)}`}
+                      width={40}
+                      height={40}
+                      className="rounded-full"
                     />
                     <AvatarFallback>
                       {getUserInitials(user)}
@@ -284,13 +288,16 @@ export function NavMenu() {
         </div>
       </div>
 
-      {/* Mobile navigation */}
+      {/* Mobile navigation with CLS prevention */}
       <div 
-        className={`lg:hidden transition-all duration-300 ease-in-out ${
-          isMobileMenuOpen 
-            ? 'max-h-screen opacity-100 visible' 
-            : 'max-h-0 opacity-0 invisible overflow-hidden'
-        }`}
+        className="lg:hidden"
+        style={{
+          maxHeight: isMobileMenuOpen ? '400px' : '0px',
+          opacity: isMobileMenuOpen ? 1 : 0,
+          overflow: 'hidden',
+          transition: 'max-height 0.3s ease-in-out, opacity 0.3s ease-in-out',
+          contain: 'layout'
+        }}
         id="mobile-navigation"
         aria-hidden={!isMobileMenuOpen}
       >

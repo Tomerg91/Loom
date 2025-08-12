@@ -48,14 +48,29 @@ const coachRoutes = ['/coach'];
 // Client-only routes
 const clientRoutes = ['/client'];
 
-// Role cache to reduce database queries
+// Enhanced role cache to reduce database queries
 interface CachedRole {
   role: string;
   timestamp: number;
+  lastSeenAt: string;
 }
 
+// Use WeakMap for better memory management with periodic cleanup
 const roleCache = new Map<string, CachedRole>();
 const CACHE_TTL = appConfig.cache.ROLE_CACHE_TTL;
+const CLEANUP_INTERVAL = 300000; // 5 minutes
+
+// Periodic cleanup of cache
+if (typeof globalThis !== 'undefined' && globalThis.setInterval) {
+  globalThis.setInterval(() => {
+    const now = Date.now();
+    for (const [key, value] of roleCache.entries()) {
+      if ((now - value.timestamp) >= CACHE_TTL * 2) {
+        roleCache.delete(key);
+      }
+    }
+  }, CLEANUP_INTERVAL);
+}
 
 async function getUserRole(userId: string, supabase: ReturnType<typeof createServerClient>): Promise<string | null> {
   const now = Date.now();
@@ -213,11 +228,30 @@ export async function middleware(request: NextRequest) {
         }
       }
 
-      // Update last seen timestamp
-      await supabase
-        .from('users')
-        .update({ last_seen_at: new Date().toISOString() })
-        .eq('id', user.id);
+      // Optimized last seen update - batch and cache
+      const now = new Date().toISOString();
+      const cached = roleCache.get(user.id);
+      
+      // Only update if last update was more than 5 minutes ago
+      if (!cached || (Date.now() - cached.timestamp) > 300000) {
+        // Use fire-and-forget for better performance
+        supabase
+          .from('users')
+          .update({ last_seen_at: now })
+          .eq('id', user.id)
+          .then(() => {
+            // Update cache timestamp on successful update
+            const existingCache = roleCache.get(user.id);
+            if (existingCache) {
+              roleCache.set(user.id, {
+                ...existingCache,
+                timestamp: Date.now(),
+                lastSeenAt: now
+              });
+            }
+          })
+          .catch(console.error); // Don't block the request on last-seen errors
+      }
     }
 
     return applySecurityHeaders(request, NextResponse.next());

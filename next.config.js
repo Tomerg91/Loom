@@ -161,13 +161,30 @@ const nextConfig = {
               priority: 40,
               enforce: true,
             },
+            // UI library chunk for better caching
+            ui: {
+              test: /[\\/]node_modules[\\/](@radix-ui|lucide-react)[\\/]/,
+              name: 'ui',
+              chunks: 'all',
+              priority: 35,
+              enforce: true,
+            },
+            // Supabase chunk
+            supabase: {
+              test: /[\\/]node_modules[\\/](@supabase)[\\/]/,
+              name: 'supabase',
+              chunks: 'all',
+              priority: 32,
+              enforce: true,
+            },
             // Shared libraries
             lib: {
               test: /[\\/]node_modules[\\/]/,
               name: 'lib',
               priority: 30,
               chunks: 'all',
-              minChunks: 1,
+              minChunks: 2,
+              maxSize: 244000, // 244KB max chunk size
             },
           },
         },

@@ -67,11 +67,27 @@ let clientAuthServiceInstance: AuthService | null = null;
 export class AuthService {
   private supabase: ReturnType<typeof createServerClient> | typeof clientSupabase;
   private userService: ReturnType<typeof createUserService>;
+  private userProfileCache = new Map<string, { data: AuthUser; expires: number }>();
 
   constructor(isServer = true) {
     // Use singleton clients to prevent multiple GoTrueClient instances
     this.supabase = isServer ? createServerClient() : clientSupabase;
     this.userService = createUserService(isServer);
+  }
+
+  private getCachedUserProfile(cacheKey: string, userId: string): AuthUser | null {
+    const cached = this.userProfileCache.get(cacheKey);
+    if (cached && Date.now() < cached.expires) {
+      return cached.data;
+    }
+    return null;
+  }
+
+  private cacheUserProfile(cacheKey: string, user: AuthUser, ttlMs: number): void {
+    this.userProfileCache.set(cacheKey, {
+      data: user,
+      expires: Date.now() + ttlMs
+    });
   }
 
   /**
@@ -207,7 +223,7 @@ export class AuthService {
   }
 
   /**
-   * Get the current user
+   * Get the current user with caching for TTFB optimization
    */
   async getCurrentUser(): Promise<AuthUser | null> {
     try {
@@ -217,11 +233,19 @@ export class AuthService {
         return null;
       }
 
+      // Use memory cache to prevent redundant database queries during SSR
+      const cacheKey = `user_profile_${user.id}`;
+      const cached = await this.getCachedUserProfile(cacheKey, user.id);
+      
+      if (cached) {
+        return cached;
+      }
+
       const userProfileResult = await this.userService.getUserProfile(user.id);
 
       if (userProfileResult.success) {
         const userProfile = userProfileResult.data;
-        return {
+        const authUser = {
           id: userProfile.id,
           email: userProfile.email,
           role: userProfile.role,
@@ -241,6 +265,10 @@ export class AuthService {
           mfaVerifiedAt: userProfile.mfaVerifiedAt,
           rememberDeviceEnabled: userProfile.rememberDeviceEnabled,
         };
+        
+        // Cache for 2 minutes to reduce database load
+        this.cacheUserProfile(cacheKey, authUser, 120000);
+        return authUser;
       }
 
       return null;

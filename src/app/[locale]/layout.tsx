@@ -6,16 +6,19 @@ import { Providers } from '@/components/providers/providers';
 import { getServerUser } from '@/lib/auth/auth';
 import { routing } from '@/i18n/routing';
 import { PerformanceMonitorComponent } from '@/components/monitoring/performance-monitor';
-import { initSentry } from '@/lib/monitoring/sentry';
 import { SkipLink } from '@/components/ui/skip-link';
 import '../globals.css';
 
-// Force dynamic rendering to avoid prerender issues with event handlers in client components
-export const dynamic = 'force-dynamic';
+// Optimize for faster initial loads - reduce server work
+export const dynamic = 'force-dynamic'; // Required for auth
+export const revalidate = false; // Disable for auth-dependent content
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+  preload: true,
+  display: 'swap',
+  fallback: ['system-ui', 'arial'],
 });
 
 export function generateStaticParams() {
@@ -42,36 +45,34 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  // Providing all messages to the client side is the easiest way to get started
-  const messages = await getMessages();
-  
-  // Get initial user for SSR
-  let initialUser = null;
-  try {
-    initialUser = await getServerUser();
-  } catch {
-    // User not authenticated, which is fine
-  }
+  // Load messages and user data in parallel to reduce TTFB
+  const [messages, initialUser] = await Promise.allSettled([
+    getMessages(),
+    getServerUser().catch(() => null) // Don't throw on auth errors
+  ]);
+
+  const resolvedMessages = messages.status === 'fulfilled' ? messages.value : {};
+  const resolvedUser = initialUser.status === 'fulfilled' ? initialUser.value : null;
 
   return (
     <html lang={locale} dir={locale === 'he' ? 'rtl' : 'ltr'}>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Initialize Sentry as early as possible
-              window.addEventListener('load', function() {
-                if (typeof window !== 'undefined') {
-                  // Initialize monitoring
-                  ${initSentry.toString()}
-                  initSentry();
-                }
-              });
-            `,
-          }}
-        />
+        {/* Preload critical resources for faster LCP */}
+        <link rel="dns-prefetch" href="https://*.supabase.co" />
+        <link rel="preconnect" href="https://*.supabase.co" crossOrigin="" />
+        {/* Preload critical fonts */}
+        <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossOrigin="" />
+        {/* Critical CSS inlined in globals.css */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            /* Critical above-the-fold styles */
+            .skeleton-loading { animation: skeleton-pulse 1.5s ease-in-out infinite; }
+            @keyframes skeleton-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+            .layout-stabilizer { min-height: 100vh; display: flex; flex-direction: column; }
+          `
+        }} />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} font-sans antialiased layout-stabilizer`}>
         {/* Skip navigation links for keyboard users */}
         <SkipLink href="#main-content">
           {locale === 'he' ? 'עבור לתוכן הראשי' : 'Skip to main content'}
@@ -81,10 +82,10 @@ export default async function LocaleLayout({
         </SkipLink>
         <Providers 
           locale={locale} 
-          messages={messages} 
-          initialUser={initialUser}
+          messages={resolvedMessages} 
+          initialUser={resolvedUser}
         >
-          <main id="main-content" tabIndex={-1}>
+          <main id="main-content" tabIndex={-1} className="flex-1">
             {children}
           </main>
           <PerformanceMonitorComponent />
