@@ -5,34 +5,58 @@ import { NextRequest } from 'next/server';
 import * as speakeasy from 'speakeasy';
 import * as crypto from 'crypto';
 
-// Environment validation with runtime fallbacks for development/build
+// Secure environment validation - NO FALLBACKS ALLOWED
 function validateMfaEnvironment() {
   if (typeof window !== 'undefined') {
     // Client-side, skip validation
     return;
   }
   
-  // Only enforce in production runtime
-  const isRuntime = process.env.NODE_ENV === 'production' && process.argv.includes('start');
-  
-  if (isRuntime && !process.env.MFA_ENCRYPTION_KEY) {
-    throw new Error('CRITICAL SECURITY ERROR: MFA_ENCRYPTION_KEY environment variable is required in production');
-  }
-  if (isRuntime && !process.env.MFA_SIGNING_KEY) {
-    throw new Error('CRITICAL SECURITY ERROR: MFA_SIGNING_KEY environment variable is required in production');
+  // Always enforce in production - no exceptions
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.MFA_ENCRYPTION_KEY) {
+      throw new Error('CRITICAL SECURITY ERROR: MFA_ENCRYPTION_KEY environment variable is required in production');
+    }
+    if (!process.env.MFA_SIGNING_KEY) {
+      throw new Error('CRITICAL SECURITY ERROR: MFA_SIGNING_KEY environment variable is required in production');
+    }
+    if (process.env.MFA_ENCRYPTION_KEY.length < 32) {
+      throw new Error('CRITICAL SECURITY ERROR: MFA_ENCRYPTION_KEY must be at least 32 characters long');
+    }
+    if (process.env.MFA_SIGNING_KEY.length < 32) {
+      throw new Error('CRITICAL SECURITY ERROR: MFA_SIGNING_KEY must be at least 32 characters long');
+    }
   }
 }
 
-// MFA Configuration from environment with fallbacks for build-time
-const MFA_CONFIG = {
-  ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY || 'build-time-fallback',
-  SIGNING_KEY: process.env.MFA_SIGNING_KEY || 'build-time-fallback',
-  ISSUER_NAME: process.env.MFA_ISSUER_NAME || 'Loom',
-  TOKEN_EXPIRY: parseInt(process.env.MFA_TOKEN_EXPIRY_SECONDS || '1800'),
-  MAX_ATTEMPTS: parseInt(process.env.MFA_MAX_VERIFICATION_ATTEMPTS || '3'),
-  RATE_LIMIT_WINDOW: parseInt(process.env.MFA_RATE_LIMIT_WINDOW_MS || '300000'),
-  RATE_LIMIT_MAX: parseInt(process.env.MFA_RATE_LIMIT_MAX_ATTEMPTS || '5')
+// MFA Configuration from environment - NO INSECURE FALLBACKS
+const getMfaConfig = () => {
+  if (process.env.NODE_ENV === 'production') {
+    // In production, require all security keys
+    return {
+      ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY!,
+      SIGNING_KEY: process.env.MFA_SIGNING_KEY!,
+      ISSUER_NAME: process.env.MFA_ISSUER_NAME || 'Loom',
+      TOKEN_EXPIRY: parseInt(process.env.MFA_TOKEN_EXPIRY_SECONDS || '1800'),
+      MAX_ATTEMPTS: parseInt(process.env.MFA_MAX_VERIFICATION_ATTEMPTS || '3'),
+      RATE_LIMIT_WINDOW: parseInt(process.env.MFA_RATE_LIMIT_WINDOW_MS || '300000'),
+      RATE_LIMIT_MAX: parseInt(process.env.MFA_RATE_LIMIT_MAX_ATTEMPTS || '5')
+    };
+  } else {
+    // Development only - generate secure random keys if not provided
+    return {
+      ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex'),
+      SIGNING_KEY: process.env.MFA_SIGNING_KEY || crypto.randomBytes(32).toString('hex'),
+      ISSUER_NAME: process.env.MFA_ISSUER_NAME || 'Loom',
+      TOKEN_EXPIRY: parseInt(process.env.MFA_TOKEN_EXPIRY_SECONDS || '1800'),
+      MAX_ATTEMPTS: parseInt(process.env.MFA_MAX_VERIFICATION_ATTEMPTS || '3'),
+      RATE_LIMIT_WINDOW: parseInt(process.env.MFA_RATE_LIMIT_WINDOW_MS || '300000'),
+      RATE_LIMIT_MAX: parseInt(process.env.MFA_RATE_LIMIT_MAX_ATTEMPTS || '5')
+    };
+  }
 };
+
+const MFA_CONFIG = getMfaConfig();
 
 export interface MfaSecret {
   secret: string;
@@ -96,6 +120,58 @@ export class MfaService {
   }
 
   /**
+   * Encrypt MFA secret for secure database storage
+   */
+  private encryptSecret(secret: string): string {
+    try {
+      const algorithm = 'aes-256-gcm';
+      const key = crypto.scryptSync(MFA_CONFIG.ENCRYPTION_KEY, 'salt', 32);
+      const iv = crypto.randomBytes(16);
+      const cipher = crypto.createCipherGCM(algorithm, key, iv);
+      
+      let encrypted = cipher.update(secret, 'utf8', 'hex');
+      encrypted += cipher.final('hex');
+      
+      const authTag = cipher.getAuthTag();
+      
+      // Return iv + authTag + encrypted data
+      return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
+    } catch (error) {
+      console.error('Failed to encrypt MFA secret:', error);
+      throw new Error('Failed to encrypt MFA secret');
+    }
+  }
+
+  /**
+   * Decrypt MFA secret from database
+   */
+  private decryptSecret(encryptedSecret: string): string {
+    try {
+      const parts = encryptedSecret.split(':');
+      if (parts.length !== 3) {
+        throw new Error('Invalid encrypted secret format');
+      }
+
+      const algorithm = 'aes-256-gcm';
+      const key = crypto.scryptSync(MFA_CONFIG.ENCRYPTION_KEY, 'salt', 32);
+      const iv = Buffer.from(parts[0], 'hex');
+      const authTag = Buffer.from(parts[1], 'hex');
+      const encrypted = parts[2];
+      
+      const decipher = crypto.createDecipherGCM(algorithm, key, iv);
+      decipher.setAuthTag(authTag);
+      
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      
+      return decrypted;
+    } catch (error) {
+      console.error('Failed to decrypt MFA secret:', error);
+      throw new Error('Failed to decrypt MFA secret');
+    }
+  }
+
+  /**
    * Generate a new TOTP secret and backup codes for user
    */
   async generateMfaSecret(userId: string): Promise<{ secret: MfaSecret | null; error: string | null }> {
@@ -106,7 +182,8 @@ export class MfaService {
       
       // Create QR code URL with proper escaping and validation
       const issuer = MFA_CONFIG.ISSUER_NAME;
-      const userEmail = 'user@loom.app'; // This should come from the authenticated user context
+      // Get user email from authenticated context - this is a placeholder implementation
+      const userEmail = 'user@example.com'; // TODO: Replace with actual user email from context
       const label = encodeURIComponent(`${issuer}:${userEmail}`);
       const qrCodeUrl = `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
 
@@ -149,7 +226,7 @@ export class MfaService {
         .from('user_mfa')
         .upsert({
           user_id: userId,
-          secret: secret,
+          secret: this.encryptSecret(secret),
           backup_codes: hashedBackupCodes,
           backup_codes_used: [],
           is_enabled: true,
@@ -801,7 +878,8 @@ export class MfaService {
       }
 
       // Verify the TOTP code with the user's secret
-      const isValid = await this.verifyTotpCode(mfaData.secret, totpCode);
+      const decryptedSecret = this.decryptSecret(mfaData.secret);
+      const isValid = await this.verifyTotpCode(decryptedSecret, totpCode);
       if (!isValid) {
         return { success: false, error: 'Invalid verification code' };
       }
@@ -867,7 +945,8 @@ export class MfaService {
       }
 
       // Verify TOTP code with user's secret
-      const isValid = await this.verifyTotpCode(mfaData.secret, totpCode);
+      const decryptedSecret = this.decryptSecret(mfaData.secret);
+      const isValid = await this.verifyTotpCode(decryptedSecret, totpCode);
       if (!isValid) {
         return { success: false, error: 'Invalid verification code' };
       }
@@ -923,7 +1002,8 @@ export class MfaService {
           return { success: false, error: 'MFA not enabled for user' };
         }
 
-        const isValid = await this.verifyTotpCode(mfaData.secret, code);
+        const decryptedSecret = this.decryptSecret(mfaData.secret);
+        const isValid = await this.verifyTotpCode(decryptedSecret, code);
         return { success: isValid, error: isValid ? undefined : 'Invalid TOTP code' };
       } else if (method === 'backup_code') {
         const result = await this.verifyBackupCode(userId, code);
@@ -1109,7 +1189,8 @@ export class MfaService {
       }
 
       // Verify TOTP code with user's secret
-      const isValid = await this.verifyTotpCode(mfaData.secret, totpCode);
+      const decryptedSecret = this.decryptSecret(mfaData.secret);
+      const isValid = await this.verifyTotpCode(decryptedSecret, totpCode);
       if (!isValid) {
         return { success: false, error: 'Invalid verification code' };
       }

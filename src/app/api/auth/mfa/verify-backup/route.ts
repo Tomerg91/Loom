@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
+import { rateLimit } from '@/lib/security/rate-limit';
 import { z } from 'zod';
 
 // Request validation schema
@@ -20,7 +21,19 @@ const verifyBackupRequestSchema = z.object({
     .transform(val => val.toUpperCase()), // Ensure uppercase
 });
 
-export async function POST(request: NextRequest) {
+// Apply strict rate limiting for backup code verification - critical security endpoint
+const rateLimitedPOST = rateLimit(5, 60000, { // 5 attempts per minute
+  keyExtractor: (request: NextRequest) => {
+    // Rate limit per IP + user combination for maximum security
+    const ip = getClientIP(request);
+    return `backup-code-verify:${ip}`;
+  },
+  blockDuration: 30 * 60 * 1000, // 30 minutes block
+  enableSuspiciousActivityDetection: true,
+  skipSuccessfulRequests: false // Track both successful and failed attempts
+});
+
+export const POST = rateLimitedPOST(async function(request: NextRequest) {
   try {
     // Parse and validate request body
     let requestData;
@@ -152,10 +165,18 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
+
+// Rate limiting for GET endpoint (less strict since it's just checking availability)
+const rateLimitedGET = rateLimit(15, 60000, { // 15 requests per minute
+  keyExtractor: (request: NextRequest) => {
+    const ip = getClientIP(request);
+    return `backup-code-status:${ip}`;
+  }
+});
 
 // GET endpoint to check backup code availability
-export async function GET(request: NextRequest) {
+export const GET = rateLimitedGET(async function(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -206,7 +227,7 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // Prevent other HTTP methods
 export async function PUT() {

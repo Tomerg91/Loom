@@ -289,6 +289,229 @@ export class NotificationService {
 
 
   /**
+   * Get notifications by IDs for a specific user
+   */
+  async getNotificationsByIds(notificationIds: string[], userId: string): Promise<Notification[]> {
+    const { data, error } = await this.supabase
+      .from('notifications')
+      .select('*')
+      .in('id', notificationIds)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching notifications by IDs:', error);
+      return [];
+    }
+
+    return data.map(this.mapDatabaseNotificationToNotification);
+  }
+
+  /**
+   * Mark multiple notifications as read
+   */
+  async markMultipleAsRead(notificationIds: string[], userId: string): Promise<{ count: number; processedIds: string[] }> {
+    const { data, error } = await this.supabase
+      .from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .in('id', notificationIds)
+      .eq('user_id', userId)
+      .is('read_at', null)
+      .select('id');
+
+    if (error) {
+      console.error('Error marking multiple notifications as read:', error);
+      return { count: 0, processedIds: [] };
+    }
+
+    return { count: data.length, processedIds: data.map(n => n.id) };
+  }
+
+  /**
+   * Delete multiple notifications
+   */
+  async deleteMultiple(notificationIds: string[], userId: string): Promise<{ count: number; processedIds: string[] }> {
+    const { data, error } = await this.supabase
+      .from('notifications')
+      .delete()
+      .in('id', notificationIds)
+      .eq('user_id', userId)
+      .select('id');
+
+    if (error) {
+      console.error('Error deleting multiple notifications:', error);
+      return { count: 0, processedIds: [] };
+    }
+
+    return { count: data.length, processedIds: data.map(n => n.id) };
+  }
+
+  /**
+   * Archive multiple notifications (mark as archived and read)
+   */
+  async archiveMultiple(notificationIds: string[], userId: string): Promise<{ count: number; processedIds: string[] }> {
+    const now = new Date().toISOString();
+    const { data, error } = await this.supabase
+      .from('notifications')
+      .update({ 
+        data: this.supabase.rpc('jsonb_set', { 
+          target: 'data', 
+          path: '{isArchived}', 
+          value: 'true'::jsonb 
+        }),
+        read_at: now
+      })
+      .in('id', notificationIds)
+      .eq('user_id', userId)
+      .select('id');
+
+    if (error) {
+      console.error('Error archiving multiple notifications:', error);
+      return { count: 0, processedIds: [] };
+    }
+
+    return { count: data.length, processedIds: data.map(n => n.id) };
+  }
+
+  /**
+   * Get notifications for export with optional filtering
+   */
+  async getNotificationsForExport(filters: {
+    userId: string;
+    limit?: number;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<Notification[]> {
+    let queryBuilder = this.supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', filters.userId);
+
+    if (filters.type) {
+      queryBuilder = queryBuilder.eq('type', filters.type);
+    }
+
+    if (filters.startDate) {
+      queryBuilder = queryBuilder.gte('created_at', filters.startDate);
+    }
+
+    if (filters.endDate) {
+      queryBuilder = queryBuilder.lte('created_at', filters.endDate);
+    }
+
+    queryBuilder = queryBuilder
+      .order(filters.sortBy || 'created_at', { ascending: filters.sortOrder === 'asc' })
+      .limit(filters.limit || 1000);
+
+    const { data, error } = await queryBuilder;
+
+    if (error) {
+      console.error('Error fetching notifications for export:', error);
+      return [];
+    }
+
+    return data.map(this.mapDatabaseNotificationToNotification);
+  }
+
+  /**
+   * Get paginated notifications with enhanced filtering
+   */
+  async getNotificationsPaginated(options: GetNotificationsOptions): Promise<Notification[]> {
+    let queryBuilder = this.supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', options.userId);
+
+    if (options.isRead !== undefined) {
+      if (options.isRead) {
+        queryBuilder = queryBuilder.not('read_at', 'is', null);
+      } else {
+        queryBuilder = queryBuilder.is('read_at', null);
+      }
+    }
+
+    if (options.isArchived !== undefined) {
+      if (options.isArchived) {
+        queryBuilder = queryBuilder.eq('data->>isArchived', 'true');
+      } else {
+        queryBuilder = queryBuilder.or('data->>isArchived.is.null,data->>isArchived.eq.false');
+      }
+    }
+
+    if (options.type) {
+      queryBuilder = queryBuilder.eq('type', options.type);
+    }
+
+    queryBuilder = queryBuilder
+      .order(options.sortBy || 'created_at', { ascending: options.sortOrder === 'asc' })
+      .range(options.offset || 0, (options.offset || 0) + (options.limit || 20) - 1);
+
+    const { data, error } = await queryBuilder;
+
+    if (error) {
+      console.error('Error fetching paginated notifications:', error);
+      return [];
+    }
+
+    return data.map(this.mapDatabaseNotificationToNotification);
+  }
+
+  /**
+   * Get notifications count with filtering
+   */
+  async getNotificationsCount(options: GetNotificationsCountOptions): Promise<number> {
+    let queryBuilder = this.supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', options.userId);
+
+    if (options.isRead !== undefined) {
+      if (options.isRead) {
+        queryBuilder = queryBuilder.not('read_at', 'is', null);
+      } else {
+        queryBuilder = queryBuilder.is('read_at', null);
+      }
+    }
+
+    if (options.isArchived !== undefined) {
+      if (options.isArchived) {
+        queryBuilder = queryBuilder.eq('data->>isArchived', 'true');
+      } else {
+        queryBuilder = queryBuilder.or('data->>isArchived.is.null,data->>isArchived.eq.false');
+      }
+    }
+
+    if (options.type) {
+      queryBuilder = queryBuilder.eq('type', options.type);
+    }
+
+    const { count, error } = await queryBuilder;
+
+    if (error) {
+      console.error('Error getting notifications count:', error);
+      return 0;
+    }
+
+    return count || 0;
+  }
+
+  /**
+   * Create notification from API data
+   */
+  async createNotificationFromApi(data: CreateNotificationData): Promise<Notification | null> {
+    return this.createNotification({
+      userId: data.userId,
+      type: data.type,
+      title: data.title,
+      message: data.content,
+      data: data.metadata,
+      scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : undefined,
+    });
+  }
+
+  /**
    * Create system update notification
    */
   async createSystemUpdate(

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,8 +20,18 @@ import {
   Clock,
   Eye,
   Download,
-  RefreshCw
+  RefreshCw,
+  MoreHorizontal,
+  UserX,
+  UserCheck,
+  RotateCcw
 } from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface MfaAdminSettingsProps {
   onSaveSettings?: (settings: MfaEnforcementSettings) => Promise<void>;
@@ -47,15 +57,54 @@ interface UserMfaStatus {
   mfaEnabled: boolean;
   lastLogin: string;
   backupCodesUsed: number;
+  backupCodesRemaining: number;
   trustedDevices: number;
+  mfaVerifiedAt?: string;
+  mfaSetupCompleted: boolean;
+  createdAt: string;
+}
+
+interface MfaStatistics {
+  totalUsers: number;
+  mfaEnabled: number;
+  mfaEnabledPercentage: number;
+  adminMfaEnabled: number;
+  adminMfaEnabledPercentage: number;
+  coachMfaEnabled: number;
+  coachMfaEnabledPercentage: number;
+  clientMfaEnabled: number;
+  clientMfaEnabledPercentage: number;
+  mfaFailures30Days: number;
+  accountLockouts30Days: number;
+  averageBackupCodesUsed: number;
+  avgTrustedDevicesPerUser: number;
+}
+
+interface ApiResponse<T> {
+  users?: UserMfaStatus[];
+  statistics?: MfaStatistics;
+  total?: number;
+  page?: number;
+  limit?: number;
+  data?: T;
 }
 
 export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
   const t = useTranslations('admin');
   const [activeTab, setActiveTab] = useState('enforcement');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [userStatuses, setUserStatuses] = useState<UserMfaStatus[]>([]);
+  const [statistics, setStatistics] = useState<MfaStatistics | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'coach' | 'client'>('all');
+  const [mfaStatusFilter, setMfaStatusFilter] = useState<'all' | 'enabled' | 'disabled'>('all');
+  const pageSize = 10;
 
-  // Mock data - in real app, fetch from API
   const [settings, setSettings] = useState<MfaEnforcementSettings>({
     globalRequirement: 'optional',
     roleRequirements: {
@@ -68,60 +117,157 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
     trustedDeviceExpiry: 30
   });
 
-  const mockUserStatuses: UserMfaStatus[] = [
-    {
-      id: '1',
-      name: 'John Admin',
-      email: 'admin@loom.app',
-      role: 'admin',
-      mfaEnabled: true,
-      lastLogin: '2024-01-20T10:30:00Z',
-      backupCodesUsed: 2,
-      trustedDevices: 3
-    },
-    {
-      id: '2',
-      name: 'Sarah Coach',
-      email: 'coach@loom.app',
-      role: 'coach',
-      mfaEnabled: false,
-      lastLogin: '2024-01-19T18:45:00Z',
-      backupCodesUsed: 0,
-      trustedDevices: 0
-    },
-    {
-      id: '3',
-      name: 'Mike Client',
-      email: 'client@loom.app',
-      role: 'client',
-      mfaEnabled: true,
-      lastLogin: '2024-01-18T14:20:00Z',
-      backupCodesUsed: 1,
-      trustedDevices: 2
+  // Fetch MFA settings from API
+  const fetchMfaSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/mfa/settings');
+      if (!response.ok) {
+        throw new Error('Failed to fetch MFA settings');
+      }
+      const result = await response.json();
+      if (result.data) {
+        setSettings(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching MFA settings:', error);
+      setError('Failed to load MFA settings');
     }
-  ];
-
-  const stats = {
-    totalUsers: 150,
-    mfaEnabled: 87,
-    mfaEnabledPercentage: 58,
-    adminMfaEnabled: 15,
-    adminMfaEnabledPercentage: 88,
-    coachMfaEnabled: 45,
-    coachMfaEnabledPercentage: 62,
-    clientMfaEnabled: 27,
-    clientMfaEnabledPercentage: 35
   };
+
+  // Fetch user MFA statuses from API
+  const fetchUserStatuses = async (page = 1, search = '', role = 'all', mfaStatus = 'all') => {
+    setIsLoadingUsers(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: pageSize.toString(),
+        includeStatistics: activeTab === 'users' ? 'false' : 'true',
+        sortBy: 'created_at',
+        sortOrder: 'desc'
+      });
+      
+      if (search) params.append('search', search);
+      if (role !== 'all') params.append('role', role);
+      if (mfaStatus !== 'all') params.append('mfaStatus', mfaStatus);
+
+      const response = await fetch(`/api/admin/mfa/users?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user MFA statuses');
+      }
+      
+      const result: ApiResponse<any> = await response.json();
+      if (result.data) {
+        setUserStatuses(result.data.users || []);
+        setTotalUsers(result.data.total || 0);
+        if (result.data.statistics) {
+          setStatistics(result.data.statistics);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user MFA statuses:', error);
+      setError('Failed to load user MFA data');
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  // Fetch MFA statistics from API
+  const fetchStatistics = async () => {
+    setIsLoadingStats(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/admin/mfa/statistics');
+      if (!response.ok) {
+        throw new Error('Failed to fetch MFA statistics');
+      }
+      const result = await response.json();
+      if (result.data) {
+        setStatistics(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching MFA statistics:', error);
+      setError('Failed to load MFA statistics');
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  // Handle MFA actions for users
+  const handleMfaAction = async (userId: string, action: 'enable' | 'disable' | 'reset', reason?: string) => {
+    try {
+      const response = await fetch(`/api/admin/mfa/users/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, reason }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${action} MFA for user`);
+      }
+
+      // Refresh user data after successful action
+      await fetchUserStatuses(currentPage, searchQuery, roleFilter === 'all' ? '' : roleFilter, mfaStatusFilter);
+      
+      // Also refresh statistics if they're displayed
+      if (statistics || activeTab === 'analytics') {
+        await fetchStatistics();
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing MFA:`, error);
+      setError(`Failed to ${action} MFA for user`);
+    }
+  };
+
+  // Load data on component mount and tab changes
+  useEffect(() => {
+    fetchMfaSettings();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUserStatuses(currentPage, searchQuery, roleFilter === 'all' ? '' : roleFilter, mfaStatusFilter);
+    } else if (activeTab === 'analytics') {
+      fetchStatistics();
+    }
+  }, [activeTab, currentPage, searchQuery, roleFilter, mfaStatusFilter]);
+
+  // Handle search with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (activeTab === 'users') {
+        setCurrentPage(1); // Reset to first page on search
+        fetchUserStatuses(1, searchQuery, roleFilter === 'all' ? '' : roleFilter, mfaStatusFilter);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   const handleSaveSettings = async () => {
     setIsLoading(true);
+    setError(null);
     try {
+      const response = await fetch('/api/admin/mfa/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save MFA settings');
+      }
+
       if (onSaveSettings) {
         await onSaveSettings(settings);
       }
-      console.log('MFA settings saved:', settings);
     } catch (error) {
       console.error('Failed to save MFA settings:', error);
+      setError('Failed to save MFA settings');
     } finally {
       setIsLoading(false);
     }
@@ -176,6 +322,14 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
         </p>
       </div>
 
+      {/* Error Alert */}
+      {error && (
+        <Alert className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -184,7 +338,13 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Total Users</span>
             </div>
-            <div className="text-2xl font-bold">{stats.totalUsers}</div>
+            <div className="text-2xl font-bold">
+              {isLoadingStats ? (
+                <div className="animate-pulse bg-gray-200 h-8 w-16 rounded" />
+              ) : (
+                statistics?.totalUsers || 0
+              )}
+            </div>
           </CardContent>
         </Card>
         
@@ -195,7 +355,11 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
               <span className="text-sm font-medium">MFA Enabled</span>
             </div>
             <div className="text-2xl font-bold text-green-600">
-              {stats.mfaEnabled} ({stats.mfaEnabledPercentage}%)
+              {isLoadingStats ? (
+                <div className="animate-pulse bg-gray-200 h-8 w-24 rounded" />
+              ) : (
+                `${statistics?.mfaEnabled || 0} (${statistics?.mfaEnabledPercentage || 0}%)`
+              )}
             </div>
           </CardContent>
         </Card>
@@ -207,7 +371,11 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
               <span className="text-sm font-medium">Admins with MFA</span>
             </div>
             <div className="text-2xl font-bold text-orange-600">
-              {stats.adminMfaEnabled} ({stats.adminMfaEnabledPercentage}%)
+              {isLoadingStats ? (
+                <div className="animate-pulse bg-gray-200 h-8 w-24 rounded" />
+              ) : (
+                `${statistics?.adminMfaEnabled || 0} (${statistics?.adminMfaEnabledPercentage || 0}%)`
+              )}
             </div>
           </CardContent>
         </Card>
@@ -219,7 +387,11 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
               <span className="text-sm font-medium">Compliance</span>
             </div>
             <div className="text-2xl font-bold text-blue-600">
-              {Math.round((stats.adminMfaEnabledPercentage + stats.coachMfaEnabledPercentage) / 2)}%
+              {isLoadingStats ? (
+                <div className="animate-pulse bg-gray-200 h-8 w-16 rounded" />
+              ) : (
+                `${statistics ? Math.round((statistics.adminMfaEnabledPercentage + statistics.coachMfaEnabledPercentage) / 2) : 0}%`
+              )}
             </div>
           </CardContent>
         </Card>
@@ -379,12 +551,17 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
                   <span>User MFA Status</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled>
                     <Download className="w-4 h-4 mr-2" />
                     Export Report
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <RefreshCw className="w-4 h-4 mr-2" />
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => fetchUserStatuses(currentPage, searchQuery, roleFilter === 'all' ? '' : roleFilter, mfaStatusFilter)}
+                    disabled={isLoadingUsers}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingUsers ? 'animate-spin' : ''}`} />
                     Refresh
                   </Button>
                 </div>
@@ -394,49 +571,177 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {mockUserStatuses.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                      </div>
-                      <Badge variant="outline">{getRoleLabel(user.role)}</Badge>
-                    </div>
-                    
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <div className="flex items-center space-x-2">
-                          {user.mfaEnabled ? (
-                            <>
-                              <CheckCircle className="w-4 h-4 text-green-600" />
-                              <span className="text-sm font-medium text-green-600">Enabled</span>
-                            </>
-                          ) : (
-                            <>
-                              <AlertTriangle className="w-4 h-4 text-orange-600" />
-                              <span className="text-sm font-medium text-orange-600">Disabled</span>
-                            </>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {user.trustedDevices} trusted devices
-                        </p>
-                      </div>
-                      
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Last login</p>
-                        <p className="text-sm">{new Date(user.lastLogin).toLocaleDateString()}</p>
-                      </div>
-                      
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+              {/* Filters */}
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search users by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Select value={roleFilter} onValueChange={(value: any) => setRoleFilter(value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="coach">Coach</SelectItem>
+                      <SelectItem value="client">Client</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={mfaStatusFilter} onValueChange={(value: any) => setMfaStatusFilter(value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="enabled">MFA Enabled</SelectItem>
+                      <SelectItem value="disabled">MFA Disabled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {/* Users List */}
+              <div className="space-y-4">
+                {isLoadingUsers ? (
+                  // Loading skeleton
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="space-y-2">
+                          <div className="animate-pulse bg-gray-200 h-4 w-32 rounded" />
+                          <div className="animate-pulse bg-gray-200 h-3 w-48 rounded" />
+                        </div>
+                        <div className="animate-pulse bg-gray-200 h-6 w-16 rounded-full" />
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="animate-pulse bg-gray-200 h-8 w-24 rounded" />
+                        <div className="animate-pulse bg-gray-200 h-8 w-20 rounded" />
+                        <div className="animate-pulse bg-gray-200 h-8 w-8 rounded" />
+                      </div>
+                    </div>
+                  ))
+                ) : userStatuses.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No users found matching your criteria</p>
+                  </div>
+                ) : (
+                  userStatuses.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-4">
+                        <div>
+                          <p className="font-medium">{user.name}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        </div>
+                        <Badge variant="outline">{getRoleLabel(user.role)}</Badge>
+                      </div>
+                      
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                          <div className="flex items-center space-x-2">
+                            {user.mfaEnabled ? (
+                              <>
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-sm font-medium text-green-600">Enabled</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertTriangle className="w-4 h-4 text-orange-600" />
+                                <span className="text-sm font-medium text-orange-600">Disabled</span>
+                              </>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {user.trustedDevices} trusted devices
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {user.backupCodesRemaining} backup codes left
+                          </p>
+                        </div>
+                        
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Last login</p>
+                          <p className="text-sm">{new Date(user.lastLogin).toLocaleDateString()}</p>
+                        </div>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleMfaAction(user.id, user.mfaEnabled ? 'disable' : 'enable')}
+                            >
+                              {user.mfaEnabled ? (
+                                <>
+                                  <UserX className="w-4 h-4 mr-2" />
+                                  Disable MFA
+                                </>
+                              ) : (
+                                <>
+                                  <UserCheck className="w-4 h-4 mr-2" />
+                                  Enable MFA
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            {user.mfaEnabled && (
+                              <DropdownMenuItem
+                                onClick={() => handleMfaAction(user.id, 'reset')}
+                              >
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                                Reset MFA
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem>
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Pagination */}
+              {totalUsers > pageSize && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                  <div className="text-sm text-gray-600">
+                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalUsers)} of {totalUsers} users
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1 || isLoadingUsers}
+                    >
+                      Previous
+                    </Button>
+                    <span className="px-3 py-1 text-sm border rounded">
+                      {currentPage} of {Math.ceil(totalUsers / pageSize)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.min(Math.ceil(totalUsers / pageSize), currentPage + 1))}
+                      disabled={currentPage >= Math.ceil(totalUsers / pageSize) || isLoadingUsers}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -446,7 +751,10 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>MFA Adoption by Role</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>MFA Adoption by Role</span>
+                  {isLoadingStats && <RefreshCw className="w-4 h-4 animate-spin" />}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -454,12 +762,18 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
                     <span>Administrators</span>
                     <div className="flex items-center space-x-2">
                       <div className="w-32 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-red-600 h-2 rounded-full" 
-                          style={{ width: `${stats.adminMfaEnabledPercentage}%` }}
-                        />
+                        {isLoadingStats ? (
+                          <div className="animate-pulse bg-gray-300 h-2 rounded-full w-full" />
+                        ) : (
+                          <div 
+                            className="bg-red-600 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${statistics?.adminMfaEnabledPercentage || 0}%` }}
+                          />
+                        )}
                       </div>
-                      <span className="text-sm font-medium">{stats.adminMfaEnabledPercentage}%</span>
+                      <span className="text-sm font-medium">
+                        {isLoadingStats ? '...' : `${statistics?.adminMfaEnabledPercentage || 0}%`}
+                      </span>
                     </div>
                   </div>
                   
@@ -467,12 +781,18 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
                     <span>Coaches</span>
                     <div className="flex items-center space-x-2">
                       <div className="w-32 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${stats.coachMfaEnabledPercentage}%` }}
-                        />
+                        {isLoadingStats ? (
+                          <div className="animate-pulse bg-gray-300 h-2 rounded-full w-full" />
+                        ) : (
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${statistics?.coachMfaEnabledPercentage || 0}%` }}
+                          />
+                        )}
                       </div>
-                      <span className="text-sm font-medium">{stats.coachMfaEnabledPercentage}%</span>
+                      <span className="text-sm font-medium">
+                        {isLoadingStats ? '...' : `${statistics?.coachMfaEnabledPercentage || 0}%`}
+                      </span>
                     </div>
                   </div>
                   
@@ -480,12 +800,18 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
                     <span>Clients</span>
                     <div className="flex items-center space-x-2">
                       <div className="w-32 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-600 h-2 rounded-full" 
-                          style={{ width: `${stats.clientMfaEnabledPercentage}%` }}
-                        />
+                        {isLoadingStats ? (
+                          <div className="animate-pulse bg-gray-300 h-2 rounded-full w-full" />
+                        ) : (
+                          <div 
+                            className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${statistics?.clientMfaEnabledPercentage || 0}%` }}
+                          />
+                        )}
                       </div>
-                      <span className="text-sm font-medium">{stats.clientMfaEnabledPercentage}%</span>
+                      <span className="text-sm font-medium">
+                        {isLoadingStats ? '...' : `${statistics?.clientMfaEnabledPercentage || 0}%`}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -494,40 +820,115 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
 
             <Card>
               <CardHeader>
-                <CardTitle>Security Metrics</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Security Metrics</span>
+                  {isLoadingStats && <RefreshCw className="w-4 h-4 animate-spin" />}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span>Average Backup Codes Used</span>
-                    <span className="font-medium">1.2 / 8</span>
+                    <span className="font-medium">
+                      {isLoadingStats ? '...' : `${statistics?.averageBackupCodesUsed || 0} / 8`}
+                    </span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span>Trusted Devices per User</span>
-                    <span className="font-medium">2.1</span>
+                    <span className="font-medium">
+                      {isLoadingStats ? '...' : statistics?.avgTrustedDevicesPerUser || 0}
+                    </span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span>MFA Failures (30 days)</span>
-                    <span className="font-medium text-orange-600">23</span>
+                    <span className="font-medium text-orange-600">
+                      {isLoadingStats ? '...' : statistics?.mfaFailures30Days || 0}
+                    </span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span>Account Lockouts (30 days)</span>
-                    <span className="font-medium text-red-600">3</span>
+                    <span className="font-medium text-red-600">
+                      {isLoadingStats ? '...' : statistics?.accountLockouts30Days || 0}
+                    </span>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          <Alert>
-            <BarChart3 className="h-4 w-4" />
-            <AlertDescription>
-              MFA adoption has increased by 15% this month. Consider enforcing MFA for coach accounts to improve overall security posture.
-            </AlertDescription>
-          </Alert>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Total Users with MFA</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600">
+                  {isLoadingStats ? (
+                    <div className="animate-pulse bg-gray-200 h-8 w-16 rounded" />
+                  ) : (
+                    `${statistics?.mfaEnabled || 0} / ${statistics?.totalUsers || 0}`
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isLoadingStats ? '...' : `${statistics?.mfaEnabledPercentage || 0}% of all users`}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Admin Compliance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-orange-600">
+                  {isLoadingStats ? (
+                    <div className="animate-pulse bg-gray-200 h-8 w-16 rounded" />
+                  ) : (
+                    `${statistics?.adminMfaEnabledPercentage || 0}%`
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isLoadingStats ? '...' : `${statistics?.adminMfaEnabled || 0} admins with MFA`}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Security Events</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-600">
+                  {isLoadingStats ? (
+                    <div className="animate-pulse bg-gray-200 h-8 w-16 rounded" />
+                  ) : (
+                    statistics?.mfaFailures30Days || 0
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  MFA failures in 30 days
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {!isLoadingStats && statistics && (
+            <Alert>
+              <BarChart3 className="h-4 w-4" />
+              <AlertDescription>
+                {statistics.adminMfaEnabledPercentage < 90 ? (
+                  `Admin MFA compliance is at ${statistics.adminMfaEnabledPercentage}%. Consider enforcing MFA for all administrator accounts to improve security.`
+                ) : statistics.mfaEnabledPercentage < 50 ? (
+                  `Overall MFA adoption is at ${statistics.mfaEnabledPercentage}%. Consider encouraging more users to enable MFA for better security posture.`
+                ) : (
+                  `MFA adoption is good at ${statistics.mfaEnabledPercentage}%. Continue monitoring and encouraging adoption across all user roles.`
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
         </TabsContent>
       </Tabs>
     </div>

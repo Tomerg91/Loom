@@ -431,6 +431,141 @@ export function NotificationCenter() {
     },
   });
 
+  // Bulk actions mutation
+  const bulkActionMutation = useMutation({
+    mutationFn: async ({ action, notificationIds }: { action: string; notificationIds: string[] }) => {
+      if (!navigator.onLine) {
+        // Add bulk actions to offline queue
+        notificationIds.forEach(id => {
+          offlineQueue.addToQueue(action as any, id);
+        });
+        throw new Error('offline');
+      }
+
+      const response = await fetch('/api/notifications/bulk-actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, notificationIds }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || `Failed to ${action} notifications`);
+      }
+
+      return response.json();
+    },
+    onSuccess: (_, { action, notificationIds }) => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      setSelectedNotifications(new Set());
+      toast.success('Success', `Successfully ${action}ed ${notificationIds.length} notification${notificationIds.length !== 1 ? 's' : ''}`);
+    },
+    onError: (error, { action, notificationIds }) => {
+      if (error.message === 'offline') {
+        toast.info('Offline', 'Actions queued for when connection is restored');
+        // Optimistically update the UI
+        queryClient.setQueryData<NotificationsResponse>(['notifications', user?.id], (old) => {
+          if (!old) return old;
+          
+          switch (action) {
+            case 'mark_read':
+              return {
+                ...old,
+                data: old.data.map(n => 
+                  notificationIds.includes(n.id) && !n.readAt 
+                    ? { ...n, readAt: new Date().toISOString() }
+                    : n
+                ),
+                pagination: {
+                  ...old.pagination,
+                  unreadCount: Math.max(0, old.pagination.unreadCount - notificationIds.filter(id => {
+                    const notification = old.data.find(n => n.id === id);
+                    return notification && !notification.readAt;
+                  }).length),
+                },
+              };
+            case 'delete':
+              return {
+                ...old,
+                data: old.data.filter(n => !notificationIds.includes(n.id)),
+                pagination: {
+                  ...old.pagination,
+                  total: old.pagination.total - notificationIds.length,
+                  unreadCount: Math.max(0, old.pagination.unreadCount - notificationIds.filter(id => {
+                    const notification = old.data.find(n => n.id === id);
+                    return notification && !notification.readAt;
+                  }).length),
+                },
+              };
+            case 'archive':
+              return {
+                ...old,
+                data: old.data.map(n => 
+                  notificationIds.includes(n.id) 
+                    ? { ...n, data: { ...n.data, isArchived: true }, readAt: n.readAt || new Date().toISOString() }
+                    : n
+                ),
+                pagination: {
+                  ...old.pagination,
+                  unreadCount: Math.max(0, old.pagination.unreadCount - notificationIds.filter(id => {
+                    const notification = old.data.find(n => n.id === id);
+                    return notification && !notification.readAt;
+                  }).length),
+                },
+              };
+            default:
+              return old;
+          }
+        });
+        setSelectedNotifications(new Set());
+      } else {
+        console.error(`Failed to ${action} notifications:`, error);
+        toast.error('Error', `Failed to ${action} notifications. Please try again.`);
+      }
+    },
+  });
+
+  // Export notifications mutation
+  const exportNotificationsMutation = useMutation({
+    mutationFn: async (format: 'json' | 'csv') => {
+      const response = await fetch(`/api/notifications/export?format=${format}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to export notifications');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `notifications_export_${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    },
+    onSuccess: (_, format) => {
+      toast.success('Success', `Notifications exported as ${format.toUpperCase()}`);
+    },
+    onError: (error) => {
+      console.error('Failed to export notifications:', error);
+      toast.error('Error', 'Failed to export notifications. Please try again.');
+    },
+  });
+
+  // Handle bulk actions
+  const handleBulkAction = useCallback((action: string, notificationIds: string[]) => {
+    if (notificationIds.length === 0) return;
+    
+    setActionLoading('bulk-action', true);
+    bulkActionMutation.mutate(
+      { action, notificationIds },
+      {
+        onSettled: () => setActionLoading('bulk-action', false),
+      }
+    );
+  }, [bulkActionMutation, setActionLoading]);
+
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
       case 'session_reminder':

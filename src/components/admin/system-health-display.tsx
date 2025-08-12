@@ -42,16 +42,20 @@ export function SystemHealthDisplay() {
     setError(null);
     
     try {
-      const response = await fetch('/api/admin/system');
+      const response = await fetch('/api/admin/system-health');
       if (!response.ok) {
         throw new Error('Failed to fetch system health data');
       }
-      const data = await response.json();
-      setHealth(data.health || generateMockHealthData());
+      const result = await response.json();
+      if (result.success) {
+        setHealth(result.data);
+      } else {
+        throw new Error(result.error || 'Failed to fetch system health');
+      }
     } catch (err) {
       console.error('Failed to fetch system health:', err);
-      setError('Unable to fetch system health data');
-      // Use mock data as fallback
+      setError('Unable to fetch real-time system health data');
+      // Use mock data as fallback for development
       setHealth(generateMockHealthData());
     } finally {
       setIsLoading(false);

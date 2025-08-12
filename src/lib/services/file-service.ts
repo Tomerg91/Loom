@@ -177,36 +177,52 @@ class FileService {
 
   private async scanForViruses(file: File): Promise<{ safe: boolean; details?: string }> {
     try {
-      // In production, integrate with a virus scanning service like:
-      // - ClamAV (open source)
-      // - VirusTotal API
-      // - AWS GuardDuty Malware Protection
-      // - Google Cloud Security Scanner
+      // Use the comprehensive virus scanning service
+      const { virusScanningService } = await import('./virus-scanning-service');
       
-      const fileBuffer = await file.arrayBuffer();
-      const fileSize = fileBuffer.byteLength;
-      
-      // Basic checks for suspicious files
-      if (fileSize === 0) {
-        return { safe: false, details: 'Empty file detected' };
-      }
-      
-      // Check for common malware signatures in filename
-      const suspiciousExtensions = ['.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js'];
-      const fileName = file.name.toLowerCase();
-      
-      for (const ext of suspiciousExtensions) {
-        if (fileName.endsWith(ext)) {
-          return { safe: false, details: 'Suspicious file extension detected' };
+      const scanResult = await virusScanningService.scanFile(file, {
+        scanProvider: process.env.NODE_ENV === 'production' ? undefined : 'local',
+        maxScanTimeMs: 30000, // 30 seconds timeout
+      });
+
+      // If file is not safe, quarantine it
+      if (!scanResult.safe) {
+        try {
+          const supabase = await createClient();
+          const fileBuffer = await file.arrayBuffer();
+          const crypto = await import('crypto');
+          const fileHash = crypto.createHash('sha256').update(Buffer.from(fileBuffer)).digest('hex');
+
+          // Call quarantine function
+          await supabase.rpc('quarantine_file', {
+            p_file_hash: fileHash,
+            p_file_name: file.name,
+            p_file_size: file.size,
+            p_file_type: file.type,
+            p_threat_name: scanResult.threatName || 'Unknown threat',
+            p_scan_provider: scanResult.scanProvider || 'local',
+            p_scan_details: scanResult.details || 'No details available',
+          });
+
+          console.warn(`File quarantined: ${file.name} - ${scanResult.threatName}`);
+        } catch (quarantineError) {
+          console.error('Failed to quarantine file:', quarantineError);
         }
       }
+
+      return {
+        safe: scanResult.safe,
+        details: scanResult.details || (scanResult.safe ? 'File passed virus scan' : 'Threat detected')
+      };
       
-      // TODO: Implement actual virus scanning with ClamAV or cloud service
-      // For now, return safe for non-executable files
-      return { safe: true };
     } catch (error) {
       console.error('Virus scan error:', error);
-      return { safe: false, details: 'Virus scan failed' };
+      
+      // In case of scan failure, be conservative and reject the file
+      return { 
+        safe: false, 
+        details: `Virus scan failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      };
     }
   }
 

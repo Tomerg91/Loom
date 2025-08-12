@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
+import { getSessionRate } from '@/lib/config/analytics-constants';
 import { z } from 'zod';
 
 const insightsQuerySchema = z.object({
@@ -235,8 +236,9 @@ export async function GET(request: NextRequest) {
 
     const clientProgressArray = Array.from(clientMap.values()).slice(0, 10); // Limit to top 10 clients
 
-    // Calculate revenue (placeholder - would need actual pricing data)
-    const estimatedRevenue = completedSessions * 100; // $100 per session placeholder
+    // Calculate revenue using centralized session rate configuration
+    const sessionRate = getSessionRate(user.id);
+    const estimatedRevenue = completedSessions * sessionRate;
 
     const insights = {
       overview: {
