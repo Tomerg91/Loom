@@ -39,7 +39,7 @@ export function LanguageSwitcher({
       <Select value={currentLocale} onValueChange={switchLanguage}>
         <SelectTrigger className={`w-auto min-w-[120px] ${className}`}>
           <SelectValue>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center rtl:space-x-reverse space-x-2">
               {showFlag && <span>{currentLanguage?.flag}</span>}
               <span>
                 {showNativeName ? currentLanguage?.nativeName : currentLanguage?.name}
@@ -50,7 +50,7 @@ export function LanguageSwitcher({
         <SelectContent>
           {availableLanguages.map((lang) => (
             <SelectItem key={lang.code} value={lang.code}>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center rtl:space-x-reverse space-x-2">
                 {showFlag && <span>{lang.flag}</span>}
                 <span>{showNativeName ? lang.nativeName : lang.name}</span>
               </div>
@@ -63,7 +63,7 @@ export function LanguageSwitcher({
 
   if (variant === 'button') {
     return (
-      <div className={`flex items-center space-x-1 ${className}`}>
+      <div className={`flex items-center rtl:space-x-reverse space-x-1 ${className}`}>
         {availableLanguages.map((lang) => (
           <Button
             key={lang.code}
@@ -87,7 +87,7 @@ export function LanguageSwitcher({
         <Button
           variant="ghost"
           size={size}
-          className={`flex items-center space-x-2 ${className}`}
+          className={`flex items-center rtl:space-x-reverse space-x-2 ${className}`}
         >
           <Languages className="h-4 w-4" />
           {showFlag && <span>{currentLanguage?.flag}</span>}

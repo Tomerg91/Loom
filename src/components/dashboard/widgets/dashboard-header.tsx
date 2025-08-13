@@ -71,7 +71,7 @@ export function DashboardHeader({
               className="flex-1 sm:flex-none"
               size="sm"
             >
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4" />
               <span className="hidden sm:inline">Refresh</span>
               <span className="sm:hidden">Refresh</span>
             </Button>
@@ -83,7 +83,7 @@ export function DashboardHeader({
               className="flex-1 sm:flex-none"
               size="sm"
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4" />
               <span className="hidden sm:inline">Export</span>
               <span className="sm:hidden">Export</span>
             </Button>

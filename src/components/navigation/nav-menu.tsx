@@ -117,22 +117,22 @@ export function NavMenu() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Left side - Logo and Navigation */}
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center rtl:space-x-reverse space-x-8">
             {/* Logo */}
-            <Link href="/dashboard" className="flex items-center space-x-2 transition-transform hover:scale-105" aria-label="Loom - Go to dashboard">
+            <Link href="/dashboard" className="flex items-center rtl:space-x-reverse space-x-2 transition-transform hover:scale-105" aria-label="Loom - Go to dashboard">
               <MessageSquare className="h-8 w-8 text-primary" aria-hidden="true" />
               <span className="text-xl font-bold text-foreground">Loom</span>
             </Link>
 
             {/* Navigation Items - Desktop */}
-            <div className="hidden lg:flex items-center space-x-1">
+            <div className="hidden lg:flex items-center rtl:space-x-reverse space-x-1">
               {/* Common items */}
               {commonItems.map((item) => (
                 <Link key={item.href} href={item.href as '/dashboard'}>
                   <Button
                     variant={isActive(item.href, item.exact) ? "default" : "ghost"}
                     size="sm"
-                    className="flex items-center space-x-2"
+                    className="flex items-center rtl:space-x-reverse space-x-2"
                     aria-current={isActive(item.href, item.exact) ? "page" : undefined}
                   >
                     <item.icon className="h-4 w-4" aria-hidden="true" />
@@ -148,7 +148,7 @@ export function NavMenu() {
                     <Button
                       variant={isActive(item.href) ? "default" : "ghost"}
                       size="sm"
-                      className="flex items-center space-x-2"
+                      className="flex items-center rtl:space-x-reverse space-x-2"
                       aria-current={isActive(item.href) ? "page" : undefined}
                     >
                       <item.icon className="h-4 w-4" aria-hidden="true" />
@@ -164,7 +164,7 @@ export function NavMenu() {
                     <Button
                       variant={isActive(item.href) ? "default" : "ghost"}
                       size="sm"
-                      className="flex items-center space-x-2"
+                      className="flex items-center rtl:space-x-reverse space-x-2"
                       aria-current={isActive(item.href) ? "page" : undefined}
                     >
                       <item.icon className="h-4 w-4" aria-hidden="true" />
@@ -180,7 +180,7 @@ export function NavMenu() {
                     <Button
                       variant={isActive(item.href) ? "default" : "ghost"}
                       size="sm"
-                      className="flex items-center space-x-2"
+                      className="flex items-center rtl:space-x-reverse space-x-2"
                       aria-current={isActive(item.href) ? "page" : undefined}
                     >
                       <item.icon className="h-4 w-4" aria-hidden="true" />
@@ -193,7 +193,7 @@ export function NavMenu() {
           </div>
 
           {/* Right side - User menu */}
-          <div className="flex items-center space-x-2 lg:space-x-4">
+          <div className="flex items-center rtl:space-x-reverse space-x-2 lg:space-x-4">
             {/* Mobile menu toggle */}
             <Button
               variant="ghost"
@@ -266,20 +266,20 @@ export function NavMenu() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
+                  <Link href="/profile" className="flex items-center rtl:space-x-reverse">
+                    <User className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4" />
                     <span>{t('profile')}</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/settings" className="flex items-center">
-                    <Settings className="mr-2 h-4 w-4" />
+                  <Link href="/settings" className="flex items-center rtl:space-x-reverse">
+                    <Settings className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4" />
                     <span>{t('settings')}</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive" data-testid="logout-button">
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4" />
                   <span>{t('logout')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -325,7 +325,7 @@ export function NavMenu() {
               <Button
                 variant={isActive(item.href, item.exact) ? "default" : "ghost"}
                 size="sm"
-                className="w-full justify-start flex items-center space-x-3 py-3 transition-all hover:scale-[1.02]"
+                className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
                 aria-current={isActive(item.href, item.exact) ? "page" : undefined}
               >
                 <item.icon className="h-5 w-5" aria-hidden="true" />
@@ -345,7 +345,7 @@ export function NavMenu() {
                   <Button
                     variant={isActive(item.href) ? "default" : "ghost"}
                     size="sm"
-                    className="w-full justify-start flex items-center space-x-3 py-3 transition-all hover:scale-[1.02]"
+                    className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
                     aria-current={isActive(item.href) ? "page" : undefined}
                   >
                     <item.icon className="h-5 w-5" aria-hidden="true" />
@@ -366,7 +366,7 @@ export function NavMenu() {
                   <Button
                     variant={isActive(item.href) ? "default" : "ghost"}
                     size="sm"
-                    className="w-full justify-start flex items-center space-x-3 py-3 transition-all hover:scale-[1.02]"
+                    className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
                     aria-current={isActive(item.href) ? "page" : undefined}
                   >
                     <item.icon className="h-5 w-5" aria-hidden="true" />
@@ -387,7 +387,7 @@ export function NavMenu() {
                   <Button
                     variant={isActive(item.href) ? "default" : "ghost"}
                     size="sm"
-                    className="w-full justify-start flex items-center space-x-3 py-3 transition-all hover:scale-[1.02]"
+                    className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
                     aria-current={isActive(item.href) ? "page" : undefined}
                   >
                     <item.icon className="h-5 w-5" aria-hidden="true" />

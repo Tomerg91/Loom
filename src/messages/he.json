@@ -285,6 +285,77 @@
       "button": "צור חשבון",
       "link": "הירשם כאן"
     },
+    "mfa": {
+      "verify": {
+        "title": "אימות דו-שלבי",
+        "description": "הזן את הקוד מאפליקציית האימות כדי להמשיך",
+        "loading": "טוען אימות MFA...",
+        "button": "אמת"
+      },
+      "setup": {
+        "title": "הגדרת אימות דו-שלבי",
+        "description": "אבטח את החשבון שלך עם רמת הגנה נוספת",
+        "loading": "טוען הגדרת MFA...",
+        "required": "אימות דו-שלבי נדרש עבור החשבון שלך",
+        "adminRequired": "אימות דו-שלבי נדרש עבור חשבונות מנהל",
+        "continue": "המשך",
+        "qrCodeAlt": "קוד QR להגדרת MFA",
+        "scanInstructions": "סרוק קוד QR זה עם אפליקציית האימות שלך",
+        "manualEntry": "מפתח הזנה ידנית",
+        "compatibleApps": "תואם ל-Google Authenticator, Authy, Microsoft Authenticator ועוד",
+        "verificationCode": "קוד אימות",
+        "verificationCodePlaceholder": "000000",
+        "verificationInstructions": "הזן את הקוד בן 6 הספרות מאפליקציית האימות כדי להשלים ההגדרה",
+        "verifyDescription": "הזן את הקוד מאפליקציית האימות כדי לאמת את ההגדרה",
+        "verify": "השלם הגדרה",
+        "verificationFailed": "האימות נכשל. אנא נסה שוב.",
+        "error": "הגדרת MFA נכשלה. אנא נסה שוב."
+      },
+      "authenticatorCode": "קוד מאמת",
+      "authenticatorCodePlaceholder": "000000",
+      "authenticatorInstructions": "הזן את הקוד בן 6 הספרות מאפליקציית האימות",
+      "backupCode": "קוד גיבוי",
+      "backupCodePlaceholder": "ABCD1234",
+      "backupCodeInstructions": "הזן אחד מקודי הגיבוי בני 8 התווים",
+      "methods": {
+        "authenticator": "אפליקציית אימות",
+        "backupCode": "קוד גיבוי"
+      },
+      "rememberDevice": "זכור מכשיר זה למשך 30 יום",
+      "rememberDeviceWarning": "בחר זאת רק במכשירים מהימנים",
+      "attemptsRemaining": "{remaining} ניסיונות נותרו",
+      "tooManyAttempts": "יותר מדי ניסיונות כושלים. אנא נסה שוב מאוחר יותר.",
+      "accountLocked": "החשבון נעול זמנית עקב ניסיונות כושלים",
+      "verificationFailed": "האימות נכשל. אנא בדוק את הקוד ונסה שוב.",
+      "troubleMessage": "מתקשה?",
+      "useBackupCode": "השתמש בקוד גיבוי",
+      "useAuthenticator": "השתמש באפליקציית אימות",
+      "cancel": "בטל",
+      "back": "חזור",
+      "backToSignin": "חזור להתחברות",
+      "backToDashboard": "חזור ללוח המחוונים",
+      "backup": {
+        "description": "שמור קודי גיבוי אלה במקום בטוח",
+        "importance": "חשוב: שמור את קודי הגיבוי האלה עכשיו. הם הדרך היחידה שלך לשחזר את החשבון אם תאבד גישה לאפליקציית האימות.",
+        "codes": "קודי גיבוי",
+        "saved": "שמרתי את קודי הגיבוי שלי",
+        "instructions": {
+          "1": "כל קוד יכול לשמש פעם אחת בלבד",
+          "2": "שמור אותם במקום בטוח (מנהל סיסמאות, הערה מאובטחת)",
+          "3": "אל תשתף אותם עם איש"
+        }
+      },
+      "complete": {
+        "title": "הגדרת MFA הושלמה!",
+        "description": "החשבון שלך מוגן כעת באימות דו-שלבי",
+        "continue": "המשך ללוח המחוונים",
+        "features": {
+          "1": "אבטחת חשבון משופרת",
+          "2": "קודי גיבוי לשחזור",
+          "3": "אפשרויות מכשיר מהימן"
+        }
+      }
+    },
     "email": "אימייל",
     "password": "סיסמה",
     "confirmPassword": "אשר סיסמה",
@@ -537,6 +608,17 @@
     "okayMood": "בסדר",
     "lowMood": "נמוך",
     "poorMood": "גרוע"
+  },
+  "reflections": {
+    "myReflections": "הרפלקציות שלי",
+    "reflectionsDescription": "תיעד את המחשבות, התובנות והתקדמות שלך לאחר כל פגישה",
+    "addReflection": "הוסף רפלקציה",
+    "editReflection": "ערוך רפלקציה",
+    "addReflectionDescription": "הרהר בפגישת הקואצ'ינג האחרונה שלך ועקוב אחר ההתקדמות שלך",
+    "editReflectionDescription": "עדכן את הרפלקציה שלך עם תובנות חדשות או תיקונים",
+    "confirmDelete": "האם אתה בטוח שברצונך למחוק רפלקציה זו? פעולה זו לא ניתנת לביטול.",
+    "reflectionDeleted": "הרפלקציה נמחקה בהצלחה",
+    "reflectionSaved": "הרפלקציה נשמרה בהצלחה"
   },
   "notification": {
     "notifications": "התראות",

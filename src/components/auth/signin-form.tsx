@@ -170,7 +170,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                className="absolute rtl:left-0 rtl:right-auto ltr:right-0 ltr:left-auto top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
                 aria-pressed={showPassword}
@@ -190,7 +190,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={isLoading} data-testid="signin-button">
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && <Loader2 className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4 animate-spin" />}
             {t('signin.button')}
           </Button>
           

@@ -6,6 +6,11 @@ const config: Config = {
   // Dark mode is now configured through CSS classes and CSS variables
   darkMode: 'class',
   
+  // Enable RTL support
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
+  
   theme: {
     // Container configuration for responsive design
     container: {
@@ -131,6 +136,12 @@ const config: Config = {
         '18': '4.5rem',
         '88': '22rem',
         '128': '32rem',
+      },
+      
+      // RTL-specific utilities
+      direction: {
+        'ltr': 'ltr',
+        'rtl': 'rtl',
       },
       
       // Animation configuration
