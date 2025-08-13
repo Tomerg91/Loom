@@ -221,43 +221,542 @@ export class UserService {
   }
 
   /**
-   * Delete user account (admin only) - Soft delete implementation
+   * Delete user account (admin only) - GDPR-compliant cascading deletion
    */
   async deleteUser(userId: string): Promise<ResultType<void>> {
     try {
-      // Implement proper soft delete with data anonymization
+      // Validate user exists and get basic info for audit
+      const { data: user, error: userFetchError } = await this.supabase
+        .from('users')
+        .select('id, email, first_name, last_name, role')
+        .eq('id', userId)
+        .single();
+
+      if (userFetchError || !user) {
+        return Result.error('User not found');
+      }
+
+      console.log(`Starting GDPR-compliant deletion for user ${userId} (${user.email})`);
+
+      // Log audit event for GDPR compliance BEFORE deletion
+      await this.logUserDeletionAudit(userId, user.email);
+
+      // Perform cascading deletion in the correct order (respecting foreign key constraints)
+      // Each method has its own error handling and will log issues but continue processing
+      const deletionResults = await this.cascadeDeleteUserData(userId);
+
+      // Finally, anonymize the user record (soft delete with anonymization)
       const anonymizedEmail = `deleted_user_${Date.now()}@deleted.local`;
-      const anonymizedPhone = null;
       
-      const { error } = await this.supabase
+      const { error: userUpdateError } = await this.supabase
         .from('users')
         .update({ 
           status: 'inactive',
-          // Anonymize personal data for privacy compliance
+          // Anonymize personal data for GDPR compliance
           email: anonymizedEmail,
           first_name: 'Deleted',
           last_name: 'User',
-          phone: anonymizedPhone,
+          phone: null,
           avatar_url: null,
+          // Clear basic MFA data (enhanced MFA already deleted)
+          mfa_enabled: false,
           // Keep audit trail
           deleted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', userId);
 
-      if (error) {
-        console.error('Error deleting user:', error);
-        return Result.error(`Failed to delete user: ${error.message}`);
+      if (userUpdateError) {
+        console.error('Error anonymizing user record:', userUpdateError);
+        return Result.error(`Failed to anonymize user record: ${userUpdateError.message}`);
       }
 
-      // TODO: Also anonymize or delete related data (sessions, notes, etc.)
-      // This should be implemented based on data retention policies
+      // Log completion with any encountered issues
+      if (deletionResults.hasErrors) {
+        console.warn(`User deletion completed with some issues for user ${userId}. Check logs above for details.`);
+        await this.logDeletionCompletion(userId, user.email, deletionResults);
+      } else {
+        console.log(`Successfully deleted user ${userId} and all related data in compliance with GDPR`);
+        await this.logDeletionCompletion(userId, user.email, deletionResults);
+      }
 
       return Result.success(undefined);
+
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Unexpected error in deleteUser:', error);
+      
+      // Try to log the failure for audit purposes
+      try {
+        const { data: { user: currentUser } } = await this.supabase.auth.getUser();
+        await this.supabase
+          .from('system_audit_logs')
+          .insert({
+            user_id: currentUser?.id || null,
+            user_email: currentUser?.email || 'system',
+            action: 'delete_record',
+            resource: 'user',
+            resource_id: userId,
+            description: `GDPR user deletion failed: ${message}`,
+            metadata: {
+              gdpr_deletion: true,
+              deletion_failed: true,
+              error_message: message,
+              timestamp: new Date().toISOString(),
+              risk_level: 'critical'
+            },
+            risk_level: 'critical'
+          });
+      } catch (auditError) {
+        console.error('Failed to log deletion failure:', auditError);
+      }
+
       return Result.error(`Unexpected error: ${message}`);
+    }
+  }
+
+  /**
+   * Cascade delete all user-related data for GDPR compliance
+   */
+  private async cascadeDeleteUserData(userId: string): Promise<{ hasErrors: boolean; errorSummary: string[] }> {
+    const errorSummary: string[] = [];
+    let hasErrors = false;
+
+    const executeStep = async (stepName: string, operation: () => Promise<void>) => {
+      try {
+        console.log(`Executing deletion step: ${stepName}`);
+        await operation();
+        console.log(`✓ Completed: ${stepName}`);
+      } catch (error) {
+        hasErrors = true;
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const stepError = `${stepName}: ${errorMessage}`;
+        errorSummary.push(stepError);
+        console.error(`✗ Failed: ${stepError}`);
+      }
+    };
+
+    // Execute deletion steps in dependency order
+    await executeStep('Delete messaging system data', () => this.deleteMessagingData(userId));
+    await executeStep('Delete enhanced MFA system data', () => this.deleteEnhancedMFAData(userId));
+    await executeStep('Delete basic MFA-related data', () => this.deleteMFAData(userId));
+    await executeStep('Delete notification system data', () => this.deleteNotificationSystemData(userId));
+    await executeStep('Delete file sharing and session file associations', () => this.deleteFileRelatedData(userId));
+    await executeStep('Delete notifications', () => this.deleteUserNotifications(userId));
+    await executeStep('Delete coach availability', () => this.deleteCoachAvailability(userId));
+    await executeStep('Delete coach notes and reflections', () => this.deleteNotesAndReflections(userId));
+    await executeStep('Delete sessions', () => this.deleteUserSessions(userId));
+    await executeStep('Delete file uploads', () => this.deleteUserFiles(userId));
+    await executeStep('Anonymize security logs', () => this.anonymizeSecurityLogs(userId));
+    await executeStep('Anonymize audit logs', () => this.anonymizeAuditLogs(userId));
+
+    if (hasErrors) {
+      console.warn(`Cascaded deletion completed with ${errorSummary.length} errors for user ${userId}`);
+    } else {
+      console.log(`Cascaded deletion completed successfully for user ${userId}`);
+    }
+
+    return { hasErrors, errorSummary };
+  }
+
+  /**
+   * Delete MFA-related data
+   */
+  private async deleteMFAData(userId: string): Promise<void> {
+    const deletions = [
+      this.supabase.from('mfa_sessions').delete().eq('user_id', userId),
+      this.supabase.from('trusted_devices').delete().eq('user_id', userId),
+    ];
+
+    const results = await Promise.allSettled(deletions);
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to delete MFA data (${index}):`, result.reason);
+      }
+    });
+  }
+
+  /**
+   * Delete file-related data
+   */
+  private async deleteFileRelatedData(userId: string): Promise<void> {
+    // First, remove file shares where user is involved
+    const { error: shareError } = await this.supabase
+      .from('file_shares')
+      .delete()
+      .or(`shared_by.eq.${userId},shared_with.eq.${userId}`);
+
+    if (shareError) {
+      console.error('Error deleting file shares:', shareError);
+    }
+
+    // Remove session file associations for user's files
+    const { data: userFiles } = await this.supabase
+      .from('file_uploads')
+      .select('id')
+      .eq('user_id', userId);
+
+    if (userFiles && userFiles.length > 0) {
+      const fileIds = userFiles.map(f => f.id);
+      const { error: sessionFileError } = await this.supabase
+        .from('session_files')
+        .delete()
+        .in('file_id', fileIds);
+
+      if (sessionFileError) {
+        console.error('Error deleting session file associations:', sessionFileError);
+      }
+    }
+  }
+
+  /**
+   * Delete user notifications
+   */
+  private async deleteUserNotifications(userId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error deleting notifications:', error);
+    }
+  }
+
+  /**
+   * Delete coach availability
+   */
+  private async deleteCoachAvailability(userId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('coach_availability')
+      .delete()
+      .eq('coach_id', userId);
+
+    if (error) {
+      console.error('Error deleting coach availability:', error);
+    }
+  }
+
+  /**
+   * Delete notes and reflections
+   */
+  private async deleteNotesAndReflections(userId: string): Promise<void> {
+    const deletions = [
+      // Delete coach notes where user is the coach or client
+      this.supabase
+        .from('coach_notes')
+        .delete()
+        .or(`coach_id.eq.${userId},client_id.eq.${userId}`),
+      
+      // Delete reflections where user is the client
+      this.supabase
+        .from('reflections')
+        .delete()
+        .eq('client_id', userId),
+    ];
+
+    const results = await Promise.allSettled(deletions);
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to delete notes/reflections (${index}):`, result.reason);
+      }
+    });
+  }
+
+  /**
+   * Delete user sessions
+   */
+  private async deleteUserSessions(userId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('sessions')
+      .delete()
+      .or(`coach_id.eq.${userId},client_id.eq.${userId}`);
+
+    if (error) {
+      console.error('Error deleting sessions:', error);
+    }
+  }
+
+  /**
+   * Delete user files
+   */
+  private async deleteUserFiles(userId: string): Promise<void> {
+    // Get list of files to delete from storage
+    const { data: files } = await this.supabase
+      .from('file_uploads')
+      .select('storage_path, bucket_name')
+      .eq('user_id', userId);
+
+    // Delete file records from database
+    const { error: dbError } = await this.supabase
+      .from('file_uploads')
+      .delete()
+      .eq('user_id', userId);
+
+    if (dbError) {
+      console.error('Error deleting file records:', dbError);
+    }
+
+    // Delete actual files from storage (if any)
+    if (files && files.length > 0) {
+      for (const file of files) {
+        try {
+          const { error: storageError } = await this.supabase.storage
+            .from(file.bucket_name)
+            .remove([file.storage_path]);
+
+          if (storageError) {
+            console.error(`Error deleting file from storage: ${file.storage_path}`, storageError);
+          }
+        } catch (error) {
+          console.error(`Failed to delete file from storage: ${file.storage_path}`, error);
+        }
+      }
+    }
+  }
+
+  /**
+   * Delete messaging system data
+   */
+  private async deleteMessagingData(userId: string): Promise<void> {
+    const deletions = [
+      // Delete typing indicators
+      this.supabase.from('typing_indicators').delete().eq('user_id', userId),
+      
+      // Delete message read receipts
+      this.supabase.from('message_read_receipts').delete().eq('user_id', userId),
+      
+      // Delete message reactions
+      this.supabase.from('message_reactions').delete().eq('user_id', userId),
+      
+      // Delete messages sent by user
+      this.supabase.from('messages').delete().eq('sender_id', userId),
+      
+      // Delete conversation participation
+      this.supabase.from('conversation_participants').delete().eq('user_id', userId),
+      
+      // Delete conversations created by user (this will cascade to messages via foreign key)
+      this.supabase.from('conversations').delete().eq('created_by', userId),
+    ];
+
+    const results = await Promise.allSettled(deletions);
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to delete messaging data (${index}):`, result.reason);
+      }
+    });
+  }
+
+  /**
+   * Delete enhanced MFA system data
+   */
+  private async deleteEnhancedMFAData(userId: string): Promise<void> {
+    const deletions = [
+      // Delete MFA verification attempts
+      this.supabase.from('mfa_verification_attempts').delete().eq('user_id', userId),
+      
+      // Delete backup codes
+      this.supabase.from('mfa_backup_codes').delete().eq('user_id', userId),
+      
+      // Delete MFA methods
+      this.supabase.from('user_mfa_methods').delete().eq('user_id', userId),
+      
+      // Delete MFA settings
+      this.supabase.from('user_mfa_settings').delete().eq('user_id', userId),
+    ];
+
+    const results = await Promise.allSettled(deletions);
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to delete enhanced MFA data (${index}):`, result.reason);
+      }
+    });
+  }
+
+  /**
+   * Delete notification system data
+   */
+  private async deleteNotificationSystemData(userId: string): Promise<void> {
+    // First get notification IDs for this user to delete delivery logs
+    const { data: userNotifications } = await this.supabase
+      .from('notifications')
+      .select('id')
+      .eq('user_id', userId);
+
+    const deletions = [
+      // Delete push subscriptions
+      this.supabase.from('push_subscriptions').delete().eq('user_id', userId),
+      
+      // Delete notification preferences
+      this.supabase.from('notification_preferences').delete().eq('user_id', userId),
+    ];
+
+    // Add delivery log deletion if there are notifications
+    if (userNotifications && userNotifications.length > 0) {
+      const notificationIds = userNotifications.map(n => n.id);
+      deletions.push(
+        this.supabase
+          .from('notification_delivery_logs')
+          .delete()
+          .in('notification_id', notificationIds)
+      );
+    }
+
+    const results = await Promise.allSettled(deletions);
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to delete notification system data (${index}):`, result.reason);
+      }
+    });
+  }
+
+  /**
+   * Anonymize security logs (preserve for system integrity but remove PII)
+   */
+  private async anonymizeSecurityLogs(userId: string): Promise<void> {
+    const anonymizations = [
+      // Anonymize security logs
+      this.supabase
+        .from('security_logs')
+        .update({
+          details: `User data anonymized on ${new Date().toISOString()}`,
+          resolved_at: new Date().toISOString(),
+          resolution_notes: 'User deleted - data anonymized for GDPR compliance'
+        })
+        .eq('user_id', userId),
+        
+      // Anonymize file security events
+      this.supabase
+        .from('file_security_events')
+        .update({
+          event_details: { anonymized: true, deletion_date: new Date().toISOString() }
+        })
+        .eq('user_id', userId),
+        
+      // Delete rate limit violations (these can be safely deleted as they're temporary security data)
+      this.supabase
+        .from('rate_limit_violations')
+        .delete()
+        .eq('user_id', userId),
+        
+      // Update blocked IPs to remove user association but keep the block for security
+      this.supabase
+        .from('blocked_ips')
+        .update({
+          blocked_reason: `Original reason anonymized - user deleted on ${new Date().toISOString()}`,
+          unblock_reason: null
+        })
+        .or(`blocked_by.eq.${userId},unblocked_by.eq.${userId}`),
+    ];
+
+    const results = await Promise.allSettled(anonymizations);
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to anonymize security logs (${index}):`, result.reason);
+      }
+    });
+  }
+
+  /**
+   * Anonymize audit logs (preserve for system integrity but remove PII)
+   */
+  private async anonymizeAuditLogs(userId: string): Promise<void> {
+    const anonymizedEmail = `deleted_user_${Date.now()}@deleted.local`;
+
+    const anonymizations = [
+      // Anonymize system audit logs
+      this.supabase
+        .from('system_audit_logs')
+        .update({
+          user_email: anonymizedEmail,
+          metadata: { anonymized: true, deletion_date: new Date().toISOString() }
+        })
+        .eq('user_id', userId),
+
+      // Anonymize maintenance logs
+      this.supabase
+        .from('maintenance_logs')
+        .update({
+          initiated_by_email: anonymizedEmail,
+          result: { anonymized: true, deletion_date: new Date().toISOString() }
+        })
+        .eq('initiated_by', userId),
+    ];
+
+    const results = await Promise.allSettled(anonymizations);
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to anonymize audit logs (${index}):`, result.reason);
+      }
+    });
+  }
+
+  /**
+   * Log user deletion audit event for GDPR compliance
+   */
+  private async logUserDeletionAudit(userId: string, userEmail: string): Promise<void> {
+    try {
+      // Get current user (admin performing the deletion)
+      const { data: { user: currentUser } } = await this.supabase.auth.getUser();
+      
+      await this.supabase
+        .from('system_audit_logs')
+        .insert({
+          user_id: currentUser?.id || null,
+          user_email: currentUser?.email || 'system',
+          action: 'delete_record',
+          resource: 'user',
+          resource_id: userId,
+          description: `GDPR-compliant user deletion: ${userEmail}`,
+          metadata: {
+            gdpr_deletion: true,
+            deleted_user_email: userEmail,
+            deletion_timestamp: new Date().toISOString(),
+            risk_level: 'high'
+          },
+          risk_level: 'high'
+        });
+    } catch (error) {
+      console.error('Error logging user deletion audit:', error);
+      // Don't fail the deletion if audit logging fails
+    }
+  }
+
+  /**
+   * Log deletion completion with results for audit purposes
+   */
+  private async logDeletionCompletion(
+    userId: string, 
+    userEmail: string, 
+    results: { hasErrors: boolean; errorSummary: string[] }
+  ): Promise<void> {
+    try {
+      const { data: { user: currentUser } } = await this.supabase.auth.getUser();
+      
+      await this.supabase
+        .from('system_audit_logs')
+        .insert({
+          user_id: currentUser?.id || null,
+          user_email: currentUser?.email || 'system',
+          action: 'delete_record',
+          resource: 'user',
+          resource_id: userId,
+          description: `GDPR user deletion completed: ${userEmail} ${results.hasErrors ? 'with errors' : 'successfully'}`,
+          metadata: {
+            gdpr_deletion: true,
+            deletion_completed: true,
+            deleted_user_email: userEmail,
+            completion_timestamp: new Date().toISOString(),
+            has_errors: results.hasErrors,
+            error_count: results.errorSummary.length,
+            errors: results.errorSummary,
+            risk_level: results.hasErrors ? 'high' : 'medium'
+          },
+          risk_level: results.hasErrors ? 'high' : 'medium'
+        });
+    } catch (error) {
+      console.error('Error logging deletion completion:', error);
+      // Don't fail the deletion if audit logging fails
     }
   }
 

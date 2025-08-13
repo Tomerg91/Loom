@@ -20,7 +20,7 @@ const rollbackVersionSchema = z.object({
 // GET /api/files/[id]/versions - Get all versions for a file
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get authenticated user
@@ -35,11 +35,11 @@ export async function GET(
     }
 
     // Verify user has access to the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     // Check if user owns the file or it's shared with them
     if (file.user_id !== user.id) {
-      const userShares = await fileDatabase.getFileShares(params.id, user.id);
+      const userShares = await fileDatabase.getFileShares(id, user.id);
       const hasFileAccess = userShares.some(share => 
         share.shared_with === user.id && 
         (!share.expires_at || new Date(share.expires_at) > new Date())
@@ -54,8 +54,8 @@ export async function GET(
     }
 
     // Get all versions for the file
-    const versions = await fileVersionsDatabase.getFileVersions(params.id);
-    const stats = await fileVersionsDatabase.getFileVersionStats(params.id);
+    const versions = await fileVersionsDatabase.getFileVersions(id);
+    const stats = await fileVersionsDatabase.getFileVersionStats(id);
 
     // Format response
     const formattedVersions = versions.map(version => ({
@@ -77,7 +77,7 @@ export async function GET(
     }));
 
     return NextResponse.json({
-      file_id: params.id,
+      file_id: id,
       versions: formattedVersions,
       stats: {
         total_versions: stats.total_versions,
@@ -102,7 +102,7 @@ export async function GET(
 // POST /api/files/[id]/versions - Create a new version of a file
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Apply rate limiting
@@ -123,7 +123,7 @@ export async function POST(
     }
 
     // Verify user owns the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     if (file.user_id !== user.id) {
       return NextResponse.json(
@@ -159,7 +159,7 @@ export async function POST(
     const fileHash = fileVersionsDatabase.generateFileHash(Buffer.from(buffer));
 
     // Check for duplicates
-    const duplicate = await fileVersionsDatabase.findDuplicateByHash(fileHash, params.id);
+    const duplicate = await fileVersionsDatabase.findDuplicateByHash(fileHash, id);
     if (duplicate) {
       return NextResponse.json(
         { error: 'This file content already exists as a version' },
@@ -170,7 +170,7 @@ export async function POST(
     // Upload new file version to Supabase Storage
     const timestamp = Date.now();
     const fileExtension = uploadedFile.name.split('.').pop();
-    const storagePath = `versions/${params.id}/${timestamp}.${fileExtension}`;
+    const storagePath = `versions/${id}/${timestamp}.${fileExtension}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('uploads')
@@ -186,7 +186,7 @@ export async function POST(
 
     // Create new version record
     const newVersion = await fileVersionsDatabase.createFileVersion({
-      file_id: params.id,
+      file_id: id,
       storage_path: uploadData.path,
       filename: uploadedFile.name,
       original_filename: uploadedFile.name,

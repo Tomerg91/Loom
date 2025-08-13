@@ -13,8 +13,8 @@ import { rateLimit } from '@/lib/security/rate-limit';
 // POST /api/messages/[conversationId]/typing - Set typing indicator
 export const POST = withErrorHandling(
   rateLimit(300, 60000)( // 300 requests per minute (high rate for typing indicators)
-    requireAuth(async (user, request: NextRequest, { params }: { params: { conversationId: string } }) => {
-      const { conversationId } = params;
+    requireAuth(async (user, request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) => {
+      const { conversationId } = await params;
 
       if (!conversationId) {
         return createErrorResponse(
@@ -68,8 +68,8 @@ export const POST = withErrorHandling(
 // GET /api/messages/[conversationId]/typing - Get typing indicators
 export const GET = withErrorHandling(
   rateLimit(300, 60000)( // 300 requests per minute
-    requireAuth(async (user, request: NextRequest, { params }: { params: { conversationId: string } }) => {
-      const { conversationId } = params;
+    requireAuth(async (user, request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) => {
+      const { conversationId } = await params;
 
       if (!conversationId) {
         return createErrorResponse(

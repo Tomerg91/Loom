@@ -19,7 +19,7 @@ const BulkActionSchema = z.object({
 // POST /api/notifications/bulk-actions - Perform bulk actions on notifications
 export const POST = withErrorHandling(
   rateLimit(30, 60000)( // 30 requests per minute for bulk operations
-    requireAuth(async (user, request: NextRequest) => {
+    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
       try {
         const body = await request.json();
         const validatedData = BulkActionSchema.parse(body);

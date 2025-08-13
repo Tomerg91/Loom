@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { OptimizedThumbnailImage } from '@/components/ui/optimized-image';
 import { 
   File, 
   Image, 
@@ -201,22 +202,12 @@ export function FileGrid({
                 <div className="mb-3 relative">
                   {isImage ? (
                     <div className="relative">
-                      <img
+                      <OptimizedThumbnailImage
                         src={file.storageUrl}
                         alt={file.name}
-                        className={`object-cover rounded ${
-                          compactMode ? 'w-16 h-16' : 'w-20 h-20'
-                        }`}
-                        loading="lazy"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          target.nextElementSibling?.classList.remove('hidden');
-                        }}
+                        size={compactMode ? 64 : 80}
+                        fallbackIcon={getFileIcon(file.fileType, file.mimeType)}
                       />
-                      <div className="hidden">
-                        {getFileIcon(file.fileType, file.mimeType)}
-                      </div>
                     </div>
                   ) : (
                     getFileIcon(file.fileType, file.mimeType)

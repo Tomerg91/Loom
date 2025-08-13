@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useTranslations } from 'next-intl';
+import { OptimizedThumbnailImage, OptimizedPreviewImage } from '@/components/ui/optimized-image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -61,6 +62,225 @@ export interface FileItem {
   previewUrl?: string;
 }
 
+// Memoized file item component for grid view
+const GridFileItem = memo(({ 
+  file, 
+  isSelected, 
+  allowMultiSelect,
+  getFileIcon, 
+  getCategoryColor,
+  formatFileSize,
+  onFileSelection,
+  onFileAction 
+}: {
+  file: FileItem;
+  isSelected: boolean;
+  allowMultiSelect: boolean;
+  getFileIcon: (fileType: string, thumbnailUrl?: string) => React.ReactNode | string;
+  getCategoryColor: (category: string) => string;
+  formatFileSize: (bytes: number) => string;
+  onFileSelection: (fileId: string, checked: boolean) => void;
+  onFileAction: (action: string, file: FileItem) => void;
+}) => {
+  const handlePreview = useCallback(() => onFileAction('preview', file), [onFileAction, file]);
+  const handleDownload = useCallback(() => onFileAction('download', file), [onFileAction, file]);
+  const handleSelection = useCallback((checked: boolean) => onFileSelection(file.id, checked), [onFileSelection, file.id]);
+
+  const fileIcon = getFileIcon(file.fileType, file.thumbnailUrl);
+
+  return (
+    <Card className={`group hover:shadow-md transition-shadow ${
+      isSelected ? 'ring-2 ring-blue-500' : ''
+    }`}>
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          {/* File Preview/Icon */}
+          <div 
+            className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer"
+            onClick={handlePreview}
+          >
+            {typeof fileIcon === 'string' ? (
+              <span className="text-3xl">{fileIcon}</span>
+            ) : (
+              fileIcon
+            )}
+          </div>
+
+          {/* File Info */}
+          <div className="space-y-2">
+            <div className="flex items-start justify-between">
+              <h4 className="font-medium text-sm truncate pr-2" title={file.filename}>
+                {file.filename}
+              </h4>
+              {allowMultiSelect && (
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={handleSelection}
+                />
+              )}
+            </div>
+            
+            <p className="text-xs text-gray-500">
+              {formatFileSize(file.fileSize)}
+            </p>
+            
+            <div className="flex flex-wrap gap-1">
+              <Badge variant="secondary" className={`text-xs ${getCategoryColor(file.category)}`}>
+                {file.category}
+              </Badge>
+              {file.isShared && (
+                <Badge variant="outline" className="text-xs text-blue-600">
+                  <ShareIcon className="h-2 w-2 mr-1" />
+                  Shared
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button variant="ghost" size="sm" onClick={handlePreview}>
+              <EyeIcon className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleDownload}>
+              <DownloadIcon className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+});
+
+GridFileItem.displayName = 'GridFileItem';
+
+// Memoized file item component for list view
+const ListFileItem = memo(({ 
+  file, 
+  isSelected, 
+  allowMultiSelect,
+  getFileIcon, 
+  getCategoryColor,
+  formatFileSize,
+  onFileSelection,
+  onFileAction 
+}: {
+  file: FileItem;
+  isSelected: boolean;
+  allowMultiSelect: boolean;
+  getFileIcon: (fileType: string, thumbnailUrl?: string) => React.ReactNode | string;
+  getCategoryColor: (category: string) => string;
+  formatFileSize: (bytes: number) => string;
+  onFileSelection: (fileId: string, checked: boolean) => void;
+  onFileAction: (action: string, file: FileItem) => void;
+}) => {
+  const handlePreview = useCallback(() => onFileAction('preview', file), [onFileAction, file]);
+  const handleDownload = useCallback(() => onFileAction('download', file), [onFileAction, file]);
+  const handleSelection = useCallback((checked: boolean) => onFileSelection(file.id, checked), [onFileSelection, file.id]);
+
+  const fileIcon = getFileIcon(file.fileType, file.thumbnailUrl);
+  const createdDate = useMemo(() => new Date(file.createdAt).toLocaleDateString(), [file.createdAt]);
+
+  return (
+    <Card className={`group hover:shadow-md transition-shadow ${
+      isSelected ? 'ring-2 ring-blue-500' : ''
+    }`}>
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {allowMultiSelect && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={handleSelection}
+              />
+            )}
+            
+            {/* File Icon */}
+            <div 
+              className="w-8 h-8 flex items-center justify-center cursor-pointer"
+              onClick={handlePreview}
+            >
+              {typeof fileIcon === 'string' ? (
+                <span className="text-xl">{fileIcon}</span>
+              ) : (
+                <div className="w-8 h-8 rounded overflow-hidden">
+                  {fileIcon}
+                </div>
+              )}
+            </div>
+
+            {/* File Details */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h4 className="font-medium text-sm truncate" title={file.filename}>
+                  {file.filename}
+                </h4>
+                <Badge variant="secondary" className={`text-xs ${getCategoryColor(file.category)}`}>
+                  {file.category}
+                </Badge>
+                {file.isShared && (
+                  <Badge variant="outline" className="text-xs text-blue-600">
+                    <ShareIcon className="h-2 w-2 mr-1" />
+                    Shared
+                  </Badge>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-4 text-xs text-gray-500">
+                <span>{formatFileSize(file.fileSize)}</span>
+                <div className="flex items-center gap-1">
+                  <CalendarIcon className="h-3 w-3" />
+                  <span>{createdDate}</span>
+                </div>
+                {file.downloadCount > 0 && (
+                  <div className="flex items-center gap-1">
+                    <DownloadIcon className="h-3 w-3" />
+                    <span>{file.downloadCount}</span>
+                  </div>
+                )}
+              </div>
+              
+              {file.description && (
+                <p className="text-xs text-gray-500 mt-1 truncate">
+                  {file.description}
+                </p>
+              )}
+              
+              {file.tags.length > 0 && (
+                <div className="flex items-center gap-1 mt-1">
+                  <TagIcon className="h-3 w-3 text-gray-400" />
+                  <div className="flex gap-1">
+                    {file.tags.slice(0, 3).map((tag, index) => (
+                      <span key={index} className="text-xs text-gray-500 bg-gray-100 px-1 rounded">
+                        {tag}
+                      </span>
+                    ))}
+                    {file.tags.length > 3 && (
+                      <span className="text-xs text-gray-500">+{file.tags.length - 3}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={handlePreview}>
+              <EyeIcon className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleDownload}>
+              <DownloadIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+});
+
+ListFileItem.displayName = 'ListFileItem';
+
 export interface FileBrowserProps {
   files: FileItem[];
   loading: boolean;
@@ -77,7 +297,7 @@ export interface FileBrowserProps {
   className?: string;
 }
 
-export function FileBrowser({
+function FileBrowserComponent({
   files,
   loading,
   viewMode: initialViewMode = 'list',
@@ -162,8 +382,8 @@ export function FileBrowser({
     return filtered;
   }, [files, searchTerm, categoryFilter, sortBy, sortOrder]);
 
-  // File selection handling
-  const handleFileSelection = (fileId: string, checked: boolean) => {
+  // File selection handling - memoized
+  const handleFileSelection = useCallback((fileId: string, checked: boolean) => {
     let newSelection: string[];
     
     if (checked) {
@@ -174,15 +394,15 @@ export function FileBrowser({
     
     setInternalSelectedFiles(newSelection);
     onSelectionChange?.(newSelection);
-  };
+  }, [internalSelectedFiles, onSelectionChange]);
 
-  const handleSelectAll = (checked: boolean) => {
+  const handleSelectAll = useCallback((checked: boolean) => {
     const newSelection = checked ? filteredFiles.map(f => f.id) : [];
     setInternalSelectedFiles(newSelection);
     onSelectionChange?.(newSelection);
-  };
+  }, [filteredFiles, onSelectionChange]);
 
-  const handleFileAction = (action: string, file: FileItem) => {
+  const handleFileAction = useCallback((action: string, file: FileItem) => {
     switch (action) {
       case 'preview':
         setPreviewFile(file);
@@ -201,20 +421,27 @@ export function FileBrowser({
         onFileAction?.(action, file.id, file);
         break;
     }
-  };
+  }, [onFilePreview, onFileDownload, onFileShare, onFileDelete, onFileAction]);
 
-  // Utility functions
-  const formatFileSize = (bytes: number): string => {
+  // Utility functions - memoized
+  const formatFileSize = useCallback((bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  }, []);
 
-  const getFileIcon = (fileType: string, thumbnailUrl?: string) => {
+  const getFileIcon = useCallback((fileType: string, thumbnailUrl?: string) => {
     if (thumbnailUrl) {
-      return <img src={thumbnailUrl} alt="" className="w-full h-full object-cover rounded" />;
+      return (
+        <OptimizedThumbnailImage 
+          src={thumbnailUrl} 
+          alt=""
+          className="w-full h-full"
+          size={48}
+        />
+      );
     }
     
     if (fileType.startsWith('image/')) return '🖼️';
@@ -224,9 +451,9 @@ export function FileBrowser({
     if (fileType.includes('word')) return '📝';
     if (fileType.includes('excel')) return '📊';
     return '📁';
-  };
+  }, []);
 
-  const getCategoryColor = (category: string) => {
+  const getCategoryColor = useCallback((category: string) => {
     switch (category) {
       case 'preparation': return 'bg-blue-100 text-blue-800';
       case 'notes': return 'bg-green-100 text-green-800';
@@ -237,7 +464,7 @@ export function FileBrowser({
       case 'avatar': return 'bg-indigo-100 text-indigo-800';
       default: return 'bg-gray-100 text-gray-800';
     }
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -378,239 +605,35 @@ export function FileBrowser({
           ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4' 
           : 'space-y-2'
         }>
-          {filteredFiles.map((file) => (
-            <Card key={file.id} className={`group hover:shadow-md transition-shadow ${
-              internalSelectedFiles.includes(file.id) ? 'ring-2 ring-blue-500' : ''
-            }`}>
-              <CardContent className={viewMode === 'grid' ? 'p-4' : 'p-3'}>
-                {viewMode === 'grid' ? (
-                  // Grid View
-                  <div className="space-y-3">
-                    {/* File Preview/Icon */}
-                    <div 
-                      className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer"
-                      onClick={() => handleFileAction('preview', file)}
-                    >
-                      {typeof getFileIcon(file.fileType, file.thumbnailUrl) === 'string' ? (
-                        <span className="text-3xl">{getFileIcon(file.fileType, file.thumbnailUrl)}</span>
-                      ) : (
-                        getFileIcon(file.fileType, file.thumbnailUrl)
-                      )}
-                    </div>
-
-                    {/* File Info */}
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between">
-                        <h4 className="font-medium text-sm truncate pr-2" title={file.filename}>
-                          {file.filename}
-                        </h4>
-                        {allowMultiSelect && (
-                          <Checkbox
-                            checked={internalSelectedFiles.includes(file.id)}
-                            onCheckedChange={(checked) => handleFileSelection(file.id, !!checked)}
-                          />
-                        )}
-                      </div>
-                      
-                      <p className="text-xs text-gray-500">
-                        {formatFileSize(file.fileSize)}
-                      </p>
-                      
-                      <div className="flex flex-wrap gap-1">
-                        <Badge variant="secondary" className={`text-xs ${getCategoryColor(file.category)}`}>
-                          {file.category}
-                        </Badge>
-                        {file.isShared && (
-                          <Badge variant="outline" className="text-xs text-blue-600">
-                            <ShareIcon className="h-2 w-2 mr-1" />
-                            Shared
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="sm" onClick={() => handleFileAction('preview', file)}>
-                        <EyeIcon className="h-3 w-3" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleFileAction('download', file)}>
-                        <DownloadIcon className="h-3 w-3" />
-                      </Button>
-                      {allowContextMenu && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVerticalIcon className="h-3 w-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleFileAction('preview', file)}>
-                              <EyeIcon className="h-4 w-4 mr-2" />
-                              Preview
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleFileAction('download', file)}>
-                              <DownloadIcon className="h-4 w-4 mr-2" />
-                              Download
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleFileAction('share', file)}>
-                              <ShareIcon className="h-4 w-4 mr-2" />
-                              Share
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleFileAction('copy', file)}>
-                              <CopyIcon className="h-4 w-4 mr-2" />
-                              Copy Link
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleFileAction('info', file)}>
-                              <InfoIcon className="h-4 w-4 mr-2" />
-                              File Info
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleFileAction('delete', file)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <TrashIcon className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  // List View
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {allowMultiSelect && (
-                        <Checkbox
-                          checked={internalSelectedFiles.includes(file.id)}
-                          onCheckedChange={(checked) => handleFileSelection(file.id, !!checked)}
-                        />
-                      )}
-                      
-                      {/* File Icon */}
-                      <div 
-                        className="w-8 h-8 flex items-center justify-center cursor-pointer"
-                        onClick={() => handleFileAction('preview', file)}
-                      >
-                        {typeof getFileIcon(file.fileType, file.thumbnailUrl) === 'string' ? (
-                          <span className="text-xl">{getFileIcon(file.fileType, file.thumbnailUrl)}</span>
-                        ) : (
-                          <div className="w-8 h-8 rounded overflow-hidden">
-                            {getFileIcon(file.fileType, file.thumbnailUrl)}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* File Details */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-sm truncate" title={file.filename}>
-                            {file.filename}
-                          </h4>
-                          <Badge variant="secondary" className={`text-xs ${getCategoryColor(file.category)}`}>
-                            {file.category}
-                          </Badge>
-                          {file.isShared && (
-                            <Badge variant="outline" className="text-xs text-blue-600">
-                              <ShareIcon className="h-2 w-2 mr-1" />
-                              Shared
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span>{formatFileSize(file.fileSize)}</span>
-                          <div className="flex items-center gap-1">
-                            <CalendarIcon className="h-3 w-3" />
-                            <span>{new Date(file.createdAt).toLocaleDateString()}</span>
-                          </div>
-                          {file.downloadCount > 0 && (
-                            <div className="flex items-center gap-1">
-                              <DownloadIcon className="h-3 w-3" />
-                              <span>{file.downloadCount}</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {file.description && (
-                          <p className="text-xs text-gray-500 mt-1 truncate">
-                            {file.description}
-                          </p>
-                        )}
-                        
-                        {file.tags.length > 0 && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <TagIcon className="h-3 w-3 text-gray-400" />
-                            <div className="flex gap-1">
-                              {file.tags.slice(0, 3).map((tag, index) => (
-                                <span key={index} className="text-xs text-gray-500 bg-gray-100 px-1 rounded">
-                                  {tag}
-                                </span>
-                              ))}
-                              {file.tags.length > 3 && (
-                                <span className="text-xs text-gray-500">+{file.tags.length - 3}</span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => handleFileAction('preview', file)}>
-                        <EyeIcon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleFileAction('download', file)}>
-                        <DownloadIcon className="h-4 w-4" />
-                      </Button>
-                      {allowContextMenu && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVerticalIcon className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleFileAction('preview', file)}>
-                              <EyeIcon className="h-4 w-4 mr-2" />
-                              Preview
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleFileAction('download', file)}>
-                              <DownloadIcon className="h-4 w-4 mr-2" />
-                              Download
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleFileAction('share', file)}>
-                              <ShareIcon className="h-4 w-4 mr-2" />
-                              Share
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleFileAction('copy', file)}>
-                              <CopyIcon className="h-4 w-4 mr-2" />
-                              Copy Link
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleFileAction('info', file)}>
-                              <InfoIcon className="h-4 w-4 mr-2" />
-                              File Info
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleFileAction('delete', file)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <TrashIcon className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+          {filteredFiles.map((file) => {
+            const isSelected = internalSelectedFiles.includes(file.id);
+            
+            return viewMode === 'grid' ? (
+              <GridFileItem
+                key={file.id}
+                file={file}
+                isSelected={isSelected}
+                allowMultiSelect={allowMultiSelect}
+                getFileIcon={getFileIcon}
+                getCategoryColor={getCategoryColor}
+                formatFileSize={formatFileSize}
+                onFileSelection={handleFileSelection}
+                onFileAction={handleFileAction}
+              />
+            ) : (
+              <ListFileItem
+                key={file.id}
+                file={file}
+                isSelected={isSelected}
+                allowMultiSelect={allowMultiSelect}
+                getFileIcon={getFileIcon}
+                getCategoryColor={getCategoryColor}
+                formatFileSize={formatFileSize}
+                onFileSelection={handleFileSelection}
+                onFileAction={handleFileAction}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -625,10 +648,9 @@ export function FileBrowser({
               {/* Preview Area */}
               <div className="bg-gray-100 rounded-lg p-8 text-center">
                 {previewFile.previewUrl ? (
-                  <img 
+                  <OptimizedPreviewImage 
                     src={previewFile.previewUrl} 
                     alt={previewFile.filename}
-                    className="max-w-full max-h-96 mx-auto"
                   />
                 ) : (
                   <div className="flex flex-col items-center gap-4">
@@ -701,3 +723,6 @@ export function FileBrowser({
     </div>
   );
 }
+
+// Memoized export
+export const FileBrowser = memo(FileBrowserComponent);

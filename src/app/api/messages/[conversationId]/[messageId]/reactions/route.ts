@@ -16,9 +16,9 @@ export const POST = withErrorHandling(
     requireAuth(async (
       user, 
       request: NextRequest, 
-      { params }: { params: { conversationId: string; messageId: string } }
+      { params }: { params: Promise<{ conversationId: string; messageId: string }> }
     ) => {
-      const { conversationId, messageId } = params;
+      const { conversationId, messageId } = await params;
 
       if (!conversationId || !messageId) {
         return createErrorResponse(
@@ -89,9 +89,9 @@ export const DELETE = withErrorHandling(
     requireAuth(async (
       user, 
       request: NextRequest, 
-      { params }: { params: { conversationId: string; messageId: string } }
+      { params }: { params: Promise<{ conversationId: string; messageId: string }> }
     ) => {
-      const { conversationId, messageId } = params;
+      const { conversationId, messageId } = await params;
       const { searchParams } = request.nextUrl;
       const emoji = searchParams.get('emoji');
 

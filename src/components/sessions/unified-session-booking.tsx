@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -71,6 +71,147 @@ interface SessionActions {
   onCancel?: (sessionId: string, reason?: string) => Promise<void>;
 }
 
+// Memoized coach item component
+const CoachItem = memo(({ coach, isOnline }: { coach: Coach; isOnline?: boolean }) => {
+  const coachImageSrc = coach.avatar || coach.avatarUrl;
+  const coachName = `${coach.firstName} ${coach.lastName}`;
+  
+  return (
+    <div className="flex items-center gap-2">
+      {coachImageSrc && (
+        <Image
+          src={coachImageSrc}
+          alt={`${coachName} profile picture`}
+          width={24}
+          height={24}
+          className="w-6 h-6 rounded-full"
+        />
+      )}
+      <span>{coachName}</span>
+      {isOnline && (
+        <div className="w-2 h-2 bg-green-500 rounded-full" title="Online" />
+      )}
+    </div>
+  );
+});
+
+CoachItem.displayName = 'CoachItem';
+
+// Memoized time slot component
+const TimeSlotButton = memo(({ 
+  slot, 
+  isSelected, 
+  isAvailable, 
+  variant, 
+  onSelect,
+  getSlotStatusIcon,
+  getSlotStatusText 
+}: { 
+  slot: TimeSlot; 
+  isSelected: boolean; 
+  isAvailable: boolean; 
+  variant: 'basic' | 'enhanced' | 'realtime';
+  onSelect: () => void;
+  getSlotStatusIcon: (slot: TimeSlot) => React.ReactNode;
+  getSlotStatusText: (slot: TimeSlot) => string;
+}) => {
+  const handleClick = useCallback(() => {
+    if (isAvailable) onSelect();
+  }, [isAvailable, onSelect]);
+
+  return (
+    <Button
+      type="button"
+      variant={isSelected ? 'default' : 'outline'}
+      disabled={!isAvailable}
+      onClick={handleClick}
+      className={cn(
+        variant === 'basic' ? "h-auto py-2" : "h-auto p-4 flex flex-col items-start gap-2 text-left",
+        !isAvailable && "opacity-50 cursor-not-allowed",
+        variant !== 'basic' && slot.isBooked && "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20",
+        variant !== 'basic' && slot.isBlocked && "border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/20"
+      )}
+      aria-pressed={isSelected}
+      aria-label={`${slot.startTime} to ${slot.endTime} - ${variant !== 'basic' ? getSlotStatusText(slot) : (!slot.isAvailable ? ' (unavailable)' : '')}`}
+      data-testid="time-slot"
+    >
+      {variant === 'basic' ? (
+        <div className="text-center">
+          <div className="font-medium">{slot.startTime} - {slot.endTime}</div>
+          {!slot.isAvailable && (
+            <div className="text-xs opacity-70">
+              {slot.conflictReason || 'Unavailable'}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-2 w-full">
+            {getSlotStatusIcon(slot)}
+            <span className="font-medium">
+              {slot.startTime} - {slot.endTime}
+            </span>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {getSlotStatusText(slot)}
+          </span>
+          {slot.sessionTitle && (
+            <span className="text-xs text-muted-foreground italic">
+              "{slot.sessionTitle}"
+            </span>
+          )}
+        </>
+      )}
+    </Button>
+  );
+});
+
+TimeSlotButton.displayName = 'TimeSlotButton';
+
+// Memoized coach info card
+const CoachInfoCard = memo(({ coach, variant }: { coach: Coach; variant: 'basic' | 'enhanced' | 'realtime' }) => {
+  const coachImageSrc = coach.avatar || coach.avatarUrl;
+  const coachName = `${coach.firstName} ${coach.lastName}`;
+
+  return (
+    <Card className="p-4 bg-muted">
+      <div className="flex items-start gap-3">
+        {coachImageSrc && (
+          <Image
+            src={coachImageSrc}
+            alt={`${coachName} profile picture`}
+            width={48}
+            height={48}
+            className="w-12 h-12 rounded-full"
+          />
+        )}
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h4 className="font-medium">{coachName}</h4>
+            {variant !== 'basic' && coach.isOnline && (
+              <Badge variant="outline" className="text-green-600 border-green-600">
+                Online
+              </Badge>
+            )}
+          </div>
+          {coach.bio && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {coach.bio}
+            </p>
+          )}
+          {variant !== 'basic' && coach.timezone && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Timezone: {coach.timezone}
+            </p>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+});
+
+CoachInfoCard.displayName = 'CoachInfoCard';
+
 export interface UnifiedSessionBookingProps {
   onSuccess?: (sessionData?: Session) => void;
   selectedCoachId?: string;
@@ -92,7 +233,7 @@ export interface UnifiedSessionBookingProps {
   showSessionActions?: boolean;
 }
 
-export function UnifiedSessionBooking({ 
+function UnifiedSessionBookingComponent({ 
   onSuccess, 
   selectedCoachId, 
   className,
@@ -356,9 +497,9 @@ export function UnifiedSessionBooking({
     }
   };
 
-  const onSubmit = (data: BookingFormData) => {
+  const onSubmit = useCallback((data: BookingFormData) => {
     createSessionMutation.mutate(data);
-  };
+  }, [createSessionMutation]);
 
   const refreshAvailability = realtimeBookingHook?.refreshAvailability ?? (async () => {
     setLastRefresh(new Date());
@@ -369,33 +510,36 @@ export function UnifiedSessionBooking({
     setIsConnected(true);
   });
 
-  // Generate next 30 days for date selection
-  const availableDates = Array.from({ length: 30 }, (_, i) => {
+  // Generate next 30 days for date selection - memoized since this is static
+  const availableDates = useMemo(() => Array.from({ length: 30 }, (_, i) => {
     const date = addDays(startOfTomorrow(), i);
     return {
       value: format(date, 'yyyy-MM-dd'),
       label: format(date, 'EEEE, MMMM d, yyyy'),
     };
-  });
+  }), []);
 
-  const selectedCoachData = realtimeBookingHook?.selectedCoachData ?? finalCoaches?.find(coach => coach.id === selectedCoach);
+  const selectedCoachData = useMemo(() => 
+    realtimeBookingHook?.selectedCoachData ?? finalCoaches?.find(coach => coach.id === selectedCoach),
+    [realtimeBookingHook?.selectedCoachData, finalCoaches, selectedCoach]
+  );
   const hasError = bookingError || createSessionMutation.error || realtimeBookingHook?.bookingError;
   const isLoading = isSubmitting || createSessionMutation.isPending || realtimeBookingHook?.isBooking;
 
-  // Time slot status helpers for enhanced variants
-  const getSlotStatusIcon = (slot: TimeSlot) => {
+  // Time slot status helpers for enhanced variants - memoized
+  const getSlotStatusIcon = useCallback((slot: TimeSlot) => {
     if (slot.isBooked) return <XCircle className="h-3 w-3 text-destructive" />;
     if (slot.isBlocked) return <XCircle className="h-3 w-3 text-muted-foreground" />;
     if (slot.isAvailable) return <CheckCircle className="h-3 w-3 text-green-500" />;
     return <XCircle className="h-3 w-3 text-muted-foreground" />;
-  };
+  }, []);
 
-  const getSlotStatusText = (slot: TimeSlot) => {
+  const getSlotStatusText = useCallback((slot: TimeSlot) => {
     if (slot.isBooked) return slot.clientName ? `Booked by ${slot.clientName}` : 'Booked';
     if (slot.isBlocked) return slot.conflictReason || 'Blocked';
     if (slot.isAvailable) return 'Available';
     return 'Unavailable';
-  };
+  }, []);
 
   return (
     <Card className={cn("w-full", variant === 'basic' ? 'max-w-2xl mx-auto' : 'max-w-4xl mx-auto', className)}>
@@ -572,21 +716,7 @@ export function UnifiedSessionBooking({
                 ) : (
                   finalCoaches?.map((coach) => (
                     <SelectItem key={coach.id} value={coach.id}>
-                      <div className="flex items-center gap-2">
-                        {(coach.avatar || coach.avatarUrl) && (
-                          <Image
-                            src={coach.avatar || coach.avatarUrl || ''}
-                            alt={`${coach.firstName} ${coach.lastName} profile picture`}
-                            width={24}
-                            height={24}
-                            className="w-6 h-6 rounded-full"
-                          />
-                        )}
-                        <span>{coach.firstName} {coach.lastName}</span>
-                        {variant !== 'basic' && coach.isOnline && (
-                          <div className="w-2 h-2 bg-green-500 rounded-full" title="Online" />
-                        )}
-                      </div>
+                      <CoachItem coach={coach} isOnline={variant !== 'basic' ? coach.isOnline : false} />
                     </SelectItem>
                   ))
                 )}
@@ -599,41 +729,7 @@ export function UnifiedSessionBooking({
 
           {/* Coach Info */}
           {showCoachInfo && selectedCoachData && (
-            <Card className="p-4 bg-muted">
-              <div className="flex items-start gap-3">
-                {(selectedCoachData.avatar || selectedCoachData.avatarUrl) && (
-                  <Image
-                    src={selectedCoachData.avatar || selectedCoachData.avatarUrl || ''}
-                    alt={`${selectedCoachData.firstName} ${selectedCoachData.lastName} profile picture`}
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 rounded-full"
-                  />
-                )}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium">
-                      {selectedCoachData.firstName} {selectedCoachData.lastName}
-                    </h4>
-                    {variant !== 'basic' && selectedCoachData.isOnline && (
-                      <Badge variant="outline" className="text-green-600 border-green-600">
-                        Online
-                      </Badge>
-                    )}
-                  </div>
-                  {selectedCoachData.bio && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {selectedCoachData.bio}
-                    </p>
-                  )}
-                  {variant !== 'basic' && selectedCoachData.timezone && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Timezone: {selectedCoachData.timezone}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </Card>
+            <CoachInfoCard coach={selectedCoachData} variant={variant} />
           )}
 
           {/* Date Selection */}
@@ -724,50 +820,16 @@ export function UnifiedSessionBooking({
                     const isSelected = watchedTimeSlot === slot.startTime;
                     
                     return (
-                      <Button
+                      <TimeSlotButton
                         key={slot.startTime}
-                        type="button"
-                        variant={isSelected ? 'default' : 'outline'}
-                        disabled={!isAvailable}
-                        onClick={() => isAvailable && setValue('timeSlot', slot.startTime)}
-                        className={cn(
-                          variant === 'basic' ? "h-auto py-2" : "h-auto p-4 flex flex-col items-start gap-2 text-left",
-                          !isAvailable && "opacity-50 cursor-not-allowed",
-                          variant !== 'basic' && slot.isBooked && "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20",
-                          variant !== 'basic' && slot.isBlocked && "border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/20"
-                        )}
-                        aria-pressed={isSelected}
-                        aria-label={`${slot.startTime} to ${slot.endTime} - ${variant !== 'basic' ? getSlotStatusText(slot) : (!slot.isAvailable ? ' (unavailable)' : '')}`}
-                        data-testid="time-slot"
-                      >
-                        {variant === 'basic' ? (
-                          <div className="text-center">
-                            <div className="font-medium">{slot.startTime} - {slot.endTime}</div>
-                            {!slot.isAvailable && (
-                              <div className="text-xs opacity-70">
-                                {slot.conflictReason || 'Unavailable'}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex items-center gap-2 w-full">
-                              {getSlotStatusIcon(slot)}
-                              <span className="font-medium">
-                                {slot.startTime} - {slot.endTime}
-                              </span>
-                            </div>
-                            <span className="text-xs text-muted-foreground">
-                              {getSlotStatusText(slot)}
-                            </span>
-                            {slot.sessionTitle && (
-                              <span className="text-xs text-muted-foreground italic">
-                                "{slot.sessionTitle}"
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </Button>
+                        slot={slot}
+                        isSelected={isSelected}
+                        isAvailable={isAvailable}
+                        variant={variant}
+                        onSelect={() => setValue('timeSlot', slot.startTime)}
+                        getSlotStatusIcon={getSlotStatusIcon}
+                        getSlotStatusText={getSlotStatusText}
+                      />
                     );
                   })}
                 </div>
@@ -876,6 +938,9 @@ export function UnifiedSessionBooking({
     </Card>
   );
 }
+
+// Memoize the main component
+export const UnifiedSessionBooking = memo(UnifiedSessionBookingComponent);
 
 // Export convenience components for specific use cases
 export function BasicSessionBooking(props: Omit<UnifiedSessionBookingProps, 'variant'>) {

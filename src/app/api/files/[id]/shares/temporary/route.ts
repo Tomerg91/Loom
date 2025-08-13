@@ -24,7 +24,7 @@ const createTemporaryShareSchema = z.object({
 // POST /api/files/[id]/shares/temporary - Create a temporary share link
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Apply rate limiting
@@ -45,7 +45,7 @@ export async function POST(
     }
 
     // Verify user owns the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     if (file.user_id !== user.id) {
       return NextResponse.json(
@@ -61,7 +61,7 @@ export async function POST(
     // Create the temporary share
     const share = await temporarySharesDatabase.createTemporaryShare(
       {
-        file_id: params.id,
+        file_id: id,
         expires_at: validatedData.expires_at,
         password: validatedData.password,
         max_downloads: validatedData.max_downloads,
@@ -82,7 +82,7 @@ export async function POST(
       message: `Temporary share created for file "${file.filename}"`,
       data: {
         type: 'temporary_file_share',
-        file_id: params.id,
+        file_id: id,
         share_id: share.id,
         share_url: shareUrl,
         expires_at: share.expires_at,
@@ -135,7 +135,7 @@ export async function POST(
 // GET /api/files/[id]/shares/temporary - Get all temporary shares for a file
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get authenticated user
@@ -150,7 +150,7 @@ export async function GET(
     }
 
     // Verify user owns the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     if (file.user_id !== user.id) {
       return NextResponse.json(
@@ -164,7 +164,7 @@ export async function GET(
     const includeStats = searchParams.get('include_stats') === 'true';
 
     // Get all temporary shares for the file
-    const shares = await temporarySharesDatabase.getFileTemporaryShares(params.id);
+    const shares = await temporarySharesDatabase.getFileTemporaryShares(id);
     
     // Add statistics if requested
     const sharesWithData = await Promise.all(
@@ -195,7 +195,7 @@ export async function GET(
     );
 
     return NextResponse.json({
-      file_id: params.id,
+      file_id: id,
       file: {
         id: file.id,
         filename: file.filename,

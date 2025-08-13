@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTypingIndicators } from '@/lib/realtime/hooks';
+import { OptimizedThumbnailImage } from '@/components/ui/optimized-image';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -339,10 +340,10 @@ export function MessageComposer({
               {attachment.type === 'image' ? (
                 <div className="flex items-center gap-2">
                   <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                  <img
+                  <OptimizedThumbnailImage
                     src={attachment.url}
                     alt={attachment.file.name}
-                    className="h-8 w-8 object-cover rounded"
+                    size={32}
                   />
                 </div>
               ) : (

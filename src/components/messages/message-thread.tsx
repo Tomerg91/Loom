@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useUser } from '@/lib/store/auth-store';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRealtimeMessages, useTypingIndicators } from '@/lib/realtime/hooks';
+import { OptimizedThumbnailImage } from '@/components/ui/optimized-image';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -67,7 +68,7 @@ export function MessageThread({ conversationId, className }: MessageThreadProps)
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
-  } = useQuery({
+  } = useInfiniteQuery({
     queryKey: ['messages', conversationId],
     queryFn: async ({ pageParam }: { pageParam?: string }) => {
       const params = new URLSearchParams({
@@ -84,6 +85,7 @@ export function MessageThread({ conversationId, className }: MessageThreadProps)
     getNextPageParam: (lastPage) => {
       return lastPage.pagination.hasNext ? lastPage.pagination.before : undefined;
     },
+    initialPageParam: undefined,
   });
 
   const messages = messagesData?.pages.flatMap(page => page.data) || [];
@@ -209,10 +211,11 @@ export function MessageThread({ conversationId, className }: MessageThreadProps)
         </div>
         
         {isImage && attachment.thumbnailUrl && (
-          <img
+          <OptimizedThumbnailImage
             src={attachment.thumbnailUrl}
             alt={attachment.fileName}
-            className="mt-2 max-w-full h-auto rounded"
+            className="mt-2 max-w-full h-auto"
+            size={200}
           />
         )}
       </div>

@@ -180,10 +180,31 @@ export class MfaService {
       const secret = this.generateRandomSecret();
       const backupCodes = this.generateBackupCodes();
       
+      // Get user email from database using the userId
+      let userEmail: string;
+      try {
+        const supabase = await createServerClient();
+        const { data: userProfile, error: profileError } = await supabase
+          .from('users')
+          .select('email')
+          .eq('id', userId)
+          .single();
+
+        if (profileError || !userProfile?.email) {
+          throw new Error('User profile not found or email not available');
+        }
+
+        userEmail = userProfile.email;
+      } catch (dbError) {
+        console.error('Failed to fetch user email for MFA setup:', dbError);
+        return {
+          secret: null,
+          error: 'Failed to retrieve user information for MFA setup'
+        };
+      }
+      
       // Create QR code URL with proper escaping and validation
       const issuer = MFA_CONFIG.ISSUER_NAME;
-      // Get user email from authenticated context - this is a placeholder implementation
-      const userEmail = 'user@example.com'; // TODO: Replace with actual user email from context
       const label = encodeURIComponent(`${issuer}:${userEmail}`);
       const qrCodeUrl = `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
 

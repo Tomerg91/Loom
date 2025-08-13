@@ -13,7 +13,7 @@ import { rateLimit } from '@/lib/security/rate-limit';
 // POST /api/notifications/push/unsubscribe - Unsubscribe from push notifications
 export const POST = withErrorHandling(
   rateLimit(10, 60000)( // 10 unsubscriptions per minute
-    requireAuth(async (user, request: NextRequest) => {
+    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
       try {
         const body = await request.json();
         const endpoint = body.endpoint; // Optional - if provided, only unsubscribe specific endpoint

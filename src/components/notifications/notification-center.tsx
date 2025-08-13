@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/lib/store/auth-store';
@@ -135,7 +135,110 @@ interface NotificationAnalytics {
   metadata?: Record<string, any>;
 }
 
-export function NotificationCenter() {
+// Memoized notification item component
+const NotificationItem = memo(({ 
+  notification, 
+  isSelected, 
+  getNotificationIcon, 
+  getNotificationTypeLabel, 
+  formatNotificationTime, 
+  handleNotificationClick, 
+  markAsReadMutation, 
+  deleteNotificationMutation 
+}: {
+  notification: NotificationWithEnhancement;
+  isSelected: boolean;
+  getNotificationIcon: (type: NotificationType) => React.ReactNode;
+  getNotificationTypeLabel: (type: NotificationType) => string;
+  formatNotificationTime: (dateString: string) => string;
+  handleNotificationClick: (notification: Notification) => void;
+  markAsReadMutation: any;
+  deleteNotificationMutation: any;
+}) => {
+  const handleClick = useCallback(() => {
+    handleNotificationClick(notification);
+  }, [notification, handleNotificationClick]);
+
+  const handleMarkAsRead = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    markAsReadMutation.mutate(notification.id);
+  }, [markAsReadMutation, notification.id]);
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteNotificationMutation.mutate(notification.id);
+  }, [deleteNotificationMutation, notification.id]);
+
+  return (
+    <div
+      className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
+        !notification.readAt ? 'bg-blue-50/50 border-l-2 border-l-blue-500' : ''
+      }`}
+      onClick={handleClick}
+      data-testid="notification-item"
+    >
+      <div className="flex items-start gap-3">
+        <div className="mt-1">
+          {getNotificationIcon(notification.type)}
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium line-clamp-2">
+                {notification.title}
+              </p>
+              <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                {notification.message}
+              </p>
+            </div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0 ml-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreHorizontal className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {!notification.readAt && (
+                  <DropdownMenuItem onClick={handleMarkAsRead}>
+                    <Check className="h-4 w-4 mr-2" />
+                    Mark as read
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          
+          <div className="flex items-center justify-between mt-2">
+            <Badge variant="outline" className="text-xs">
+              {getNotificationTypeLabel(notification.type)}
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {formatNotificationTime(notification.createdAt)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+NotificationItem.displayName = 'NotificationItem';
+
+function NotificationCenterComponent() {
   const t = useTranslations('notifications');
   const router = useRouter();
   const user = useUser();
@@ -266,7 +369,7 @@ export function NotificationCenter() {
 
   // Fetch notifications
   const { data: notificationsData, isLoading, error: fetchError } = useQuery({
-    queryKey: ['notifications', user?.id],
+    queryKey: ['notifications', user?.id] as const,
     queryFn: async (): Promise<NotificationsResponse> => {
       const response = await fetch('/api/notifications?limit=20&sortOrder=desc');
       if (!response.ok) throw new Error('Failed to fetch notifications');
@@ -566,7 +669,7 @@ export function NotificationCenter() {
     );
   }, [bulkActionMutation, setActionLoading]);
 
-  const getNotificationIcon = (type: NotificationType) => {
+  const getNotificationIcon = useCallback((type: NotificationType) => {
     switch (type) {
       case 'session_reminder':
         return <Calendar className="h-4 w-4 text-blue-600" />;
@@ -579,9 +682,9 @@ export function NotificationCenter() {
       default:
         return <Bell className="h-4 w-4 text-gray-600" />;
     }
-  };
+  }, []);
 
-  const getNotificationTypeLabel = (type: NotificationType) => {
+  const getNotificationTypeLabel = useCallback((type: NotificationType) => {
     switch (type) {
       case 'session_reminder':
         return t('sessionReminder');
@@ -594,9 +697,9 @@ export function NotificationCenter() {
       default:
         return t('notification');
     }
-  };
+  }, [t]);
 
-  const formatNotificationTime = (dateString: string) => {
+  const formatNotificationTime = useCallback((dateString: string) => {
     const date = parseISO(dateString);
     
     if (isToday(date)) {
@@ -606,9 +709,9 @@ export function NotificationCenter() {
     } else {
       return format(date, 'PP');
     }
-  };
+  }, []);
 
-  const handleNotificationClick = async (notification: Notification) => {
+  const handleNotificationClick = useCallback(async (notification: Notification) => {
     try {
       // Mark notification as read if not already read
       if (!notification.readAt) {
@@ -649,7 +752,7 @@ export function NotificationCenter() {
       console.error('Navigation error:', error);
       toast.error('Error', 'Failed to navigate. Please try again.');
     }
-  };
+  }, [markAsReadMutation, setIsOpen, router, user?.role, toast]);
 
   // Enhanced notification processing with filtering, sorting, and grouping
   const enhancedNotifications = useMemo(() => {
@@ -1254,78 +1357,17 @@ export function NotificationCenter() {
               ) : (
                 <div className="divide-y">
                   {notifications.map((notification) => (
-                    <div
+                    <NotificationItem
                       key={notification.id}
-                      className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
-                        !notification.readAt ? 'bg-blue-50/50 border-l-2 border-l-blue-500' : ''
-                      }`}
-                      onClick={() => handleNotificationClick(notification)}
-                      data-testid="notification-item"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="mt-1">
-                          {getNotificationIcon(notification.type)}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <p className="text-sm font-medium line-clamp-2">
-                                {notification.title}
-                              </p>
-                              <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                                {notification.message}
-                              </p>
-                            </div>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="h-6 w-6 p-0 ml-2"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MoreHorizontal className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {!notification.readAt && (
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      markAsReadMutation.mutate(notification.id);
-                                    }}
-                                  >
-                                    <Check className="h-4 w-4 mr-2" />
-                                    Mark as read
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteNotificationMutation.mutate(notification.id);
-                                  }}
-                                  className="text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                          
-                          <div className="flex items-center justify-between mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              {getNotificationTypeLabel(notification.type)}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {formatNotificationTime(notification.createdAt)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      notification={notification}
+                      isSelected={selectedNotifications.has(notification.id)}
+                      getNotificationIcon={getNotificationIcon}
+                      getNotificationTypeLabel={getNotificationTypeLabel}
+                      formatNotificationTime={formatNotificationTime}
+                      handleNotificationClick={handleNotificationClick}
+                      markAsReadMutation={markAsReadMutation}
+                      deleteNotificationMutation={deleteNotificationMutation}
+                    />
                   ))}
                 </div>
               )}
@@ -1368,3 +1410,6 @@ export function NotificationCenter() {
     </TooltipProvider>
   );
 }
+
+// Memoize the main component
+export const NotificationCenter = memo(NotificationCenterComponent);

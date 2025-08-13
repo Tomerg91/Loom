@@ -4,9 +4,9 @@ import { authMiddleware } from '@/lib/auth/middleware';
 import { createClient } from '@/lib/supabase/server';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 /**
@@ -14,6 +14,8 @@ interface RouteParams {
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    const paramsData = await params;
+    
     // Authenticate user
     const authResult = await authMiddleware(request);
     if (!authResult.success) {
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const { userId } = authResult.data;
-    const { id: fileId } = params;
+    const { id: fileId } = paramsData;
     
     const shareData = await request.json();
     const { userId: targetUserId, permission, expiresAt } = shareData;
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(result.data, { status: 201 });
   } catch (error) {
-    console.error(`POST /api/files/${params.id}/share error:`, error);
+    console.error(`POST /api/files/${id}/share error:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -100,7 +102,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const { userId } = authResult.data;
-    const { id: fileId } = params;
+    const { id: fileId } = await params;
 
     // Get file details including shares
     const fileResult = await fileManagementService.getFile(fileId, userId);
@@ -138,7 +140,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(shares || []);
   } catch (error) {
-    console.error(`GET /api/files/${params.id}/share error:`, error);
+    console.error(`GET /api/files/${id}/share error:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -161,7 +163,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     const { userId } = authResult.data;
-    const { id: fileId } = params;
+    const { id: fileId } = await params;
     
     const url = new URL(request.url);
     const targetUserId = url.searchParams.get('userId');
@@ -206,7 +208,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(`DELETE /api/files/${params.id}/share error:`, error);
+    console.error(`DELETE /api/files/${id}/share error:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

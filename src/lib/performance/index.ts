@@ -61,7 +61,7 @@ export const PERFORMANCE_CONFIG = {
   // Performance thresholds
   THRESHOLDS: {
     LCP: 2500,        // Largest Contentful Paint (ms)
-    FID: 100,         // First Input Delay (ms)
+    INP: 200,         // Interaction to Next Paint (ms) - replaced FID in 2024
     CLS: 0.1,         // Cumulative Layout Shift
     TTFB: 800,        // Time to First Byte (ms)
     FCP: 1800,        // First Contentful Paint (ms)
@@ -107,7 +107,7 @@ export const PerformanceUtils = {
   // Calculate performance score (0-100)
   calculatePerformanceScore: (metrics: {
     lcp?: number;
-    fid?: number;
+    inp?: number;   // Updated from fid to inp
     cls?: number;
     ttfb?: number;
     fcp?: number;
@@ -118,8 +118,8 @@ export const PerformanceUtils = {
       scores.push(metrics.lcp <= 2500 ? 100 : metrics.lcp <= 4000 ? 50 : 0);
     }
     
-    if (metrics.fid !== undefined) {
-      scores.push(metrics.fid <= 100 ? 100 : metrics.fid <= 300 ? 50 : 0);
+    if (metrics.inp !== undefined) {
+      scores.push(metrics.inp <= 200 ? 100 : metrics.inp <= 500 ? 50 : 0);
     }
     
     if (metrics.cls !== undefined) {

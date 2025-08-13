@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { OptimizedImage } from '@/components/ui/optimized-image';
 import { cn } from '@/lib/utils';
 
 /**
@@ -152,7 +153,7 @@ export const StableImage = React.memo(({
       style={{ width, height }}
     >
       {src ? (
-        <img
+        <OptimizedImage
           src={src}
           alt={alt}
           width={width}

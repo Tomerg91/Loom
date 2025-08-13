@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders, mockUseMutation } from '@/test/utils';
+import { renderWithProviders, createMockMutationResult, mockUseMutation } from '@/test/utils';
 import { SigninForm } from '@/components/auth/signin-form';
 
 // Mock Next.js navigation
@@ -16,19 +16,19 @@ describe('SigninForm', () => {
   
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseMutation.mockReturnValue({
+    mockUseMutation.mockReturnValue(createMockMutationResult(null, {
       mutate: mockMutate,
       isPending: false,
       isError: false,
       error: null,
-    });
+    }));
   });
 
   it('renders signin form correctly', () => {
     renderWithProviders(<SigninForm />);
     
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByTestId('password-input')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
     expect(screen.getByText(/don't have an account/i)).toBeInTheDocument();
   });
@@ -63,7 +63,7 @@ describe('SigninForm', () => {
     renderWithProviders(<SigninForm />);
     
     const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByTestId('password-input');
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
@@ -79,26 +79,26 @@ describe('SigninForm', () => {
   });
 
   it('shows loading state during submission', () => {
-    mockUseMutation.mockReturnValue({
+    mockUseMutation.mockReturnValue(createMockMutationResult(null, {
       mutate: mockMutate,
       isPending: true,
       isError: false,
       error: null,
-    });
+    }));
     
     renderWithProviders(<SigninForm />);
     
-    const submitButton = screen.getByRole('button', { name: /signing in/i });
+    const submitButton = screen.getByTestId('signin-button');
     expect(submitButton).toBeDisabled();
   });
 
   it('shows error message on submission failure', () => {
-    mockUseMutation.mockReturnValue({
+    mockUseMutation.mockReturnValue(createMockMutationResult(null, {
       mutate: mockMutate,
       isPending: false,
       isError: true,
       error: new Error('Invalid credentials'),
-    });
+    }));
     
     renderWithProviders(<SigninForm />);
     
@@ -107,18 +107,18 @@ describe('SigninForm', () => {
 
   it('redirects to dashboard on successful signin', async () => {
     const mockOnSuccess = vi.fn();
-    mockUseMutation.mockReturnValue({
+    mockUseMutation.mockReturnValue(createMockMutationResult(null, {
       mutate: mockMutate,
       isPending: false,
       isError: false,
       error: null,
       onSuccess: mockOnSuccess,
-    });
+    }));
     
     renderWithProviders(<SigninForm />);
     
     const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByTestId('password-input');
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });

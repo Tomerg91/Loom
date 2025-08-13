@@ -1,316 +1,453 @@
-# Loom App - File Structure & Associations Reference
+# Loom App - File Structure Reference & Architecture Guide
 
-## Project Architecture: Next.js 15 Coaching Platform
-**Updated**: August 4, 2025  
-**Technology Stack**: Next.js 15 + React 19 + TypeScript + Supabase + Tailwind CSS
-
----
-
-## 📁 ROOT DIRECTORY STRUCTURE
+## 📁 Root Directory Structure
 
 ```
 loom-app/
-├── .github/                    # CI/CD workflows & security automation
-├── .next/                      # Next.js build output (auto-generated)
-├── .vercel/                    # Vercel deployment configuration
-├── public/                     # Static assets & PWA files
-├── src/                        # Main application source code
-├── supabase/                   # Database migrations & configuration
-├── tests/                      # Global test configuration
-├── tailwind.config.ts          # Tailwind CSS design system
-├── next.config.js              # Next.js configuration
-├── package.json                # Dependencies & scripts
-├── tsconfig.json               # TypeScript configuration
-├── docker-compose.yml          # Local development environment
-├── Dockerfile                  # Production container build
-└── nginx.conf                  # Production reverse proxy
+├── 📋 Documentation & Configuration
+│   ├── BUGS_AND_ISSUES_DOCUMENTATION.md    # Comprehensive bug tracker
+│   ├── CLAUDE.md                           # AI development guidance
+│   ├── REFACTORING_PLAN.md                 # Refactoring roadmap
+│   ├── README.md                           # Project overview
+│   ├── CONTRIBUTING.md                     # Development guidelines
+│   └── package.json                        # Dependencies (107 packages)
+│
+├── ⚙️ Configuration Files
+│   ├── next.config.js                      # Next.js 15 configuration
+│   ├── tailwind.config.ts                  # Tailwind CSS v4 design system
+│   ├── tsconfig.json                       # TypeScript strict configuration
+│   ├── eslint.config.js                    # ESLint rules
+│   ├── playwright.config.ts                # E2E test configuration
+│   ├── vitest.config.ts                    # Unit test configuration
+│   └── .env.example                        # Environment variables template
+│
+├── 🎯 Core Application
+│   └── src/                                # Main source code
+│
+├── 🗄️ Database & Backend
+│   └── supabase/                           # Database schema & migrations
+│
+├── 🧪 Testing Infrastructure
+│   ├── tests/                              # E2E tests (Playwright)
+│   └── src/test/                           # Unit/integration tests
+│
+├── 🌐 Static Assets
+│   └── public/                             # Images, icons, static files
+│
+└── 🚀 Deployment
+    ├── Dockerfile                          # Container configuration
+    ├── docker-compose.yml                  # Local development setup
+    └── .github/workflows/                  # CI/CD pipelines
 ```
 
----
+## 🎯 Source Code Architecture (`src/`)
 
-## 🔧 CONFIGURATION FILES ASSOCIATIONS
-
-### Core Framework Configuration
-| File | Purpose | Associated Files | Notes |
-|------|---------|------------------|-------|
-| `next.config.js` | Next.js framework setup | `src/i18n/`, `src/middleware.ts` | Security headers, i18n routing |
-| `tsconfig.json` | TypeScript compiler | All `.ts/.tsx` files | Path aliases (`@/*`) |
-| `tailwind.config.ts` | CSS framework | `src/components/`, `postcss.config.mjs` | Design tokens, themes |
-| `package.json` | Dependencies & scripts | `package-lock.json`, `node_modules/` | 15+ Radix UI components |
-
-### Development & Deployment
-| File | Purpose | Associated Files | Notes |
-|------|---------|------------------|-------|
-| `eslint.config.mjs` | Code linting | All source files | Strict TypeScript rules |
-| `vitest.config.ts` | Unit testing setup | `tests/`, `src/**/*.test.ts` | Vitest configuration |
-| `playwright.config.ts` | E2E testing | `tests/e2e/` | Browser automation |
-| `docker-compose.yml` | Local development | `Dockerfile`, `nginx.conf` | Full stack local env |
-| `vercel.json` | Production deployment | `.vercel/`, `dist/` | Serverless deployment |
-
----
-
-## 🎯 SOURCE CODE STRUCTURE (`src/`)
-
-### Application Router (`src/app/`)
+### 📱 Application Routes (`src/app/`)
 ```
 src/app/
-├── [locale]/                   # Internationalized routing (en/he)
-│   ├── (auth)/                # Authentication group routes
-│   │   ├── signin/            # Sign in page
-│   │   ├── signup/            # User registration  
-│   │   └── reset-password/    # Password reset flow
-│   ├── (dashboard)/           # Protected dashboard routes
-│   │   ├── dashboard/         # Main dashboard
-│   │   ├── sessions/          # Session management
-│   │   └── settings/          # User preferences
-│   ├── admin/                 # Admin-only routes (RBAC)
-│   │   ├── users/            # User management
-│   │   ├── analytics/        # System analytics
-│   │   └── system/           # System configuration
-│   ├── coach/                 # Coach role routes
-│   │   ├── clients/          # Client management
-│   │   ├── availability/     # Schedule management
-│   │   ├── insights/         # Performance metrics
-│   │   └── notes/            # Session notes
-│   └── client/                # Client role routes
-│       ├── coaches/          # Browse coaches
-│       ├── book/             # Session booking
-│       ├── progress/         # Progress tracking
-│       └── reflections/      # Personal reflections
-├── api/                       # Backend API routes
-│   ├── auth/                 # Authentication endpoints
-│   │   ├── signin/           # Login endpoint
-│   │   ├── signup/           # Registration endpoint
-│   │   ├── callback/         # OAuth callback
-│   │   └── mfa/              # Multi-factor auth (7 endpoints)
-│   ├── sessions/             # Session CRUD operations
-│   ├── users/                # User management
-│   ├── notifications/        # Notification system
-│   ├── admin/                # Admin operations
-│   ├── coach/                # Coach-specific APIs
-│   ├── client/               # Client-specific APIs
-│   └── widgets/              # Dashboard widget data
-├── globals.css               # Global CSS & Tailwind imports
-├── layout.tsx                # Root layout with providers
-└── not-found.tsx             # 404 error page
+├── 🌐 Internationalization
+│   └── [locale]/                          # English (en) / Hebrew (he)
+│       ├── layout.tsx                     # Main app layout with providers
+│       ├── page.tsx                       # Landing page
+│       ├── loading.tsx                    # Global loading component
+│       ├── error.tsx                      # Global error boundary
+│       ├── not-found.tsx                  # 404 page
+│       │
+│       ├── 🔐 Authentication Routes
+│       │   └── auth/
+│       │       ├── signin/page.tsx        # Sign in flow
+│       │       ├── signup/page.tsx        # Registration flow
+│       │       ├── forgot/page.tsx        # Password reset
+│       │       ├── mfa/page.tsx           # Multi-factor authentication
+│       │       └── callback/page.tsx      # OAuth callback handler
+│       │
+│       ├── 👨‍💼 Admin Routes (Protected)
+│       │   └── admin/
+│       │       ├── layout.tsx             # Admin layout wrapper
+│       │       ├── page.tsx               # Admin dashboard
+│       │       ├── users/                 # User management
+│       │       ├── analytics/             # System analytics
+│       │       ├── notifications/         # Notification management
+│       │       └── settings/              # System configuration
+│       │
+│       ├── 🎓 Coach Routes (Protected)
+│       │   └── coach/
+│       │       ├── layout.tsx             # Coach layout wrapper
+│       │       ├── page.tsx               # Coach dashboard
+│       │       ├── clients/               # Client management
+│       │       ├── sessions/              # Session management
+│       │       ├── analytics/             # Coach insights
+│       │       ├── availability/          # Schedule management
+│       │       └── profile/               # Coach profile settings
+│       │
+│       ├── 👤 Client Routes (Protected)
+│       │   └── client/
+│       │       ├── layout.tsx             # Client layout wrapper
+│       │       ├── page.tsx               # Client dashboard
+│       │       ├── sessions/              # Booking & session history
+│       │       ├── progress/              # Progress tracking
+│       │       ├── reflections/           # Personal reflections
+│       │       ├── coaches/               # Browse coaches
+│       │       └── profile/               # Client profile settings
+│       │
+│       ├── 📊 Shared Dashboard Routes
+│       │   └── dashboard/
+│       │       ├── layout.tsx             # Universal dashboard layout
+│       │       ├── notifications/         # Notification center
+│       │       ├── files/                 # File management
+│       │       └── settings/              # User preferences
+│       │
+│       └── 🔗 Public Sharing
+│           └── share/
+│               └── [token]/page.tsx       # Public file sharing
+│
+└── 🛠️ API Routes (`src/app/api/`)
+    ├── auth/                              # Authentication endpoints
+    ├── admin/                             # Admin-only endpoints
+    ├── coach/                             # Coach-specific endpoints
+    ├── client/                            # Client-specific endpoints
+    ├── files/                             # File management API
+    ├── notifications/                     # Notification system API
+    └── webhooks/                          # External service webhooks
 ```
 
-### Component Architecture (`src/components/`)
+### 🧩 Component Library (`src/components/`)
 ```
 src/components/
-├── ui/                        # Reusable UI primitives (Radix-based)
-│   ├── button.tsx            # Button variants & states
-│   ├── input.tsx             # Form input components
-│   ├── modal.tsx             # Modal dialog system
-│   ├── toast.tsx             # Notification toasts
-│   ├── dropdown-menu.tsx     # Accessible dropdown menus
-│   ├── sheet.tsx             # Slide-out panels
-│   ├── skeleton.tsx          # Loading skeletons
-│   ├── progress.tsx          # Progress indicators
-│   ├── calendar.tsx          # Date picker component
-│   └── data-table.tsx        # Sortable data tables
-├── auth/                      # Authentication components
-│   ├── signin-form.tsx       # Sign in form with MFA
-│   ├── signup-form.tsx       # Registration form
-│   ├── reset-password-form.tsx # Password reset
-│   └── mfa/                  # Multi-factor authentication
-│       ├── mfa-setup-form.tsx     # MFA enrollment
-│       ├── mfa-verification-form.tsx # MFA challenge
-│       └── backup-codes.tsx       # Recovery codes
-├── dashboard/                 # Role-specific dashboards
-│   ├── admin/                # Admin dashboard components
-│   ├── coach/                # Coach dashboard components
-│   ├── client/               # Client dashboard components
-│   └── shared/               # Shared dashboard widgets
-├── sessions/                  # Session management
-│   ├── session-card.tsx      # Session display component
-│   ├── booking-form.tsx      # Session booking interface
-│   ├── session-list.tsx      # Session list with filters
-│   └── session-details.tsx   # Detailed session view
-├── notifications/             # Notification system
-│   ├── notification-bell.tsx # Notification icon with count
-│   ├── notification-list.tsx # Notification feed
-│   └── notification-item.tsx # Individual notification
-├── navigation/                # Navigation components
-│   ├── nav-menu.tsx          # Main navigation menu
-│   ├── breadcrumbs.tsx       # Breadcrumb navigation
-│   ├── sidebar.tsx           # Dashboard sidebar
-│   └── user-menu.tsx         # User profile dropdown
-└── providers/                 # React context providers
-    ├── auth-provider.tsx     # Authentication context
-    ├── theme-provider.tsx    # Theme/dark mode
-    ├── query-provider.tsx    # TanStack Query setup
-    └── toast-provider.tsx    # Toast notification system
+├── 🎨 UI Primitives (Radix-based)
+│   └── ui/
+│       ├── button.tsx                     # Base button component
+│       ├── input.tsx                      # Form input fields
+│       ├── dialog.tsx                     # Modal dialogs
+│       ├── dropdown-menu.tsx              # Dropdown menus
+│       ├── toast.tsx                      # Notification toasts
+│       ├── avatar.tsx                     # User avatars
+│       ├── badge.tsx                      # Status badges
+│       ├── card.tsx                       # Content cards
+│       ├── tabs.tsx                       # Tab navigation
+│       └── [15+ more primitives]
+│
+├── 🔐 Authentication Components
+│   └── auth/
+│       ├── signin-form.tsx                # Sign in form
+│       ├── signup-form.tsx                # Registration form
+│       ├── mfa-verification.tsx           # MFA challenge
+│       ├── password-reset.tsx             # Password reset flow
+│       └── auth-provider.tsx              # Authentication context
+│
+├── 📊 Dashboard Components
+│   └── dashboard/
+│       ├── sidebar.tsx                    # Navigation sidebar
+│       ├── header.tsx                     # Top navigation
+│       ├── stats-card.tsx                 # Statistics display
+│       ├── quick-actions.tsx              # Action buttons
+│       ├── recent-activity.tsx            # Activity timeline
+│       └── role-specific/                 # Role-based dashboards
+│           ├── admin-dashboard.tsx
+│           ├── coach-dashboard.tsx
+│           └── client-dashboard.tsx
+│
+├── 📅 Session Management
+│   └── sessions/
+│       ├── session-booking.tsx            # Session booking interface
+│       ├── session-calendar.tsx           # Calendar view
+│       ├── session-details.tsx            # Session information
+│       ├── session-notes.tsx              # Session notes editor
+│       ├── session-rating.tsx             # Session feedback
+│       └── unified-session-booking.tsx    # Comprehensive booking flow
+│
+├── 📁 File Management
+│   └── files/
+│       ├── file-upload-zone.tsx           # Drag & drop upload
+│       ├── file-preview.tsx               # File preview modal
+│       ├── file-list.tsx                  # File browser
+│       ├── file-sharing-dialog.tsx        # Share permissions
+│       └── file-download.tsx              # Download handler
+│
+├── 🔔 Notification System
+│   └── notifications/
+│       ├── notification-center.tsx        # Notification hub
+│       ├── notification-item.tsx          # Individual notification
+│       ├── notification-settings.tsx      # Preferences
+│       └── push-notification-setup.tsx    # Push setup
+│
+└── 🌐 Context Providers
+    └── providers/
+        ├── query-provider.tsx             # React Query client
+        ├── theme-provider.tsx             # Dark/light theme
+        ├── auth-provider.tsx              # Authentication state
+        ├── notification-provider.tsx      # Notification state
+        └── locale-provider.tsx            # Internationalization
 ```
 
-### Library & Utilities (`src/lib/`)
+### 📚 Business Logic & Services (`src/lib/`)
 ```
 src/lib/
-├── auth/                      # Authentication system
-│   ├── auth.ts               # Core auth service (Supabase)
-│   ├── auth-context.tsx      # React auth context
-│   ├── middleware.ts         # Route protection middleware
-│   ├── permissions.ts        # RBAC permission definitions
-│   └── session.ts            # Session management
-├── database/                  # Database utilities
-│   ├── client.ts             # Supabase client configuration
-│   ├── types.ts              # Database type definitions
-│   └── queries.ts            # Common database queries
-├── security/                  # Security utilities
-│   ├── rate-limit.ts         # Rate limiting implementation
-│   ├── mfa-rate-limit.ts     # MFA-specific rate limiting
-│   ├── csrf.ts               # CSRF protection
-│   └── validation.ts         # Input validation & sanitization
-├── services/                  # Business logic services
-│   ├── mfa-service.ts        # MFA implementation (TOTP)
-│   ├── notification-service.ts # Notification management
-│   ├── session-service.ts    # Session business logic
-│   └── user-service.ts       # User management service
-├── store/                     # Zustand state management
-│   ├── auth-store.ts         # Authentication state
-│   ├── session-store.ts      # Session state
-│   ├── notification-store.ts # Notification state
-│   └── index.ts              # Store provider setup
-├── hooks/                     # Custom React hooks
-│   ├── use-auth.ts           # Authentication hook
-│   ├── use-sessions.ts       # Session management hook
-│   ├── use-notifications.ts  # Notification hook
-│   └── use-permissions.ts    # Permission checking hook
-├── api/                       # API utilities
-│   ├── utils.ts              # API helper functions
-│   ├── validation.ts         # Request/response validation
-│   └── error-handling.ts     # Centralized error handling
-├── config/                    # Configuration management
-│   ├── api-endpoints.ts      # API endpoint definitions
-│   ├── constants.ts          # Application constants
-│   └── env.ts                # Environment variable validation
-└── utils.ts                   # General utility functions
+├── 🔐 Authentication System
+│   └── auth/
+│       ├── auth-context.tsx               # Authentication React context
+│       ├── auth-helpers.ts                # Utility functions
+│       ├── session-management.ts          # Session handling
+│       └── role-based-access.ts           # RBAC implementation
+│
+├── 🗄️ Database Layer
+│   └── database/
+│       ├── index.ts                       # Database client singleton
+│       ├── users.ts                       # User data operations
+│       ├── sessions.ts                    # Session data operations
+│       ├── notifications.ts               # Notification data
+│       ├── files.ts                       # File metadata operations
+│       ├── analytics.ts                   # Analytics data
+│       └── admin-analytics.ts             # Admin-specific analytics
+│
+├── 🛠️ Business Services
+│   └── services/
+│       ├── user-service.ts                # User management logic
+│       ├── session-service.ts             # Session business logic
+│       ├── notification-service.ts        # Notification dispatch
+│       ├── file-service.ts                # File processing
+│       ├── email-service.ts               # Email notifications
+│       ├── mfa-service.ts                 # Multi-factor auth
+│       ├── analytics-service.ts           # Analytics collection
+│       └── export-service.ts              # Data export functionality
+│
+├── 🔒 Security Layer
+│   └── security/
+│       ├── encryption.ts                  # Data encryption utilities
+│       ├── rate-limiting.ts               # API rate limiting
+│       ├── csrf-protection.ts             # CSRF token handling
+│       ├── input-validation.ts            # Input sanitization
+│       └── audit-logging.ts               # Security audit logs
+│
+├── 🎛️ Configuration
+│   └── config/
+│       ├── database.ts                    # Database configuration
+│       ├── supabase.ts                    # Supabase client setup
+│       ├── auth-config.ts                 # Authentication settings
+│       ├── email-templates.ts             # Email templates
+│       ├── notification-templates.ts      # Notification templates
+│       ├── analytics-constants.ts         # Analytics configuration
+│       └── refactoring-examples.md        # Code examples
+│
+├── 📊 Performance & Monitoring
+│   └── performance/
+│       ├── web-vitals-monitor.ts          # Performance metrics
+│       ├── error-tracking.ts              # Error monitoring
+│       └── analytics-tracker.ts           # User analytics
+│
+└── 🔧 Utilities
+    ├── utils.ts                           # General utilities
+    ├── date-utils.ts                      # Date/time helpers
+    ├── file-utils.ts                      # File processing utilities
+    ├── validation-schemas.ts              # Zod validation schemas
+    └── constants.ts                       # Application constants
 ```
 
-### Internationalization (`src/i18n/` & `src/messages/`)
+### 🪝 Custom React Hooks (`src/hooks/`)
+```
+src/hooks/
+├── Authentication Hooks
+│   ├── use-auth.ts                        # Authentication state & actions
+│   ├── use-mfa.ts                         # Multi-factor authentication
+│   └── use-session.ts                     # Session management
+│
+├── Data Fetching Hooks (React Query)
+│   ├── use-users.ts                       # User data queries
+│   ├── use-sessions.ts                    # Session data queries
+│   ├── use-notifications.ts               # Notification queries
+│   ├── use-files.ts                       # File management queries
+│   └── use-analytics.ts                   # Analytics data queries
+│
+├── UI State Hooks
+│   ├── use-theme.ts                       # Theme switching
+│   ├── use-sidebar.ts                     # Sidebar state
+│   ├── use-modal.ts                       # Modal management
+│   └── use-toast.ts                       # Toast notifications
+│
+└── Utility Hooks
+    ├── use-debounce.ts                    # Input debouncing
+    ├── use-local-storage.ts               # Local storage persistence
+    ├── use-media-query.ts                 # Responsive design
+    └── use-clipboard.ts                   # Clipboard operations
+```
+
+### 🌐 Internationalization (`src/i18n/`)
 ```
 src/i18n/
-├── config.ts                  # next-intl configuration
-├── request.ts                 # Server-side i18n setup
-└── routing.ts                 # Internationalized routing
-
-src/messages/
-├── en.json                    # English translations
-└── he.json                    # Hebrew translations (RTL support)
+├── routing.ts                             # Locale routing configuration
+├── locales/
+│   ├── en/                               # English translations
+│   │   ├── common.json                   # Common UI text
+│   │   ├── auth.json                     # Authentication text
+│   │   ├── dashboard.json                # Dashboard content
+│   │   ├── sessions.json                 # Session-related text
+│   │   └── errors.json                   # Error messages
+│   └── he/                               # Hebrew translations (RTL)
+│       ├── common.json
+│       ├── auth.json
+│       ├── dashboard.json
+│       ├── sessions.json
+│       └── errors.json
+└── middleware.ts                          # i18n middleware integration
 ```
 
----
+### 📝 TypeScript Definitions (`src/types/`)
+```
+src/types/
+├── auth.ts                                # Authentication types
+├── user.ts                                # User data types
+├── session.ts                             # Session types
+├── notification.ts                        # Notification types
+├── file.ts                                # File management types
+├── analytics.ts                           # Analytics types
+├── database.ts                            # Database schema types
+└── api.ts                                 # API response types
+```
 
-## 🗄️ DATABASE STRUCTURE (`supabase/`)
-
-### Database Management
+## 🗄️ Database Structure (`supabase/`)
 ```
 supabase/
-├── config.toml               # Supabase local development
-├── migrations/               # Database schema migrations
-│   ├── 20250704000001_initial_schema.sql      # Core tables
-│   ├── 20250704000002_rls_policies.sql        # Row Level Security
-│   ├── 20250730000001_mfa_system.sql          # MFA tables & functions
-│   └── 20250730000002_notification_system.sql # Notification tables
-└── seed.sql                  # Initial data seeding
+├── config.toml                           # Supabase configuration
+├── migrations/                           # Database migrations (20+ files)
+│   ├── 20240701000000_initial_schema.sql # Initial database setup
+│   ├── 20240701000001_auth_setup.sql     # Authentication tables
+│   ├── 20240701000002_rls_policies.sql   # Row Level Security
+│   ├── 20240701000003_mfa_system.sql     # Multi-factor authentication
+│   ├── 20240701000004_sessions_table.sql # Session management
+│   ├── 20240701000005_notifications.sql  # Notification system
+│   ├── 20240701000006_files_system.sql   # File management
+│   ├── 20240701000007_analytics.sql      # Analytics tables
+│   └── [more migrations...]
+│
+├── functions/                            # Edge functions
+│   ├── send-notification/                # Push notifications
+│   ├── file-processing/                  # File processing
+│   └── analytics-aggregation/            # Analytics processing
+│
+└── seed.sql                              # Development data
 ```
 
----
-
-## 🧪 TESTING STRUCTURE (`tests/`)
-
-### Test Configuration
+## 🧪 Testing Structure
 ```
-tests/
-├── setup.ts                  # Global test setup
-├── helpers.ts                # Test utility functions
-├── e2e/                     # End-to-end tests (Playwright)
-│   ├── auth.spec.ts         # Authentication flow tests
-│   ├── sessions.spec.ts     # Session management tests
-│   └── admin.spec.ts        # Admin functionality tests
-└── fixtures/                # Test data fixtures
+├── tests/ (E2E with Playwright)
+│   ├── examples/
+│   │   ├── auth-example.spec.ts          # Authentication flows
+│   │   ├── dashboard-example.spec.ts     # Dashboard functionality
+│   │   └── session-booking.spec.ts       # Session booking flow
+│   ├── fixtures/                         # Test data
+│   └── utils/                            # Test utilities
+│
+└── src/test/ (Unit/Integration with Vitest)
+    ├── components/                       # Component tests
+    │   ├── auth/                         # Authentication component tests
+    │   ├── dashboard/                    # Dashboard component tests
+    │   ├── sessions/                     # Session component tests
+    │   └── notifications/                # Notification component tests
+    ├── hooks/                            # Hook tests
+    ├── lib/                              # Business logic tests
+    └── utils/                            # Utility function tests
 ```
 
----
+## 📦 Key Dependencies & Their Purposes
 
-## 📦 BUILD & DEPLOYMENT ASSOCIATIONS
+### 🎯 Core Framework
+- **Next.js 15.3.5**: React framework with App Router
+- **React 19.0.0**: UI library with latest features
+- **TypeScript**: Type safety and development experience
 
-### Development Dependencies
-| Package Category | Key Dependencies | Associated Files |
-|------------------|------------------|------------------|
-| **Framework** | next@15.3.5, react@19 | `src/app/`, `src/components/` |
-| **Authentication** | @supabase/supabase-js, @supabase/ssr | `src/lib/auth/`, `supabase/` |
-| **UI Components** | @radix-ui/*, tailwindcss | `src/components/ui/`, `tailwind.config.ts` |
-| **State Management** | zustand, @tanstack/react-query | `src/lib/store/`, `src/lib/hooks/` |
-| **Security** | speakeasy, bcryptjs | `src/lib/security/`, `src/lib/services/mfa-service.ts` |
-| **Testing** | vitest, @playwright/test | `tests/`, `*.test.ts` files |
+### 🗄️ Backend & Database
+- **@supabase/supabase-js**: Backend-as-a-Service client
+- **@supabase/auth-helpers-nextjs**: Next.js auth integration
+
+### 🎨 UI & Styling
+- **Tailwind CSS v4**: Utility-first CSS framework
+- **@radix-ui/**: 15+ accessible UI components
+- **lucide-react**: Icon library
+- **class-variance-authority**: Component variants
+
+### 📊 State Management
+- **@tanstack/react-query**: Server state management
+- **zustand**: Client state management
+- **react-hook-form**: Form handling
+
+### 🔐 Security & Validation
+- **zod**: Schema validation
+- **@next/csrf**: CSRF protection
+- **bcryptjs**: Password hashing
+
+### 🧪 Testing
+- **vitest**: Unit testing framework
+- **@playwright/test**: E2E testing
+- **@testing-library/react**: Component testing utilities
+
+### 🌐 Internationalization
+- **next-intl**: i18n for Next.js with RTL support
+
+### 📊 Monitoring & Analytics
+- **@sentry/nextjs**: Error monitoring
+- **web-vitals**: Performance monitoring
+
+## 🔗 File Relationships & Dependencies
+
+### Authentication Flow Dependencies
+```
+middleware.ts → auth-context.tsx → use-auth.ts → supabase/client.ts
+     ↓
+auth/signin/page.tsx → signin-form.tsx → auth-service.ts
+     ↓
+dashboard routing based on user role
+```
+
+### Dashboard Component Hierarchy
+```
+layout.tsx (providers)
+     ↓
+dashboard/layout.tsx (sidebar + header)
+     ↓
+role-specific dashboards (admin/coach/client)
+     ↓
+specific feature components (sessions, files, notifications)
+```
+
+### Data Flow Architecture
+```
+UI Components → Custom Hooks → React Query → Services → Database
+     ↑                                                      ↓
+State Management ← Business Logic ← API Routes ← Supabase Client
+```
+
+## 🚀 Deployment Architecture
+
+### Development Environment
+- **Local Database**: Supabase local development
+- **File Storage**: Local file system
+- **Authentication**: Supabase Auth (local)
+
+### Production Environment
+- **Hosting**: Vercel
+- **Database**: Supabase (hosted)
+- **File Storage**: Supabase Storage
+- **CDN**: Vercel Edge Network
+- **Monitoring**: Sentry + Vercel Analytics
 
 ### CI/CD Pipeline
 ```
-.github/workflows/
-├── ci.yml                    # Continuous integration
-│   ├── Runs on: src/**, tests/**
-│   ├── Triggers: PR, push to main
-│   └── Actions: lint, test, build
-├── deploy.yml                # Deployment automation  
-│   ├── Runs on: main branch
-│   ├── Triggers: successful CI
-│   └── Actions: deploy to Vercel
-└── security.yml              # CodeQL security analysis
-    ├── Runs on: src/**
-    ├── Triggers: schedule, PR
-    └── Actions: security scan
+GitHub → GitHub Actions → Build & Test → Deploy to Vercel
+                    ↓
+               Type Check & Lint → Unit Tests → E2E Tests
 ```
 
 ---
 
-## 🔗 CRITICAL ASSOCIATIONS TO REMEMBER
+**Architecture Principles**:
+- 🔒 Security by design with RLS and middleware protection
+- 📱 Mobile-first responsive design
+- 🌐 Full internationalization (English/Hebrew RTL)
+- ♿ Accessibility with Radix UI components
+- 🎯 TypeScript strict mode for type safety
+- 🧪 Comprehensive testing strategy (unit + E2E)
+- 📊 Performance monitoring and optimization
+- 🔄 Real-time features with Supabase subscriptions
 
-### Authentication Flow Chain
-```
-Request → middleware.ts → auth-context.tsx → auth.ts → Supabase → Database RLS
-```
-
-### MFA Implementation Chain  
-```
-MFA Setup → mfa-service.ts → API endpoints → Database → UI Components
-```
-
-### Route Protection Chain
-```
-URL → middleware.ts → permissions.ts → auth-store.ts → Component Render
-```
-
-### API Request Chain
-```
-Frontend → api/**.ts → validation.ts → rate-limit.ts → Supabase → Database
-```
-
-### State Management Flow
-```
-User Action → Component → Zustand Store → React Query → API → Database
-```
-
----
-
-## 🚨 FILES REQUIRING IMMEDIATE ATTENTION
-
-### Security Critical Files
-1. `/src/lib/services/mfa-service.ts` - Remove hardcoded test data
-2. `/src/lib/auth/auth-context.tsx` - Fix client-side MFA exposure  
-3. `/src/app/api/sessions/route.ts` - Add rate limiting
-4. `/src/lib/config/api-endpoints.ts` - Add MFA endpoints
-
-### Configuration Files
-1. `.env.local` - Validate all environment variables
-2. `nginx.conf` - Update CORS configuration
-3. `next.config.js` - Review security headers
-
-### TypeScript Error Sources
-1. `/src/lib/auth/auth-context.tsx` (lines 61-65)
-2. `/src/lib/security/rate-limit.ts` (lines 74-83)  
-3. Multiple auth-related type mismatches
-
----
-
-*This reference document maps the complete file structure and critical associations within the Loom app codebase. Use this as a guide for understanding component dependencies and architectural relationships.*
+**Last Updated**: August 13, 2025  
+**Maintained By**: Development Team

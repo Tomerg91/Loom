@@ -42,7 +42,7 @@ export async function GET(
     const token = searchParams.get('token'); // For temporary shares
 
     // Get file information
-    const fileResult = await fileManagementService.getFile(params.id, user?.id);
+    const fileResult = await fileManagementService.getFile(id, user?.id);
     
     if (!fileResult.success) {
       return NextResponse.json(
@@ -65,7 +65,7 @@ export async function GET(
         .from('temporary_shares')
         .select('*')
         .eq('share_token', token)
-        .eq('file_id', params.id)
+        .eq('file_id', id)
         .eq('is_active', true)
         .gt('expires_at', new Date().toISOString())
         .single();
@@ -96,7 +96,7 @@ export async function GET(
     if (!hasAccess && user) {
       const sharedFilesResult = await fileManagementService.getSharedFiles(user.id);
       const validShare = sharedFilesResult.success && sharedFilesResult.data.find(sharedFile => 
-        sharedFile.id === params.id
+        sharedFile.id === id
       );
       
       if (validShare && validShare.sharedWith?.[0]) {
@@ -132,7 +132,7 @@ export async function GET(
     // Start download tracking if enabled
     if (trackAnalytics) {
       downloadId = await downloadTrackingDatabase.startDownload({
-        fileId: params.id,
+        fileId: id,
         userId: user?.id || null,
         ipAddress,
         userAgent,
@@ -174,7 +174,7 @@ export async function GET(
       await supabase
         .from('file_uploads')
         .update({ download_count: supabase.raw('download_count + 1') })
-        .eq('id', params.id);
+        .eq('id', id);
 
       // Complete download tracking
       if (downloadId) {

@@ -12,7 +12,7 @@ const historyQuerySchema = z.object({
 // GET /api/users/[id]/download-history - Get user's download history
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get authenticated user
@@ -27,7 +27,7 @@ export async function GET(
     }
 
     // Users can only view their own download history
-    if (params.id !== user.id) {
+    if (id !== user.id) {
       return NextResponse.json(
         { error: 'You can only view your own download history' },
         { status: 403 }
@@ -46,19 +46,19 @@ export async function GET(
 
     // Get user's download history
     const downloadHistory = await downloadTrackingDatabase.getUserDownloadHistory(
-      params.id,
+      id,
       limit,
       offset
     );
 
     // Get user's top downloaded files
-    const topFiles = await downloadTrackingDatabase.getUserTopFiles(params.id, 10);
+    const topFiles = await downloadTrackingDatabase.getUserTopFiles(id, 10);
 
     // Get total download count for pagination
     const { data: totalDownloads, error: countError } = await supabase
       .from('file_download_logs')
       .select('id', { count: 'exact' })
-      .eq('downloaded_by', params.id);
+      .eq('downloaded_by', id);
 
     if (countError) {
       throw new Error(`Failed to get total download count: ${countError.message}`);
@@ -117,7 +117,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      user_id: params.id,
+      user_id: id,
       download_history: downloadHistory,
       top_files: topFiles,
       statistics: {

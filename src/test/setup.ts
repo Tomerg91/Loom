@@ -1,11 +1,27 @@
 import '@testing-library/jest-dom';
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 // Cleanup after each test
 afterEach(() => {
   cleanup();
+  vi.clearAllMocks();
 });
+
+// Set up jsdom environment with proper base URL
+Object.defineProperty(window, 'location', {
+  value: {
+    origin: 'http://localhost:3000',
+    href: 'http://localhost:3000',
+    pathname: '/',
+    search: '',
+    hash: '',
+  },
+  writable: true,
+});
+
+// Mock fetch globally to handle API calls in tests
+global.fetch = vi.fn();
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
@@ -21,30 +37,37 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock @tanstack/react-query
-vi.mock('@tanstack/react-query', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+// Create exportable mock functions for React Query hooks
+export const mockUseQuery = vi.fn();
+export const mockUseMutation = vi.fn();
+export const mockUseQueryClient = vi.fn();
+export const mockQueryClient = {
+  invalidateQueries: vi.fn(),
+  setQueryData: vi.fn(),
+  getQueryData: vi.fn(),
+  removeQueries: vi.fn(),
+  clear: vi.fn(),
+  mount: vi.fn(),
+  unmount: vi.fn(),
+  isFetching: vi.fn(),
+  isMutating: vi.fn(),
+  getDefaultOptions: vi.fn(() => ({})),
+  setDefaultOptions: vi.fn(),
+  getMutationCache: vi.fn(),
+  getQueryCache: vi.fn(),
+  cancelQueries: vi.fn(),
+};
+
+// Mock @tanstack/react-query with consistent mock instances
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query');
   return {
     ...actual,
-    QueryClient: vi.fn(() => ({
-      invalidateQueries: vi.fn(),
-      setQueryData: vi.fn(),
-      getQueryData: vi.fn(),
-      removeQueries: vi.fn(),
-      clear: vi.fn(),
-      mount: vi.fn(),
-      unmount: vi.fn(),
-      isFetching: vi.fn(),
-      isMutating: vi.fn(),
-      getDefaultOptions: vi.fn(() => ({})),
-      setDefaultOptions: vi.fn(),
-      getMutationCache: vi.fn(),
-      getQueryCache: vi.fn(),
-    })),
-    useQuery: vi.fn(),
-    useMutation: vi.fn(),
+    QueryClient: vi.fn(() => mockQueryClient),
+    useQuery: mockUseQuery,
+    useMutation: mockUseMutation,
     useInfiniteQuery: vi.fn(),
-    useQueryClient: vi.fn(),
+    useQueryClient: mockUseQueryClient,
   };
 });
 
@@ -55,4 +78,24 @@ Object.defineProperty(process, 'env', {
     NEXT_PUBLIC_SUPABASE_URL: 'https://mock-supabase-url.supabase.co',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: 'mock-anon-key',
   },
+});
+
+// Set up default mock return values
+beforeEach(() => {
+  // Reset all mocks
+  vi.clearAllMocks();
+  
+  // Setup default mock implementations
+  mockUseQueryClient.mockReturnValue(mockQueryClient);
+  
+  // Mock fetch with proper response structure
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: vi.fn().mockResolvedValue({ data: null }),
+    text: vi.fn().mockResolvedValue(''),
+    blob: vi.fn(),
+    arrayBuffer: vi.fn(),
+    headers: new Headers(),
+  });
 });

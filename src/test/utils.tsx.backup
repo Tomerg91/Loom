@@ -5,10 +5,6 @@ import { ReactElement, ReactNode } from 'react';
 import { vi } from 'vitest';
 import en from '@/messages/en.json';
 import { User } from '@/types';
-import { mockUseQuery, mockUseMutation, mockUseQueryClient, mockQueryClient } from './setup';
-
-// Re-export the mock functions from setup so tests can import them
-export { mockUseQuery, mockUseMutation, mockUseQueryClient, mockQueryClient };
 
 // Mock user data
 export const mockUser: User = {
@@ -87,7 +83,13 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
 export function renderWithProviders(
   ui: ReactElement,
   {
-    queryClient = createTestQueryClient(),
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    }),
     locale = 'en',
     ...renderOptions
   }: CustomRenderOptions = {}
@@ -104,27 +106,6 @@ export function renderWithProviders(
 
   return render(ui, { wrapper: Wrapper, ...renderOptions });
 }
-
-// Create a test QueryClient that uses actual React Query but with test-friendly defaults
-export const createTestQueryClient = (): QueryClient => {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        staleTime: 0,
-        gcTime: 0,
-      },
-      mutations: {
-        retry: false,
-      },
-    },
-    logger: {
-      log: () => {},
-      warn: () => {},
-      error: () => {},
-    },
-  });
-};
 
 // Mock API responses
 export const mockApiResponse = {
@@ -149,7 +130,6 @@ export const mockFetchResponse = {
   text: vi.fn(),
   blob: vi.fn(),
   arrayBuffer: vi.fn(),
-  headers: new Headers(),
 };
 
 // Helper to mock fetch with specific responses
@@ -221,8 +201,8 @@ export const createMockReflection = (overrides = {}) => ({
   ...overrides,
 });
 
-// Utility functions for creating mock hook return values
-export const createMockQueryResult = <TData = unknown, TError = unknown>(
+// Mock TanStack Query hooks with proper React Query v5 types
+export const mockUseQuery = <TData = unknown, TError = unknown>(
   data: TData, 
   options: Partial<{ 
     isLoading: boolean; 
@@ -233,14 +213,14 @@ export const createMockQueryResult = <TData = unknown, TError = unknown>(
   }> = {}
 ): UseQueryResult<TData, TError> => {
   const isError = options.isError ?? false;
-  const isPending = options.isPending ?? options.isLoading ?? false;
-  const isSuccess = options.isSuccess ?? (!isError && !isPending);
+  const isPending = options.isPending ?? false;
+  const isSuccess = options.isSuccess ?? (!(isError) && !(isPending));
   
   return {
     data: isSuccess ? data : undefined,
     error: isError ? (options.error ?? new Error('Mock error') as TError) : null,
     isError,
-    isLoading: isPending, // For backward compatibility
+    isLoading: options.isLoading ?? isPending, // For backward compatibility
     isPending,
     isSuccess,
     isLoadingError: isError && isPending,
@@ -264,7 +244,7 @@ export const createMockQueryResult = <TData = unknown, TError = unknown>(
   } as UseQueryResult<TData, TError>;
 };
 
-export const createMockMutationResult = <TData = unknown, TError = unknown, TVariables = unknown, TContext = unknown>(
+export const mockUseMutation = <TData = unknown, TError = unknown, TVariables = unknown, TContext = unknown>(
   data: TData | null = null, 
   options: Partial<{ 
     mutate: ReturnType<typeof vi.fn>; 
@@ -297,6 +277,7 @@ export const createMockMutationResult = <TData = unknown, TError = unknown, TVar
     submittedAt: isSuccess || isError ? Date.now() : 0,
     context: undefined as TContext | undefined,
     isPaused: false,
+    onSuccess: options.onSuccess,
   } as UseMutationResult<TData, TError, TVariables, TContext>;
 };
 
@@ -351,6 +332,27 @@ export const mockLocalStorage = () => {
       return Object.keys(store).length;
     },
   };
+};
+
+// Mock QueryClient for testing
+export const createMockQueryClient = (overrides: Partial<QueryClient> = {}): QueryClient => {
+  const mockQueryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        staleTime: 0,
+        gcTime: 0,
+      },
+      mutations: {
+        retry: false,
+      },
+    },
+  });
+
+  // Override specific methods if needed
+  Object.assign(mockQueryClient, overrides);
+  
+  return mockQueryClient;
 };
 
 // Setup test environment

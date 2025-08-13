@@ -13,7 +13,7 @@ import { rateLimit } from '@/lib/security/rate-limit';
 // GET /api/notifications - List notifications with pagination and filters
 export const GET = withErrorHandling(
   rateLimit(150, 60000)( // 150 requests per minute
-    requireAuth(async (user, request: NextRequest) => {
+    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
       const { searchParams } = request.nextUrl;
       const page = parseInt(searchParams.get('page') || '1');
       const limit = parseInt(searchParams.get('limit') || '20');
@@ -68,7 +68,7 @@ export const GET = withErrorHandling(
 // POST /api/notifications - Create new notification
 export const POST = withErrorHandling(
   rateLimit(150, 60000)( // 150 requests per minute
-    requireAuth(async (user, request: NextRequest) => {
+    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
       // Check if user has permission to create notifications (admin or coach)
       if (user.role !== 'admin' && user.role !== 'coach') {
         return createErrorResponse(

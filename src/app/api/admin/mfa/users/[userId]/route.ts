@@ -12,9 +12,9 @@ const mfaActionSchema = z.object({
 });
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     userId: string;
-  };
+  }>;
 }
 
 // Apply rate limiting for MFA admin actions to prevent abuse
@@ -27,7 +27,7 @@ const rateLimitedHandler = rateLimit(20, 60000)( // 20 requests per minute for M
         return ApiResponseHelper.forbidden('Admin access required for MFA management');
       }
 
-      const { userId } = params;
+      const { userId } = await params;
       if (!userId) {
         return ApiResponseHelper.badRequest('User ID is required');
       }

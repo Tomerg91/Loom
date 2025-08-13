@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ProgressCardProps {
@@ -9,15 +10,15 @@ interface ProgressCardProps {
   color?: string;
 }
 
-export function ProgressCard({ 
+export const ProgressCard = memo(({ 
   title, 
   value, 
   maxValue = 100, 
   description,
   showPercentage = true,
   color = 'bg-primary'
-}: ProgressCardProps) {
-  const percentage = Math.round((value / maxValue) * 100);
+}: ProgressCardProps) => {
+  const percentage = useMemo(() => Math.round((value / maxValue) * 100), [value, maxValue]);
   
   return (
     <Card>
@@ -44,4 +45,4 @@ export function ProgressCard({
       </CardContent>
     </Card>
   );
-}
+});

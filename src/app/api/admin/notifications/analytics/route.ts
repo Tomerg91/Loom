@@ -22,7 +22,7 @@ const AnalyticsQuerySchema = z.object({
 // GET /api/admin/notifications/analytics - Get notification analytics
 export const GET = withErrorHandling(
   rateLimit(60, 60000)( // 60 requests per minute
-    requireAuth(async (user, request: NextRequest) => {
+    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
       // Check admin permissions
       if (user.role !== 'admin') {
         return createErrorResponse(

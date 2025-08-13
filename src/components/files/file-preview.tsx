@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { 
   X, 
   Download, 
@@ -51,36 +52,114 @@ const formatDate = (dateString: string) => {
   });
 };
 
+// URL sanitization utility
+const sanitizeUrl = (url: string): string => {
+  try {
+    const parsedUrl = new URL(url);
+    // Only allow HTTPS URLs and data URLs for fallbacks
+    if (!['https:', 'data:'].includes(parsedUrl.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+    // Additional domain validation for storage URLs
+    if (parsedUrl.protocol === 'https:') {
+      // Add your trusted storage domains here
+      const trustedDomains = [
+        'supabase.co', 
+        'supabasecdn.com',
+        // Add other trusted storage domains
+      ];
+      const isValidDomain = trustedDomains.some(domain => 
+        parsedUrl.hostname.includes(domain)
+      );
+      if (!isValidDomain && !parsedUrl.hostname.includes('localhost')) {
+        console.warn('Untrusted domain blocked:', parsedUrl.hostname);
+        return '';
+      }
+    }
+    return url;
+  } catch {
+    return '';
+  }
+};
+
+// File type validation
+const isValidFileType = (mimeType: string, expectedType: string): boolean => {
+  const allowedTypes = {
+    'image': ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    'video': ['video/mp4', 'video/avi', 'video/mov', 'video/quicktime'],
+    'audio': ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/mpeg'],
+    'pdf': ['application/pdf'],
+    'text': ['text/plain', 'text/csv', 'text/html', 'text/markdown']
+  };
+  
+  const validTypes = allowedTypes[expectedType as keyof typeof allowedTypes] || [];
+  return validTypes.includes(mimeType);
+};
+
 const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
   const { fileType, mimeType, storageUrl, name } = file;
+  
+  // Sanitize the storage URL
+  const sanitizedUrl = sanitizeUrl(storageUrl);
+  
+  if (!sanitizedUrl) {
+    return (
+      <div className="flex items-center justify-center bg-red-50 rounded-lg p-8">
+        <div className="text-center">
+          <File className="h-16 w-16 text-red-400 mx-auto mb-4" />
+          <p className="text-red-600 mb-2">Invalid file URL</p>
+          <p className="text-sm text-red-500">This file cannot be previewed due to security restrictions.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Image preview
-  if (fileType === 'image') {
+  if (fileType === 'image' && isValidFileType(mimeType, 'image')) {
     return (
       <div className="flex items-center justify-center bg-gray-100 rounded-lg p-4">
-        <img 
-          src={storageUrl} 
-          alt={name}
-          className="max-w-full max-h-96 object-contain rounded"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9ImZlYXRoZXIgZmVhdGhlci1pbWFnZSI+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iMiIgcnk9IjIiLz48Y2lyY2xlIGN4PSI4LjUiIGN5PSI4LjUiIHI9IjEuNSIvPjxwb2x5bGluZSBwb2ludHM9IjIxLDE1IDEyLDcgMyw5Ii8+PC9zdmc+';
-          }}
-        />
+        <div className="relative max-w-full max-h-96">
+          <Image
+            src={sanitizedUrl}
+            alt={`Preview of ${name}`}
+            width={600}
+            height={400}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '384px',
+              width: 'auto',
+              height: 'auto',
+              objectFit: 'contain'
+            }}
+            className="rounded"
+            unoptimized={true} // For external URLs
+            onError={() => {
+              console.error('Failed to load image:', sanitizedUrl);
+            }}
+            loader={({ src }) => {
+              // Custom loader for secure URL handling
+              return sanitizeUrl(src) || '/images/fallback-image.svg';
+            }}
+          />
+        </div>
       </div>
     );
   }
 
   // Video preview
-  if (fileType === 'video') {
+  if (fileType === 'video' && isValidFileType(mimeType, 'video')) {
     return (
       <div className="flex items-center justify-center bg-gray-100 rounded-lg p-4">
         <video 
           controls 
           className="max-w-full max-h-96 rounded"
           preload="metadata"
+          controlsList="nodownload" // Prevent unauthorized downloads
+          onError={() => {
+            console.error('Failed to load video:', sanitizedUrl);
+          }}
         >
-          <source src={storageUrl} type={mimeType} />
+          <source src={sanitizedUrl} type={mimeType} />
           Your browser does not support the video tag.
         </video>
       </div>
@@ -88,13 +167,20 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
   }
 
   // Audio preview
-  if (fileType === 'audio') {
+  if (fileType === 'audio' && isValidFileType(mimeType, 'audio')) {
     return (
       <div className="flex items-center justify-center bg-gray-100 rounded-lg p-8">
         <div className="text-center">
           <Music className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <audio controls className="w-full max-w-sm">
-            <source src={storageUrl} type={mimeType} />
+          <audio 
+            controls 
+            className="w-full max-w-sm"
+            controlsList="nodownload" // Prevent unauthorized downloads
+            onError={() => {
+              console.error('Failed to load audio:', sanitizedUrl);
+            }}
+          >
+            <source src={sanitizedUrl} type={mimeType} />
             Your browser does not support the audio tag.
           </audio>
         </div>
@@ -103,14 +189,24 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
   }
 
   // PDF preview (would need PDF.js or similar in production)
-  if (fileType === 'pdf') {
+  if (fileType === 'pdf' && isValidFileType(mimeType, 'pdf')) {
     return (
       <div className="flex items-center justify-center bg-gray-100 rounded-lg p-8">
         <div className="text-center">
           <FileText className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <p className="text-gray-600 mb-4">PDF Preview</p>
           <Button asChild>
-            <a href={storageUrl} target="_blank" rel="noopener noreferrer">
+            <a 
+              href={sanitizedUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                if (!sanitizedUrl) {
+                  e.preventDefault();
+                  console.error('Invalid PDF URL blocked');
+                }
+              }}
+            >
               <ExternalLink className="h-4 w-4 mr-2" />
               Open in New Tab
             </a>
@@ -121,16 +217,26 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
   }
 
   // Text file preview
-  if (fileType === 'text' || mimeType.startsWith('text/')) {
+  if (fileType === 'text' && isValidFileType(mimeType, 'text')) {
     return (
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="text-center text-gray-600 mb-4">
           <FileText className="h-12 w-12 mx-auto mb-2" />
           <p>Text file preview would be shown here</p>
-          <p className="text-sm">In production, fetch and display file contents</p>
+          <p className="text-sm">In production, fetch and display file contents securely</p>
         </div>
         <Button asChild>
-          <a href={storageUrl} target="_blank" rel="noopener noreferrer">
+          <a 
+            href={sanitizedUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              if (!sanitizedUrl) {
+                e.preventDefault();
+                console.error('Invalid text file URL blocked');
+              }
+            }}
+          >
             <ExternalLink className="h-4 w-4 mr-2" />
             Open in New Tab
           </a>
@@ -149,7 +255,17 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
           {fileType} • {formatFileSize(file.sizeBytes)}
         </p>
         <Button asChild>
-          <a href={storageUrl} target="_blank" rel="noopener noreferrer">
+          <a 
+            href={sanitizedUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              if (!sanitizedUrl) {
+                e.preventDefault();
+                console.error('Invalid file URL blocked');
+              }
+            }}
+          >
             <ExternalLink className="h-4 w-4 mr-2" />
             Open in New Tab
           </a>
@@ -173,7 +289,16 @@ export function FilePreview({ file, open, onClose, onShare, onDelete }: FilePrev
             </div>
             <div className="flex items-center gap-2 ml-4">
               <Button variant="outline" size="sm" asChild>
-                <a href={file.storageUrl} download={file.originalName}>
+                <a 
+                  href={sanitizeUrl(file.storageUrl)} 
+                  download={file.originalName}
+                  onClick={(e) => {
+                    if (!sanitizeUrl(file.storageUrl)) {
+                      e.preventDefault();
+                      console.error('Invalid download URL blocked');
+                    }
+                  }}
+                >
                   <Download className="h-4 w-4" />
                 </a>
               </Button>

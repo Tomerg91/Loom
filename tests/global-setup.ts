@@ -103,10 +103,15 @@ async function globalSetup(config: FullConfig) {
  */
 async function checkServerHealth(baseURL: string): Promise<boolean> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
     const response = await fetch(`${baseURL}/api/health`, {
       method: 'GET',
-      timeout: 5000
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
     return false;

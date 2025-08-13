@@ -24,7 +24,7 @@ import { withApiOptimization, createStreamingResponse, optimizeQuery } from '@/l
 export const GET = withErrorHandling(
   withApiOptimization(
     rateLimit(100, 60000)( // 100 requests per minute
-      requireAuth(async (user, request: NextRequest) => {
+      requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
         // Original route logic
         const query = parseQueryParams(request);
         
@@ -84,7 +84,7 @@ export const GET = withErrorHandling(
 // POST /api/sessions - Create new session
 export const POST = withErrorHandling(
   rateLimit(50, 60000)( // 50 session creations per minute
-    requireAuth(async (user, request: NextRequest) => {
+    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
       // Check if user has coach role (required for creating sessions)
       if (user.role !== 'coach' && user.role !== 'admin') {
         return createErrorResponse(

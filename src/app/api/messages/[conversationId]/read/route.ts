@@ -13,8 +13,8 @@ import { rateLimit } from '@/lib/security/rate-limit';
 // POST /api/messages/[conversationId]/read - Mark conversation as read
 export const POST = withErrorHandling(
   rateLimit(100, 60000)( // 100 requests per minute
-    requireAuth(async (user, request: NextRequest, { params }: { params: { conversationId: string } }) => {
-      const { conversationId } = params;
+    requireAuth(async (user, request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) => {
+      const { conversationId } = await params;
 
       if (!conversationId) {
         return createErrorResponse(

@@ -92,7 +92,7 @@ describe('Session Booking Integration', () => {
 
     (vi.mocked(useQuery)).mockImplementation(mockUseQuery);
     (vi.mocked(useMutation)).mockImplementation(mockUseMutation);
-    (vi.mocked(useQueryClient)).mockReturnValue(mockQueryClient);
+    (vi.mocked(useQueryClient)).mockReturnValue(mockQueryClient as any);
   });
 
   describe('Complete Booking Flow', () => {
@@ -334,7 +334,7 @@ describe('Session Booking Integration', () => {
       });
 
       (vi.mocked(useMutation)).mockImplementation(mockMutationSuccess);
-      (vi.mocked(useQueryClient)).mockReturnValue(localMockQueryClient);
+      (vi.mocked(useQueryClient)).mockReturnValue(localMockQueryClient as any);
 
       renderWithProviders(<SessionBookingForm />);
 

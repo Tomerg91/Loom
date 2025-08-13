@@ -75,7 +75,7 @@ async function checkSessionAccess(
 // GET /api/sessions/[id]/files - Get all files associated with a session
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get authenticated user
@@ -92,7 +92,7 @@ export async function GET(
     // Check session access
     const { hasAccess, session } = await checkSessionAccess(
       supabase,
-      params.id,
+      id,
       user.id
     );
 
@@ -104,7 +104,7 @@ export async function GET(
     }
 
     // Get session files with file details
-    const sessionFiles = await sessionFilesDatabase.getSessionFiles(params.id);
+    const sessionFiles = await sessionFilesDatabase.getSessionFiles(id);
 
     // Format response
     const formattedFiles = sessionFiles.map(sf => ({
@@ -135,7 +135,7 @@ export async function GET(
     };
 
     return NextResponse.json({
-      sessionId: params.id,
+      sessionId: id,
       sessionTitle: session.title,
       files: formattedFiles,
       filesByCategory,
@@ -161,7 +161,7 @@ export async function GET(
 // POST /api/sessions/[id]/files - Attach a file to a session
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Apply rate limiting
@@ -184,7 +184,7 @@ export async function POST(
     // Check session access
     const { hasAccess, session, userRole } = await checkSessionAccess(
       supabase,
-      params.id,
+      id,
       user.id
     );
 
@@ -219,7 +219,7 @@ export async function POST(
     }
 
     // Check if file is already attached to this session
-    const isAlreadyAttached = await sessionFilesDatabase.isFileAttachedToSession(params.id, validatedData.fileId);
+    const isAlreadyAttached = await sessionFilesDatabase.isFileAttachedToSession(id, validatedData.fileId);
 
     if (isAlreadyAttached) {
       return NextResponse.json(
@@ -230,7 +230,7 @@ export async function POST(
 
     // Create session-file association
     const sessionFile = await sessionFilesDatabase.createSessionFile({
-      session_id: params.id,
+      session_id: id,
       file_id: validatedData.fileId,
       file_category: validatedData.category,
       uploaded_by: user.id,
@@ -247,7 +247,7 @@ export async function POST(
       message: `${file.user.first_name} attached a file to "${session.title}": ${file.filename}`,
       data: {
         type: 'session_file_added',
-        session_id: params.id,
+        session_id: id,
         file_id: validatedData.fileId,
         added_by: user.id,
         category: validatedData.category,
@@ -294,7 +294,7 @@ export async function POST(
 // PUT /api/sessions/[id]/files/[fileId] - Update session file metadata
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Apply rate limiting
@@ -317,7 +317,7 @@ export async function PUT(
     // Check session access
     const { hasAccess, userRole } = await checkSessionAccess(
       supabase,
-      params.id,
+      id,
       user.id
     );
 
@@ -344,7 +344,7 @@ export async function PUT(
     const { data: sessionFile, error: sessionFileError } = await supabase
       .from('session_files')
       .select('*')
-      .eq('session_id', params.id)
+      .eq('session_id', id)
       .eq('file_id', fileId)
       .single();
 
@@ -373,7 +373,7 @@ export async function PUT(
     }
 
     const updatedSessionFile = await sessionFilesDatabase.updateSessionFile(
-      params.id, 
+      id, 
       fileId, 
       updateFields
     );
@@ -418,7 +418,7 @@ export async function PUT(
 // DELETE /api/sessions/[id]/files/[fileId] - Remove file from session
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Apply rate limiting
@@ -441,7 +441,7 @@ export async function DELETE(
     // Check session access
     const { hasAccess, session, userRole } = await checkSessionAccess(
       supabase,
-      params.id,
+      id,
       user.id
     );
 
@@ -471,7 +471,7 @@ export async function DELETE(
           filename
         )
       `)
-      .eq('session_id', params.id)
+      .eq('session_id', id)
       .eq('file_id', fileId)
       .single();
 
@@ -491,7 +491,7 @@ export async function DELETE(
     }
 
     // Remove the session file association
-    await sessionFilesDatabase.deleteSessionFile(params.id, fileId);
+    await sessionFilesDatabase.deleteSessionFile(id, fileId);
 
     // Create notification for other session participant
     const otherParticipantId = session.coach_id === user.id ? session.client_id : session.coach_id;
@@ -504,7 +504,7 @@ export async function DELETE(
       message: `${currentUserName} removed "${sessionFile.file.filename}" from "${session.title}"`,
       data: {
         type: 'session_file_removed',
-        session_id: params.id,
+        session_id: id,
         file_id: fileId,
         removed_by: user.id,
       },

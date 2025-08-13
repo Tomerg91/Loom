@@ -15,9 +15,11 @@ const analyticsQuerySchema = z.object({
 // GET /api/files/[id]/analytics - Get comprehensive download analytics for a file
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     // Get authenticated user
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -30,7 +32,7 @@ export async function GET(
     }
 
     // Verify user owns the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     if (file.user_id !== user.id) {
       return NextResponse.json(
@@ -53,7 +55,7 @@ export async function GET(
 
     // Get comprehensive analytics
     const analytics = await downloadTrackingDatabase.getFileDownloadAnalytics(
-      params.id,
+      id,
       date_from,
       date_to
     );
@@ -62,7 +64,7 @@ export async function GET(
     let recentLogs = null;
     if (include_logs) {
       recentLogs = await downloadTrackingDatabase.getRecentDownloads(
-        params.id,
+        id,
         logs_limit,
         0
       );
@@ -75,12 +77,12 @@ export async function GET(
 
     const [monthlyStats, weeklyStats] = await Promise.all([
       downloadTrackingDatabase.getFileDownloadStats(
-        params.id,
+        id,
         thirtyDaysAgo.toISOString().split('T')[0],
         now.toISOString().split('T')[0]
       ),
       downloadTrackingDatabase.getFileDownloadStats(
-        params.id,
+        id,
         sevenDaysAgo.toISOString().split('T')[0],
         now.toISOString().split('T')[0]
       ),

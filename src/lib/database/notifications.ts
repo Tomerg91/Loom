@@ -417,6 +417,9 @@ export class NotificationService {
 
   /**
    * Get paginated notifications with enhanced filtering
+   * Supports filtering by read status, archive status, type, and custom sorting
+   * @param options - Configuration options for pagination and filtering
+   * @returns Promise<Notification[]> - Array of filtered notifications
    */
   async getNotificationsPaginated(options: GetNotificationsOptions): Promise<Notification[]> {
     let queryBuilder = this.supabase
@@ -460,6 +463,9 @@ export class NotificationService {
 
   /**
    * Get notifications count with filtering
+   * Supports filtering by read status, archive status, and type
+   * @param options - Configuration options for filtering
+   * @returns Promise<number> - Total count of notifications matching the filters
    */
   async getNotificationsCount(options: GetNotificationsCountOptions): Promise<number> {
     let queryBuilder = this.supabase
@@ -499,6 +505,9 @@ export class NotificationService {
 
   /**
    * Create notification from API data
+   * Transforms API data structure and delegates to the main createNotification method
+   * @param data - API notification data structure
+   * @returns Promise<Notification | null> - Created notification or null if failed
    */
   async createNotificationFromApi(data: CreateNotificationData): Promise<Notification | null> {
     return this.createNotification({
@@ -584,110 +593,33 @@ export class NotificationService {
     };
   }
 
-  /**
-   * Get notifications with pagination and filtering (for API)
-   */
-  async getNotificationsPaginated(options: GetNotificationsOptions): Promise<Notification[]> {
-    let query = this.supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', options.userId);
 
-    // Apply filters
-    if (options.isRead !== undefined) {
-      if (options.isRead) {
-        query = query.not('read_at', 'is', null);
-      } else {
-        query = query.is('read_at', null);
-      }
-    }
-    if (options.type) {
-      query = query.eq('type', options.type as 'session_reminder' | 'new_message' | 'session_confirmation' | 'system_update');
-    }
 
-    // Apply sorting
-    const sortBy = options.sortBy || 'created_at';
-    const sortOrder = options.sortOrder || 'desc';
-    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-
-    // Apply pagination
-    if (options.limit) {
-      query = query.limit(options.limit);
-    }
-    if (options.offset) {
-      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Error fetching notifications with pagination:', error);
-      return [];
-    }
-
-    return data.map(this.mapDatabaseNotificationToNotification);
-  }
-
-  /**
-   * Get total count of notifications (for API pagination)
-   */
-  async getNotificationsCount(options: GetNotificationsCountOptions): Promise<number> {
-    let query = this.supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', options.userId);
-
-    // Apply filters
-    if (options.isRead !== undefined) {
-      if (options.isRead) {
-        query = query.not('read_at', 'is', null);
-      } else {
-        query = query.is('read_at', null);
-      }
-    }
-    if (options.type) {
-      query = query.eq('type', options.type as 'session_reminder' | 'new_message' | 'session_confirmation' | 'system_update');
-    }
-
-    const { count, error } = await query;
-
-    if (error) {
-      console.error('Error counting notifications:', error);
-      return 0;
-    }
-
-    return count || 0;
-  }
-
-  /**
-   * Create notification (for API)
-   */
-  async createNotificationFromApi(notificationData: CreateNotificationData): Promise<Notification | null> {
-    const { data, error } = await this.supabase
-      .from('notifications')
-      .insert({
-        user_id: notificationData.userId,
-        type: notificationData.type,
-        title: notificationData.title,
-        message: notificationData.content,
-        data: JSON.parse(JSON.stringify(notificationData.metadata || {})),
-        scheduled_for: notificationData.scheduledFor,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating notification:', error);
-      return null;
-    }
-
-    return this.mapDatabaseNotificationToNotification(data);
-  }
 }
 
 // Export individual functions for API usage
 const notificationService = new NotificationService(true);
 
-export const getNotificationsPaginated = (options: GetNotificationsOptions) => notificationService.getNotificationsPaginated(options);
-export const getNotificationsCount = (options: GetNotificationsCountOptions) => notificationService.getNotificationsCount(options);
-export const createNotification = (notificationData: CreateNotificationData) => notificationService.createNotificationFromApi(notificationData);
+/**
+ * Get paginated notifications with enhanced filtering (API wrapper)
+ * @param options - Configuration options for pagination and filtering
+ * @returns Promise<Notification[]> - Array of filtered notifications
+ */
+export const getNotificationsPaginated = (options: GetNotificationsOptions) => 
+  notificationService.getNotificationsPaginated(options);
+
+/**
+ * Get notifications count with filtering (API wrapper)
+ * @param options - Configuration options for filtering
+ * @returns Promise<number> - Total count of notifications matching the filters
+ */
+export const getNotificationsCount = (options: GetNotificationsCountOptions) => 
+  notificationService.getNotificationsCount(options);
+
+/**
+ * Create notification from API data (API wrapper)
+ * @param notificationData - API notification data structure
+ * @returns Promise<Notification | null> - Created notification or null if failed
+ */
+export const createNotification = (notificationData: CreateNotificationData) => 
+  notificationService.createNotificationFromApi(notificationData);

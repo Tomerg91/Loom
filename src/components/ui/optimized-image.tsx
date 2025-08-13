@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { ImageIcon, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OptimizedImageProps {
@@ -19,6 +20,10 @@ interface OptimizedImageProps {
   onLoad?: () => void;
   onError?: () => void;
   fill?: boolean;
+  unoptimized?: boolean;
+  style?: React.CSSProperties;
+  fallbackIcon?: React.ReactNode;
+  showErrorIcon?: boolean;
 }
 
 // Create a 1x1 transparent image as fallback
@@ -40,6 +45,10 @@ export const OptimizedImage = React.memo(({
   onLoad,
   onError,
   fill = false,
+  unoptimized = false,
+  style,
+  fallbackIcon = <ImageIcon className="h-6 w-6 text-muted-foreground" />,
+  showErrorIcon = false,
   ...props
 }: OptimizedImageProps) => {
   const [imageError, setImageError] = React.useState(false);
@@ -63,12 +72,26 @@ export const OptimizedImage = React.memo(({
           'bg-muted flex items-center justify-center',
           className
         )}
-        style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}
+        style={{ 
+          width: fill ? '100%' : width, 
+          height: fill ? '100%' : height,
+          ...style 
+        }}
         role="img"
         aria-label={alt}
-      />
+      >
+        {showErrorIcon && imageError ? (
+          <AlertCircle className="h-4 w-4 text-destructive" />
+        ) : (
+          fallbackIcon
+        )}
+      </div>
     );
   }
+
+  // Auto-detect unoptimized for data URLs and blob URLs
+  const shouldUnoptimize = unoptimized || 
+    (typeof src === 'string' && (src.startsWith('data:') || src.startsWith('blob:')));
 
   const imageProps = {
     src: src,
@@ -80,11 +103,13 @@ export const OptimizedImage = React.memo(({
     quality,
     onLoad: handleLoad,
     onError: handleError,
+    unoptimized: shouldUnoptimize,
     className: cn(
       'transition-opacity duration-300',
       imageLoaded ? 'opacity-100' : 'opacity-0',
       className
     ),
+    style,
     ...(fill && { fill: true }),
     ...(sizes && { sizes }),
     ...(placeholder === 'blur' && blurDataURL && { 
@@ -139,3 +164,92 @@ export const OptimizedAvatarImage = React.memo(({
 });
 
 OptimizedAvatarImage.displayName = 'OptimizedAvatarImage';
+
+// File thumbnail optimized image component
+export const OptimizedThumbnailImage = React.memo(({
+  src,
+  alt = '',
+  className,
+  size = 48,
+  ...props
+}: Omit<OptimizedImageProps, 'width' | 'height'> & { size?: number }) => {
+  return (
+    <OptimizedImage
+      src={src}
+      alt={alt}
+      width={size}
+      height={size}
+      className={cn('object-cover rounded', className)}
+      sizes={`${size}px`}
+      quality={75}
+      fallbackIcon={<ImageIcon className="h-4 w-4 text-muted-foreground" />}
+      showErrorIcon
+      {...props}
+    />
+  );
+});
+
+OptimizedThumbnailImage.displayName = 'OptimizedThumbnailImage';
+
+// File preview optimized image component
+export const OptimizedPreviewImage = React.memo(({
+  src,
+  alt,
+  className,
+  maxWidth = 400,
+  maxHeight = 384,
+  ...props
+}: Omit<OptimizedImageProps, 'width' | 'height'> & { 
+  maxWidth?: number;
+  maxHeight?: number;
+}) => {
+  return (
+    <OptimizedImage
+      src={src}
+      alt={alt}
+      width={maxWidth}
+      height={maxHeight}
+      className={cn('max-w-full max-h-96 mx-auto', className)}
+      style={{ 
+        width: 'auto', 
+        height: 'auto', 
+        maxWidth: '100%', 
+        maxHeight: `${maxHeight / 16}rem` 
+      }}
+      sizes="(max-width: 768px) 100vw, 400px"
+      quality={85}
+      fallbackIcon={<ImageIcon className="h-8 w-8 text-muted-foreground" />}
+      showErrorIcon
+      {...props}
+    />
+  );
+});
+
+OptimizedPreviewImage.displayName = 'OptimizedPreviewImage';
+
+// QR Code optimized image component (for MFA)
+export const OptimizedQRImage = React.memo(({
+  src,
+  alt,
+  className,
+  size = 200,
+  ...props
+}: Omit<OptimizedImageProps, 'width' | 'height'> & { size?: number }) => {
+  return (
+    <OptimizedImage
+      src={src}
+      alt={alt}
+      width={size}
+      height={size}
+      className={cn('mx-auto border rounded-lg', className)}
+      priority
+      unoptimized // QR codes are typically data URLs
+      quality={100} // QR codes need to be crisp
+      fallbackIcon={<div className="text-sm text-muted-foreground">QR Code Loading...</div>}
+      showErrorIcon
+      {...props}
+    />
+  );
+});
+
+OptimizedQRImage.displayName = 'OptimizedQRImage';

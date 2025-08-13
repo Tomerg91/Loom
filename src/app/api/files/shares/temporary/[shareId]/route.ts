@@ -25,7 +25,7 @@ const updateTemporaryShareSchema = z.object({
 // GET /api/files/shares/temporary/[shareId] - Get specific temporary share details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shareId: string } }
+  { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
     // Get authenticated user
@@ -40,7 +40,7 @@ export async function GET(
     }
 
     // Get the temporary share with details
-    const share = await temporarySharesDatabase.getTemporaryShare(params.shareId);
+    const share = await temporarySharesDatabase.getTemporaryShare(shareId);
     
     if (!share) {
       return NextResponse.json(
@@ -68,7 +68,7 @@ export async function GET(
     // Get access logs if requested
     let accessLogs = null;
     if (includeLogs) {
-      accessLogs = await temporarySharesDatabase.getShareAccessLogs(params.shareId, 50, 0);
+      accessLogs = await temporarySharesDatabase.getShareAccessLogs(shareId, 50, 0);
     }
 
     return NextResponse.json({
@@ -108,7 +108,7 @@ export async function GET(
 // PUT /api/files/shares/temporary/[shareId] - Update temporary share
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { shareId: string } }
+  { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
     // Apply rate limiting
@@ -129,7 +129,7 @@ export async function PUT(
     }
 
     // Get the temporary share
-    const existingShare = await temporarySharesDatabase.getTemporaryShare(params.shareId);
+    const existingShare = await temporarySharesDatabase.getTemporaryShare(shareId);
     
     if (!existingShare) {
       return NextResponse.json(
@@ -152,7 +152,7 @@ export async function PUT(
 
     // Update the share
     const updatedShare = await temporarySharesDatabase.updateTemporaryShare(
-      params.shareId,
+      shareId,
       validatedData
     );
 
@@ -176,7 +176,7 @@ export async function PUT(
         message: `Temporary share updated: ${significantChanges.join(', ')}`,
         data: {
           type: 'temporary_file_share',
-          share_id: params.shareId,
+          share_id: shareId,
           file_id: existingShare.file_id,
           changes: significantChanges,
         },
@@ -224,7 +224,7 @@ export async function PUT(
 // DELETE /api/files/shares/temporary/[shareId] - Delete temporary share
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { shareId: string } }
+  { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
     // Apply rate limiting
@@ -245,7 +245,7 @@ export async function DELETE(
     }
 
     // Get the temporary share
-    const existingShare = await temporarySharesDatabase.getTemporaryShare(params.shareId);
+    const existingShare = await temporarySharesDatabase.getTemporaryShare(shareId);
     
     if (!existingShare) {
       return NextResponse.json(
@@ -263,7 +263,7 @@ export async function DELETE(
     }
 
     // Delete the share
-    await temporarySharesDatabase.deleteTemporaryShare(params.shareId);
+    await temporarySharesDatabase.deleteTemporaryShare(shareId);
 
     // Create notification
     await supabase.from('notifications').insert({
@@ -273,7 +273,7 @@ export async function DELETE(
       message: 'Temporary file share was deleted',
       data: {
         type: 'temporary_file_share',
-        share_id: params.shareId,
+        share_id: shareId,
         file_id: existingShare.file_id,
       },
     });

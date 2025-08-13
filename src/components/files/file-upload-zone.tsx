@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -93,6 +94,53 @@ const FILE_TYPE_CONFIG = {
 
 const DEFAULT_ALLOWED_TYPES = Object.keys(FILE_TYPE_CONFIG);
 
+// Security utilities
+const sanitizePreviewUrl = (url: string): string => {
+  try {
+    const parsedUrl = new URL(url);
+    // Only allow blob URLs for local previews and data URLs for fallbacks
+    if (!['blob:', 'data:'].includes(parsedUrl.protocol)) {
+      console.warn('Invalid preview URL protocol blocked:', parsedUrl.protocol);
+      return '';
+    }
+    return url;
+  } catch {
+    return '';
+  }
+};
+
+// Enhanced file type validation
+const isValidImageFile = (file: File): boolean => {
+  const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  return allowedImageTypes.includes(file.type);
+};
+
+// File content validation (basic header check)
+const validateFileContent = async (file: File): Promise<boolean> => {
+  try {
+    if (!file.type.startsWith('image/')) return true;
+    
+    // Read first few bytes to validate image headers
+    const buffer = await file.slice(0, 12).arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    
+    // Check image signatures
+    const signatures = {
+      'image/jpeg': [0xFF, 0xD8, 0xFF],
+      'image/png': [0x89, 0x50, 0x4E, 0x47],
+      'image/gif': [0x47, 0x49, 0x46],
+      'image/webp': [0x52, 0x49, 0x46, 0x46]
+    };
+    
+    const expectedSignature = signatures[file.type as keyof typeof signatures];
+    if (!expectedSignature) return true; // Allow unknown types for now
+    
+    return expectedSignature.every((byte, index) => bytes[index] === byte);
+  } catch {
+    return false;
+  }
+};
+
 export function FileUploadZone({
   onFilesSelected,
   onUploadComplete,
@@ -116,8 +164,22 @@ export function FileUploadZone({
   const [editingFile, setEditingFile] = useState<UploadFile | null>(null);
   const [newTag, setNewTag] = useState('');
 
-  // File validation
-  const validateFile = useCallback((file: File): { valid: boolean; error?: string } => {
+  // Enhanced file validation
+  const validateFile = useCallback(async (file: File): Promise<{ valid: boolean; error?: string }> => {
+    // Check file name for suspicious patterns
+    const suspiciousPatterns = [
+      /\.(exe|bat|cmd|scr|vbs|js|jar)$/i,
+      /\.\./,
+      /[<>:"|?*]/
+    ];
+    
+    if (suspiciousPatterns.some(pattern => pattern.test(file.name))) {
+      return {
+        valid: false,
+        error: 'File name contains invalid characters or suspicious extensions'
+      };
+    }
+
     // Check file type
     if (!allowedTypes.includes(file.type)) {
       return {
@@ -137,11 +199,20 @@ export function FileUploadZone({
       };
     }
 
+    // Validate file content
+    const isValidContent = await validateFileContent(file);
+    if (!isValidContent) {
+      return {
+        valid: false,
+        error: 'File content validation failed - file may be corrupted or malicious'
+      };
+    }
+
     return { valid: true };
   }, [allowedTypes, maxFileSize]);
 
-  // Handle file selection
-  const handleFileSelection = useCallback((files: FileList | File[]) => {
+  // Handle file selection with async validation
+  const handleFileSelection = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     setGlobalError('');
 
@@ -151,11 +222,23 @@ export function FileUploadZone({
       return;
     }
 
-    // Process files
+    // Process files with async validation
     const newUploadFiles: UploadFile[] = [];
     
-    fileArray.forEach((file, index) => {
-      const validation = validateFile(file);
+    for (let index = 0; index < fileArray.length; index++) {
+      const file = fileArray[index];
+      const validation = await validateFile(file);
+      
+      // Create secure preview URL only for valid images
+      let previewUrl: string | undefined;
+      if (file.type.startsWith('image/') && validation.valid && isValidImageFile(file)) {
+        try {
+          const blobUrl = URL.createObjectURL(file);
+          previewUrl = sanitizePreviewUrl(blobUrl);
+        } catch (error) {
+          console.error('Failed to create preview URL:', error);
+        }
+      }
       
       const uploadFile: UploadFile = {
         id: `${Date.now()}-${index}`,
@@ -169,11 +252,11 @@ export function FileUploadZone({
         progress: 0,
         status: validation.valid ? 'pending' : 'error',
         error: validation.error,
-        previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+        previewUrl,
       };
       
       newUploadFiles.push(uploadFile);
-    });
+    }
 
     const updatedFiles = [...uploadFiles, ...newUploadFiles];
     setUploadFiles(updatedFiles);
@@ -476,12 +559,23 @@ export function FileUploadZone({
                 <div className="flex items-start gap-3">
                   {/* File Icon/Preview */}
                   <div className="flex-shrink-0">
-                    {showPreview && uploadFile.previewUrl ? (
-                      <img
-                        src={uploadFile.previewUrl}
-                        alt={uploadFile.name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
+                    {showPreview && uploadFile.previewUrl && sanitizePreviewUrl(uploadFile.previewUrl) ? (
+                      <div className="relative w-12 h-12">
+                        <Image
+                          src={sanitizePreviewUrl(uploadFile.previewUrl)}
+                          alt={`Preview of ${uploadFile.name}`}
+                          width={48}
+                          height={48}
+                          className="object-cover rounded"
+                          unoptimized={true} // For blob URLs
+                          onError={() => {
+                            console.error('Failed to load preview:', uploadFile.previewUrl);
+                          }}
+                          loader={({ src }) => {
+                            return sanitizePreviewUrl(src) || '/images/fallback-image.svg';
+                          }}
+                        />
+                      </div>
                     ) : (
                       <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded">
                         {getFileIcon(uploadFile.type)}
@@ -607,12 +701,23 @@ export function FileUploadZone({
             <div className="space-y-4">
               {/* File Preview */}
               <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                {showPreview && editingFile.previewUrl ? (
-                  <img
-                    src={editingFile.previewUrl}
-                    alt={editingFile.name}
-                    className="w-16 h-16 object-cover rounded"
-                  />
+                {showPreview && editingFile.previewUrl && sanitizePreviewUrl(editingFile.previewUrl) ? (
+                  <div className="relative w-16 h-16">
+                    <Image
+                      src={sanitizePreviewUrl(editingFile.previewUrl)}
+                      alt={`Preview of ${editingFile.name}`}
+                      width={64}
+                      height={64}
+                      className="object-cover rounded"
+                      unoptimized={true} // For blob URLs
+                      onError={() => {
+                        console.error('Failed to load preview:', editingFile.previewUrl);
+                      }}
+                      loader={({ src }) => {
+                        return sanitizePreviewUrl(src) || '/images/fallback-image.svg';
+                      }}
+                    />
+                  </div>
                 ) : (
                   <div className="w-16 h-16 flex items-center justify-center bg-gray-100 rounded">
                     {getFileIcon(editingFile.type)}

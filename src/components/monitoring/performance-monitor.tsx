@@ -300,7 +300,7 @@ export function PerformanceMonitorComponent() {
 function getVitalColor(name: string, value: number): string {
   const thresholds: Record<string, { good: number; poor: number }> = {
     CLS: { good: 0.1, poor: 0.25 },
-    FID: { good: 100, poor: 300 },
+    INP: { good: 200, poor: 500 }, // Interaction to Next Paint replaced FID
     FCP: { good: 1800, poor: 3000 },
     LCP: { good: 2500, poor: 4000 },
     TTFB: { good: 800, poor: 1800 },

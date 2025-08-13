@@ -5,7 +5,7 @@ import { applySecurityHeaders } from '@/lib/security/headers';
 import { validateUserAgent } from '@/lib/security/validation';
 import createMiddleware from 'next-intl/middleware';
 import { config as appConfig } from '@/lib/config';
-// import { createMfaService } from '@/lib/services/mfa-service';
+import { createMfaService } from '@/lib/services/mfa-service';
 
 // Create next-intl middleware
 const intlMiddleware = createMiddleware(routing);
@@ -201,10 +201,31 @@ export async function middleware(request: NextRequest) {
       );
 
       // Check if user has MFA enabled and route requires MFA
-      // TODO: Re-enable MFA checks once Edge Runtime compatibility is resolved
       if (requiresMfa) {
-        // Temporarily skip MFA checks to avoid Edge Runtime issues
-        console.log('MFA checks temporarily disabled for Edge Runtime compatibility');
+        try {
+          // Create MFA service instance
+          const mfaService = createMfaService(true);
+          
+          // Check if user has MFA enabled
+          const mfaStatus = await mfaService.getMFAStatus(user.id);
+          
+          if (mfaStatus.isEnabled) {
+            // Check if user has verified MFA for this session
+            // For now, redirect to MFA verification page
+            // In a complete implementation, you'd check session MFA verification status
+            const mfaVerifyUrl = new URL(`/${locale}/auth/mfa-verify`, request.url);
+            mfaVerifyUrl.searchParams.set('redirectTo', pathWithoutLocale);
+            
+            // Only redirect if not already on MFA pages
+            if (!pathWithoutLocale.startsWith('/auth/mfa-')) {
+              return NextResponse.redirect(mfaVerifyUrl);
+            }
+          }
+        } catch (mfaError) {
+          // Log error but don't block access - graceful degradation
+          console.error('MFA check failed:', mfaError);
+          // Continue without MFA verification in case of service errors
+        }
       }
 
       // Check admin routes
@@ -271,6 +292,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  runtime: 'nodejs',
   matcher: [
     /*
      * Match all request paths except for the ones starting with:

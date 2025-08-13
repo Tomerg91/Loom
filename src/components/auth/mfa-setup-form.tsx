@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { OptimizedQRImage } from '@/components/ui/optimized-image';
 import { createMfaService } from '@/lib/services/mfa-service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -208,12 +209,10 @@ export function MfaSetupForm({
       <div className="text-center">
         <div className="mb-4">
           {setupData?.qrCodeUrl ? (
-            <img 
+            <OptimizedQRImage 
               src={setupData.qrCodeUrl} 
               alt={t('setup.qrCodeAlt')}
-              className="mx-auto border rounded-lg"
-              width={200}
-              height={200}
+              size={200}
             />
           ) : (
             <div className="w-48 h-48 mx-auto bg-muted animate-pulse rounded-lg" />

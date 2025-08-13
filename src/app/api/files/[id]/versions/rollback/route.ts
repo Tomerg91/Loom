@@ -14,7 +14,7 @@ const rollbackSchema = z.object({
 // POST /api/files/[id]/versions/rollback - Rollback to a specific version
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Apply rate limiting
@@ -35,7 +35,7 @@ export async function POST(
     }
 
     // Verify user owns the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     if (file.user_id !== user.id) {
       return NextResponse.json(
@@ -50,7 +50,7 @@ export async function POST(
 
     // Verify target version exists
     const targetVersion = await fileVersionsDatabase.getVersionByNumber(
-      params.id, 
+      id, 
       validatedData.target_version
     );
 
@@ -63,7 +63,7 @@ export async function POST(
 
     // Perform rollback
     const newVersionId = await fileVersionsDatabase.rollbackToVersion(
-      params.id,
+      id,
       validatedData.target_version,
       user.id,
       validatedData.description
@@ -80,7 +80,7 @@ export async function POST(
       message: `File "${file.filename}" was rolled back to version ${validatedData.target_version}`,
       data: {
         type: 'file_rollback',
-        file_id: params.id,
+        file_id: id,
         target_version: validatedData.target_version,
         new_version: newVersion.version_number,
       },

@@ -13,8 +13,8 @@ import { rateLimit } from '@/lib/security/rate-limit';
 // GET /api/messages/[conversationId] - Get messages for a specific conversation
 export const GET = withErrorHandling(
   rateLimit(300, 60000)( // 300 requests per minute
-    requireAuth(async (user, request: NextRequest, { params }: { params: { conversationId: string } }) => {
-      const { conversationId } = params;
+    requireAuth(async (user, request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) => {
+      const { conversationId } = await params;
       const { searchParams } = request.nextUrl;
       const page = parseInt(searchParams.get('page') || '1');
       const limit = parseInt(searchParams.get('limit') || '50');
@@ -92,8 +92,8 @@ export const GET = withErrorHandling(
 // PUT /api/messages/[conversationId] - Update conversation settings (archive, mute, etc.)
 export const PUT = withErrorHandling(
   rateLimit(50, 60000)( // 50 requests per minute
-    requireAuth(async (user, request: NextRequest, { params }: { params: { conversationId: string } }) => {
-      const { conversationId } = params;
+    requireAuth(async (user, request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) => {
+      const { conversationId } = await params;
 
       if (!conversationId) {
         return createErrorResponse(
@@ -163,8 +163,8 @@ export const PUT = withErrorHandling(
 // DELETE /api/messages/[conversationId] - Leave/delete conversation
 export const DELETE = withErrorHandling(
   rateLimit(20, 60000)( // 20 requests per minute
-    requireAuth(async (user, request: NextRequest, { params }: { params: { conversationId: string } }) => {
-      const { conversationId } = params;
+    requireAuth(async (user, request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) => {
+      const { conversationId } = await params;
 
       if (!conversationId) {
         return createErrorResponse(

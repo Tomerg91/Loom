@@ -1,12 +1,11 @@
 'use client';
 
-// import { getCLS, getFID, getFCP, getLCP, getTTFB, Metric } from 'web-vitals';
-// TODO: Fix web-vitals v5 API compatibility
+import { onCLS, onINP, onLCP, onFCP, onTTFB, Metric } from 'web-vitals';
 
 // Web Vitals thresholds (Google's recommendations)
 const THRESHOLDS = {
   CLS: { good: 0.1, poor: 0.25 },
-  FID: { good: 100, poor: 300 },
+  INP: { good: 200, poor: 500 }, // Interaction to Next Paint (replaced FID in 2024)
   FCP: { good: 1800, poor: 3000 },
   LCP: { good: 2500, poor: 4000 },
   TTFB: { good: 800, poor: 1800 },
@@ -44,12 +43,8 @@ class WebVitalsMonitor {
   private initializeMonitoring() {
     if (typeof window === 'undefined') return;
 
-    // Core Web Vitals - temporarily disabled due to web-vitals v5 API changes
-    // getCLS(this.handleMetric.bind(this));
-    // getFID(this.handleMetric.bind(this));
-    // getFCP(this.handleMetric.bind(this));
-    // getLCP(this.handleMetric.bind(this));
-    // getTTFB(this.handleMetric.bind(this));
+    // Core Web Vitals with error handling and browser compatibility
+    this.initializeCoreWebVitals();
 
     // Custom performance monitoring
     this.monitorRouteChanges();
@@ -57,7 +52,39 @@ class WebVitalsMonitor {
     this.monitorAPIPerformance();
   }
 
-  private handleMetric(metric: any) {
+  private initializeCoreWebVitals() {
+    try {
+      // Cumulative Layout Shift - Available in all modern browsers
+      onCLS(this.handleMetric.bind(this), { reportAllChanges: true });
+      
+      // Largest Contentful Paint - Available in Chromium-based browsers
+      onLCP(this.handleMetric.bind(this), { reportAllChanges: true });
+      
+      // First Contentful Paint - Available in Chromium-based browsers
+      onFCP(this.handleMetric.bind(this), { reportAllChanges: true });
+      
+      // Interaction to Next Paint - Available in Chromium-based browsers
+      onINP(this.handleMetric.bind(this), { reportAllChanges: true });
+      
+      // Time to First Byte - Available in all browsers with Navigation Timing API
+      onTTFB(this.handleMetric.bind(this), { reportAllChanges: true });
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Web Vitals monitoring initialized successfully');
+      }
+    } catch (error) {
+      console.warn('Failed to initialize Web Vitals monitoring:', error);
+      
+      // Report the initialization error but don't break the application
+      if (typeof window !== 'undefined' && 'Sentry' in window) {
+        (window as any).Sentry.captureException(error, {
+          tags: { component: 'web-vitals-monitor' },
+        });
+      }
+    }
+  }
+
+  private handleMetric(metric: Metric) {
     const rating = this.getMetricRating(metric.name as keyof typeof THRESHOLDS, metric.value);
     
     const performanceData: PerformanceData = {
@@ -72,6 +99,18 @@ class WebVitalsMonitor {
 
     this.performanceData.push(performanceData);
     this.reportMetric(performanceData);
+    
+    // Log additional metric details in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Web Vitals Metric:', {
+        name: metric.name,
+        value: metric.value,
+        rating: metric.rating,
+        delta: metric.delta,
+        id: metric.id,
+        entries: metric.entries,
+      });
+    }
   }
 
   private getMetricRating(metricName: keyof typeof THRESHOLDS, value: number): 'good' | 'needs-improvement' | 'poor' {
@@ -84,46 +123,93 @@ class WebVitalsMonitor {
   }
 
   private reportMetric(data: PerformanceData) {
-    // Send to analytics
+    try {
+      // Send to Google Analytics
+      this.sendToGoogleAnalytics(data);
+      
+      // Send to Sentry for monitoring
+      this.sendToSentry(data);
+      
+      // Send to Next.js Analytics (if available)
+      this.sendToNextJSAnalytics(data);
+      
+      // Log performance issues in development
+      if (process.env.NODE_ENV === 'development') {
+        const color = data.rating === 'good' ? 'green' : data.rating === 'needs-improvement' ? 'orange' : 'red';
+        console.log(
+          `%c${data.metric}: ${data.value.toFixed(2)}ms (${data.rating})`,
+          `color: ${color}; font-weight: bold;`
+        );
+      }
+
+      // Send to API for server-side analytics
+      this.sendToAPI(data);
+    } catch (error) {
+      console.warn('Error reporting metric:', error);
+      
+      // Don't let reporting errors break the monitoring
+      if (typeof window !== 'undefined' && 'Sentry' in window) {
+        (window as any).Sentry.captureException(error, {
+          tags: { component: 'web-vitals-reporter' },
+        });
+      }
+    }
+  }
+
+  private sendToGoogleAnalytics(data: PerformanceData) {
     if (typeof window !== 'undefined' && 'gtag' in window) {
-      (window as any).gtag('event', 'web_vitals', {
-        event_category: 'Performance',
-        event_label: data.metric,
-        value: Math.round(data.value),
-        custom_map: {
-          rating: data.rating,
-          session_id: data.sessionId,
-          user_id: data.userId,
-        },
-      });
+      try {
+        (window as any).gtag('event', 'web_vitals', {
+          event_category: 'Performance',
+          event_label: data.metric,
+          value: Math.round(data.value),
+          custom_map: {
+            rating: data.rating,
+            session_id: data.sessionId,
+            user_id: data.userId,
+          },
+        });
+      } catch (error) {
+        console.warn('Failed to send to Google Analytics:', error);
+      }
     }
+  }
 
-    // Send to Sentry for monitoring
+  private sendToSentry(data: PerformanceData) {
     if (typeof window !== 'undefined' && 'Sentry' in window) {
-      (window as any).Sentry.addBreadcrumb({
-        category: 'performance',
-        message: `${data.metric}: ${data.value.toFixed(2)}ms (${data.rating})`,
-        level: data.rating === 'poor' ? 'warning' : 'info',
-        data: {
-          metric: data.metric,
+      try {
+        (window as any).Sentry.addBreadcrumb({
+          category: 'performance',
+          message: `${data.metric}: ${data.value.toFixed(2)}ms (${data.rating})`,
+          level: data.rating === 'poor' ? 'warning' : 'info',
+          data: {
+            metric: data.metric,
+            value: data.value,
+            rating: data.rating,
+            url: data.url,
+          },
+        });
+      } catch (error) {
+        console.warn('Failed to send to Sentry:', error);
+      }
+    }
+  }
+
+  private sendToNextJSAnalytics(data: PerformanceData) {
+    // Next.js Analytics integration
+    if (typeof window !== 'undefined' && 'NextWebVitalsMetric' in window) {
+      try {
+        (window as any).NextWebVitalsMetric({
+          id: data.metric,
+          label: data.rating === 'good' ? 'web-vital' : 'poor-web-vital',
+          name: data.metric,
+          startTime: data.timestamp,
           value: data.value,
-          rating: data.rating,
-          url: data.url,
-        },
-      });
+        });
+      } catch (error) {
+        console.warn('Failed to send to Next.js Analytics:', error);
+      }
     }
-
-    // Log performance issues in development
-    if (process.env.NODE_ENV === 'development') {
-      const color = data.rating === 'good' ? 'green' : data.rating === 'needs-improvement' ? 'orange' : 'red';
-      console.log(
-        `%c${data.metric}: ${data.value.toFixed(2)}ms (${data.rating})`,
-        `color: ${color}; font-weight: bold;`
-      );
-    }
-
-    // Send to API for server-side analytics
-    this.sendToAPI(data);
   }
 
   private async sendToAPI(data: PerformanceData) {

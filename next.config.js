@@ -117,6 +117,14 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      // Supabase storage - Matches any subdomain of supabase.co
+      // Note: In production, you should replace this with your specific Supabase project URL
+      // for better security: e.g., 'your-project-ref.supabase.co'
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

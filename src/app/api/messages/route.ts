@@ -13,7 +13,7 @@ import { rateLimit } from '@/lib/security/rate-limit';
 // GET /api/messages - Get conversations list with last message and unread count
 export const GET = withErrorHandling(
   rateLimit(200, 60000)( // 200 requests per minute
-    requireAuth(async (user, request: NextRequest) => {
+    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
       const { searchParams } = request.nextUrl;
       const page = parseInt(searchParams.get('page') || '1');
       const limit = parseInt(searchParams.get('limit') || '20');
@@ -70,7 +70,7 @@ export const GET = withErrorHandling(
 // POST /api/messages - Send a new message or create a new conversation
 export const POST = withErrorHandling(
   rateLimit(100, 60000)( // 100 requests per minute
-    requireAuth(async (user, request: NextRequest) => {
+    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
       try {
         const body = await request.json();
         const {

@@ -1,18 +1,7 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { 
-  renderWithProviders, 
-  mockFetch, 
-  mockApiResponse, 
-  createMockQueryResult, 
-  createMockMutationResult,
-  createMockSession,
-  mockUseQuery,
-  mockUseMutation,
-  mockUseQueryClient,
-  mockQueryClient
-} from '@/test/utils';
+import { renderWithProviders, mockFetch, mockApiResponse, mockUseQuery, mockUseMutation, createMockSession } from '@/test/utils';
 import { UnifiedSessionBooking, type UnifiedSessionBookingProps } from '@/components/sessions/unified-session-booking';
 
 // Mock dependencies
@@ -33,12 +22,27 @@ vi.mock('@/hooks/use-realtime-booking', () => ({
   useRealtimeBooking: vi.fn().mockReturnValue(null),
 }));
 
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importActual('@tanstack/react-query');
+  return {
+    ...actual,
+    useQuery: vi.fn(),
+    useMutation: vi.fn(),
+    useQueryClient: vi.fn(() => ({
+      invalidateQueries: vi.fn(),
+      setQueryData: vi.fn(),
+      getQueryData: vi.fn(),
+      removeQueries: vi.fn(),
+    })),
+  };
+});
+
 // Mock sub-components
 vi.mock('@/components/sessions/booking-confirmation-dialog', () => ({
-  BookingConfirmationDialog: ({ open, onClose, onConfirm, session }: any) =>
+  BookingConfirmationDialog: ({ open, onClose, onConfirm, sessionData }: any) =>
     open ? (
       <div data-testid="booking-confirmation-dialog">
-        <div data-testid="session-title">{session?.title}</div>
+        <div data-testid="session-title">{sessionData?.title}</div>
         <button data-testid="confirm-booking" onClick={onConfirm}>
           Confirm
         </button>
@@ -63,7 +67,7 @@ vi.mock('react-hook-form', () => ({
       return fn({
         coachId: 'coach-123',
         date: '2024-01-15',
-        timeSlot: '10:00',
+        timeSlot: '10:00-11:00',
         title: 'Test Session',
         description: 'Test session description',
         duration: 60,
@@ -74,7 +78,7 @@ vi.mock('react-hook-form', () => ({
       const values = {
         coachId: 'coach-123',
         date: '2024-01-15',
-        timeSlot: '10:00',
+        timeSlot: '10:00-11:00',
         duration: 60,
       };
       return values[field as keyof typeof values];
@@ -86,6 +90,9 @@ vi.mock('react-hook-form', () => ({
     },
   })),
 }));
+
+// Import mocked dependencies
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 describe('UnifiedSessionBooking', () => {
   const mockCoaches = [
@@ -135,41 +142,59 @@ describe('UnifiedSessionBooking', () => {
     },
   ];
 
-  const mockMutate = vi.fn();
-  const mockBookingMutation = createMockMutationResult(createMockSession(), {
-    mutate: mockMutate,
-  });
+  const mockBookingMutation = mockUseMutation(createMockSession());
 
   const defaultProps: UnifiedSessionBookingProps = {
     onSuccess: vi.fn(),
     variant: 'basic',
   };
 
-  // Mock fetch globally for API calls
+  // Helper function for completing booking setup
+  const completeBookingSetup = async () => {
+    const user = userEvent.setup();
+    
+    // Select coach
+    const coachSelect = screen.getByRole('combobox', { name: /coach/i });
+    await user.selectOptions(coachSelect, 'coach-123');
+    
+    // Select date
+    const dateInput = screen.getByLabelText(/date/i);
+    await user.type(dateInput, '2024-01-15');
+    
+    // Select time slot
+    await waitFor(() => {
+      const timeSlot = screen.getByText('09:00 - 10:00');
+      return user.click(timeSlot);
+    });
+    
+    // Fill session details
+    const titleInput = screen.getByLabelText(/session title/i);
+    await user.type(titleInput, 'Test Session');
+    
+    return user;
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Setup mock fetch for API calls
-    mockFetch({
-      data: mockCoaches,
-    });
-    
     // Mock useQuery for coaches
-    mockUseQuery.mockImplementation(({ queryKey }: any) => {
+    (useQuery as any).mockImplementation(({ queryKey }: any) => {
       if (queryKey[0] === 'coaches') {
-        return createMockQueryResult(mockCoaches, { isSuccess: true });
+        return mockUseQuery(mockCoaches, { isSuccess: true });
       }
       if (queryKey[0] === 'timeSlots') {
-        return createMockQueryResult(mockTimeSlots, { isSuccess: true });
+        return mockUseQuery(mockTimeSlots, { isSuccess: true });
       }
-      return createMockQueryResult(null);
+      return mockUseQuery(null);
     });
 
     // Mock useMutation for booking
-    mockUseMutation.mockReturnValue(mockBookingMutation);
+    (useMutation as any).mockReturnValue(mockBookingMutation);
 
     // Mock useQueryClient
-    mockUseQueryClient.mockReturnValue(mockQueryClient);
+    (useQueryClient as any).mockReturnValue({
+      invalidateQueries: vi.fn(),
+    });
   });
 
   afterEach(() => {
@@ -181,28 +206,26 @@ describe('UnifiedSessionBooking', () => {
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
       expect(screen.getByRole('heading', { name: /book session/i })).toBeInTheDocument();
-      expect(screen.getByTestId('coach-select')).toBeInTheDocument();
+      expect(screen.getByRole('combobox')).toBeInTheDocument();
       expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
-      expect(screen.getByTestId('session-title')).toBeInTheDocument();
+      expect(screen.getByLabelText(/session title/i)).toBeInTheDocument();
     });
 
     it('shows coach selection dropdown', () => {
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
-      const coachSelect = screen.getByTestId('coach-select');
+      const coachSelect = screen.getByRole('combobox', { name: /coach/i });
       expect(coachSelect).toBeInTheDocument();
     });
 
     it('displays available coaches', async () => {
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
-      const coachSelect = screen.getByTestId('coach-select');
+      const coachSelect = screen.getByRole('combobox', { name: /coach/i });
       await userEvent.click(coachSelect);
       
-      await waitFor(() => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
-        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-      });
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
     });
 
     it('preselects coach when selectedCoachId is provided', () => {
@@ -215,16 +238,16 @@ describe('UnifiedSessionBooking', () => {
     });
 
     it('shows loading state while fetching coaches', () => {
-      mockUseQuery.mockImplementation(({ queryKey }: any) => {
+      (useQuery as any).mockImplementation(({ queryKey }: any) => {
         if (queryKey[0] === 'coaches') {
-          return createMockQueryResult(null, { isPending: true });
+          return { ...mockUseQuery(null), isLoading: true };
         }
-        return createMockQueryResult(null);
+        return mockUseQuery(null);
       });
 
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      expect(screen.getByTestId('coaches-loading')).toBeInTheDocument();
     });
 
     it('applies custom title and description when provided', () => {
@@ -264,17 +287,33 @@ describe('UnifiedSessionBooking', () => {
       expect(screen.queryByText(/Experienced coach/i)).not.toBeInTheDocument();
     });
 
+    it('displays coach availability status', async () => {
+      renderWithProviders(
+        <UnifiedSessionBooking
+          {...defaultProps}
+          variant="enhanced"
+          showAvailabilityStatus={true}
+        />
+      );
+      
+      const user = userEvent.setup();
+      const coachSelect = screen.getByRole('combobox', { name: /coach/i });
+      await user.selectOptions(coachSelect, 'coach-123');
+      
+      // Should show availability information
+      expect(screen.getByText(/available slots/i)).toBeInTheDocument();
+    });
+
     it('updates time slots when coach is selected', async () => {
       const user = userEvent.setup();
-      const coachSelect = screen.getByTestId('coach-select');
+      const coachSelect = screen.getByRole('combobox', { name: /coach/i });
       
-      await user.click(coachSelect);
-      await user.click(screen.getByText('John Doe'));
+      await user.selectOptions(coachSelect, 'coach-123');
       
       // Should trigger time slots query
-      expect(mockUseQuery).toHaveBeenCalledWith(
+      expect(useQuery).toHaveBeenCalledWith(
         expect.objectContaining({
-          queryKey: ['timeSlots', 'coach-123', '2024-01-15', 60],
+          queryKey: ['timeSlots', 'coach-123', '', 60],
         })
       );
     });
@@ -286,6 +325,9 @@ describe('UnifiedSessionBooking', () => {
       
       // John Doe should show as online
       expect(screen.getByText(/online/i)).toBeInTheDocument();
+      
+      // Jane Smith should show as offline (if displayed)
+      // This would depend on how the component renders offline coaches
     });
   });
 
@@ -294,9 +336,8 @@ describe('UnifiedSessionBooking', () => {
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
       const user = userEvent.setup();
-      const coachSelect = screen.getByTestId('coach-select');
-      await user.click(coachSelect);
-      await user.click(screen.getByText('John Doe'));
+      const coachSelect = screen.getByRole('combobox', { name: /coach/i });
+      await user.selectOptions(coachSelect, 'coach-123');
     });
 
     it('shows date picker', () => {
@@ -305,56 +346,55 @@ describe('UnifiedSessionBooking', () => {
 
     it('displays available time slots after selecting date', async () => {
       const user = userEvent.setup();
-      const dateSelect = screen.getByLabelText(/date/i);
+      const dateInput = screen.getByLabelText(/date/i);
       
-      await user.click(dateSelect);
+      await user.type(dateInput, '2024-01-15');
       
       await waitFor(() => {
-        expect(screen.getByText(/09:00 - 10:00/)).toBeInTheDocument();
-        expect(screen.getByText(/10:00 - 11:00/)).toBeInTheDocument();
+        expect(screen.getByText('09:00 - 10:00')).toBeInTheDocument();
+        expect(screen.getByText('10:00 - 11:00')).toBeInTheDocument();
       });
     });
 
     it('disables booked time slots', async () => {
       const user = userEvent.setup();
-      const dateSelect = screen.getByLabelText(/date/i);
+      const dateInput = screen.getByLabelText(/date/i);
       
-      await user.click(dateSelect);
+      await user.type(dateInput, '2024-01-15');
       
       await waitFor(() => {
-        const bookedSlot = screen.getByText(/11:00 - 12:00/);
-        expect(bookedSlot.closest('button')).toBeDisabled();
+        const bookedSlot = screen.getByText('11:00 - 12:00');
+        expect(bookedSlot).toHaveClass('disabled');
         expect(screen.getByText('Existing Session')).toBeInTheDocument();
       });
     });
 
     it('shows loading state while fetching time slots', () => {
-      mockUseQuery.mockImplementation(({ queryKey }: any) => {
+      (useQuery as any).mockImplementation(({ queryKey }: any) => {
         if (queryKey[0] === 'timeSlots') {
-          return createMockQueryResult(null, { isPending: true });
+          return { ...mockUseQuery(null), isLoading: true };
         }
         if (queryKey[0] === 'coaches') {
-          return createMockQueryResult(mockCoaches);
+          return mockUseQuery({ data: mockCoaches });
         }
-        return createMockQueryResult(null);
+        return mockUseQuery(null);
       });
 
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      expect(screen.getByTestId('timeslots-loading')).toBeInTheDocument();
     });
 
     it('updates available slots based on duration', async () => {
       const user = userEvent.setup();
       const durationSelect = screen.getByLabelText(/duration/i);
       
-      await user.click(durationSelect);
-      await user.click(screen.getByText(/90/));
+      await user.selectOptions(durationSelect, '90');
       
       // Should refetch time slots with new duration
-      expect(mockUseQuery).toHaveBeenCalledWith(
+      expect(useQuery).toHaveBeenCalledWith(
         expect.objectContaining({
-          queryKey: ['timeSlots', 'coach-123', '2024-01-15', 90],
+          queryKey: ['timeSlots', 'coach-123', '', 90],
         })
       );
     });
@@ -364,15 +404,40 @@ describe('UnifiedSessionBooking', () => {
     it('requires session title', async () => {
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
-      const titleInput = screen.getByTestId('session-title');
+      const titleInput = screen.getByLabelText(/session title/i);
       expect(titleInput).toBeRequired();
     });
 
     it('allows optional session description', () => {
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
-      const descriptionInput = screen.getByTestId('session-description');
+      const descriptionInput = screen.getByLabelText(/description/i);
       expect(descriptionInput).not.toBeRequired();
+    });
+
+    it('shows character limit for description', async () => {
+      renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
+      
+      const user = userEvent.setup();
+      const descriptionInput = screen.getByLabelText(/description/i);
+      
+      const longText = 'a'.repeat(400);
+      await user.type(descriptionInput, longText);
+      
+      expect(screen.getByText(/400.*500/)).toBeInTheDocument();
+    });
+
+    it('prevents exceeding character limits', async () => {
+      renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
+      
+      const user = userEvent.setup();
+      const titleInput = screen.getByLabelText(/session title/i);
+      
+      const longTitle = 'a'.repeat(150);
+      await user.type(titleInput, longTitle);
+      
+      // Should be truncated to 100 characters
+      expect(titleInput).toHaveValue('a'.repeat(100));
     });
 
     it('validates required fields before submission', async () => {
@@ -384,20 +449,19 @@ describe('UnifiedSessionBooking', () => {
       await user.click(submitButton);
       
       // Should show validation errors
-      await waitFor(() => {
-        expect(screen.getByText(/coach selection is required/i)).toBeInTheDocument();
-        expect(screen.getByText(/date is required/i)).toBeInTheDocument();
-        expect(screen.getByText(/session title is required/i)).toBeInTheDocument();
-      });
+      expect(screen.getByText(/coach selection is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/date is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/session title is required/i)).toBeInTheDocument();
     });
   });
 
   describe('Booking Flow', () => {
+
     it('shows booking confirmation dialog', async () => {
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
-      const user = userEvent.setup();
-      const submitButton = screen.getByTestId('book-session-submit');
+      const user = await completeBookingSetup();
+      const submitButton = screen.getByRole('button', { name: /book session/i });
       
       await user.click(submitButton);
       
@@ -408,20 +472,20 @@ describe('UnifiedSessionBooking', () => {
     it('confirms booking and calls API', async () => {
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
-      const user = userEvent.setup();
-      const submitButton = screen.getByTestId('book-session-submit');
+      const user = await completeBookingSetup();
+      const submitButton = screen.getByRole('button', { name: /book session/i });
       
       await user.click(submitButton);
       
       const confirmButton = screen.getByTestId('confirm-booking');
       await user.click(confirmButton);
       
-      expect(mockMutate).toHaveBeenCalledWith({
+      expect(mockBookingMutation.mutate).toHaveBeenCalledWith({
         coachId: 'coach-123',
         date: '2024-01-15',
-        timeSlot: '10:00',
+        timeSlot: '09:00-10:00',
         title: 'Test Session',
-        description: 'Test session description',
+        description: '',
         duration: 60,
       });
     });
@@ -429,8 +493,8 @@ describe('UnifiedSessionBooking', () => {
     it('cancels booking from confirmation dialog', async () => {
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
-      const user = userEvent.setup();
-      const submitButton = screen.getByTestId('book-session-submit');
+      const user = await completeBookingSetup();
+      const submitButton = screen.getByRole('button', { name: /book session/i });
       
       await user.click(submitButton);
       
@@ -438,21 +502,23 @@ describe('UnifiedSessionBooking', () => {
       await user.click(cancelButton);
       
       expect(screen.queryByTestId('booking-confirmation-dialog')).not.toBeInTheDocument();
-      expect(mockMutate).not.toHaveBeenCalled();
+      expect(mockBookingMutation.mutate).not.toHaveBeenCalled();
     });
 
     it('calls onSuccess after successful booking', async () => {
       const onSuccess = vi.fn();
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} onSuccess={onSuccess} />);
       
-      const user = userEvent.setup();
-      const submitButton = screen.getByTestId('book-session-submit');
+      const user = await completeBookingSetup();
+      const submitButton = screen.getByRole('button', { name: /book session/i });
       
       await user.click(submitButton);
       
       const confirmButton = screen.getByTestId('confirm-booking');
       await user.click(confirmButton);
       
+      // Simulate successful mutation by calling the component's onSuccess directly
+      // In v5, we simulate the mutation success through the component's onSuccess callback
       await waitFor(() => {
         expect(onSuccess).toHaveBeenCalledWith(expect.objectContaining({
           id: expect.any(String),
@@ -462,31 +528,84 @@ describe('UnifiedSessionBooking', () => {
     });
 
     it('shows loading state during booking submission', async () => {
-      const loadingMutation = createMockMutationResult(null, { 
-        mutate: mockMutate, 
-        isPending: true 
-      });
-      mockUseMutation.mockReturnValue(loadingMutation);
+      const loadingMutation = { ...mockBookingMutation, isPending: true };
+      (useMutation as any).mockReturnValue(loadingMutation);
       
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
-      const submitButton = screen.getByTestId('book-session-submit');
+      const user = await completeBookingSetup();
+      const submitButton = screen.getByRole('button', { name: /book session/i });
       
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      await user.click(submitButton);
+      
+      expect(screen.getByText(/booking/i)).toBeInTheDocument();
       expect(submitButton).toBeDisabled();
     });
 
     it('handles booking errors', async () => {
-      const errorMutation = createMockMutationResult(null, { 
-        mutate: mockMutate,
+      const errorMutation = { 
+        ...mockBookingMutation, 
         isError: true, 
         error: new Error('Booking failed') 
-      });
-      mockUseMutation.mockReturnValue(errorMutation);
+      };
+      (useMutation as any).mockReturnValue(errorMutation);
       
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
+      await completeBookingSetup();
+      
       expect(screen.getByText(/Booking failed/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Real-time Features', () => {
+    it('enables real-time updates for enhanced variant', () => {
+      renderWithProviders(
+        <UnifiedSessionBooking {...defaultProps} variant="enhanced" />
+      );
+      
+      // Should use realtime booking hook
+      expect(require('@/hooks/use-realtime-booking').useRealtimeBooking).toHaveBeenCalled();
+    });
+
+    it('shows connection status when enabled', () => {
+      renderWithProviders(
+        <UnifiedSessionBooking
+          {...defaultProps}
+          variant="realtime"
+          showConnectionStatus={true}
+        />
+      );
+      
+      expect(screen.getByTestId('connection-status')).toBeInTheDocument();
+    });
+
+    it('displays last refresh time', () => {
+      renderWithProviders(
+        <UnifiedSessionBooking
+          {...defaultProps}
+          variant="enhanced"
+          showAvailabilityStatus={true}
+        />
+      );
+      
+      expect(screen.getByText(/last updated/i)).toBeInTheDocument();
+    });
+
+    it('allows manual refresh of availability', async () => {
+      const queryClient = { invalidateQueries: vi.fn() };
+      (useQueryClient as any).mockReturnValue(queryClient);
+      
+      renderWithProviders(
+        <UnifiedSessionBooking {...defaultProps} variant="enhanced" />
+      );
+      
+      const user = userEvent.setup();
+      const refreshButton = screen.getByRole('button', { name: /refresh/i });
+      
+      await user.click(refreshButton);
+      
+      expect(queryClient.invalidateQueries).toHaveBeenCalledWith(['timeSlots']);
     });
   });
 
@@ -496,15 +615,6 @@ describe('UnifiedSessionBooking', () => {
       onComplete: vi.fn().mockResolvedValue(undefined),
       onCancel: vi.fn().mockResolvedValue(undefined),
     };
-
-    beforeEach(() => {
-      // Mock successful fetch responses for session actions
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: vi.fn().mockResolvedValue({ success: true }),
-      });
-    });
 
     it('shows session actions for existing sessions', () => {
       renderWithProviders(
@@ -556,7 +666,7 @@ describe('UnifiedSessionBooking', () => {
       
       await user.click(completeButton);
       
-      expect(sessionActions.onComplete).toHaveBeenCalledWith('session-123', undefined);
+      expect(sessionActions.onComplete).toHaveBeenCalledWith('session-123');
     });
 
     it('handles session cancellation action', async () => {
@@ -575,7 +685,7 @@ describe('UnifiedSessionBooking', () => {
       
       await user.click(cancelButton);
       
-      expect(sessionActions.onCancel).toHaveBeenCalledWith('session-123', 'Session cancelled by user');
+      expect(sessionActions.onCancel).toHaveBeenCalledWith('session-123');
     });
 
     it('shows different actions based on session status', () => {
@@ -595,13 +705,76 @@ describe('UnifiedSessionBooking', () => {
     });
   });
 
+  describe('Optimistic Updates', () => {
+    it('applies optimistic updates when enabled', async () => {
+      renderWithProviders(
+        <UnifiedSessionBooking
+          {...defaultProps}
+          enableOptimisticUpdates={true}
+        />
+      );
+      
+      const user = await completeBookingSetup();
+      const submitButton = screen.getByRole('button', { name: /book session/i });
+      
+      await user.click(submitButton);
+      
+      const confirmButton = screen.getByTestId('confirm-booking');
+      await user.click(confirmButton);
+      
+      // Should immediately show the booked session in UI
+      expect(screen.getByText(/session booked/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Accessibility', () => {
+    it('has proper ARIA labels for form controls', () => {
+      renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
+      
+      expect(screen.getByLabelText(/coach/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/session title/i)).toBeInTheDocument();
+    });
+
+    it('provides keyboard navigation support', async () => {
+      renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
+      
+      const user = userEvent.setup();
+      
+      await user.tab();
+      expect(screen.getByRole('combobox', { name: /coach/i })).toHaveFocus();
+      
+      await user.tab();
+      expect(screen.getByLabelText(/date/i)).toHaveFocus();
+    });
+
+    it('announces form errors to screen readers', async () => {
+      renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
+      
+      const user = userEvent.setup();
+      const submitButton = screen.getByRole('button', { name: /book session/i });
+      
+      await user.click(submitButton);
+      
+      const errorAlert = screen.getByRole('alert');
+      expect(errorAlert).toHaveTextContent(/coach selection is required/i);
+    });
+
+    it('has accessible button labels', () => {
+      renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
+      
+      const submitButton = screen.getByRole('button', { name: /book session/i });
+      expect(submitButton).toHaveAccessibleName();
+    });
+  });
+
   describe('Edge Cases', () => {
     it('handles empty coach list', () => {
-      mockUseQuery.mockImplementation(({ queryKey }: any) => {
+      (useQuery as any).mockImplementation(({ queryKey }: any) => {
         if (queryKey[0] === 'coaches') {
-          return createMockQueryResult([], { isSuccess: true });
+          return mockUseQuery({ data: [] });
         }
-        return createMockQueryResult(null);
+        return mockUseQuery(null);
       });
 
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
@@ -610,14 +783,14 @@ describe('UnifiedSessionBooking', () => {
     });
 
     it('handles no available time slots', () => {
-      mockUseQuery.mockImplementation(({ queryKey }: any) => {
+      (useQuery as any).mockImplementation(({ queryKey }: any) => {
         if (queryKey[0] === 'coaches') {
-          return createMockQueryResult(mockCoaches, { isSuccess: true });
+          return mockUseQuery({ data: mockCoaches });
         }
         if (queryKey[0] === 'timeSlots') {
-          return createMockQueryResult([], { isSuccess: true });
+          return mockUseQuery([]);
         }
-        return createMockQueryResult(null);
+        return mockUseQuery(null);
       });
 
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
@@ -626,19 +799,31 @@ describe('UnifiedSessionBooking', () => {
     });
 
     it('handles API errors gracefully', () => {
-      mockUseQuery.mockImplementation(({ queryKey }: any) => {
+      (useQuery as any).mockImplementation(({ queryKey }: any) => {
         if (queryKey[0] === 'coaches') {
-          return createMockQueryResult(null, { 
-            isError: true, 
-            error: new Error('Failed to load coaches') 
-          });
+          return { ...mockUseQuery(null), isError: true, error: new Error('Failed to load') };
         }
-        return createMockQueryResult(null);
+        return mockUseQuery(null);
       });
 
       renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
       
       expect(screen.getByText(/Failed to load coaches/i)).toBeInTheDocument();
+    });
+
+    it('handles rapid form state changes', async () => {
+      renderWithProviders(<UnifiedSessionBooking {...defaultProps} />);
+      
+      const user = userEvent.setup();
+      const coachSelect = screen.getByRole('combobox', { name: /coach/i });
+      
+      // Rapidly change coach selection
+      await user.selectOptions(coachSelect, 'coach-123');
+      await user.selectOptions(coachSelect, 'coach-456');
+      await user.selectOptions(coachSelect, 'coach-123');
+      
+      // Should handle state changes gracefully
+      expect(screen.getByDisplayValue(/John Doe/i)).toBeInTheDocument();
     });
 
     it('cleans up on unmount', () => {

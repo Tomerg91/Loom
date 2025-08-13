@@ -6,7 +6,7 @@ import { headers } from 'next/headers';
 // GET /api/share/[token] - Access shared file (API endpoint for programmatic access)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
@@ -15,7 +15,7 @@ export async function GET(
 
     // Validate access to the share
     const validation = await temporarySharesDatabase.validateShareAccess(
-      params.token,
+      token,
       password || undefined
     );
 
@@ -152,7 +152,7 @@ export async function GET(
 // POST /api/share/[token] - Access shared file with password in body
 export async function POST(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
     const body = await request.json();

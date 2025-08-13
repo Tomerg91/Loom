@@ -27,6 +27,10 @@ const mockUser = {
   firstName: 'John',
   lastName: 'Doe',
   token: 'mock-token',
+  language: 'en' as const,
+  status: 'active' as const,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 // Mock coaches data
@@ -149,7 +153,7 @@ describe('Session Booking Complete Workflow', () => {
 
   it('completes the full booking workflow successfully', async () => {
     const user = userEvent.setup();
-    const onSuccessMock = jest.fn();
+    const onSuccessMock = vi.fn();
 
     render(
       <TestWrapper>

@@ -19,9 +19,11 @@ const optimizeSchema = z.object({
 // POST /api/files/[id]/optimize - Optimize a file
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     // Apply rate limiting
     const rateLimitResult = await fileModificationRateLimit(request);
     if (rateLimitResult) {
@@ -40,7 +42,7 @@ export async function POST(
     }
 
     // Verify user owns the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     if (file.user_id !== user.id) {
       return NextResponse.json(
@@ -124,7 +126,7 @@ export async function POST(
     // Upload optimized file to storage
     const timestamp = Date.now();
     const fileExtension = file.filename.split('.').pop();
-    const optimizedStoragePath = `optimized/${params.id}/${timestamp}.${fileExtension}`;
+    const optimizedStoragePath = `optimized/${id}/${timestamp}.${fileExtension}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('uploads')
@@ -145,7 +147,7 @@ export async function POST(
       const { fileVersionsDatabase } = await import('@/lib/database/file-versions');
       
       const newVersion = await fileVersionsDatabase.createFileVersion({
-        file_id: params.id,
+        file_id: id,
         storage_path: uploadData.path,
         filename: file.filename,
         original_filename: file.original_filename,
@@ -160,7 +162,7 @@ export async function POST(
       versionId = newVersion.id;
     } else {
       // Update existing file record
-      await fileDatabase.updateFileUpload(params.id, {
+      await fileDatabase.updateFileUpload(id, {
         filename: file.filename,
         file_type: file.file_type,
         file_size: result.optimizedSize,
@@ -176,7 +178,7 @@ export async function POST(
       message: `File "${file.filename}" was optimized, saving ${(result.compressionRatio * 100).toFixed(1)}% in size`,
       data: {
         type: 'file_optimization',
-        file_id: params.id,
+        file_id: id,
         version_id: versionId,
         original_size: result.originalSize,
         optimized_size: result.optimizedSize,
@@ -221,9 +223,11 @@ export async function POST(
 // GET /api/files/[id]/optimize - Get optimization recommendations
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     // Get authenticated user
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -236,11 +240,11 @@ export async function GET(
     }
 
     // Verify user has access to the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     // Check if user owns the file or it's shared with them
     if (file.user_id !== user.id) {
-      const userShares = await fileDatabase.getFileShares(params.id, user.id);
+      const userShares = await fileDatabase.getFileShares(id, user.id);
       const hasFileAccess = userShares.some(share => 
         share.shared_with === user.id && 
         (!share.expires_at || new Date(share.expires_at) > new Date())
@@ -286,7 +290,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      file_id: params.id,
+      file_id: id,
       filename: file.filename,
       file_type: file.file_type,
       file_size: file.file_size,

@@ -13,7 +13,7 @@ const compareSchema = z.object({
 // POST /api/files/[id]/versions/compare - Compare two versions of a file
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get authenticated user
@@ -28,11 +28,11 @@ export async function POST(
     }
 
     // Verify user has access to the file
-    const file = await fileDatabase.getFileUpload(params.id);
+    const file = await fileDatabase.getFileUpload(id);
     
     // Check if user owns the file or it's shared with them
     if (file.user_id !== user.id) {
-      const userShares = await fileDatabase.getFileShares(params.id, user.id);
+      const userShares = await fileDatabase.getFileShares(id, user.id);
       const hasFileAccess = userShares.some(share => 
         share.shared_with === user.id && 
         (!share.expires_at || new Date(share.expires_at) > new Date())
@@ -52,8 +52,8 @@ export async function POST(
 
     // Verify both versions exist
     const [versionA, versionB] = await Promise.all([
-      fileVersionsDatabase.getVersionByNumber(params.id, validatedData.version_a),
-      fileVersionsDatabase.getVersionByNumber(params.id, validatedData.version_b),
+      fileVersionsDatabase.getVersionByNumber(id, validatedData.version_a),
+      fileVersionsDatabase.getVersionByNumber(id, validatedData.version_b),
     ]);
 
     if (!versionA) {
@@ -72,7 +72,7 @@ export async function POST(
 
     // Get comparison data
     const comparison = await fileVersionsDatabase.compareVersions(
-      params.id,
+      id,
       validatedData.version_a,
       validatedData.version_b
     );
@@ -84,7 +84,7 @@ export async function POST(
     ]);
 
     return NextResponse.json({
-      file_id: params.id,
+      file_id: id,
       comparison: {
         ...comparison.comparison,
         download_urls: {
@@ -125,7 +125,7 @@ export async function POST(
 // GET /api/files/[id]/versions/compare?version_a=X&version_b=Y - Compare via query params
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
