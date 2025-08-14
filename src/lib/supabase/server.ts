@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { type NextRequest, type NextResponse } from 'next/server';
 import { type Database } from '@/types/supabase';
 import { env } from '@/env.mjs';
+import { serverEnv } from '@/env-server.mjs';
 
 // Singleton instances to prevent multiple GoTrueClient creation
 let serverClientInstance: ReturnType<typeof createSupabaseServerClient<Database>> | null = null;
@@ -154,7 +155,7 @@ export const createAdminClient = () => {
   }
   
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
-  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey = serverEnv.SUPABASE_SERVICE_ROLE_KEY;
   
   if (!serviceRoleKey) {
     throw new Error('Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY');

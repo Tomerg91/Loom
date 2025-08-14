@@ -1,13 +1,16 @@
 import * as Sentry from '@sentry/nextjs';
 import React from 'react';
-import { env } from '@/env.mjs';
+
+// Direct access to client-safe environment variables
+const NODE_ENV = process.env.NODE_ENV;
+const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
 // Sentry configuration (shared between client and server)
 export const sentryConfig = {
-  dsn: env.SENTRY_DSN,
-  environment: env.NODE_ENV,
-  tracesSampleRate: env.NODE_ENV === 'production' ? 0.1 : 1.0,
-  debug: env.NODE_ENV === 'development',
+  dsn: SENTRY_DSN,
+  environment: NODE_ENV,
+  tracesSampleRate: NODE_ENV === 'production' ? 0.1 : 1.0,
+  debug: NODE_ENV === 'development',
   
   // Note: Browser-specific integrations are now in sentry.client.config.js
   // Server-specific configuration is in sentry.server.config.js
@@ -23,14 +26,14 @@ export const sentryConfig = {
 
 // Initialize Sentry
 export const initSentry = () => {
-  if (env.SENTRY_DSN) {
+  if (SENTRY_DSN) {
     Sentry.init(sentryConfig);
   }
 };
 
 // Error tracking utilities
 export const captureError = (error: Error, context?: Record<string, unknown>) => {
-  if (env.SENTRY_DSN) {
+  if (SENTRY_DSN) {
     Sentry.withScope((scope) => {
       if (context) {
         Object.keys(context).forEach((key) => {
@@ -44,7 +47,7 @@ export const captureError = (error: Error, context?: Record<string, unknown>) =>
 };
 
 export const captureMessage = (message: string, level: Sentry.SeverityLevel = 'info') => {
-  if (env.SENTRY_DSN) {
+  if (SENTRY_DSN) {
     Sentry.captureMessage(message, level);
   }
   console.log(`[${level}] ${message}`);
@@ -56,7 +59,7 @@ export const setUserContext = (user: {
   email?: string;
   role?: string;
 }) => {
-  if (env.SENTRY_DSN) {
+  if (SENTRY_DSN) {
     Sentry.setUser({
       id: user.id,
       email: user.email,
@@ -67,7 +70,7 @@ export const setUserContext = (user: {
 
 // Performance monitoring
 export const startTransaction = (name: string, operation: string) => {
-  if (env.SENTRY_DSN) {
+  if (SENTRY_DSN) {
     return Sentry.startSpan({
       name,
       op: operation,
@@ -105,7 +108,7 @@ export const addBreadcrumb = (breadcrumb: {
   level?: Sentry.SeverityLevel;
   data?: Record<string, unknown>;
 }) => {
-  if (env.SENTRY_DSN) {
+  if (SENTRY_DSN) {
     Sentry.addBreadcrumb(breadcrumb);
   }
 };
@@ -118,7 +121,7 @@ export const withSentryErrorBoundary = <T extends Record<string, unknown>>(
     beforeCapture?: (scope: Sentry.Scope) => void;
   }
 ): React.ComponentType<T> => {
-  if (env.SENTRY_DSN) {
+  if (SENTRY_DSN) {
     return Sentry.withErrorBoundary(Component, {
       fallback: options?.fallback || (({ error }: { error?: Error }) => React.createElement('div', null, 'Something went wrong')),
       beforeCapture: options?.beforeCapture,

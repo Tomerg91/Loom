@@ -1,13 +1,12 @@
-import { env } from '@/env.mjs';
-
+// Direct access to client-safe environment variables
 // Google Analytics
-export const GA_TRACKING_ID = env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
+export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
 // Window interface is declared in analytics-provider.tsx to avoid duplication
 
 // PostHog
-export const POSTHOG_KEY = env.NEXT_PUBLIC_POSTHOG_KEY;
-export const POSTHOG_HOST = env.NEXT_PUBLIC_POSTHOG_HOST;
+export const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+export const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST;
 
 // Analytics events
 export interface AnalyticsEvent {

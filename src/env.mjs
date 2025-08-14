@@ -1,34 +1,29 @@
-// Validate and provide environment variables
-function getRequiredEnvVar(name) {
+// Client-safe environment variables only
+// CRITICAL: Only NEXT_PUBLIC_ prefixed variables can be safely exposed to the client
+function getRequiredClientEnvVar(name) {
   const value = process.env[name];
   if (!value) {
-    console.error(`Missing required environment variable: ${name}`);
-    // Don't throw in development to allow for easier setup
+    console.error(`Missing required client environment variable: ${name}`);
     if (process.env.NODE_ENV === 'production') {
-      throw new Error(`Missing required environment variable: ${name}`);
+      throw new Error(`Missing required client environment variable: ${name}`);
     }
   }
   return value;
 }
 
-function getOptionalEnvVar(name, defaultValue = undefined) {
+function getOptionalClientEnvVar(name, defaultValue = undefined) {
   return process.env[name] || defaultValue;
 }
 
+// Only client-safe environment variables (NEXT_PUBLIC_ prefixed)
 export const env = {
-  NODE_ENV: getOptionalEnvVar('NODE_ENV', 'development'),
-  SUPABASE_SERVICE_ROLE_KEY: getRequiredEnvVar('SUPABASE_SERVICE_ROLE_KEY'),
-  SENTRY_DSN: getOptionalEnvVar('SENTRY_DSN'),
-  SMTP_HOST: getOptionalEnvVar('SMTP_HOST'),
-  SMTP_PORT: getOptionalEnvVar('SMTP_PORT'),
-  SMTP_USER: getOptionalEnvVar('SMTP_USER'),
-  SMTP_PASSWORD: getOptionalEnvVar('SMTP_PASSWORD'),
-  REDIS_URL: getOptionalEnvVar('REDIS_URL'),
-  NEXT_PUBLIC_SUPABASE_URL: getRequiredEnvVar('NEXT_PUBLIC_SUPABASE_URL'),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: getRequiredEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
-  NEXT_PUBLIC_APP_URL: getOptionalEnvVar('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
-  NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: getOptionalEnvVar('NEXT_PUBLIC_GOOGLE_ANALYTICS_ID'),
-  NEXT_PUBLIC_POSTHOG_KEY: getOptionalEnvVar('NEXT_PUBLIC_POSTHOG_KEY'),
-  NEXT_PUBLIC_POSTHOG_HOST: getOptionalEnvVar('NEXT_PUBLIC_POSTHOG_HOST'),
-  NEXT_PUBLIC_SENTRY_DSN: getOptionalEnvVar('NEXT_PUBLIC_SENTRY_DSN'),
+  NODE_ENV: getOptionalClientEnvVar('NODE_ENV', 'development'),
+  // Only public environment variables that are safe for client-side
+  NEXT_PUBLIC_SUPABASE_URL: getRequiredClientEnvVar('NEXT_PUBLIC_SUPABASE_URL'),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: getRequiredClientEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+  NEXT_PUBLIC_APP_URL: getOptionalClientEnvVar('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
+  NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: getOptionalClientEnvVar('NEXT_PUBLIC_GOOGLE_ANALYTICS_ID'),
+  NEXT_PUBLIC_POSTHOG_KEY: getOptionalClientEnvVar('NEXT_PUBLIC_POSTHOG_KEY'),
+  NEXT_PUBLIC_POSTHOG_HOST: getOptionalClientEnvVar('NEXT_PUBLIC_POSTHOG_HOST'),
+  NEXT_PUBLIC_SENTRY_DSN: getOptionalClientEnvVar('NEXT_PUBLIC_SENTRY_DSN'),
 };
