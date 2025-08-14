@@ -259,30 +259,33 @@ export function validateIPAddress(ip: string): boolean {
 
 // User agent validation
 export function validateUserAgent(userAgent: string): boolean {
-  // Block suspicious user agents
-  const suspiciousPatterns = [
-    /bot/i,
-    /crawler/i,
-    /spider/i,
-    /scan/i,
-    /python/i,
-    /curl/i,
-    /wget/i,
+  // In development, allow all user agents
+  if (process.env.NODE_ENV !== 'production') {
+    return true;
+  }
+  
+  // In production, be more permissive and only block obviously malicious patterns
+  const maliciousPatterns = [
+    /sqlmap/i,
+    /nikto/i,
+    /nessus/i,
+    /masscan/i,
+    /nmap/i,
+    /dirb/i,
+    /dirbuster/i,
+    /gobuster/i,
+    /burpsuite/i,
+    /owasp/i,
   ];
   
-  // Allow legitimate browsers
-  const legitimatePatterns = [
-    /Mozilla/,
-    /Chrome/,
-    /Safari/,
-    /Firefox/,
-    /Edge/,
-    /Opera/,
-  ];
-  
-  if (suspiciousPatterns.some(pattern => pattern.test(userAgent))) {
+  // Block empty or suspicious user agents
+  if (!userAgent || userAgent.length < 10) {
     return false;
   }
   
-  return legitimatePatterns.some(pattern => pattern.test(userAgent));
+  if (maliciousPatterns.some(pattern => pattern.test(userAgent))) {
+    return false;
+  }
+  
+  return true;
 }

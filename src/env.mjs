@@ -17,7 +17,7 @@ function getOptionalEnvVar(name, defaultValue = undefined) {
 
 export const env = {
   NODE_ENV: getOptionalEnvVar('NODE_ENV', 'development'),
-  SUPABASE_SERVICE_ROLE_KEY: getOptionalEnvVar('SUPABASE_SERVICE_ROLE_KEY'),
+  SUPABASE_SERVICE_ROLE_KEY: getRequiredEnvVar('SUPABASE_SERVICE_ROLE_KEY'),
   SENTRY_DSN: getOptionalEnvVar('SENTRY_DSN'),
   SMTP_HOST: getOptionalEnvVar('SMTP_HOST'),
   SMTP_PORT: getOptionalEnvVar('SMTP_PORT'),
