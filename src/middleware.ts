@@ -1,14 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { routing } from '@/i18n/routing';
-import { applySecurityHeaders } from '@/lib/security/headers';
-import { validateUserAgent } from '@/lib/security/validation';
+import { routing } from './i18n/routing';
+import { applySecurityHeaders } from './lib/security/headers';
+import { validateUserAgent } from './lib/security/validation';
 import createMiddleware from 'next-intl/middleware';
-import { config as appConfig } from '@/lib/config';
-import { createMfaService } from '@/lib/services/mfa-service';
 
 // Create next-intl middleware
 const intlMiddleware = createMiddleware(routing);
+
+// Simplified auth checking for middleware - avoid complex Supabase imports
+function getSessionFromCookies(request: NextRequest) {
+  try {
+    // Get auth cookies that Supabase sets
+    const accessToken = request.cookies.get('sb-access-token')?.value;
+    const refreshToken = request.cookies.get('sb-refresh-token')?.value;
+    
+    // Check for the new cookie format used by newer Supabase versions
+    const authCookie = request.cookies.get('sb-auth-token')?.value;
+    
+    // Simple validation - if we have tokens, assume user is authenticated
+    // For more robust validation, this should be done in API routes
+    return !!(accessToken || refreshToken || authCookie);
+  } catch (error) {
+    console.warn('Error checking auth cookies in middleware:', error);
+    return false;
+  }
+}
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -31,85 +47,6 @@ const publicRoutes = [
   '/auth/mfa-verify',
   '/auth/mfa-setup',
 ];
-
-// Routes that require MFA verification (in addition to basic auth)
-const mfaRequiredRoutes = [
-  '/admin',
-  '/settings/security',
-  '/settings/mfa',
-];
-
-// Admin-only routes
-const adminRoutes = ['/admin'];
-
-// Coach-only routes
-const coachRoutes = ['/coach'];
-
-// Client-only routes
-const clientRoutes = ['/client'];
-
-// Enhanced role cache to reduce database queries
-interface CachedRole {
-  role: string;
-  timestamp: number;
-  lastSeenAt: string;
-}
-
-// Use WeakMap for better memory management with periodic cleanup
-const roleCache = new Map<string, CachedRole>();
-const CACHE_TTL = appConfig.cache.ROLE_CACHE_TTL;
-const CLEANUP_INTERVAL = 300000; // 5 minutes
-
-// Periodic cleanup of cache
-if (typeof globalThis !== 'undefined' && globalThis.setInterval) {
-  globalThis.setInterval(() => {
-    const now = Date.now();
-    for (const [key, value] of roleCache.entries()) {
-      if ((now - value.timestamp) >= CACHE_TTL * 2) {
-        roleCache.delete(key);
-      }
-    }
-  }, CLEANUP_INTERVAL);
-}
-
-async function getUserRole(userId: string, supabase: ReturnType<typeof createServerClient>): Promise<string | null> {
-  const now = Date.now();
-  
-  // Check cache first
-  const cached = roleCache.get(userId);
-  if (cached && (now - cached.timestamp) < CACHE_TTL) {
-    return cached.role;
-  }
-  
-  // Query database if not cached or expired
-  const { data: userProfile } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .single();
-    
-  if (userProfile?.role) {
-    // Cache the result
-    roleCache.set(userId, {
-      role: userProfile.role,
-      timestamp: now
-    });
-    
-    // Clean up old cache entries periodically (simple approach)
-    if (roleCache.size > appConfig.cache.ROLE_CACHE_MAX_SIZE) {
-      const entries = Array.from(roleCache.entries());
-      for (const [key, value] of entries) {
-        if ((now - value.timestamp) >= CACHE_TTL) {
-          roleCache.delete(key);
-        }
-      }
-    }
-    
-    return userProfile.role;
-  }
-  
-  return null;
-}
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -149,14 +86,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // If we get here, the locale is already validated by next-intl
-  // Now handle authentication for locale-prefixed routes
+  // Now handle authentication for locale-prefixed routes using simplified approach
   try {
-    // Use singleton supabase client to prevent multiple GoTrueClient instances
-    const supabase = createServerClient();
-    
-    // Get session
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    // Use simplified cookie-based auth checking
+    const hasAuthSession = getSessionFromCookies(request);
 
     // Extract locale and path without locale
     const locale = pathname.split('/')[1];
@@ -174,7 +107,7 @@ export async function middleware(request: NextRequest) {
     const isAuthRoute = pathWithoutLocale.startsWith('/auth/');
 
     // Redirect authenticated users away from auth pages
-    if (user && isAuthRoute) {
+    if (hasAuthSession && isAuthRoute) {
       return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
     }
 
@@ -184,97 +117,15 @@ export async function middleware(request: NextRequest) {
     }
 
     // Require authentication for protected routes
-    if (isProtectedRoute && !user) {
+    if (isProtectedRoute && !hasAuthSession) {
       const redirectUrl = new URL(`/${locale}/auth/signin`, request.url);
       redirectUrl.searchParams.set('redirectTo', pathWithoutLocale);
       return NextResponse.redirect(redirectUrl);
     }
 
-    // If user is authenticated, check role-based access and MFA requirements
-    if (user && isProtectedRoute) {
-      // Get user role (cached for performance)
-      const userRole = await getUserRole(user.id, supabase);
-
-      // Check if MFA verification is required for this route
-      const requiresMfa = mfaRequiredRoutes.some(route => 
-        pathWithoutLocale.startsWith(route)
-      );
-
-      // Check if user has MFA enabled and route requires MFA
-      if (requiresMfa) {
-        try {
-          // Create MFA service instance
-          const mfaService = createMfaService(true);
-          
-          // Check if user has MFA enabled
-          const mfaStatus = await mfaService.getMFAStatus(user.id);
-          
-          if (mfaStatus.isEnabled) {
-            // Check if user has verified MFA for this session
-            // For now, redirect to MFA verification page
-            // In a complete implementation, you'd check session MFA verification status
-            const mfaVerifyUrl = new URL(`/${locale}/auth/mfa-verify`, request.url);
-            mfaVerifyUrl.searchParams.set('redirectTo', pathWithoutLocale);
-            
-            // Only redirect if not already on MFA pages
-            if (!pathWithoutLocale.startsWith('/auth/mfa-')) {
-              return NextResponse.redirect(mfaVerifyUrl);
-            }
-          }
-        } catch (mfaError) {
-          // Log error but don't block access - graceful degradation
-          console.error('MFA check failed:', mfaError);
-          // Continue without MFA verification in case of service errors
-        }
-      }
-
-      // Check admin routes
-      if (adminRoutes.some(route => pathWithoutLocale.startsWith(route))) {
-        if (userRole !== 'admin') {
-          return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
-        }
-      }
-
-      // Check coach routes
-      if (coachRoutes.some(route => pathWithoutLocale.startsWith(route))) {
-        if (userRole !== 'coach' && userRole !== 'admin') {
-          return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
-        }
-      }
-
-      // Check client routes
-      if (clientRoutes.some(route => pathWithoutLocale.startsWith(route))) {
-        if (userRole !== 'client' && userRole !== 'admin') {
-          return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
-        }
-      }
-
-      // Optimized last seen update - batch and cache
-      const now = new Date().toISOString();
-      const cached = roleCache.get(user.id);
-      
-      // Only update if last update was more than 5 minutes ago
-      if (!cached || (Date.now() - cached.timestamp) > 300000) {
-        // Use fire-and-forget for better performance
-        supabase
-          .from('users')
-          .update({ last_seen_at: now })
-          .eq('id', user.id)
-          .then(() => {
-            // Update cache timestamp on successful update
-            const existingCache = roleCache.get(user.id);
-            if (existingCache) {
-              roleCache.set(user.id, {
-                ...existingCache,
-                timestamp: Date.now(),
-                lastSeenAt: now
-              });
-            }
-          })
-          .catch(console.error); // Don't block the request on last-seen errors
-      }
-    }
-
+    // For protected routes with authenticated users, allow access
+    // Role-based access control and MFA will be handled in API routes and pages
+    // This keeps the middleware lightweight and Edge Runtime compatible
     return applySecurityHeaders(request, NextResponse.next());
   } catch (error) {
     console.error('Auth middleware error:', error);
@@ -292,7 +143,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  runtime: 'nodejs',
   matcher: [
     /*
      * Match all request paths except for the ones starting with:

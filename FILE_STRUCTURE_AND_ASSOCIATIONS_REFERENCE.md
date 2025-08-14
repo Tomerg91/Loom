@@ -1,755 +1,339 @@
 # File Structure and Associations Reference
 
-This document provides a comprehensive overview of the Loom coaching platform codebase structure, file relationships, and architectural patterns.
+## Overview
+This document provides a comprehensive reference of the Loom app file structure, showing how files are interconnected and their relationships for debugging and maintenance purposes.
 
-## Table of Contents
+## Technology Stack Summary
 
-1. [Project Overview](#project-overview)
-2. [Core Architecture](#core-architecture)
-3. [Directory Structure](#directory-structure)
-4. [Internationalization System](#internationalization-system)
-5. [Component Architecture](#component-architecture)
-6. [API Routes Structure](#api-routes-structure)
-7. [Database Schema](#database-schema)
-8. [Configuration System](#configuration-system)
-9. [Security & Authentication](#security--authentication)
-10. [File Associations & Dependencies](#file-associations--dependencies)
+### Core Framework
+- **Next.js 15.3.5** with App Router
+- **React 19** with TypeScript
+- **Supabase** for backend and database
+- **Tailwind CSS 4** for styling
 
-## Project Overview
-
-**Technology Stack:**
-- Framework: Next.js 15.3.5 with App Router
-- Language: TypeScript
-- Database: Supabase (PostgreSQL)
-- Authentication: Supabase Auth with MFA
-- Styling: Tailwind CSS 4
-- UI Components: Radix UI primitives
-- State Management: Zustand + React Query
-- Internationalization: next-intl
-- Testing: Vitest + Playwright
-- Monitoring: Sentry
-- Deployment: Vercel/Docker
-
-**Architecture Style:** 
-- Multi-tenant coaching platform
-- Role-based access control (Admin, Coach, Client)
-- Internationalized (English/Hebrew with RTL support)
-- Progressive Web App with performance monitoring
-
-## Core Architecture
-
-### Application Layout Structure
-
-```
-src/app/
-├── layout.tsx                     # Root layout (minimal passthrough)
-├── [locale]/                      # Locale-based routing
-│   ├── layout.tsx                 # Main locale layout with providers
-│   ├── page.tsx                   # Home page
-│   ├── (auth)/                    # Authentication routes
-│   ├── (dashboard)/               # Dashboard routes
-│   └── api/                       # API routes (not locale-specific)
-```
-
-### Provider Hierarchy
-
-```
-NextIntlClientProvider
-└── QueryProvider (React Query)
-    └── StoreProvider (Zustand)
-        └── AuthProvider
-            └── RealtimeProvider
-                └── AnalyticsProvider
-                    └── PerformanceMonitor
-```
+### Key Libraries
+- **State Management**: Zustand + TanStack Query
+- **UI Components**: Radix UI primitives
+- **Forms**: react-hook-form + zod validation
+- **Testing**: Vitest + Playwright
+- **Deployment**: Vercel with Docker support
 
 ## Directory Structure
 
-### Root Level Files
-
-| File | Purpose | Key Dependencies |
-|------|---------|------------------|
-| `package.json` | Project dependencies and scripts | Next.js 15, React 19, Supabase |
-| `next.config.js` | Next.js configuration with i18n setup | next-intl plugin |
-| `middleware.ts` | Request routing, auth, and security | Supabase auth, next-intl |
-| `tailwind.config.ts` | Tailwind CSS configuration | Custom design tokens |
-| `tsconfig.json` | TypeScript configuration | Strict type checking |
-| `docker-compose.yml` | Local development environment | Supabase stack |
-| `Dockerfile` | Production container setup | Node.js, Nginx |
-
-### Source Code Structure (`src/`)
-
-#### Application Routes (`src/app/`)
-
 ```
-app/
-├── layout.tsx                     # Minimal root layout
-├── globals.css                    # Global styles and CSS variables
-├── [locale]/                      # Internationalized routes
-│   ├── layout.tsx                 # Main layout with providers
-│   ├── page.tsx                   # Landing page
-│   ├── auth/                      # Authentication flows
-│   │   ├── signin/page.tsx        # Sign in form
-│   │   ├── signup/page.tsx        # Registration form
-│   │   ├── callback/route.ts      # OAuth callback handler
-│   │   ├── mfa-setup/page.tsx     # MFA setup wizard
-│   │   └── mfa-verify/page.tsx    # MFA verification
-│   ├── dashboard/page.tsx         # Unified dashboard
-│   ├── sessions/                  # Session management
-│   │   ├── page.tsx               # Session list
-│   │   ├── new/page.tsx           # Create session
-│   │   └── [id]/                  # Session details/edit
-│   ├── client/                    # Client-specific pages
-│   │   ├── page.tsx               # Client dashboard
-│   │   ├── book/page.tsx          # Book session
-│   │   ├── coaches/page.tsx       # Browse coaches
-│   │   ├── progress/page.tsx      # Progress tracking
-│   │   └── reflections/page.tsx   # Session reflections
-│   ├── coach/                     # Coach-specific pages
-│   │   ├── page.tsx               # Coach dashboard
-│   │   ├── clients/               # Client management
-│   │   ├── availability/page.tsx  # Schedule management
-│   │   ├── insights/page.tsx      # Analytics insights
-│   │   └── notes/page.tsx         # Client notes
-│   ├── admin/                     # Admin panel
-│   │   ├── page.tsx               # Admin dashboard
-│   │   ├── users/page.tsx         # User management
-│   │   ├── analytics/page.tsx     # System analytics
-│   │   └── system/page.tsx        # System settings
-│   └── settings/                  # User settings
-│       ├── page.tsx               # Profile settings
-│       ├── language/page.tsx      # Language preferences
-│       └── notifications/page.tsx # Notification settings
-└── api/                          # API routes (server-side)
-    ├── auth/                     # Authentication endpoints
-    ├── sessions/                 # Session CRUD operations
-    ├── users/                    # User management
-    ├── coaches/                  # Coach-specific operations
-    ├── admin/                    # Admin operations
-    └── widgets/                  # Dashboard widgets
+loom-app/
+├── 📁 src/                          # Main application source
+│   ├── 📁 app/                      # Next.js App Router pages & API routes
+│   │   ├── 📁 [locale]/             # Internationalized pages
+│   │   │   ├── 📁 admin/            # Admin dashboard pages
+│   │   │   ├── 📁 auth/             # Authentication pages
+│   │   │   ├── 📁 client/           # Client dashboard pages
+│   │   │   ├── 📁 coach/            # Coach dashboard pages
+│   │   │   ├── 📁 files/            # File management pages
+│   │   │   ├── 📁 sessions/         # Session management pages
+│   │   │   └── 📁 settings/         # User settings pages
+│   │   └── 📁 api/                  # API routes (server endpoints)
+│   │       ├── 📁 admin/            # Admin API endpoints
+│   │       ├── 📁 auth/             # Authentication API
+│   │       ├── 📁 client/           # Client API endpoints
+│   │       ├── 📁 coach/            # Coach API endpoints
+│   │       ├── 📁 files/            # File management API
+│   │       ├── 📁 notifications/    # Notifications API
+│   │       └── 📁 sessions/         # Session booking API
+│   ├── 📁 components/               # Reusable UI components
+│   │   ├── 📁 admin/                # Admin-specific components
+│   │   ├── 📁 auth/                 # Authentication components
+│   │   ├── 📁 client/               # Client dashboard components
+│   │   ├── 📁 coach/                # Coach dashboard components
+│   │   ├── 📁 files/                # File management components
+│   │   ├── 📁 notifications/        # Notification components
+│   │   ├── 📁 sessions/             # Session components
+│   │   └── 📁 ui/                   # Base UI components (Radix UI based)
+│   ├── 📁 lib/                      # Shared utilities and services
+│   │   ├── 📁 auth/                 # Authentication logic
+│   │   ├── 📁 database/             # Database query functions
+│   │   ├── 📁 services/             # Business logic services
+│   │   ├── 📁 supabase/             # Supabase client configuration
+│   │   ├── 📁 security/             # Security utilities
+│   │   ├── 📁 performance/          # Performance optimization
+│   │   └── 📁 utils/                # General utilities
+│   ├── 📁 i18n/                     # Internationalization
+│   │   ├── 📁 messages/             # Translation files
+│   │   └── config.ts                # i18n configuration
+│   └── 📁 types/                    # TypeScript type definitions
+├── 📁 supabase/                     # Supabase configuration
+│   ├── 📁 migrations/               # Database migrations
+│   └── config.toml                  # Supabase settings
+├── 📁 tests/                        # Test files
+│   ├── 📁 e2e/                      # Playwright E2E tests
+│   └── 📁 unit/                     # Unit tests
+└── 📁 public/                       # Static assets
 ```
 
-#### Components (`src/components/`)
+## Critical Configuration Files
 
-```
-components/
-├── ui/                           # Reusable UI primitives
-│   ├── button.tsx                # Button component with variants
-│   ├── card.tsx                  # Card container component
-│   ├── dialog.tsx                # Modal dialog component
-│   ├── input.tsx                 # Form input component
-│   ├── language-switcher.tsx     # Language selection component
-│   └── index.ts                  # Barrel exports
-├── auth/                         # Authentication components
-│   ├── auth-provider.tsx         # Auth context provider
-│   ├── signin-form.tsx           # Sign in form
-│   ├── signup-form.tsx           # Registration form
-│   ├── mfa/                      # MFA components
-│   │   ├── mfa-setup-wizard.tsx  # MFA setup flow
-│   │   ├── mfa-qr-code.tsx       # QR code display
-│   │   └── mfa-verification-input.tsx # TOTP input
-│   └── route-guard.tsx           # Protected route wrapper
-├── dashboard/                    # Dashboard components
-│   ├── widgets/                  # Dashboard widgets
-│   │   ├── session-list.tsx      # Session list widget
-│   │   ├── progress-list.tsx     # Progress tracking
-│   │   ├── achievement-grid.tsx  # Achievement display
-│   │   └── user-management-table.tsx # Admin user table
-│   ├── cards/                    # Dashboard cards
-│   │   ├── stats-card.tsx        # Statistics display
-│   │   └── progress-card.tsx     # Progress indicators
-│   └── shared/                   # Shared dashboard utilities
-│       ├── hooks.ts              # Dashboard-specific hooks
-│       ├── types.ts              # Dashboard type definitions
-│       └── utils.ts              # Dashboard utilities
-├── sessions/                     # Session-related components
-│   ├── forms/                    # Session forms
-│   │   ├── session-information-form.tsx # Session details form
-│   │   ├── session-goals-manager.tsx # Goals management
-│   │   └── session-notes-editor.tsx # Notes editor
-│   ├── display/                  # Session display components
-│   │   ├── session-header.tsx    # Session title/status
-│   │   ├── session-participants.tsx # Participant list
-│   │   └── session-rating.tsx    # Session rating
-│   ├── booking/                  # Booking components
-│   │   └── unified-session-booking.tsx # Main booking flow
-│   └── shared/                   # Session utilities
-│       └── utils.ts              # Session helper functions
-├── client/                       # Client-specific components
-│   ├── client-dashboard.tsx      # Client dashboard layout
-│   ├── book-page.tsx             # Session booking page
-│   ├── coaches-page.tsx          # Coach browsing
-│   └── progress-page.tsx         # Progress tracking
-├── coach/                        # Coach-specific components
-│   ├── coach-dashboard.tsx       # Coach dashboard layout
-│   ├── clients-page.tsx          # Client management
-│   ├── availability-manager.tsx  # Schedule management
-│   └── insights-page.tsx         # Analytics display
-├── admin/                        # Admin components
-│   ├── analytics-page.tsx        # System analytics
-│   ├── users-page.tsx            # User management
-│   └── system-page.tsx           # System settings
-├── settings/                     # Settings components
-│   ├── settings-page.tsx         # Main settings layout
-│   ├── language-settings-card.tsx # Language preferences
-│   ├── notification-settings-card.tsx # Notification settings
-│   └── profile-settings-card.tsx # Profile management
-├── providers/                    # Context providers
-│   ├── providers.tsx             # Main providers wrapper
-│   ├── query-provider.tsx        # React Query setup
-│   ├── store-provider.tsx        # Zustand store provider
-│   ├── realtime-provider.tsx     # Real-time updates
-│   └── analytics-provider.tsx    # Analytics tracking
-├── navigation/                   # Navigation components
-│   └── nav-menu.tsx              # Main navigation menu
-├── notifications/                # Notification components
-│   └── notification-center.tsx   # Notification panel
-├── layout/                       # Layout components
-│   ├── app-layout.tsx            # Main app layout
-│   └── page-wrapper.tsx          # Page container
-├── monitoring/                   # Monitoring components
-│   └── performance-monitor.tsx   # Performance tracking
-└── error-boundary.tsx            # Error boundary wrapper
-```
-
-#### Library Code (`src/lib/`)
-
-```
-lib/
-├── auth/                         # Authentication utilities
-│   ├── auth.ts                   # Auth helper functions
-│   ├── auth-context.tsx          # Auth React context
-│   ├── middleware.ts             # Auth middleware
-│   └── permissions.ts            # Permission checking
-├── supabase/                     # Supabase integration
-│   ├── client.ts                 # Client-side Supabase
-│   ├── server.ts                 # Server-side Supabase
-│   └── middleware.ts             # Supabase middleware
-├── database/                     # Database operations
-│   ├── index.ts                  # Database connection
-│   ├── sessions.ts               # Session queries
-│   ├── users.ts                  # User queries
-│   ├── notifications.ts          # Notification queries
-│   └── services/                 # Database services
-│       ├── session-crud.ts       # Session CRUD operations
-│       ├── session-analytics.ts  # Session analytics
-│       └── session-workflow.ts   # Session state management
-├── api/                          # API utilities
-│   ├── auth-client.ts            # Auth API client
-│   ├── crud-routes.ts            # CRUD route helpers
-│   ├── validation.ts             # API validation
-│   └── errors.ts                 # Error handling
-├── store/                        # State management
-│   ├── index.ts                  # Store configuration
-│   ├── auth-store.ts             # Authentication state
-│   ├── session-store.ts          # Session state
-│   └── notification-store.ts     # Notification state
-├── queries/                      # React Query hooks
-│   ├── index.ts                  # Query configuration
-│   ├── sessions.ts               # Session queries
-│   ├── users.ts                  # User queries
-│   └── notifications.ts          # Notification queries
-├── config/                       # Configuration
-│   ├── index.ts                  # Main config class
-│   ├── constants.ts              # App constants
-│   ├── api-endpoints.ts          # API endpoint definitions
-│   └── cancellation-policies.ts  # Business rules
-├── security/                     # Security utilities
-│   ├── headers.ts                # Security headers
-│   ├── rate-limit.ts             # Rate limiting
-│   ├── validation.ts             # Input validation
-│   ├── password.ts               # Password utilities
-│   └── mfa-rate-limit.ts         # MFA rate limiting
-├── services/                     # Business logic services
-│   ├── auth-service.ts           # Authentication service
-│   ├── user-service.ts           # User management service
-│   ├── analytics-service.ts      # Analytics service
-│   ├── file-service.ts           # File handling service
-│   └── mfa-service.ts            # MFA service
-├── permissions/                  # Permission system
-│   ├── index.ts                  # Permission definitions
-│   ├── permissions.ts            # Permission logic
-│   └── hooks.ts                  # Permission hooks
-├── realtime/                     # Real-time features
-│   ├── realtime-client.ts        # Real-time client
-│   └── hooks.ts                  # Real-time hooks
-├── performance/                  # Performance optimization
-│   ├── index.ts                  # Performance utilities
-│   ├── caching.ts                # Caching strategies
-│   ├── lazy-loading.ts           # Component lazy loading
-│   ├── optimization.ts           # Bundle optimization
-│   └── web-vitals.ts             # Web vitals monitoring
-├── monitoring/                   # Monitoring & analytics
-│   ├── sentry.ts                 # Error tracking
-│   └── analytics.ts              # User analytics
-├── notifications/                # Notification system
-│   ├── email-service.ts          # Email notifications
-│   └── session-notifications.ts  # Session-specific notifications
-├── accessibility/                # Accessibility utilities
-│   ├── aria.ts                   # ARIA helpers
-│   └── hooks.ts                  # Accessibility hooks
-├── validation/                   # Validation schemas
-│   └── common.ts                 # Common validation rules
-├── db/                          # Database schema & ORM
-│   ├── index.ts                  # Database connection
-│   ├── schema.ts                 # Mock schema definitions
-│   └── orm-functions.ts          # ORM helper functions
-├── types/                        # Type definitions
-│   └── result.ts                 # Result type utilities
-└── utils.ts                      # General utilities
-```
-
-## Internationalization System
-
-### Core i18n Files
-
+### Environment & Configuration
 | File | Purpose | Dependencies |
+|------|---------|-------------|
+| `next.config.js` | Next.js configuration | Build process, deployment |
+| `tailwind.config.ts` | Tailwind CSS configuration | Styling system |
+| `tsconfig.json` | TypeScript configuration | Type checking |
+| `package.json` | Dependencies and scripts | All npm packages |
+| `vercel.json` | Deployment configuration | Production deployment |
+| `.env.local` | Local environment variables | Development |
+| `.env.example` | Environment variable template | Setup documentation |
+
+### Environment Variable Management
+| File | Purpose | Security Level |
 |------|---------|--------------|
-| `src/i18n/config.ts` | i18n configuration and message loading | next-intl/server |
-| `src/i18n/routing.ts` | Route localization setup | next-intl/routing |
-| `src/i18n/request.ts` | Request-level i18n handling | next-intl |
-| `src/messages/en.json` | English translations | - |
-| `src/messages/he.json` | Hebrew translations | - |
+| `src/env.mjs` | Client-safe environment variables | Public (NEXT_PUBLIC_*) |
+| `src/env-server.mjs` | Server-only environment variables | Private (API keys) |
 
-### i18n Integration Points
+**Critical Environment Variables:**
+- `SUPABASE_SERVICE_ROLE_KEY` - Server-side database operations
+- `NEXT_PUBLIC_SUPABASE_URL` - Client connection to Supabase
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Client authentication
 
-**Next.js Configuration:**
-- `next.config.js` includes `next-intl` plugin configuration
-- Points to `src/i18n/request.ts` for request handling
+## API Architecture
 
-**Middleware Integration:**
-- `middleware.ts` uses `createMiddleware` from next-intl
-- Handles locale detection and routing
+### Route Structure
+```
+/api/
+├── auth/           # Authentication endpoints
+│   ├── signin      # User login
+│   ├── signup      # User registration  
+│   ├── mfa/        # Multi-factor authentication
+│   └── session     # Session management
+├── admin/          # Admin operations
+│   ├── users       # User management
+│   ├── analytics   # Admin analytics
+│   └── system      # System health
+├── client/         # Client-specific endpoints
+│   ├── stats       # Client statistics
+│   └── reflections # Client reflections
+├── coach/          # Coach-specific endpoints
+│   ├── clients     # Coach's clients
+│   ├── insights    # Coach insights
+│   └── stats       # Coach statistics
+├── files/          # File management
+│   ├── upload      # File upload
+│   ├── [id]/       # File operations
+│   └── share/      # File sharing
+└── sessions/       # Session management
+    ├── book        # Session booking
+    ├── [id]/       # Session operations
+    └── [id]/files  # Session files
+```
 
-**Layout Integration:**
-- `[locale]/layout.tsx` sets HTML `lang` and `dir` attributes
-- Provides locale context to all child components
+## Database Architecture
 
-**Component Usage:**
-- Components use `useTranslations()` hook for translations
-- Language switcher in `src/components/ui/language-switcher.tsx`
+### Supabase Integration
+| Service | Files | Purpose |
+|---------|-------|---------|
+| **Client Creation** | `src/lib/supabase/client.ts` | Client-side Supabase client |
+| **Server Creation** | `src/lib/supabase/server.ts` | Server-side Supabase clients |
+| **Database Queries** | `src/lib/database/*.ts` | Type-safe database operations |
+| **Migrations** | `supabase/migrations/*.sql` | Database schema changes |
 
-### Translation Structure
-
-```json
-{
-  "common": {
-    "loading": "Loading...",
-    "save": "Save",
-    "cancel": "Cancel"
-  },
-  "navigation": {
-    "home": "Home",
-    "dashboard": "Dashboard",
-    "sessions": "Sessions"
-  },
-  "auth": {
-    "signin": "Sign In",
-    "signup": "Sign Up",
-    "signout": "Sign Out"
-  },
-  "sessions": {
-    "title": "Sessions",
-    "book": "Book Session",
-    "cancel": "Cancel Session"
-  }
-}
+### Database Services
+```
+src/lib/database/
+├── users.ts              # User management
+├── sessions.ts           # Session operations
+├── files.ts              # File management
+├── notifications.ts      # Notification system
+├── messaging.ts          # Chat/messaging
+├── admin-analytics.ts    # Admin reporting
+├── availability.ts       # Coach availability
+└── temporary-shares.ts   # File sharing
 ```
 
 ## Component Architecture
 
-### UI Component System
-
-**Base Components (`src/components/ui/`):**
-- Built on Radix UI primitives
-- Consistent styling with Tailwind CSS
-- TypeScript interfaces for props
-- Accessible by default
-- Support for dark/light themes
-
-**Composition Pattern:**
-```typescript
-// Example: Button component composition
-<Button variant="primary" size="lg" disabled={loading}>
-  {loading ? <Spinner /> : "Submit"}
-</Button>
+### UI Component Hierarchy
+```
+src/components/
+├── ui/                   # Base components (Radix UI)
+│   ├── button.tsx        # Button primitive
+│   ├── dialog.tsx        # Modal dialogs
+│   ├── form.tsx          # Form components
+│   └── input.tsx         # Input controls
+├── auth/                 # Authentication UI
+│   ├── signin-form.tsx   # Login form
+│   ├── signup-form.tsx   # Registration form
+│   └── mfa-setup.tsx     # MFA configuration
+├── dashboard/            # Dashboard layouts
+│   ├── sidebar.tsx       # Navigation sidebar
+│   ├── header.tsx        # Top navigation
+│   └── stats-card.tsx    # Statistics display
+├── files/                # File management UI
+│   ├── file-upload.tsx   # Upload interface
+│   ├── file-browser.tsx  # File explorer
+│   └── share-dialog.tsx  # Sharing controls
+└── sessions/             # Session UI
+    ├── booking-form.tsx  # Session booking
+    ├── session-card.tsx  # Session display
+    └── availability.tsx  # Calendar availability
 ```
 
-### Feature Components
+## Service Layer
 
-**Authentication Components:**
-- `AuthProvider` - Global auth state management
-- `RouteGuard` - Protected route wrapper
-- `SignInForm` - Login form with validation
-- `MfaSetupWizard` - Multi-factor authentication setup
-
-**Dashboard Components:**
-- Role-specific dashboards (Client, Coach, Admin)
-- Reusable widget system
-- Real-time data updates
-- Responsive grid layouts
-
-**Session Components:**
-- Unified booking flow
-- Session state management
-- Real-time status updates
-- Form validation and error handling
-
-### Component Relationships
-
+### Business Logic Services
 ```
-App Layout
-├── Navigation Menu
-├── Main Content Area
-│   ├── Page-specific Components
-│   ├── Dashboard Widgets
-│   └── Modal Dialogs
-├── Notification Center
-└── Performance Monitor
+src/lib/services/
+├── file-service.ts               # File operations
+├── notification-service.ts       # Notifications
+├── email-notification-service.ts # Email notifications
+├── push-notification-service.ts  # Push notifications
+├── mfa-service.ts                # Multi-factor auth
+├── file-management-service.ts    # Advanced file ops
+└── virus-scanning-service.ts     # Security scanning
 ```
-
-## API Routes Structure
-
-### Authentication Routes (`/api/auth/`)
-
-| Route | Method | Purpose | Security |
-|-------|---------|---------|----------|
-| `/auth/signin` | POST | User login | Rate limited |
-| `/auth/signup` | POST | User registration | Rate limited |
-| `/auth/signout` | POST | User logout | Authenticated |
-| `/auth/me` | GET | Current user info | Authenticated |
-| `/auth/mfa/setup` | POST | MFA setup | Authenticated |
-| `/auth/mfa/verify` | POST | MFA verification | Rate limited |
-
-### Session Routes (`/api/sessions/`)
-
-| Route | Method | Purpose | Authorization |
-|-------|---------|---------|---------------|
-| `/sessions` | GET | List sessions | Role-based |
-| `/sessions` | POST | Create session | Coach/Admin |
-| `/sessions/[id]` | GET | Session details | Participant/Admin |
-| `/sessions/[id]` | PUT | Update session | Coach/Admin |
-| `/sessions/[id]/cancel` | POST | Cancel session | Participant/Admin |
-| `/sessions/book` | POST | Book session | Client/Admin |
-
-### Admin Routes (`/api/admin/`)
-
-| Route | Method | Purpose | Authorization |
-|-------|---------|---------|---------------|
-| `/admin/users` | GET | List all users | Admin only |
-| `/admin/analytics` | GET | System analytics | Admin only |
-| `/admin/system` | GET | System status | Admin only |
-
-### API Route Patterns
-
-**Standard CRUD Pattern:**
-```typescript
-// GET /api/resource - List resources
-// POST /api/resource - Create resource
-// GET /api/resource/[id] - Get specific resource
-// PUT/PATCH /api/resource/[id] - Update resource
-// DELETE /api/resource/[id] - Delete resource
-```
-
-**Nested Resource Pattern:**
-```typescript
-// GET /api/users/[id]/sessions - User's sessions
-// POST /api/sessions/[id]/cancel - Session actions
-// GET /api/coaches/[id]/availability - Coach availability
-```
-
-## Database Schema
-
-### Core Tables
-
-**Users Table:**
-```sql
-CREATE TABLE users (
-    id UUID PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    role user_role NOT NULL DEFAULT 'client',
-    first_name TEXT,
-    last_name TEXT,
-    timezone TEXT DEFAULT 'UTC',
-    language language NOT NULL DEFAULT 'en',
-    status user_status NOT NULL DEFAULT 'active',
-    mfa_enabled BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-**Sessions Table:**
-```sql
-CREATE TABLE sessions (
-    id UUID PRIMARY KEY,
-    coach_id UUID REFERENCES users(id),
-    client_id UUID REFERENCES users(id),
-    title TEXT NOT NULL,
-    scheduled_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    duration_minutes INTEGER DEFAULT 60,
-    status session_status DEFAULT 'scheduled',
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-**Database Service Layer:**
-- `src/lib/database/sessions.ts` - Session queries
-- `src/lib/database/users.ts` - User queries
-- `src/lib/database/services/` - Business logic services
-
-### Migration Files
-
-| File | Purpose |
-|------|---------|
-| `20250704000001_initial_schema.sql` | Core tables and types |
-| `20250704000002_rls_policies.sql` | Row Level Security |
-| `20250704000003_functions_and_views.sql` | Database functions |
-| `20250730000001_mfa_implementation.sql` | MFA support |
-| `20250805000001_add_timezone_support.sql` | Timezone handling |
-
-## Configuration System
-
-### Configuration Architecture
-
-**Main Configuration Class (`src/lib/config/index.ts`):**
-- Singleton pattern for global access
-- Environment-specific settings
-- Validation on startup
-- Type-safe configuration access
-
-**Configuration Modules:**
-- `constants.ts` - Application constants
-- `api-endpoints.ts` - API endpoint definitions
-- `cancellation-policies.ts` - Business rules
-
-### Environment Configuration
-
-```typescript
-export const ENV_CONFIG = {
-  DEVELOPMENT: {
-    API_BASE_URL: 'http://localhost:3000',
-    LOG_LEVEL: 'debug',
-    CACHE_ENABLED: false
-  },
-  PRODUCTION: {
-    API_BASE_URL: 'https://app.loom.com',
-    LOG_LEVEL: 'error',
-    CACHE_ENABLED: true
-  }
-};
-```
-
-### Feature Flags
-
-```typescript
-export const FEATURE_FLAGS = {
-  MFA_ENABLED: true,
-  REAL_TIME_UPDATES: true,
-  ANALYTICS_TRACKING: true,
-  FILE_UPLOADS: true
-};
-```
-
-## Security & Authentication
-
-### Security Layers
-
-1. **Next.js Middleware (`middleware.ts`)**
-   - Route protection
-   - Authentication checks
-   - Role-based access control
-   - MFA verification
-
-2. **API Route Security**
-   - Request validation
-   - Rate limiting
-   - CORS protection
-   - Input sanitization
-
-3. **Database Security**
-   - Row Level Security (RLS)
-   - Role-based policies
-   - Encrypted sensitive data
 
 ### Authentication Flow
-
 ```
-User Request
-├── Middleware Check
-│   ├── Route Protected? → Require Auth
-│   ├── Auth Valid? → Check Role
-│   ├── MFA Required? → Verify MFA
-│   └── Allow/Redirect
-├── API Route Handler
-│   ├── Validate Request
-│   ├── Check Permissions
-│   └── Process Request
-└── Database Query
-    ├── Apply RLS Policies
-    └── Return Filtered Data
+Authentication Chain:
+1. src/lib/auth/auth.ts           # Core auth logic
+2. src/lib/auth/middleware.ts     # Route protection
+3. src/middleware.ts              # Global middleware
+4. src/app/api/auth/*.ts          # Auth API endpoints
+5. src/components/auth/*.tsx      # Auth UI components
 ```
 
-### MFA Implementation
+## Critical Relationships
 
-**MFA Service (`src/lib/services/mfa-service.ts`):**
-- TOTP generation and verification
-- Backup codes management
-- Trusted device handling
-- Rate limiting for attempts
-
-**MFA Components:**
-- `mfa-setup-wizard.tsx` - Setup flow
-- `mfa-qr-code.tsx` - QR code display
-- `mfa-verification-input.tsx` - Code input
-
-## File Associations & Dependencies
-
-### Critical Path Dependencies
-
-**Application Bootstrap:**
+### Environment Variable Flow
 ```
-middleware.ts → i18n/routing.ts → auth/middleware.ts
-├── Supabase client (lib/supabase/server.ts)
-├── Security headers (lib/security/headers.ts)
-└── Rate limiting (lib/security/rate-limit.ts)
+Development:
+.env.local → src/env-server.mjs → src/lib/supabase/server.ts
+
+Production:
+Vercel Environment Variables → src/env-server.mjs → src/lib/supabase/server.ts
 ```
 
-**Page Rendering:**
+### Build Process Dependencies
 ```
-[locale]/layout.tsx → components/providers/providers.tsx
-├── Auth Provider (auth/auth-provider.tsx)
-├── Query Provider (providers/query-provider.tsx)
-├── Store Provider (providers/store-provider.tsx)
-└── i18n Provider (next-intl)
-```
-
-**API Routes:**
-```
-api/*/route.ts → lib/api/crud-routes.ts
-├── Authentication check (lib/auth/auth.ts)
-├── Permission validation (lib/permissions/)
-├── Database operations (lib/database/)
-└── Response formatting (lib/api/utils.ts)
+1. Environment validation (src/env*.mjs)
+2. TypeScript compilation (tsconfig.json)
+3. Tailwind processing (tailwind.config.ts)
+4. Next.js optimization (next.config.js)
+5. Static generation (pages & API routes)
 ```
 
-### Component Dependencies
-
-**Dashboard Components:**
+### Database Connection Chain
 ```
-dashboard/page.tsx
-├── dashboard/widgets/session-list.tsx
-├── dashboard/cards/stats-card.tsx
-├── charts/dashboard-charts.tsx
-└── ui/card.tsx, ui/button.tsx
+API Route → Database Service → Supabase Client → Database
+     ↓              ↓              ↓              ↓
+/api/files → src/lib/database/files.ts → createClient() → Supabase PostgreSQL
 ```
 
-**Session Management:**
-```
-sessions/page.tsx
-├── sessions/session-list.tsx
-├── sessions/forms/session-information-form.tsx
-├── sessions/display/session-header.tsx
-└── ui/ components
-```
+## Security Architecture
 
-### State Management Flow
+### Authentication Layers
+| Layer | Component | Purpose |
+|-------|-----------|---------|
+| **Route Protection** | `src/middleware.ts` | Global route authentication |
+| **API Authentication** | `src/lib/auth/auth.ts` | API request validation |
+| **MFA Integration** | `src/lib/services/mfa-service.ts` | Multi-factor authentication |
+| **Session Management** | `src/lib/auth/middleware.ts` | Session validation |
 
-**Global State (Zustand):**
+### File Security
 ```
-store/index.ts
-├── auth-store.ts (user session)
-├── session-store.ts (current sessions)
-└── notification-store.ts (notifications)
-```
-
-**Server State (React Query):**
-```
-queries/index.ts
-├── sessions.ts (session queries)
-├── users.ts (user queries)
-└── notifications.ts (notification queries)
+File Upload Flow:
+1. src/components/files/file-upload.tsx    # UI upload component
+2. src/app/api/files/upload/route.ts       # Upload API endpoint  
+3. src/lib/services/file-service.ts        # File processing
+4. src/lib/security/file-security-middleware.ts # Security validation
+5. src/lib/services/virus-scanning-service.ts # Virus scanning
+6. Supabase Storage                         # Secure file storage
 ```
 
-### Asset Dependencies
+## Testing Architecture
 
-**Styling:**
+### Test Structure
 ```
-globals.css
-├── Tailwind base styles
-├── Custom CSS variables
-├── Component overrides
-└── Accessibility styles (styles/accessibility.css)
-```
-
-**Static Assets:**
-```
-public/
-├── *.svg (icons)
-├── favicon.ico
-└── manifest files
+tests/
+├── e2e/                  # Playwright end-to-end tests
+│   ├── auth.spec.ts      # Authentication testing
+│   ├── files.spec.ts     # File management testing
+│   └── sessions.spec.ts  # Session booking testing
+└── unit/                 # Unit tests (Vitest)
+    ├── api/              # API endpoint tests
+    ├── components/       # Component tests
+    └── services/         # Service layer tests
 ```
 
-### Build Dependencies
+### Test Configuration Files
+| File | Purpose |
+|------|---------|
+| `playwright.config.ts` | E2E test configuration |
+| `vitest.config.ts` | Unit test configuration |
+| `tests/setup.ts` | Test environment setup |
 
-**Build Process:**
-```
-next.config.js
-├── next-intl plugin
-├── Bundle optimization
-├── Security headers
-└── Performance optimizations
-```
+## Deployment Architecture
 
-**Testing Setup:**
+### Vercel Deployment
 ```
-vitest.config.ts + playwright.config.ts
-├── Test utilities (test/utils.tsx)
-├── Test helpers (tests/helpers/)
-└── Mock setup (test/setup.ts)
-```
-
-### Development Dependencies
-
-**Code Quality:**
-```
-eslint.config.mjs
-├── TypeScript rules
-├── React rules
-├── Next.js rules
-└── Accessibility rules
+Build Process:
+1. Environment variable injection
+2. TypeScript compilation  
+3. Next.js optimization
+4. Static page generation
+5. API route bundling
+6. Asset optimization
 ```
 
-**Scripts:**
+### Docker Configuration
+| File | Purpose |
+|------|---------|
+| `Dockerfile` | Container configuration |
+| `docker-compose.yml` | Multi-service orchestration |
+| `nginx.conf` | Reverse proxy configuration |
+
+## Performance Optimization
+
+### Optimization Components
 ```
-scripts/
-├── analyze-bundle.js (bundle analysis)
-├── optimize-images.js (image optimization)
-├── performance-audit.js (performance testing)
-└── production-readiness-test.sh (deployment checks)
+src/lib/performance/
+├── database-optimization.ts  # Query optimization
+├── database-optimizer.ts     # Connection pooling
+└── [Various cache strategies]
 ```
 
-## Key Integration Points
+### Asset Optimization
+- **Static Assets**: Cached via Vercel CDN
+- **Images**: Next.js Image optimization
+- **Fonts**: Self-hosted for performance
+- **CSS**: Tailwind purging and minification
 
-### Database Integration
-- Supabase client configuration in `lib/supabase/`
-- Database operations in `lib/database/`
-- Type safety with generated types in `types/supabase.ts`
+## Common File Relationships
 
-### Real-time Features
-- Supabase real-time subscriptions
-- Real-time provider in `components/providers/realtime-provider.tsx`
-- Real-time hooks in `lib/realtime/hooks.ts`
+### Feature Implementation Pattern
+```
+1. Database Schema (supabase/migrations/*.sql)
+2. Database Service (src/lib/database/*.ts)
+3. API Endpoint (src/app/api/*/route.ts)
+4. UI Component (src/components/*/component.tsx)
+5. Page Integration (src/app/[locale]/*/page.tsx)
+```
 
-### Performance Monitoring
-- Web vitals tracking in `lib/performance/web-vitals.ts`
-- Performance monitor component
-- Sentry integration for error tracking
+### Configuration Dependency Chain
+```
+package.json → tsconfig.json → next.config.js → tailwind.config.ts → vercel.json
+```
 
-### Accessibility
-- ARIA utilities in `lib/accessibility/aria.ts`
-- Accessible UI components
-- Skip links and screen reader support
-- RTL language support
+## Debugging Reference
 
-This reference document provides a comprehensive overview of the codebase structure and relationships. Use it to understand how components interact, where to find specific functionality, and how the various systems integrate together.
+### Common Error Sources
+| Error Type | Likely Files | Investigation Steps |
+|------------|--------------|-------------------|
+| **Environment Variables** | `src/env-server.mjs`, `.env.local` | Check variable loading and validation |
+| **Database Errors** | `src/lib/database/*.ts`, `src/lib/supabase/server.ts` | Verify client creation and queries |
+| **Authentication Issues** | `src/middleware.ts`, `src/lib/auth/*.ts` | Check session validation chain |
+| **Build Failures** | `next.config.js`, `tsconfig.json` | Review configuration files |
+| **Styling Issues** | `tailwind.config.ts`, `src/components/ui/*.tsx` | Check Tailwind configuration |
+
+---
+*Last Updated: [Current Date]*  
+*Status: Reference Document*  
+*Maintained by: Development Team*

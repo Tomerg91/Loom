@@ -76,7 +76,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://www.googletagmanager.com https://www.google-analytics.com https://js.sentry-cdn.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://www.google-analytics.com https://sentry.io https://*.sentry.io; frame-src 'self' https://secure5.tranzila.com https://direct.tranzila.com; object-src 'none'; base-uri 'self'; form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com;",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://www.googletagmanager.com https://www.google-analytics.com https://js.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://www.google-analytics.com https://sentry.io https://*.sentry.io; frame-src 'self' https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io; object-src 'none'; base-uri 'self'; form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com;",
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
@@ -99,6 +99,42 @@ const nextConfig = {
           {
             key: 'X-Robots-Tag',
             value: 'noindex, nofollow',
+          },
+        ],
+      },
+      // Static CSS files
+      {
+        source: '/_next/static/css/(.*\\.css)',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/css',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'same-origin',
+          },
+        ],
+      },
+      // Static JS files
+      {
+        source: '/_next/static/chunks/(.*\\.js)',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'same-origin',
           },
         ],
       },
