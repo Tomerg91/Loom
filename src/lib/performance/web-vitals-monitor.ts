@@ -217,7 +217,7 @@ class WebVitalsMonitor {
       // Batch requests to avoid overwhelming the server
       if (this.performanceData.length % 5 === 0) {
         const batch = this.performanceData.slice(-5);
-        await fetch('/api/analytics/performance', {
+        await fetch('/api/monitoring/performance', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ metrics: batch }),

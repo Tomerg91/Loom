@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { authService } from '@/lib/services/auth-service';
 import { adminSystemService, MaintenanceAction, MaintenanceActionParams } from '@/lib/database/admin-system';
 import { ApiResponseHelper } from '@/lib/api/types';
@@ -43,7 +43,7 @@ const maintenanceActionSchema = z.object({
 // Rate limiting specifically for maintenance operations
 const maintenanceRateLimit = rateLimit(10, 60 * 1000); // 10 operations per minute
 
-export const POST = maintenanceRateLimit(async function(request: NextRequest): Promise<Response> {
+export const POST = maintenanceRateLimit(async function(request: NextRequest): Promise<NextResponse> {
   try {
     // Verify admin access with enhanced checks
     const session = await authService.getSession();
@@ -152,7 +152,7 @@ export const POST = maintenanceRateLimit(async function(request: NextRequest): P
 });
 
 // GET endpoint to check maintenance operation status
-export async function GET(request: NextRequest): Promise<Response> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     // Verify admin access
     const session = await authService.getSession();

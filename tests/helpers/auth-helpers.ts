@@ -256,7 +256,7 @@ export class TestAuthHelper {
             access_token: accessToken,
             refresh_token: refreshToken,
             user: {
-              id: user.id || 'test-user-id',
+              id: (user as any).id || 'test-user-id',
               email: user.email,
               user_metadata: {
                 first_name: user.firstName,

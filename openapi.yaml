@@ -1,0 +1,2102 @@
+openapi: 3.0.0
+info:
+  title: Loom Coaching App API
+  description: |
+    Comprehensive API for the Loom coaching platform, providing secure endpoints for authentication, session management, file handling, and real-time communication between coaches and clients.
+    
+    ## Authentication
+    Most endpoints require authentication via Bearer tokens. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+    
+    ## Rate Limiting
+    All endpoints are rate-limited for security and performance:
+    - Authentication endpoints: 10 requests/minute
+    - File uploads: 20 requests/hour
+    - General API calls: 100 requests/minute
+    
+    ## Error Handling
+    The API uses consistent error response format:
+    ```json
+    {
+      "success": false,
+      "error": "Error message",
+      "code": "ERROR_CODE",
+      "details": {}
+    }
+    ```
+  version: 1.0.0
+  contact:
+    name: Loom API Support
+    email: support@loom-app.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://loom-app.vercel.app/api
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+paths:
+  # Authentication Endpoints
+  /auth/signin:
+    post:
+      tags:
+        - Authentication
+      summary: Sign in to the application
+      description: |
+        Authenticates a user with email and password. Supports MFA verification.
+        Includes security features like rate limiting and account lockout protection.
+      operationId: signIn
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  minLength: 5
+                  maxLength: 254
+                  description: User's email address
+                  example: user@example.com
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+                  description: User's password
+                  example: SecurePassword123!
+                rememberMe:
+                  type: boolean
+                  default: false
+                  description: Extend session duration
+      responses:
+        '200':
+          description: Successful authentication (non-MFA)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      message:
+                        type: string
+                        example: Successfully signed in
+              examples:
+                success:
+                  summary: Successful sign-in
+                  value:
+                    success: true
+                    data:
+                      user:
+                        id: "12345678-1234-1234-1234-123456789012"
+                        email: "user@example.com"
+                        role: "client"
+                        firstName: "John"
+                        lastName: "Doe"
+                        status: "active"
+                        mfaEnabled: false
+                      message: "Successfully signed in"
+                mfa_required:
+                  summary: MFA verification required
+                  value:
+                    success: true
+                    data:
+                      requiresMFA: true
+                      userId: "12345678-1234-1234-1234-123456789012"
+                      email: "user@example.com"
+                      message: "MFA verification required to complete signin"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Create a new user account
+      description: |
+        Register a new user account. Supports both client and coach roles.
+        Includes validation for email domains and password strength.
+      operationId: signUp
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - firstName
+                - lastName
+                - role
+                - acceptedTerms
+              properties:
+                email:
+                  type: string
+                  format: email
+                  minLength: 5
+                  maxLength: 254
+                  description: User's email address
+                  example: newuser@example.com
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+                  description: Strong password with complexity requirements
+                  example: SecurePassword123!
+                firstName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                  pattern: "^[a-zA-Z\\s\\-']+$"
+                  description: User's first name
+                  example: John
+                lastName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                  pattern: "^[a-zA-Z\\s\\-']+$"
+                  description: User's last name
+                  example: Doe
+                role:
+                  type: string
+                  enum: [client, coach]
+                  description: User role
+                  example: client
+                phone:
+                  type: string
+                  pattern: "^\\+?[1-9]\\d{1,14}$"
+                  description: Phone number in international format
+                  example: "+1234567890"
+                language:
+                  type: string
+                  enum: [en, he]
+                  default: en
+                  description: Preferred language
+                  example: en
+                acceptedTerms:
+                  type: boolean
+                  description: Must be true to create account
+                  example: true
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      message:
+                        type: string
+                        example: Account created successfully. Please check your email for verification.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/signout:
+    post:
+      tags:
+        - Authentication
+      summary: Sign out current user
+      description: Invalidates the current session and logs out the user
+      operationId: signOut
+      responses:
+        '200':
+          description: Successfully signed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Retrieves the authenticated user's profile information
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # MFA Endpoints
+  /auth/mfa/setup:
+    post:
+      tags:
+        - Multi-Factor Authentication
+      summary: Setup MFA for user account
+      description: |
+        Initiates MFA setup by generating TOTP secret and QR code.
+        Returns backup codes for account recovery.
+      operationId: setupMFA
+      responses:
+        '200':
+          description: MFA setup data generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      secret:
+                        type: string
+                        description: Base32 encoded TOTP secret
+                        example: JBSWY3DPEHPK3PXP
+                      qrCodeUrl:
+                        type: string
+                        format: uri
+                        description: QR code data URL for authenticator apps
+                      manualEntryKey:
+                        type: string
+                        description: Manual entry key for authenticator apps
+                      backupCodes:
+                        type: array
+                        items:
+                          type: string
+                        description: One-time backup codes
+                        example: ["123456", "789012"]
+                      appName:
+                        type: string
+                        example: Loom App
+                      accountName:
+                        type: string
+                        example: user@example.com
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: MFA already enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/mfa/verify:
+    post:
+      tags:
+        - Multi-Factor Authentication
+      summary: Verify MFA code during setup or login
+      description: Verifies TOTP code from authenticator app or backup code
+      operationId: verifyMFA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  minLength: 6
+                  maxLength: 8
+                  pattern: "^[0-9]+$"
+                  description: 6-digit TOTP code or 8-digit backup code
+                  example: "123456"
+                userId:
+                  type: string
+                  format: uuid
+                  description: Required for login verification (not setup)
+                  example: "12345678-1234-1234-1234-123456789012"
+      responses:
+        '200':
+          description: MFA verification successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      verified:
+                        type: boolean
+                        example: true
+                      user:
+                        $ref: '#/components/schemas/User'
+                        description: Included for login verification
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Session Management Endpoints
+  /sessions:
+    get:
+      tags:
+        - Sessions
+      summary: List sessions
+      description: |
+        Retrieves sessions based on user role:
+        - Clients: Sessions they participate in
+        - Coaches: Sessions they conduct
+        - Admins: All sessions with filtering
+      operationId: listSessions
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortOrderParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [scheduled, in_progress, completed, cancelled]
+          description: Filter by session status
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter sessions from this date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter sessions to this date
+        - name: coachId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by coach ID (admin only)
+        - name: clientId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by client ID (admin/coach only)
+      responses:
+        '200':
+          description: Sessions retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Session'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags:
+        - Sessions
+      summary: Create a new session
+      description: |
+        Creates a new coaching session. Only admins and coaches can create sessions.
+        Validates coach availability and participant permissions.
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /sessions/book:
+    post:
+      tags:
+        - Sessions
+      summary: Book a session (client-facing)
+      description: |
+        Allows clients to book sessions with available coaches.
+        Includes availability checking and automatic notifications.
+      operationId: bookSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - coachId
+                - title
+                - scheduledAt
+                - durationMinutes
+              properties:
+                coachId:
+                  type: string
+                  format: uuid
+                  description: ID of the coach to book with
+                  example: "12345678-1234-1234-1234-123456789012"
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  description: Session title
+                  example: "Career Planning Session"
+                description:
+                  type: string
+                  maxLength: 500
+                  description: Optional session description
+                  example: "Discussion about career goals and development plan"
+                scheduledAt:
+                  type: string
+                  format: date-time
+                  description: When the session is scheduled
+                  example: "2024-01-15T14:30:00Z"
+                durationMinutes:
+                  type: integer
+                  minimum: 15
+                  maximum: 240
+                  description: Session duration in minutes
+                  example: 60
+      responses:
+        '201':
+          description: Session booked successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /sessions/{id}:
+    get:
+      tags:
+        - Sessions
+      summary: Get session details
+      description: Retrieves detailed information about a specific session
+      operationId: getSession
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Session ID
+      responses:
+        '200':
+          description: Session details retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Session'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Sessions
+      summary: Update session
+      description: Updates session details. Requires appropriate permissions.
+      operationId: updateSession
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Session ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSessionRequest'
+      responses:
+        '200':
+          description: Session updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Sessions
+      summary: Delete session
+      description: Deletes a session. Only admins and session owners can delete.
+      operationId: deleteSession
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Session ID
+      responses:
+        '204':
+          description: Session deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /sessions/{id}/cancel:
+    post:
+      tags:
+        - Sessions
+      summary: Cancel a session
+      description: Cancels a scheduled session with optional reason
+      operationId: cancelSession
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Session ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+                  description: Optional cancellation reason
+                  example: "Emergency meeting conflict"
+                notifyParticipants:
+                  type: boolean
+                  default: true
+                  description: Whether to send notifications
+      responses:
+        '200':
+          description: Session cancelled successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # File Management Endpoints
+  /files/upload:
+    post:
+      tags:
+        - Files
+      summary: Upload a file
+      description: |
+        Uploads files with validation and security scanning.
+        Supports different file types and storage directories.
+      operationId: uploadFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File to upload
+                metadata:
+                  type: string
+                  description: JSON metadata for the file
+                  example: |
+                    {
+                      "directory": "documents",
+                      "sessionId": "12345678-1234-1234-1234-123456789012",
+                      "description": "Session notes",
+                      "category": "notes",
+                      "isShared": false
+                    }
+            encoding:
+              metadata:
+                contentType: application/json
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  file:
+                    $ref: '#/components/schemas/FileUpload'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /files:
+    get:
+      tags:
+        - Files
+      summary: List user files
+      description: Retrieves files accessible to the current user
+      operationId: listFiles
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: directory
+          in: query
+          schema:
+            type: string
+            enum: [avatars, documents, uploads, sessions]
+          description: Filter by directory
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [preparation, notes, recording, resource, personal, avatar, document]
+          description: Filter by file category
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by session ID
+      responses:
+        '200':
+          description: Files retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FileUpload'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /files/{id}:
+    get:
+      tags:
+        - Files
+      summary: Get file details
+      description: Retrieves metadata and details for a specific file
+      operationId: getFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: File ID
+      responses:
+        '200':
+          description: File details retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/FileUpload'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Files
+      summary: Delete a file
+      description: Deletes a file and its metadata
+      operationId: deleteFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: File ID
+      responses:
+        '204':
+          description: File deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /files/{id}/download:
+    get:
+      tags:
+        - Files
+      summary: Download a file
+      description: Downloads the actual file content
+      operationId: downloadFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: File ID
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Notification Endpoints
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: List user notifications
+      description: Retrieves notifications for the current user
+      operationId: listNotifications
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: isRead
+          in: query
+          schema:
+            type: boolean
+          description: Filter by read status
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [session_reminder, new_message, session_confirmation, system_update]
+          description: Filter by notification type
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Notification'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags:
+        - Notifications
+      summary: Create a notification
+      description: Creates a new notification (admin/coach only)
+      operationId: createNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNotificationRequest'
+      responses:
+        '201':
+          description: Notification created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Notification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /notifications/{id}/read:
+    post:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      description: Marks a specific notification as read
+      operationId: markNotificationRead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Notification ID
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /notifications/mark-all-read:
+    post:
+      tags:
+        - Notifications
+      summary: Mark all notifications as read
+      description: Marks all user notifications as read
+      operationId: markAllNotificationsRead
+      responses:
+        '200':
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Coach-specific endpoints
+  /coach/clients:
+    get:
+      tags:
+        - Coach Management
+      summary: List coach's clients
+      description: Retrieves the list of clients for the authenticated coach
+      operationId: getCoachClients
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, pending]
+          description: Filter by client status
+      responses:
+        '200':
+          description: Clients retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /coach/clients/{id}:
+    get:
+      tags:
+        - Coach Management
+      summary: Get client details
+      description: Retrieves detailed information about a specific client
+      operationId: getClientDetails
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Client ID
+      responses:
+        '200':
+          description: Client details retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/User'
+                          - type: object
+                            properties:
+                              sessions:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Session'
+                              recentReflections:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Reflection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /coach/stats:
+    get:
+      tags:
+        - Coach Management
+      summary: Get coach statistics
+      description: Retrieves performance statistics for the authenticated coach
+      operationId: getCoachStats
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, year]
+            default: month
+          description: Statistics period
+      responses:
+        '200':
+          description: Coach statistics retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CoachStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # Client-specific endpoints
+  /client/reflections:
+    get:
+      tags:
+        - Client Management
+      summary: List client reflections
+      description: Retrieves reflections created by the authenticated client
+      operationId: getClientReflections
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by session ID
+      responses:
+        '200':
+          description: Reflections retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Reflection'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags:
+        - Client Management
+      summary: Create a reflection
+      description: Creates a new reflection entry
+      operationId: createReflection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReflectionRequest'
+      responses:
+        '201':
+          description: Reflection created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Reflection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /client/stats:
+    get:
+      tags:
+        - Client Management
+      summary: Get client statistics
+      description: Retrieves progress statistics for the authenticated client
+      operationId: getClientStats
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, year]
+            default: month
+          description: Statistics period
+      responses:
+        '200':
+          description: Client statistics retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ClientStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # Widget endpoints for dashboard
+  /widgets/analytics:
+    get:
+      tags:
+        - Dashboard Widgets
+      summary: Get analytics widget data
+      description: Retrieves aggregated analytics data for dashboard widgets
+      operationId: getAnalyticsWidget
+      parameters:
+        - name: widget
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [sessions_overview, user_growth, performance_metrics, engagement]
+          description: Widget type to retrieve
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, quarter, year]
+            default: month
+          description: Data period
+      responses:
+        '200':
+          description: Widget data retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/WidgetData'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # Health check endpoint
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Returns system health status
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-15T12:00:00Z"
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication endpoints
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items per page
+
+    SortByParam:
+      name: sortBy
+      in: query
+      schema:
+        type: string
+      description: Field to sort by
+
+    SortOrderParam:
+      name: sortOrder
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+      description: Sort order
+
+  schemas:
+    # Core Data Models
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+          example: "12345678-1234-1234-1234-123456789012"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "user@example.com"
+        role:
+          type: string
+          enum: [client, coach, admin]
+          description: User role
+          example: "client"
+        firstName:
+          type: string
+          description: User's first name
+          example: "John"
+        lastName:
+          type: string
+          description: User's last name
+          example: "Doe"
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to user's avatar image
+          example: "https://example.com/avatar.jpg"
+        language:
+          type: string
+          enum: [en, he]
+          description: User's preferred language
+          example: "en"
+        status:
+          type: string
+          enum: [active, inactive, pending, suspended]
+          description: User account status
+          example: "active"
+        lastSeenAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last activity timestamp
+          example: "2024-01-15T12:00:00Z"
+        mfaEnabled:
+          type: boolean
+          description: Whether MFA is enabled
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: "2024-01-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2024-01-15T12:00:00Z"
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique session identifier
+          example: "12345678-1234-1234-1234-123456789012"
+        coachId:
+          type: string
+          format: uuid
+          description: Coach user ID
+          example: "87654321-4321-4321-4321-210987654321"
+        clientId:
+          type: string
+          format: uuid
+          description: Client user ID
+          example: "11111111-2222-3333-4444-555555555555"
+        title:
+          type: string
+          description: Session title
+          example: "Career Planning Session"
+        description:
+          type: string
+          nullable: true
+          description: Session description
+          example: "Discussion about career goals and development plan"
+        scheduledAt:
+          type: string
+          format: date-time
+          description: Scheduled session time
+          example: "2024-01-15T14:30:00Z"
+        duration:
+          type: integer
+          description: Session duration in minutes
+          example: 60
+        durationMinutes:
+          type: integer
+          description: Alternative duration field
+          example: 60
+        status:
+          type: string
+          enum: [scheduled, in_progress, completed, cancelled, no_show]
+          description: Session status
+          example: "scheduled"
+        meetingUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Virtual meeting URL
+          example: "https://meet.example.com/session123"
+        notes:
+          type: string
+          nullable: true
+          description: Session notes
+          example: "Client showed great progress on goals"
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+          description: Session rating (1-5)
+          example: 5
+        coach:
+          allOf:
+            - $ref: '#/components/schemas/User'
+            - type: object
+              description: Coach details
+        client:
+          allOf:
+            - $ref: '#/components/schemas/User'
+            - type: object
+              description: Client details
+        createdAt:
+          type: string
+          format: date-time
+          description: Session creation timestamp
+          example: "2024-01-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2024-01-15T12:00:00Z"
+
+    FileUpload:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique file identifier
+          example: "12345678-1234-1234-1234-123456789012"
+        filename:
+          type: string
+          description: File name
+          example: "session-notes.pdf"
+        originalFilename:
+          type: string
+          description: Original uploaded filename
+          example: "My Session Notes.pdf"
+        fileType:
+          type: string
+          description: MIME type
+          example: "application/pdf"
+        fileSize:
+          type: integer
+          description: File size in bytes
+          example: 1048576
+        fileCategory:
+          type: string
+          enum: [preparation, notes, recording, resource, personal, avatar, document]
+          description: File category
+          example: "notes"
+        url:
+          type: string
+          format: uri
+          description: File access URL
+          example: "https://storage.example.com/files/session-notes.pdf"
+        description:
+          type: string
+          nullable: true
+          description: File description
+          example: "Notes from career planning session"
+        tags:
+          type: array
+          items:
+            type: string
+          description: File tags
+          example: ["career", "planning", "goals"]
+        isShared:
+          type: boolean
+          description: Whether file is shared
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: Upload timestamp
+          example: "2024-01-15T12:00:00Z"
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique notification identifier
+          example: "12345678-1234-1234-1234-123456789012"
+        userId:
+          type: string
+          format: uuid
+          description: Target user ID
+          example: "87654321-4321-4321-4321-210987654321"
+        type:
+          type: string
+          enum: [session_reminder, new_message, session_confirmation, system_update]
+          description: Notification type
+          example: "session_reminder"
+        title:
+          type: string
+          description: Notification title
+          example: "Session Reminder"
+        content:
+          type: string
+          description: Notification content
+          example: "Your session with John Doe starts in 30 minutes"
+        isRead:
+          type: boolean
+          description: Read status
+          example: false
+        isArchived:
+          type: boolean
+          description: Archive status
+          example: false
+        scheduledFor:
+          type: string
+          format: date-time
+          nullable: true
+          description: Scheduled delivery time
+          example: "2024-01-15T14:00:00Z"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional notification data
+          example:
+            sessionId: "12345678-1234-1234-1234-123456789012"
+            coachName: "John Doe"
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          example: "2024-01-15T12:00:00Z"
+
+    Reflection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique reflection identifier
+          example: "12345678-1234-1234-1234-123456789012"
+        userId:
+          type: string
+          format: uuid
+          description: Client user ID
+          example: "87654321-4321-4321-4321-210987654321"
+        sessionId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Associated session ID
+          example: "11111111-2222-3333-4444-555555555555"
+        content:
+          type: string
+          description: Reflection content
+          example: "Today's session helped me understand my communication patterns better..."
+        moodRating:
+          type: integer
+          minimum: 1
+          maximum: 10
+          nullable: true
+          description: Mood rating (1-10)
+          example: 8
+        insights:
+          type: string
+          nullable: true
+          description: Key insights
+          example: "I need to work on active listening skills"
+        nextSessionGoals:
+          type: string
+          nullable: true
+          description: Goals for next session
+          example: "Practice the communication techniques we discussed"
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          example: "2024-01-15T12:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2024-01-15T12:00:00Z"
+
+    # Request/Response Schemas
+    CreateSessionRequest:
+      type: object
+      required:
+        - title
+        - scheduledAt
+        - duration
+        - coachId
+        - clientId
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Session title
+          example: "Career Planning Session"
+        description:
+          type: string
+          maxLength: 500
+          description: Session description
+          example: "Discussion about career goals and development plan"
+        scheduledAt:
+          type: string
+          format: date-time
+          description: Scheduled session time
+          example: "2024-01-15T14:30:00Z"
+        duration:
+          type: integer
+          minimum: 15
+          maximum: 240
+          description: Session duration in minutes
+          example: 60
+        coachId:
+          type: string
+          format: uuid
+          description: Coach user ID
+          example: "87654321-4321-4321-4321-210987654321"
+        clientId:
+          type: string
+          format: uuid
+          description: Client user ID
+          example: "11111111-2222-3333-4444-555555555555"
+        meetingUrl:
+          type: string
+          format: uri
+          description: Virtual meeting URL
+          example: "https://meet.example.com/session123"
+
+    UpdateSessionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Session title
+          example: "Updated Career Planning Session"
+        description:
+          type: string
+          maxLength: 500
+          description: Session description
+          example: "Updated discussion about career goals"
+        scheduledAt:
+          type: string
+          format: date-time
+          description: Scheduled session time
+          example: "2024-01-15T15:30:00Z"
+        duration:
+          type: integer
+          minimum: 15
+          maximum: 240
+          description: Session duration in minutes
+          example: 90
+        status:
+          type: string
+          enum: [scheduled, in_progress, completed, cancelled]
+          description: Session status
+          example: "scheduled"
+        meetingUrl:
+          type: string
+          format: uri
+          description: Virtual meeting URL
+          example: "https://meet.example.com/session456"
+        notes:
+          type: string
+          maxLength: 2000
+          description: Session notes
+          example: "Client showed improvement in goal setting"
+
+    CreateNotificationRequest:
+      type: object
+      required:
+        - userId
+        - type
+        - title
+        - content
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Target user ID
+          example: "87654321-4321-4321-4321-210987654321"
+        type:
+          type: string
+          enum: [session_reminder, new_message, session_confirmation, system_update]
+          description: Notification type
+          example: "session_reminder"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Notification title
+          example: "Session Reminder"
+        content:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Notification content
+          example: "Your session starts in 30 minutes"
+        scheduledFor:
+          type: string
+          format: date-time
+          description: Scheduled delivery time
+          example: "2024-01-15T14:00:00Z"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional notification data
+          example:
+            sessionId: "12345678-1234-1234-1234-123456789012"
+
+    CreateReflectionRequest:
+      type: object
+      required:
+        - content
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: Associated session ID
+          example: "12345678-1234-1234-1234-123456789012"
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: Reflection content
+          example: "Today's session was very insightful..."
+        moodRating:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Mood rating (1-10)
+          example: 8
+        insights:
+          type: string
+          maxLength: 1000
+          description: Key insights
+          example: "I learned about my communication patterns"
+        nextSessionGoals:
+          type: string
+          maxLength: 1000
+          description: Goals for next session
+          example: "Practice active listening techniques"
+
+    # Statistics Schemas
+    CoachStats:
+      type: object
+      properties:
+        totalSessions:
+          type: integer
+          description: Total sessions conducted
+          example: 150
+        completedSessions:
+          type: integer
+          description: Completed sessions
+          example: 142
+        averageRating:
+          type: number
+          format: float
+          description: Average session rating
+          example: 4.7
+        totalClients:
+          type: integer
+          description: Total number of clients
+          example: 25
+        activeClients:
+          type: integer
+          description: Currently active clients
+          example: 18
+        revenueGenerated:
+          type: number
+          format: float
+          description: Total revenue generated
+          example: 15000.00
+        period:
+          type: string
+          description: Statistics period
+          example: "month"
+
+    ClientStats:
+      type: object
+      properties:
+        totalSessions:
+          type: integer
+          description: Total sessions attended
+          example: 12
+        completedSessions:
+          type: integer
+          description: Completed sessions
+          example: 10
+        averageMoodRating:
+          type: number
+          format: float
+          description: Average mood rating
+          example: 7.5
+        totalReflections:
+          type: integer
+          description: Total reflections created
+          example: 15
+        goalsAchieved:
+          type: integer
+          description: Number of goals achieved
+          example: 8
+        progressScore:
+          type: number
+          format: float
+          description: Overall progress score
+          example: 85.5
+        period:
+          type: string
+          description: Statistics period
+          example: "month"
+
+    WidgetData:
+      type: object
+      properties:
+        widget:
+          type: string
+          description: Widget type
+          example: "sessions_overview"
+        period:
+          type: string
+          description: Data period
+          example: "month"
+        data:
+          type: object
+          additionalProperties: true
+          description: Widget-specific data
+          example:
+            totalSessions: 450
+            completedSessions: 425
+            cancelledSessions: 15
+            trends:
+              - date: "2024-01-01"
+                value: 45
+              - date: "2024-01-02"
+                value: 52
+
+    # Utility Schemas
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        limit:
+          type: integer
+          description: Items per page
+          example: 20
+        total:
+          type: integer
+          description: Total number of items
+          example: 150
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 8
+        hasNext:
+          type: boolean
+          description: Whether there are more pages
+          example: true
+        hasPrev:
+          type: boolean
+          description: Whether there are previous pages
+          example: false
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: Success message
+          example: "Operation completed successfully"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error message
+          example: "Validation failed"
+        code:
+          type: string
+          description: Error code
+          example: "VALIDATION_ERROR"
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details
+
+  responses:
+    BadRequest:
+      description: Bad Request - Invalid input or validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            validation_error:
+              summary: Validation error
+              value:
+                success: false
+                error: "Validation failed"
+                code: "VALIDATION_ERROR"
+                details:
+                  issues:
+                    - field: "email"
+                      message: "Invalid email format"
+
+    Unauthorized:
+      description: Unauthorized - Authentication required or failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Authentication required. Please provide a valid Bearer token."
+            code: "UNAUTHORIZED"
+
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Access denied. Required role: admin"
+            code: "FORBIDDEN"
+
+    NotFound:
+      description: Not Found - Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Resource not found"
+            code: "NOT_FOUND"
+
+    Conflict:
+      description: Conflict - Resource conflict or business rule violation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Coach is not available at the selected time"
+            code: "SCHEDULING_CONFLICT"
+
+    TooManyRequests:
+      description: Too Many Requests - Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Too many requests. Please try again later."
+            code: "RATE_LIMIT_EXCEEDED"
+      headers:
+        X-RateLimit-Limit:
+          description: Request limit per window
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          description: Remaining requests in current window
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          description: Unix timestamp when rate limit resets
+          schema:
+            type: integer
+        Retry-After:
+          description: Seconds to wait before retrying
+          schema:
+            type: integer
+
+    InternalError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "An unexpected error occurred"
+            code: "INTERNAL_ERROR"
+
+tags:
+  - name: Authentication
+    description: User authentication and account management
+  - name: Multi-Factor Authentication
+    description: MFA setup and verification
+  - name: Sessions
+    description: Coaching session management
+  - name: Files
+    description: File upload and management
+  - name: Notifications
+    description: User notification system
+  - name: Coach Management
+    description: Coach-specific operations
+  - name: Client Management
+    description: Client-specific operations
+  - name: Dashboard Widgets
+    description: Dashboard analytics and widgets
+  - name: System
+    description: System health and utilities

@@ -36,7 +36,7 @@ describe('QueryClient Mocking Infrastructure', () => {
     );
     
     mockUseMutation.mockReturnValue(
-      createMockMutationResult(null, { mutate: () => {}, isPending: false })
+      createMockMutationResult(null, { mutate: vi.fn(), isPending: false })
     );
   });
 
@@ -59,7 +59,7 @@ describe('QueryClient Mocking Infrastructure', () => {
 
   it('shows mutation loading state', () => {
     mockUseMutation.mockReturnValue(
-      createMockMutationResult(null, { mutate: () => {}, isPending: true })
+      createMockMutationResult(null, { mutate: vi.fn(), isPending: true })
     );
     
     renderWithProviders(<TestComponent />);

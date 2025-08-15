@@ -68,12 +68,13 @@ export const setUserContext = (user: {
   }
 };
 
-// Performance monitoring
-export const startTransaction = (name: string, operation: string) => {
+// Performance monitoring with enhanced business context
+export const startTransaction = (name: string, operation: string, context?: Record<string, unknown>) => {
   if (SENTRY_DSN) {
     return Sentry.startSpan({
       name,
       op: operation,
+      attributes: context,
     }, (span) => {
       // Return a span-like object for compatibility
       return {
@@ -92,6 +93,11 @@ export const startTransaction = (name: string, operation: string) => {
             span.setAttributes({ [key]: value });
           }
         },
+        setStatus: (status: 'ok' | 'error' | 'cancelled') => {
+          if (span) {
+            span.setStatus({ code: status === 'ok' ? 1 : 2 });
+          }
+        },
       };
     });
   }
@@ -99,7 +105,106 @@ export const startTransaction = (name: string, operation: string) => {
     finish: () => {},
     setTag: () => {},
     setData: () => {},
+    setStatus: () => {},
   };
+};
+
+// Business metrics tracking
+export const trackBusinessMetric = (metricName: string, value: number, tags?: Record<string, string>) => {
+  if (SENTRY_DSN && typeof window !== 'undefined' && 'Sentry' in window) {
+    try {
+      // Use Sentry metrics API if available
+      if ('metrics' in Sentry && Sentry.metrics) {
+        Sentry.metrics.gauge(metricName, value, {
+          tags,
+          timestamp: Date.now(),
+        });
+      }
+      
+      // Also add as breadcrumb for context
+      addBreadcrumb({
+        category: 'business_metric',
+        message: `${metricName}: ${value}`,
+        level: 'info',
+        data: { metric: metricName, value, tags },
+      });
+    } catch (error) {
+      console.warn('Failed to track business metric:', error);
+    }
+  }
+};
+
+// User engagement tracking
+export const trackUserEngagement = (action: string, feature: string, userId?: string, metadata?: Record<string, unknown>) => {
+  if (SENTRY_DSN) {
+    Sentry.withScope((scope) => {
+      scope.setTag('engagement_action', action);
+      scope.setTag('feature', feature);
+      if (userId) scope.setUser({ id: userId });
+      
+      scope.setContext('engagement', {
+        action,
+        feature,
+        timestamp: new Date().toISOString(),
+        ...metadata,
+      });
+      
+      Sentry.captureMessage(`User engagement: ${action} in ${feature}`, 'info');
+    });
+  }
+};
+
+// API performance monitoring
+export const monitorAPICall = async <T>(
+  endpoint: string,
+  operation: () => Promise<T>,
+  context?: Record<string, unknown>
+): Promise<T> => {
+  const transaction = startTransaction(`API ${endpoint}`, 'http.server', {
+    endpoint,
+    ...context,
+  });
+  
+  const startTime = Date.now();
+  
+  try {
+    const result = await operation();
+    const duration = Date.now() - startTime;
+    
+    transaction.setTag('status', 'success');
+    transaction.setData('response_time', duration);
+    
+    // Track API performance metric
+    trackBusinessMetric('api_response_time', duration, {
+      endpoint,
+      status: 'success',
+    });
+    
+    transaction.finish();
+    return result;
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    transaction.setTag('status', 'error');
+    transaction.setData('response_time', duration);
+    transaction.setData('error', error instanceof Error ? error.message : 'Unknown error');
+    
+    // Track API error metric
+    trackBusinessMetric('api_error_rate', 1, {
+      endpoint,
+      status: 'error',
+      error_type: error instanceof Error ? error.name : 'unknown',
+    });
+    
+    captureError(error as Error, {
+      endpoint,
+      duration,
+      operation: 'api_call',
+    });
+    
+    transaction.finish();
+    throw error;
+  }
 };
 
 export const addBreadcrumb = (breadcrumb: {

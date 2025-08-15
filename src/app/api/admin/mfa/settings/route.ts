@@ -76,15 +76,12 @@ const postHandler = rateLimit(10, 60000)( // 10 requests per minute for updating
         return ApiResponseHelper.internalError(result.error || 'Failed to save MFA settings');
       }
 
-      return ApiResponseHelper.success(
-        { 
+      return ApiResponseHelper.success({
           message: 'MFA settings updated successfully',
           settings,
           updatedBy: adminUserId,
           timestamp: new Date().toISOString()
-        },
-        200
-      );
+        });
 
     } catch (error) {
       console.error('Save MFA settings API error:', error);
@@ -103,15 +100,15 @@ const postHandler = rateLimit(10, 60000)( // 10 requests per minute for updating
   }
 );
 
-export async function GET(request: NextRequest): Promise<Response> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   return getHandler(request);
 }
 
-export async function POST(request: NextRequest): Promise<Response> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   return postHandler(request);
 }
 
 // Also support PUT for consistency with RESTful conventions
-export async function PUT(request: NextRequest): Promise<Response> {
+export async function PUT(request: NextRequest): Promise<NextResponse> {
   return postHandler(request);
 }

@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminSystemService } from '@/lib/database/admin-system';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { withAdminSecurity } from '@/lib/security/admin-middleware';
@@ -15,7 +15,7 @@ export const GET = withAdminSecurity(
   async function(
     request: NextRequest,
     context: { user: any; headers: Record<string, string> }
-  ): Promise<Response> {
+  ): Promise<NextResponse> {
     try {
       const { searchParams } = new URL(request.url);
       
@@ -104,8 +104,8 @@ export const GET = withAdminSecurity(
 );
 
 // OPTIONS handler for CORS
-export async function OPTIONS(): Promise<Response> {
-  return new Response(null, {
+export async function OPTIONS(): Promise<NextResponse> {
+  return new NextResponse(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',

@@ -70,17 +70,14 @@ const rateLimitedHandler = rateLimit(20, 60000)( // 20 requests per minute for M
         return ApiResponseHelper.internalError(result.error || `Failed to ${action} MFA for user`);
       }
 
-      return ApiResponseHelper.success(
-        { 
+      return ApiResponseHelper.success({
           message: `MFA ${action} successful for user`,
           action,
           userId,
           adminUserId,
           reason: reason || null,
           timestamp: new Date().toISOString()
-        },
-        200
-      );
+        });
 
     } catch (error) {
       console.error('MFA admin action API error:', error);
@@ -99,11 +96,11 @@ const rateLimitedHandler = rateLimit(20, 60000)( // 20 requests per minute for M
   }
 );
 
-export async function POST(request: NextRequest, context: RouteParams): Promise<Response> {
+export async function POST(request: NextRequest, context: RouteParams): Promise<NextResponse> {
   return rateLimitedHandler(request, context);
 }
 
 // Also support PATCH for consistency with RESTful conventions
-export async function PATCH(request: NextRequest, context: RouteParams): Promise<Response> {
+export async function PATCH(request: NextRequest, context: RouteParams): Promise<NextResponse> {
   return rateLimitedHandler(request, context);
 }

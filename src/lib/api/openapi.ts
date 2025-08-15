@@ -1,5 +1,41 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import * as yaml from 'js-yaml';
+
 // OpenAPI 3.0 specification for the Loom Coaching Platform API
-export const openApiSpec = {
+// Dynamically loads from the comprehensive openapi.yaml file
+function loadOpenApiSpec() {
+  try {
+    // Try to load the comprehensive openapi.yaml file
+    const yamlPath = join(process.cwd(), 'openapi.yaml');
+    const yamlContent = readFileSync(yamlPath, 'utf8');
+    const spec = yaml.load(yamlContent) as any;
+    
+    // Update server URLs based on environment
+    if (spec && spec.servers) {
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const baseUrl = isDevelopment ? 'http://localhost:3000/api' : 'https://loom-app.vercel.app/api';
+      
+      spec.servers = [
+        {
+          url: baseUrl,
+          description: `${isDevelopment ? 'Development' : 'Production'} server`
+        },
+        ...(isDevelopment ? [{
+          url: 'http://localhost:3000/api',
+          description: 'Local development server'
+        }] : [])
+      ];
+    }
+    
+    return spec;
+  } catch (error) {
+    console.warn('Could not load openapi.yaml, using embedded spec:', error);
+    return embeddedOpenApiSpec;
+  }
+}
+
+const embeddedOpenApiSpec = {
   openapi: '3.0.3',
   info: {
     title: 'Loom Coaching Platform API',
@@ -1074,3 +1110,6 @@ export const openApiSpec = {
     },
   ],
 };
+
+// Export the OpenAPI specification
+export const openApiSpec = loadOpenApiSpec();

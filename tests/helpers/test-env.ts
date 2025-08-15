@@ -126,7 +126,8 @@ export function setupTestEnvironment(): void {
   const config = getTestConfig();
   
   // Set environment variables for the test run
-  process.env.NODE_ENV = 'test';
+  // NODE_ENV is set by test runner, don't override
+  // process.env.NODE_ENV = 'test';
   process.env.NEXT_PUBLIC_APP_ENV = config.appEnv;
   process.env.NEXT_PUBLIC_SUPABASE_URL = config.supabaseUrl;
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = config.supabaseAnonKey;

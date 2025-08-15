@@ -242,7 +242,7 @@ describe('RouteGuard', () => {
       (usePermission as any).mockReturnValue(true);
       
       renderWithProviders(
-        <RouteGuard requirePermission="users:read" as any>
+        <RouteGuard requirePermission="user:view:all">
           <TestComponent />
         </RouteGuard>
       );
@@ -254,7 +254,7 @@ describe('RouteGuard', () => {
       (usePermission as any).mockReturnValue(false);
       
       renderWithProviders(
-        <RouteGuard requirePermission="users:write" as any>
+        <RouteGuard requirePermission="user:create">
           <TestComponent />
         </RouteGuard>
       );
@@ -269,7 +269,7 @@ describe('RouteGuard', () => {
       (useAnyPermission as any).mockReturnValue(true);
       
       renderWithProviders(
-        <RouteGuard requireAnyPermission={['users:read', 'users:write'] as Permission[]}>
+        <RouteGuard requireAnyPermission={['user:view:all', 'user:create']}>
           <TestComponent />
         </RouteGuard>
       );
@@ -281,7 +281,7 @@ describe('RouteGuard', () => {
       (useAnyPermission as any).mockReturnValue(false);
       
       renderWithProviders(
-        <RouteGuard requireAnyPermission={['users:write', 'admin:access'] as Permission[]}>
+        <RouteGuard requireAnyPermission={['user:create', 'admin:view:dashboard']}>
           <TestComponent />
         </RouteGuard>
       );
@@ -295,7 +295,7 @@ describe('RouteGuard', () => {
       (usePermission as any).mockReturnValue(false);
       
       renderWithProviders(
-        <RouteGuard requirePermission="admin:access" as any>
+        <RouteGuard requirePermission="admin:view:dashboard">
           <TestComponent />
         </RouteGuard>
       );
@@ -313,7 +313,7 @@ describe('RouteGuard', () => {
       (usePermission as any).mockReturnValue(true);
       
       renderWithProviders(
-        <RouteGuard requireRole="admin" requirePermission="users:write" as any>
+        <RouteGuard requireRole="admin" requirePermission="user:create">
           <TestComponent />
         </RouteGuard>
       );
@@ -327,7 +327,7 @@ describe('RouteGuard', () => {
       (usePermission as any).mockReturnValue(false);
       
       renderWithProviders(
-        <RouteGuard requireRole="admin" requirePermission="super:admin" as any>
+        <RouteGuard requireRole="admin" requirePermission="admin:manage:system">
           <TestComponent />
         </RouteGuard>
       );
@@ -343,7 +343,7 @@ describe('RouteGuard', () => {
       (usePermission as any).mockReturnValue(true);
       
       renderWithProviders(
-        <RouteGuard requireRole="admin" requirePermission="users:read" as any>
+        <RouteGuard requireRole="admin" requirePermission="user:view:all">
           <TestComponent />
         </RouteGuard>
       );

@@ -50,7 +50,8 @@ import {
   AlertTriangle,
   Loader2
 } from 'lucide-react';
-import { useToast } from '@/components/ui/enhanced-toast-provider';
+// import { useToast } from '@/components/ui/enhanced-toast-provider'; // Commented out due to framer-motion dependency
+import { useToast } from '@/components/ui/use-toast';
 import { formatDistanceToNow, format, subDays, subWeeks, subMonths } from 'date-fns';
 
 interface NotificationAnalytics {

@@ -16,7 +16,7 @@ vi.mock('react-hook-form', async () => {
         onBlur: vi.fn(),
         ref: vi.fn(),
       })),
-      handleSubmit: vi.fn((fn) => (e) => {
+      handleSubmit: vi.fn((fn) => (e: any) => {
         e?.preventDefault();
         return fn({
           email: 'test@example.com',

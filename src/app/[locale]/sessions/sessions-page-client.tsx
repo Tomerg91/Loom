@@ -8,9 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { SessionBookingForm } from '@/components/sessions/booking';
-import { SessionList } from '@/components/sessions/session-list';
-import { SessionCalendar } from '@/components/sessions/session-calendar';
+import { LazySessionBooking, LazySessionList, LazySessionCalendar } from '@/components/lazy-components';
 import { Calendar, List, Plus, Clock, Users, CheckCircle } from 'lucide-react';
 import type { Session } from '@/types';
 
@@ -80,7 +78,7 @@ export function SessionsPageClient({ locale }: SessionsPageClientProps) {
                       {t('selectCoachAndTimeSlot')}
                     </DialogDescription>
                   </DialogHeader>
-                  <SessionBookingForm onSuccess={handleBookingSuccess} />
+                  <LazySessionBooking onSuccess={handleBookingSuccess} />
                 </DialogContent>
               </Dialog>
             )}
@@ -154,7 +152,7 @@ export function SessionsPageClient({ locale }: SessionsPageClientProps) {
           </TabsList>
 
           <TabsContent value="list" className="mt-6">
-            <SessionList 
+            <LazySessionList 
               showFilters={true}
               limit={20}
               coachId={user?.role === 'coach' ? user.id : undefined}
@@ -163,7 +161,7 @@ export function SessionsPageClient({ locale }: SessionsPageClientProps) {
           </TabsContent>
 
           <TabsContent value="calendar" className="mt-6">
-            <SessionCalendar
+            <LazySessionCalendar
               coachId={user?.role === 'coach' ? user.id : undefined}
               clientId={user?.role === 'client' ? user.id : undefined}
               onSessionClick={handleSessionClick}

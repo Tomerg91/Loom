@@ -1,8 +1,10 @@
 'use client';
 
-import { lazy, Suspense } from 'react';
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 // Component prop interfaces
 interface CoachDashboardProps {
@@ -31,12 +33,20 @@ interface FileManagerProps {
   uploadEnabled?: boolean;
 }
 
-// Dashboard Loading Skeleton
+// Generic loading component with spinner
+const LoadingSpinner = ({ message = "Loading..." }: { message?: string }) => (
+  <div className="flex flex-col items-center justify-center p-8 space-y-4">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <p className="text-sm text-muted-foreground">{message}</p>
+  </div>
+);
+
+// Enhanced Dashboard Loading Skeleton
 const DashboardSkeleton = () => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {[...Array(4)].map((_, i) => (
-        <Card key={i}>
+        <Card key={i} className="animate-pulse">
           <CardHeader>
             <Skeleton className="h-4 w-20" />
           </CardHeader>
@@ -54,36 +64,192 @@ const DashboardSkeleton = () => (
   </div>
 );
 
-// Heavy dashboard components - lazy loaded
-export const LazyCoachDashboard = lazy(() => 
-  import('@/components/coach/coach-dashboard').then(mod => ({ 
+// Error fallback component
+const ErrorFallback = ({ 
+  message = "Component unavailable", 
+  onRetry 
+}: { 
+  message?: string;
+  onRetry?: () => void;
+}) => (
+  <Card className="border-destructive/50">
+    <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+      <div className="text-destructive mb-4">
+        <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-destructive/10 flex items-center justify-center">
+          <span className="text-destructive">!</span>
+        </div>
+        <h3 className="text-lg font-semibold">{message}</h3>
+      </div>
+      {onRetry && (
+        <button 
+          onClick={onRetry}
+          className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"
+        >
+          Retry
+        </button>
+      )}
+    </CardContent>
+  </Card>
+);
+
+// ============================================================================
+// OPTIMIZED HEAVY COMPONENTS - Using dynamic imports for better chunking
+// ============================================================================
+
+// Dashboard components
+export const LazyCoachDashboard = dynamic(
+  () => import('@/components/coach/coach-dashboard').then(mod => ({ 
     default: mod.CoachDashboardComponent 
-  }))
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading coach dashboard..." />,
+    ssr: false
+  }
 );
 
-export const LazyClientDashboard = lazy(() => 
-  import('@/components/client/client-dashboard').then(mod => ({ 
+export const LazyClientDashboard = dynamic(
+  () => import('@/components/client/client-dashboard').then(mod => ({ 
     default: mod.ClientDashboardComponent 
-  }))
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading client dashboard..." />,
+    ssr: false
+  }
 );
 
-export const LazyAdminAnalytics = lazy(() => 
-  import('@/components/admin/analytics-page').then(mod => ({ 
-    default: mod.AdminAnalyticsPage 
-  }))
+// Admin components
+export const LazyAdminAnalytics = dynamic(
+  () => import('./admin/lazy-admin-components').then(mod => ({ 
+    default: mod.LazyAdminAnalyticsPage 
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading analytics dashboard..." />,
+    ssr: false
+  }
 );
 
-export const LazySessionManagement = lazy(() => 
-  import('@/components/sessions/session-list').then(mod => ({ 
-    default: mod.SessionList 
-  }))
+export const LazyAdminUsers = dynamic(
+  () => import('./admin/lazy-admin-components').then(mod => ({ 
+    default: mod.LazyAdminUsersPage 
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading user management..." />,
+    ssr: false
+  }
 );
 
-export const LazyFileManager = lazy(() => 
-  import('@/components/files/file-manager').then(mod => ({ 
-    default: mod.FileManager 
-  }))
+export const LazyAdminSystem = dynamic(
+  () => import('./admin/lazy-admin-components').then(mod => ({ 
+    default: mod.LazyAdminSystemPage 
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading system settings..." />,
+    ssr: false
+  }
 );
+
+// Chart components (heavy recharts library)
+export const LazyUserGrowthChart = dynamic(
+  () => import('./charts/lazy-chart-components').then(mod => ({ 
+    default: mod.LazyUserGrowthChart 
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading chart..." />,
+    ssr: false
+  }
+);
+
+export const LazySessionMetricsChart = dynamic(
+  () => import('./charts/lazy-chart-components').then(mod => ({ 
+    default: mod.LazySessionMetricsChart 
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading metrics chart..." />,
+    ssr: false
+  }
+);
+
+export const LazyDashboardCharts = dynamic(
+  () => import('./charts/lazy-chart-components').then(mod => ({ 
+    default: mod.LazyDashboardCharts 
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading dashboard charts..." />,
+    ssr: false
+  }
+);
+
+// Session components
+export const LazySessionCalendar = dynamic(
+  () => import('./sessions/lazy-session-components').then(mod => ({ 
+    default: mod.LazySessionCalendar 
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading calendar..." />,
+    ssr: false
+  }
+);
+
+export const LazySessionList = dynamic(
+  () => import('./sessions/lazy-session-components').then(mod => ({ 
+    default: mod.LazySessionList 
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading sessions..." />,
+    ssr: false
+  }
+);
+
+export const LazySessionBooking = dynamic(
+  () => import('./sessions/lazy-session-components').then(mod => ({ 
+    default: mod.LazyUnifiedSessionBooking 
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading booking form..." />,
+    ssr: false
+  }
+);
+
+// Note: File management, messaging, and rich text editor components 
+// are commented out due to missing dependencies. 
+// They can be enabled once the missing modules are available.
+
+/*
+// File management components
+export const LazyFileManager = dynamic(
+  () => import('./files/file-manager'),
+  {
+    loading: () => <LoadingSpinner message="Loading file manager..." />,
+    ssr: false
+  }
+);
+
+// Messaging components  
+export const LazyMessageThread = dynamic(
+  () => import('./messages/message-thread'),
+  {
+    loading: () => <LoadingSpinner message="Loading messages..." />,
+    ssr: false
+  }
+);
+
+export const LazyNotificationCenter = dynamic(
+  () => import('./notifications/notification-center'),
+  {
+    loading: () => <LoadingSpinner message="Loading notifications..." />,
+    ssr: false
+  }
+);
+
+// Rich text editor (heavy component)
+export const LazyRichTextEditor = dynamic(
+  () => import('./ui/rich-text-editor'),
+  {
+    loading: () => <LoadingSpinner message="Loading editor..." />,
+    ssr: false
+  }
+);
+*/
 
 // Lazy loading wrapper component
 interface LazyWrapperProps {

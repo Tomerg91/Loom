@@ -20,7 +20,7 @@ vi.mock('react-hook-form', () => ({
       onBlur: vi.fn(),
       ref: vi.fn(),
     })),
-    handleSubmit: vi.fn((fn) => (e) => {
+    handleSubmit: vi.fn((fn) => (e: any) => {
       e?.preventDefault();
       return fn({
         sessionId: 'session-123',

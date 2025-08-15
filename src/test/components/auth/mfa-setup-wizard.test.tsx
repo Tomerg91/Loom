@@ -589,6 +589,7 @@ describe('MfaSetupWizard', () => {
     it('supports keyboard navigation', async () => {
       renderWithProviders(<MfaSetupWizard {...defaultProps} />);
       
+      const user = userEvent.setup();
       // Test tab navigation
       await user.tab();
       expect(screen.getByText(/setup.getStarted/i)).toHaveFocus();

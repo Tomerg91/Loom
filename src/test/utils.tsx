@@ -118,11 +118,6 @@ export const createTestQueryClient = (): QueryClient => {
         retry: false,
       },
     },
-    logger: {
-      log: () => {},
-      warn: () => {},
-      error: () => {},
-    },
   });
 };
 
@@ -261,6 +256,8 @@ export const createMockQueryResult = <TData = unknown, TError = unknown>(
     errorUpdatedAt: isError ? Date.now() : 0,
     refetch: vi.fn().mockResolvedValue({ data, error: null, isError: false, isSuccess: true }),
     promise: Promise.resolve({ data, error: null, isError: false, isSuccess: true }),
+    isInitialLoading: isPending,
+    isEnabled: true,
   } as UseQueryResult<TData, TError>;
 };
 

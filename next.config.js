@@ -196,49 +196,146 @@ const nextConfig = {
       },
     ];
 
-    // Optimize bundle size for Next.js 15
+    // Enhanced bundle optimization for production
     if (!dev && !isServer) {
-      // Next.js 15 has improved automatic chunking, but we can still customize
       config.optimization = {
         ...config.optimization,
         splitChunks: {
-          ...config.optimization.splitChunks,
+          chunks: 'all',
+          minSize: 20000,        // 20KB minimum chunk size
+          maxSize: 244000,       // 244KB maximum chunk size (for better caching)
+          minChunks: 1,
+          maxAsyncRequests: 30,  // Allow more async chunks for better splitting
+          maxInitialRequests: 25, // Allow more initial chunks
+          automaticNameDelimiter: '~',
           cacheGroups: {
-            ...config.optimization.splitChunks.cacheGroups,
-            // Framework chunk for React/Next.js core
+            // React/Next.js framework chunk (highest priority)
             framework: {
               chunks: 'all',
               name: 'framework',
               test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|next)[\\/]/,
-              priority: 40,
+              priority: 50,
               enforce: true,
+              reuseExistingChunk: true,
             },
-            // UI library chunk for better caching
+            
+            // Charts library (recharts is heavy - separate chunk)
+            charts: {
+              test: /[\\/]node_modules[\\/](recharts|d3-.*|victory-.*)[\\/]/,
+              name: 'charts',
+              chunks: 'all',
+              priority: 45,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            
+            // UI component libraries
             ui: {
-              test: /[\\/]node_modules[\\/](@radix-ui|lucide-react)[\\/]/,
+              test: /[\\/]node_modules[\\/](@radix-ui|lucide-react|react-day-picker)[\\/]/,
               name: 'ui',
               chunks: 'all',
-              priority: 35,
+              priority: 40,
               enforce: true,
+              reuseExistingChunk: true,
             },
-            // Supabase chunk
-            supabase: {
-              test: /[\\/]node_modules[\\/](@supabase)[\\/]/,
-              name: 'supabase',
+            
+            // Authentication & database
+            auth: {
+              test: /[\\/]node_modules[\\/](@supabase|@tanstack\/react-query|zustand)[\\/]/,
+              name: 'auth',
+              chunks: 'all',
+              priority: 38,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            
+            // Internationalization
+            i18n: {
+              test: /[\\/]node_modules[\\/](next-intl|date-fns)[\\/]/,
+              name: 'i18n',
+              chunks: 'all',
+              priority: 36,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            
+            // Form handling libraries
+            forms: {
+              test: /[\\/]node_modules[\\/](react-hook-form|@hookform|zod)[\\/]/,
+              name: 'forms',
+              chunks: 'all',
+              priority: 34,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            
+            // Utilities and smaller libraries
+            utils: {
+              test: /[\\/]node_modules[\\/](clsx|class-variance-authority|tailwind-merge|tailwindcss-animate)[\\/]/,
+              name: 'utils',
               chunks: 'all',
               priority: 32,
               enforce: true,
+              reuseExistingChunk: true,
             },
-            // Shared libraries
-            lib: {
-              test: /[\\/]node_modules[\\/]/,
-              name: 'lib',
-              priority: 30,
+            
+            // PDF and file processing
+            files: {
+              test: /[\\/]node_modules[\\/](pdf-lib|qrcode|speakeasy|bcryptjs)[\\/]/,
+              name: 'files',
               chunks: 'all',
+              priority: 30,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            
+            // Monitoring and analytics
+            monitoring: {
+              test: /[\\/]node_modules[\\/](@sentry|web-vitals)[\\/]/,
+              name: 'monitoring',
+              chunks: 'all',
+              priority: 28,
+              enforce: true,
+              reuseExistingChunk: true,
+            },
+            
+            // Common vendor libraries (lower priority)
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendor',
+              chunks: 'all',
+              priority: 20,
               minChunks: 2,
-              maxSize: 244000, // 244KB max chunk size
+              maxSize: 244000,
+              reuseExistingChunk: true,
+            },
+            
+            // Default group for everything else
+            default: {
+              minChunks: 2,
+              priority: 10,
+              reuseExistingChunk: true,
+              maxSize: 244000,
             },
           },
+        },
+        
+        // Tree shaking improvements
+        usedExports: true,
+        sideEffects: false,
+        
+        // Module concatenation for better minification
+        concatenateModules: true,
+      };
+      
+      // Add performance budgets for bundle size monitoring
+      config.performance = {
+        hints: process.env.NODE_ENV === 'production' ? 'warning' : false,
+        maxAssetSize: 250000,     // 250KB per asset
+        maxEntrypointSize: 250000, // 250KB per entry point
+        assetFilter: function(assetFilename) {
+          // Only apply budgets to JS and CSS files
+          return assetFilename.endsWith('.js') || assetFilename.endsWith('.css');
         },
       };
     }

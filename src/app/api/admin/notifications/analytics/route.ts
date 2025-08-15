@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -18,6 +18,34 @@ const AnalyticsQuerySchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 });
+
+// Helper function to generate time series data
+function generateTimeSeriesData(notifications: any[], startDate: Date, endDate: Date, range: string) {
+  const intervalHours = range === '1d' ? 1 : 24;
+  const data = [];
+  
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    const intervalEnd = new Date(current);
+    intervalEnd.setHours(intervalEnd.getHours() + intervalHours);
+    
+    const intervalNotifications = notifications.filter(n => {
+      const createdAt = new Date(n.created_at);
+      return createdAt >= current && createdAt < intervalEnd;
+    });
+    
+    data.push({
+      timestamp: current.toISOString(),
+      sent: intervalNotifications.length,
+      delivered: intervalNotifications.filter(n => n.sent_at).length,
+      opened: intervalNotifications.filter(n => n.read_at).length,
+    });
+    
+    current.setHours(current.getHours() + intervalHours);
+  }
+  
+  return data;
+}
 
 // GET /api/admin/notifications/analytics - Get notification analytics
 export const GET = withErrorHandling(
@@ -67,70 +95,104 @@ export const GET = withErrorHandling(
         const channelCondition = query.channel ? `AND channel = '${query.channel}'` : '';
         const typeCondition = query.type ? `AND type = '${query.type}'` : '';
 
-        // Get overview statistics
-        const { data: overviewData } = await supabase.rpc('get_notification_overview_stats', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          filter_channel: query.channel || null,
-          filter_type: query.type || null,
-        });
-
-        // Get channel breakdown
-        const { data: channelBreakdown } = await supabase
-          .from('notification_delivery_logs')
-          .select('channel, status')
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString());
-
-        // Get type breakdown
-        const { data: typeBreakdown } = await supabase
+        // Get overview statistics from existing notifications table
+        const { data: allNotifications, error: notificationsError } = await supabase
           .from('notifications')
-          .select(`
-            type,
-            notification_delivery_logs!inner(status, sent_at, delivered_at, opened_at, clicked_at)
-          `)
+          .select('*')
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString());
 
-        // Get time series data
-        const { data: timeSeriesData } = await supabase.rpc('get_notification_time_series', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          interval_type: query.range === '1d' ? 'hour' : 'day',
-          filter_channel: query.channel || null,
-          filter_type: query.type || null,
-        });
+        if (notificationsError) {
+          console.error('Error fetching notifications:', notificationsError);
+          throw new Error('Failed to fetch notifications data');
+        }
 
-        // Get top performing notifications
-        const { data: topPerforming } = await supabase.rpc('get_top_performing_notifications', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          limit_count: 10,
-        });
+        // Calculate overview stats
+        const totalSent = allNotifications?.length || 0;
+        const totalRead = allNotifications?.filter(n => n.read_at)?.length || 0;
+        const totalSentOut = allNotifications?.filter(n => n.sent_at)?.length || 0;
+        
+        const overviewData = {
+          totalSent,
+          totalDelivered: totalSentOut,
+          totalOpened: totalRead,
+          totalClicked: 0, // Not tracked in current schema
+          deliveryRate: totalSent > 0 ? (totalSentOut / totalSent) * 100 : 0,
+          openRate: totalSentOut > 0 ? (totalRead / totalSentOut) * 100 : 0,
+          clickRate: 0, // Not tracked in current schema
+        };
 
-        // Get user engagement metrics
-        const { data: userEngagement } = await supabase.rpc('get_user_engagement_metrics', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-        });
+        // Channel breakdown - simulate based on notification type
+        const channelBreakdown = allNotifications?.map(notification => ({
+          channel: notification.type.includes('session') ? 'email' : 'inapp',
+          status: notification.sent_at ? (notification.read_at ? 'opened' : 'delivered') : 'sent'
+        })) || [];
 
-        // Get delivery issues
-        const { data: deliveryIssues } = await supabase
-          .from('notification_delivery_logs')
-          .select(`
-            id,
-            notification_id,
-            channel,
-            status,
-            error_message,
-            created_at,
-            notifications!inner(type, title)
-          `)
-          .eq('status', 'failed')
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString())
-          .order('created_at', { ascending: false })
-          .limit(50);
+        // Type breakdown from existing notifications
+        const typeBreakdown = allNotifications?.map(notification => ({
+          type: notification.type,
+          notification_delivery_logs: [{
+            status: notification.sent_at ? (notification.read_at ? 'opened' : 'delivered') : 'sent',
+            sent_at: notification.sent_at,
+            delivered_at: notification.sent_at,
+            opened_at: notification.read_at,
+            clicked_at: null
+          }]
+        })) || [];
+
+        // Generate time series data
+        const timeSeriesData = generateTimeSeriesData(allNotifications || [], startDate, endDate, query.range);
+
+        // Calculate top performing notifications based on read rate
+        const notificationPerformance: Record<string, any> = {};
+        allNotifications?.forEach(notification => {
+          const key = `${notification.type}-${notification.title}`;
+          if (!notificationPerformance[key]) {
+            notificationPerformance[key] = {
+              title: notification.title,
+              type: notification.type,
+              sent: 0,
+              opened: 0,
+              openRate: 0
+            };
+          }
+          notificationPerformance[key].sent += 1;
+          if (notification.read_at) {
+            notificationPerformance[key].opened += 1;
+          }
+        });
+        
+        const topPerforming = Object.values(notificationPerformance)
+          .map((perf: any) => ({ ...perf, openRate: perf.sent > 0 ? (perf.opened / perf.sent) * 100 : 0 }))
+          .sort((a: any, b: any) => b.openRate - a.openRate)
+          .slice(0, 10);
+
+        // Calculate user engagement metrics
+        const uniqueUsers = new Set(allNotifications?.map(n => n.user_id) || []).size;
+        const engagedUsers = new Set(
+          allNotifications?.filter(n => n.read_at)?.map(n => n.user_id) || []
+        ).size;
+        
+        const userEngagement = {
+          activeUsers: uniqueUsers,
+          engagedUsers,
+          unsubscribeRate: 0, // Not tracked in current schema
+          avgNotificationsPerUser: uniqueUsers > 0 ? totalSent / uniqueUsers : 0,
+        };
+
+        // Simulate delivery issues - notifications that were scheduled but never sent
+        const deliveryIssues = allNotifications
+          ?.filter(n => !n.sent_at && new Date(n.scheduled_for) < new Date())
+          ?.slice(0, 50)
+          ?.map(n => ({
+            id: n.id,
+            notification_id: n.id,
+            channel: n.type.includes('session') ? 'email' : 'inapp',
+            status: 'failed',
+            error_message: 'Scheduled notification not sent',
+            created_at: n.created_at,
+            notifications: { type: n.type, title: n.title }
+          })) || [];
 
         // Process channel breakdown
         const channelStats = {
@@ -222,25 +284,19 @@ export const GET = withErrorHandling(
         });
 
         const analytics = {
-          overview: overviewData || {
-            totalSent: 0,
-            totalDelivered: 0,
-            totalOpened: 0,
-            totalClicked: 0,
-            deliveryRate: 0,
-            openRate: 0,
-            clickRate: 0,
+          query: {
+            range: query.range,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            channel: query.channel,
+            type: query.type
           },
+          overview: overviewData,
           byChannel: channelStats,
           byType: typeStats,
-          timeSeriesData: timeSeriesData || [],
-          topPerformingNotifications: topPerforming || [],
-          userEngagement: userEngagement || {
-            activeUsers: 0,
-            engagedUsers: 0,
-            unsubscribeRate: 0,
-            avgNotificationsPerUser: 0,
-          },
+          timeSeriesData: timeSeriesData,
+          topPerformingNotifications: topPerforming,
+          userEngagement: userEngagement,
           deliveryIssues: Object.values(issueGroups),
         };
 

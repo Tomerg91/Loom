@@ -29,7 +29,7 @@ vi.mock('@/lib/performance/web-vitals', () => ({
     passed: metrics.LCP < 2500 && metrics.FID < 100 && metrics.CLS < 0.1,
     violations: Object.entries(metrics).filter(([key, value]) => {
       const thresholds = { LCP: 2500, FID: 100, CLS: 0.1 };
-      return value > thresholds[key as keyof typeof thresholds];
+      return (value as number) > thresholds[key as keyof typeof thresholds];
     }).map(([key]) => key),
   })),
 }));
