@@ -7,6 +7,7 @@ import { getServerUser } from '@/lib/auth/auth';
 import { routing } from '@/i18n/routing';
 import { PerformanceMonitorComponent } from '@/components/monitoring/performance-monitor';
 import { SkipLink } from '@/components/ui/skip-link';
+import { EnvironmentCheck } from '@/components/environment-check';
 import '../globals.css';
 
 // Optimize for faster initial loads - reduce server work
@@ -80,6 +81,7 @@ export default async function LocaleLayout({
         <SkipLink href="#main-navigation" className="left-32">
           {locale === 'he' ? 'עבור לניווט' : 'Skip to navigation'}
         </SkipLink>
+        <EnvironmentCheck />
         <Providers 
           locale={locale} 
           messages={resolvedMessages} 

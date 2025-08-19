@@ -4,8 +4,11 @@ function getRequiredClientEnvVar(name) {
   const value = process.env[name];
   if (!value) {
     console.error(`Missing required client environment variable: ${name}`);
+    // In production, provide more helpful error but don't crash the build
     if (process.env.NODE_ENV === 'production') {
-      throw new Error(`Missing required client environment variable: ${name}`);
+      console.error(`Production deployment missing ${name}. Check Vercel environment variables.`);
+      // Return a placeholder that will show a user-friendly error in the UI
+      return `MISSING_${name.replace('NEXT_PUBLIC_', '')}`;
     }
   }
   return value;

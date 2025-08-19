@@ -9,10 +9,10 @@ export function generateNonce(): string {
 
 // Security headers configuration
 export const SECURITY_HEADERS = {
-  // Content Security Policy - Allow inline scripts and Tranzilla
+  // Content Security Policy - Allow inline scripts, Tranzilla, and Sentry
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com",
+    "script-src 'self' 'unsafe-inline' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://js.sentry-cdn.com https://*.sentry.io",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // Only allow unsafe-inline for styles
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https:",
@@ -21,8 +21,8 @@ export const SECURITY_HEADERS = {
     "base-uri 'self'",
     "form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com",
     "frame-ancestors 'none'",
-    "frame-src 'self' https://secure5.tranzila.com https://direct.tranzila.com",
-    "connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com",
+    "frame-src 'self' https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io",
+    "connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://sentry.io https://*.sentry.io",
     "worker-src 'self' blob:",
     "manifest-src 'self'",
   ].join('; '),
@@ -37,26 +37,26 @@ export const SECURITY_HEADERS = {
   // HSTS (HTTP Strict Transport Security)
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
   
-  // Cross-Origin headers
-  'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Embedder-Policy': 'require-corp',
-  'Cross-Origin-Resource-Policy': 'same-origin',
+  // Cross-Origin headers - Updated for Sentry compatibility
+  'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+  'Cross-Origin-Embedder-Policy': 'unsafe-none',
+  'Cross-Origin-Resource-Policy': 'cross-origin',
 };
 
 // Development environment adjustments - Still secure but allows localhost
 const DEV_CSP_OVERRIDES = {
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://js.sentry-cdn.com https://*.sentry.io",
     "style-src 'self' 'unsafe-inline'", // Only allow unsafe-inline for styles in dev
     "font-src 'self' data:",
     "img-src 'self' data: blob: https: http:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://sentry.io https://*.sentry.io",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com",
     "frame-ancestors 'none'",
-    "frame-src 'self' https://secure5.tranzila.com https://direct.tranzila.com",
+    "frame-src 'self' https://secure5.tranzila.com https://direct.tranzilla.com https://*.sentry.io",
   ].join('; '),
   
   // Less restrictive COEP in development

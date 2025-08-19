@@ -86,6 +86,10 @@ const nextConfig = {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin-allow-popups',
           },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
         ],
       },
       // API routes security
@@ -102,13 +106,13 @@ const nextConfig = {
           },
         ],
       },
-      // Static CSS files
+      // Static CSS files - Fix MIME type issues
       {
         source: '/_next/static/css/(.*\\.css)',
         headers: [
           {
             key: 'Content-Type',
-            value: 'text/css',
+            value: 'text/css; charset=utf-8',
           },
           {
             key: 'Cache-Control',
@@ -117,6 +121,10 @@ const nextConfig = {
           {
             key: 'Cross-Origin-Resource-Policy',
             value: 'same-origin',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
           },
         ],
       },
