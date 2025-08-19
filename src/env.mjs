@@ -11,6 +11,20 @@ function getRequiredClientEnvVar(name) {
       return `MISSING_${name.replace('NEXT_PUBLIC_', '')}`;
     }
   }
+  
+  // Validate URL format for URL-type environment variables
+  if (name.includes('URL') && value && !value.startsWith('MISSING_')) {
+    try {
+      new URL(value);
+    } catch (error) {
+      console.error(`Invalid URL format for ${name}: ${value}`);
+      if (process.env.NODE_ENV === 'production') {
+        return `INVALID_${name.replace('NEXT_PUBLIC_', '')}_FORMAT`;
+      }
+      throw new Error(`Invalid URL format for ${name}: ${value}`);
+    }
+  }
+  
   return value;
 }
 

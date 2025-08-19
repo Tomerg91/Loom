@@ -16,7 +16,7 @@ function checkEnvironmentVariables(): EnvironmentError[] {
   const errors: EnvironmentError[] = [];
   
   // Check for missing required variables
-  if (env.NEXT_PUBLIC_SUPABASE_URL?.startsWith('MISSING_')) {
+  if (env.NEXT_PUBLIC_SUPABASE_URL?.startsWith('MISSING_') || env.NEXT_PUBLIC_SUPABASE_URL?.startsWith('INVALID_')) {
     errors.push({
       variable: 'NEXT_PUBLIC_SUPABASE_URL',
       value: env.NEXT_PUBLIC_SUPABASE_URL,
@@ -30,6 +30,21 @@ function checkEnvironmentVariables(): EnvironmentError[] {
       value: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       required: true,
     });
+  }
+  
+  // Validate URL format for existing URLs
+  if (env.NEXT_PUBLIC_SUPABASE_URL && 
+      !env.NEXT_PUBLIC_SUPABASE_URL.startsWith('MISSING_') && 
+      !env.NEXT_PUBLIC_SUPABASE_URL.startsWith('INVALID_')) {
+    try {
+      new URL(env.NEXT_PUBLIC_SUPABASE_URL);
+    } catch (error) {
+      errors.push({
+        variable: 'NEXT_PUBLIC_SUPABASE_URL',
+        value: `Invalid URL format: ${env.NEXT_PUBLIC_SUPABASE_URL}`,
+        required: true,
+      });
+    }
   }
   
   return errors;

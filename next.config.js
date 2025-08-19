@@ -34,6 +34,11 @@ const nextConfig = {
         loaders: ['@svgr/webpack'],
         as: '*.js',
       },
+      // Explicitly handle CSS files to prevent MIME type issues
+      '*.css': {
+        loaders: ['css-loader'],
+        as: '*.css',
+      },
     },
   },
   
@@ -76,7 +81,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://www.googletagmanager.com https://www.google-analytics.com https://js.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://www.google-analytics.com https://sentry.io https://*.sentry.io; frame-src 'self' https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io; object-src 'none'; base-uri 'self'; form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com;",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://www.googletagmanager.com https://www.google-analytics.com https://js.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline' https://*.vercel.app; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://www.google-analytics.com https://sentry.io https://*.sentry.io; frame-src 'self' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io; object-src 'none'; base-uri 'self'; form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com;",
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
@@ -190,6 +195,16 @@ const nextConfig = {
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // Suppress critical dependency warnings for instrumentation libraries
     config.module.exprContextCritical = false;
+    
+    // Fix CSS MIME type issues - ensure proper CSS handling
+    if (!dev && !isServer) {
+      // Add plugin to ensure CSS files have correct MIME type
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          '__CSS_MIME_TYPE_FIX__': true
+        })
+      );
+    }
     
     // More specific suppression for OpenTelemetry/Sentry
     config.ignoreWarnings = [

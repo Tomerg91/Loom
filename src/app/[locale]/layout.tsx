@@ -61,8 +61,7 @@ export default async function LocaleLayout({
         {/* Preload critical resources for faster LCP */}
         <link rel="dns-prefetch" href="https://*.supabase.co" />
         <link rel="preconnect" href="https://*.supabase.co" crossOrigin="" />
-        {/* Preload critical fonts */}
-        <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossOrigin="" />
+        {/* Google Fonts Inter is loaded automatically - no preload needed */}
         {/* Critical CSS inlined in globals.css */}
         <style dangerouslySetInnerHTML={{
           __html: `

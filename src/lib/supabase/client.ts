@@ -18,6 +18,18 @@ function validateClientEnv() {
     if (!NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       throw new Error('Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY');
     }
+    
+    // Validate URL format
+    if (NEXT_PUBLIC_SUPABASE_URL.startsWith('MISSING_') || NEXT_PUBLIC_SUPABASE_URL.startsWith('INVALID_')) {
+      throw new Error(`Invalid Supabase URL configuration: ${NEXT_PUBLIC_SUPABASE_URL}`);
+    }
+    
+    // Validate URL is actually a valid URL
+    try {
+      new URL(NEXT_PUBLIC_SUPABASE_URL);
+    } catch (error) {
+      throw new Error(`Invalid Supabase URL format: ${NEXT_PUBLIC_SUPABASE_URL}`);
+    }
   }
 }
 

@@ -51,6 +51,15 @@ const publicRoutes = [
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
+  // Fix CSS MIME type issues for Next.js static files
+  if (pathname.startsWith('/_next/static/css/')) {
+    const response = NextResponse.next();
+    response.headers.set('Content-Type', 'text/css; charset=utf-8');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    return response;
+  }
+  
   // Skip middleware for static files and API routes
   if (
     pathname.startsWith('/_next') ||

@@ -49,13 +49,25 @@ export const getOptimizedImageUrl = (
   height?: number,
   quality: number = 80
 ): string => {
-  const url = new URL(src, process.env.NEXT_PUBLIC_APP_URL);
-  url.searchParams.set('w', width.toString());
-  if (height) {
-    url.searchParams.set('h', height.toString());
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!baseUrl || baseUrl.startsWith('MISSING_') || baseUrl.startsWith('INVALID_')) {
+      console.warn('Invalid or missing NEXT_PUBLIC_APP_URL, using relative URL');
+      // Return original src if we can't construct a proper URL
+      return src;
+    }
+    
+    const url = new URL(src, baseUrl);
+    url.searchParams.set('w', width.toString());
+    if (height) {
+      url.searchParams.set('h', height.toString());
+    }
+    url.searchParams.set('q', quality.toString());
+    return url.toString();
+  } catch (error) {
+    console.error('Error constructing optimized image URL:', error);
+    return src; // Fallback to original src
   }
-  url.searchParams.set('q', quality.toString());
-  return url.toString();
 };
 
 // Lazy loading utility
