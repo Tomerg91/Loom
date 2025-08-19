@@ -129,7 +129,7 @@ async function checkDatabaseHealth() {
     
     // Test basic connectivity
     const { error: basicError } = await supabase
-      .from('profiles')
+      .from('users')
       .select('id')
       .limit(1);
     
@@ -142,7 +142,7 @@ async function checkDatabaseHealth() {
     // Test write capability (non-destructive)
     const writeStart = Date.now();
     const { error: writeError } = await supabase
-      .from('audit_logs')
+      .from('system_audit_logs')
       .select('id')
       .limit(1);
     
