@@ -51,22 +51,30 @@ const publicRoutes = [
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
-  // Fix CSS MIME type issues for Next.js static files
-  if (pathname.startsWith('/_next/static/css/')) {
-    const response = NextResponse.next();
-    response.headers.set('Content-Type', 'text/css; charset=utf-8');
-    response.headers.set('X-Content-Type-Options', 'nosniff');
-    response.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
-    return response;
-  }
-  
-  // Skip middleware for static files and API routes
+  // CRITICAL: Skip ALL middleware logic for Next.js static assets
+  // This must be the FIRST check to prevent any middleware execution
   if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/static') ||
-    pathname.includes('.') ||
-    pathname.startsWith('/api')
+    pathname.startsWith('/_next/static/') ||
+    pathname.startsWith('/_next/image/') ||
+    pathname.startsWith('/favicon.ico') ||
+    pathname.startsWith('/static/') ||
+    pathname.includes('.css') ||
+    pathname.includes('.js') ||
+    pathname.includes('.map') ||
+    pathname.includes('.ico') ||
+    pathname.includes('.png') ||
+    pathname.includes('.jpg') ||
+    pathname.includes('.jpeg') ||
+    pathname.includes('.svg') ||
+    pathname.includes('.gif') ||
+    pathname.includes('.webp') ||
+    pathname.includes('.woff') ||
+    pathname.includes('.woff2') ||
+    pathname.includes('.ttf') ||
+    pathname.includes('.eot') ||
+    pathname.startsWith('/api/')
   ) {
+    // Return immediately without any processing
     return NextResponse.next();
   }
 
@@ -154,12 +162,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * Match all request paths except:
+     * - API routes
+     * - Static files (_next/static, _next/image)
+     * - Public files (favicon, robots.txt, etc.)
+     * - File extensions (css, js, images, fonts, etc.)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api/|_next/static|_next/image|_next/webpack-hmr|favicon.ico|robots.txt|sitemap.xml|manifest.json|.*\\.).*)',
   ],
 };
