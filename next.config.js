@@ -3,8 +3,6 @@ const createNextIntlPlugin = require('next-intl/plugin');
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
-console.log('NEXT_PUBLIC_SUPABASE_URL during build:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-
 const nextConfig = {
   reactStrictMode: true,
   experimental: {

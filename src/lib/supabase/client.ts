@@ -6,6 +6,9 @@ import { Database } from '@/types/supabase';
 const NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+console.log('Browser NEXT_PUBLIC_SUPABASE_URL:', NEXT_PUBLIC_SUPABASE_URL);
+console.log('Browser NEXT_PUBLIC_SUPABASE_ANON_KEY:', NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
 // Singleton instance to prevent multiple GoTrueClient creation
 let clientInstance: ReturnType<typeof createClientComponentClient<Database>> | null = null;
 
