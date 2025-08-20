@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { fileManagementService } from '@/lib/services/file-management-service';
 import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
 import { fileDownloadRateLimit } from '@/lib/security/file-rate-limit';
+import { getCorsHeadersForPublicEndpoint } from '@/lib/security/cors';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -210,11 +211,12 @@ export async function GET(
         responseHeaders.set('Content-Security-Policy', "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'");
       }
 
-      // Add CORS headers for cross-origin requests if needed
+      // Add secure CORS headers for temporary shares (restricted to allowed origins)
       if (downloadType === 'temporary_share') {
-        responseHeaders.set('Access-Control-Allow-Origin', '*');
-        responseHeaders.set('Access-Control-Allow-Methods', 'GET');
-        responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type');
+        const corsHeaders = getCorsHeadersForPublicEndpoint();
+        Object.entries(corsHeaders).forEach(([key, value]) => {
+          responseHeaders.set(key, value);
+        });
       }
 
       return new NextResponse(fileBuffer, {

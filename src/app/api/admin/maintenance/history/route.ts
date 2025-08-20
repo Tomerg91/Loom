@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminSystemService } from '@/lib/database/admin-system';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { withAdminSecurity } from '@/lib/security/admin-middleware';
+import { createCorsResponse } from '@/lib/security/cors';
 import { z } from 'zod';
 
 const historyQuerySchema = z.object({
@@ -103,14 +104,7 @@ export const GET = withAdminSecurity(
   }
 );
 
-// OPTIONS handler for CORS
-export async function OPTIONS(): Promise<NextResponse> {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+// OPTIONS handler for CORS with security-compliant origin restriction
+export async function OPTIONS(request: NextRequest): Promise<NextResponse> {
+  return createCorsResponse(request);
 }
