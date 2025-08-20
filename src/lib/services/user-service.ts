@@ -327,4 +327,9 @@ class UserService {
   }
 }
 
+// Export the class
+export { UserService };
+
+// Export a singleton instance
 export const userService = new UserService();
+
