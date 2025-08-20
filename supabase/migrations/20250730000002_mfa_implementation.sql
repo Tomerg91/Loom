@@ -558,11 +558,9 @@ GRANT EXECUTE ON FUNCTION get_user_mfa_status(UUID) TO authenticated;
 
 GRANT SELECT ON mfa_admin_dashboard TO authenticated;
 
--- Create RLS policy for admin dashboard view
-CREATE POLICY "Admins can view MFA dashboard" ON mfa_admin_dashboard
-    FOR SELECT USING (
-        EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin')
-    );
+-- Note: Views cannot have RLS policies directly
+-- Access control for the mfa_admin_dashboard view is handled through the underlying table policies
+-- and application-level access controls for admin users
 
 -- Add MFA enforcement trigger for admin/coach users based on system config
 CREATE OR REPLACE FUNCTION check_mfa_enforcement()
@@ -636,17 +634,23 @@ BEGIN
     GET DIAGNOSTICS cleanup_count = ROW_COUNT;
     
     -- Clean up old verification attempts (keep 90 days)
-    DELETE FROM mfa_verification_attempts 
-    WHERE created_at < NOW() - INTERVAL '90 days';
-    GET DIAGNOSTICS cleanup_count = cleanup_count + ROW_COUNT;
+    WITH deleted_attempts AS (
+        DELETE FROM mfa_verification_attempts 
+        WHERE created_at < NOW() - INTERVAL '90 days'
+        RETURNING 1
+    )
+    SELECT cleanup_count + COUNT(*) INTO cleanup_count FROM deleted_attempts;
     
     -- Clean up expired QR codes and verification codes
-    UPDATE user_mfa_methods 
-    SET qr_code_url = NULL,
-        verification_code = NULL,
-        verification_expires_at = NULL
-    WHERE verification_expires_at < NOW();
-    GET DIAGNOSTICS cleanup_count = cleanup_count + ROW_COUNT;
+    WITH updated_methods AS (
+        UPDATE user_mfa_methods 
+        SET qr_code_url = NULL,
+            verification_code = NULL,
+            verification_expires_at = NULL
+        WHERE verification_expires_at < NOW()
+        RETURNING 1
+    )
+    SELECT cleanup_count + COUNT(*) INTO cleanup_count FROM updated_methods;
     
     -- Log cleanup activity
     INSERT INTO security_audit_log (event_type, event_details, severity)

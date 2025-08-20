@@ -49,7 +49,7 @@ export async function GET(
 
     const params = await context.params;
     const coachId = session.user.id;
-    const clientId = id;
+    const clientId = params.id;
 
     if (!clientId) {
       return ApiResponseHelper.badRequest('Client ID is required');
@@ -211,7 +211,7 @@ export async function PUT(
 
     const params = await context.params;
     const coachId = session.user.id;
-    const clientId = id;
+    const clientId = params.id;
 
     if (!clientId) {
       return ApiResponseHelper.badRequest('Client ID is required');

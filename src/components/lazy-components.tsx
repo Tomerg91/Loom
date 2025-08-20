@@ -34,7 +34,7 @@ interface FileManagerProps {
 }
 
 // Generic loading component with spinner
-const LoadingSpinner = ({ message = "Loading..." }: { message?: string }) => (
+export const LoadingSpinner = ({ message = "Loading..." }: { message?: string }) => (
   <div className="flex flex-col items-center justify-center p-8 space-y-4">
     <Loader2 className="h-8 w-8 animate-spin text-primary" />
     <p className="text-sm text-muted-foreground">{message}</p>

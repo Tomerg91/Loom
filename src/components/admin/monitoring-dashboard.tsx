@@ -184,22 +184,22 @@ export default function MonitoringDashboard() {
       switch (status) {
         case 'healthy':
         case 'good':
-          return <CheckCircle className=\"w-3 h-3\" />;
+          return <CheckCircle className="w-3 h-3" />;
         case 'degraded':
         case 'needs-improvement':
         case 'slow':
-          return <AlertTriangle className=\"w-3 h-3\" />;
+          return <AlertTriangle className="w-3 h-3" />;
         case 'unhealthy':
         case 'poor':
-          return <XCircle className=\"w-3 h-3\" />;
+          return <XCircle className="w-3 h-3" />;
         default:
-          return <AlertCircle className=\"w-3 h-3\" />;
+          return <AlertCircle className="w-3 h-3" />;
       }
     };
 
     return (
       <Badge 
-        variant=\"outline\" 
+        variant="outline" 
         className={`${getStatusColor(status)} ${size === 'sm' ? 'text-xs px-2 py-1' : ''} inline-flex items-center gap-1`}
       >
         {getStatusIcon(status)}
@@ -218,18 +218,18 @@ export default function MonitoringDashboard() {
     trend?: 'improving' | 'stable' | 'degrading';
   }> = ({ title, value, subtitle, icon, status, trend }) => (
     <Card>
-      <CardContent className=\"p-6\">
-        <div className=\"flex items-center justify-between\">
-          <div className=\"flex items-center space-x-2\">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
             {icon}
             <div>
-              <p className=\"text-sm font-medium text-gray-600\">{title}</p>
-              <p className=\"text-2xl font-bold\">{value}</p>
-              {subtitle && <p className=\"text-xs text-gray-500\">{subtitle}</p>}
+              <p className="text-sm font-medium text-gray-600">{title}</p>
+              <p className="text-2xl font-bold">{value}</p>
+              {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
             </div>
           </div>
-          <div className=\"text-right\">
-            {status && <StatusBadge status={status} size=\"sm\" />}
+          <div className="text-right">
+            {status && <StatusBadge status={status} size="sm" />}
             {trend && (
               <div className={`text-xs mt-1 ${
                 trend === 'improving' ? 'text-green-600' : 
@@ -247,38 +247,38 @@ export default function MonitoringDashboard() {
 
   if (loading && !systemHealth) {
     return (
-      <div className=\"space-y-6\">
-        <div className=\"flex items-center justify-center h-64\">
-          <RefreshCw className=\"w-8 h-8 animate-spin text-gray-400\" />
-          <span className=\"ml-2 text-gray-600\">Loading monitoring data...</span>
+      <div className="space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
+          <span className="ml-2 text-gray-600">Loading monitoring data...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className=\"space-y-6\">
+    <div className="space-y-6">
       {/* Header */}
-      <div className=\"flex items-center justify-between\">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className=\"text-3xl font-bold tracking-tight\">System Monitoring</h1>
-          <p className=\"text-gray-600\">
+          <h1 className="text-3xl font-bold tracking-tight">System Monitoring</h1>
+          <p className="text-gray-600">
             Real-time system health, performance, and business metrics
           </p>
         </div>
-        <div className=\"flex items-center space-x-2\">
-          <div className=\"text-sm text-gray-500\">
+        <div className="flex items-center space-x-2">
+          <div className="text-sm text-gray-500">
             Last updated: {lastUpdated.toLocaleTimeString()}
           </div>
           <Button
-            variant=\"outline\"
-            size=\"sm\"
+            variant="outline"
+            size="sm"
             onClick={() => setAutoRefresh(!autoRefresh)}
           >
             <Activity className={`w-4 h-4 mr-2 ${autoRefresh ? 'text-green-600' : 'text-gray-400'}`} />
             Auto-refresh {autoRefresh ? 'ON' : 'OFF'}
           </Button>
-          <Button variant=\"outline\" size=\"sm\" onClick={fetchMonitoringData} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={fetchMonitoringData} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
@@ -287,31 +287,31 @@ export default function MonitoringDashboard() {
 
       {/* Active Alerts */}
       {activeAlerts.length > 0 && (
-        <Card className=\"border-red-200 bg-red-50\">
+        <Card className="border-red-200 bg-red-50">
           <CardHeader>
-            <CardTitle className=\"text-red-800 flex items-center\">
-              <AlertTriangle className=\"w-5 h-5 mr-2\" />
+            <CardTitle className="text-red-800 flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2" />
               Active Alerts ({activeAlerts.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className=\"space-y-2\">
+            <div className="space-y-2">
               {activeAlerts.slice(0, 5).map((alert, index) => (
-                <div key={index} className=\"flex items-center justify-between p-3 bg-white rounded-lg border\">
-                  <div className=\"flex items-center space-x-3\">
-                    <StatusBadge status={alert.severity} size=\"sm\" />
+                <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                  <div className="flex items-center space-x-3">
+                    <StatusBadge status={alert.severity} size="sm" />
                     <div>
-                      <p className=\"font-medium\">{alert.title}</p>
-                      <p className=\"text-sm text-gray-600\">{alert.message}</p>
+                      <p className="font-medium">{alert.title}</p>
+                      <p className="text-sm text-gray-600">{alert.message}</p>
                     </div>
                   </div>
-                  <div className=\"text-sm text-gray-500\">
+                  <div className="text-sm text-gray-500">
                     {new Date(alert.timestamp).toLocaleTimeString()}
                   </div>
                 </div>
               ))}
               {activeAlerts.length > 5 && (
-                <p className=\"text-sm text-gray-600 text-center\">
+                <p className="text-sm text-gray-600 text-center">
                   And {activeAlerts.length - 5} more alerts...
                 </p>
               )}
@@ -320,21 +320,21 @@ export default function MonitoringDashboard() {
         </Card>
       )}
 
-      <Tabs defaultValue=\"overview\" className=\"space-y-6\">
-        <TabsList className=\"grid w-full grid-cols-4\">
-          <TabsTrigger value=\"overview\">Overview</TabsTrigger>
-          <TabsTrigger value=\"performance\">Performance</TabsTrigger>
-          <TabsTrigger value=\"business\">Business</TabsTrigger>
-          <TabsTrigger value=\"system\">System</TabsTrigger>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="business">Business</TabsTrigger>
+          <TabsTrigger value="system">System</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value=\"overview\" className=\"space-y-6\">
+        <TabsContent value="overview" className="space-y-6">
           {/* System Health Overview */}
           <Card>
             <CardHeader>
-              <CardTitle className=\"flex items-center\">
-                <Heart className=\"w-5 h-5 mr-2\" />
+              <CardTitle className="flex items-center">
+                <Heart className="w-5 h-5 mr-2" />
                 System Health
               </CardTitle>
               <CardDescription>
@@ -343,51 +343,51 @@ export default function MonitoringDashboard() {
             </CardHeader>
             <CardContent>
               {systemHealth ? (
-                <div className=\"space-y-4\">
-                  <div className=\"flex items-center justify-between\">
-                    <div className=\"flex items-center space-x-3\">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
                       <div className={`w-4 h-4 rounded-full ${
                         systemHealth.status === 'healthy' ? 'bg-green-500' :
                         systemHealth.status === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
                       }`} />
-                      <span className=\"text-lg font-semibold\">
+                      <span className="text-lg font-semibold">
                         {systemHealth.status.charAt(0).toUpperCase() + systemHealth.status.slice(1)}
                       </span>
                       <StatusBadge status={systemHealth.status} />
                     </div>
-                    <div className=\"text-sm text-gray-500\">
+                    <div className="text-sm text-gray-500">
                       Response time: {systemHealth.performance.responseTime}
                     </div>
                   </div>
 
-                  <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4\">
-                    <div className=\"flex items-center justify-between p-3 bg-gray-50 rounded-lg\">
-                      <div className=\"flex items-center space-x-2\">
-                        <Database className=\"w-4 h-4 text-blue-600\" />
-                        <span className=\"text-sm font-medium\">Database</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Database className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium">Database</span>
                       </div>
-                      <StatusBadge status={systemHealth.checks.database.status} size=\"sm\" />
+                      <StatusBadge status={systemHealth.checks.database.status} size="sm" />
                     </div>
 
-                    <div className=\"flex items-center justify-between p-3 bg-gray-50 rounded-lg\">
-                      <div className=\"flex items-center space-x-2\">
-                        <Globe className=\"w-4 h-4 text-green-600\" />
-                        <span className=\"text-sm font-medium\">External Services</span>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Globe className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium">External Services</span>
                       </div>
-                      <StatusBadge status={systemHealth.checks.external_services.status} size=\"sm\" />
+                      <StatusBadge status={systemHealth.checks.external_services.status} size="sm" />
                     </div>
 
-                    <div className=\"flex items-center justify-between p-3 bg-gray-50 rounded-lg\">
-                      <div className=\"flex items-center space-x-2\">
-                        <Server className=\"w-4 h-4 text-purple-600\" />
-                        <span className=\"text-sm font-medium\">System Resources</span>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Server className="w-4 h-4 text-purple-600" />
+                        <span className="text-sm font-medium">System Resources</span>
                       </div>
-                      <StatusBadge status={systemHealth.checks.system.status} size=\"sm\" />
+                      <StatusBadge status={systemHealth.checks.system.status} size="sm" />
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className=\"text-center py-8 text-gray-500\">
+                <div className="text-center py-8 text-gray-500">
                   Unable to load system health data
                 </div>
               )}
@@ -395,31 +395,31 @@ export default function MonitoringDashboard() {
           </Card>
 
           {/* Quick Metrics Grid */}
-          <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6\">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {businessMetrics && (
               <>
                 <MetricCard
-                  title=\"Active Users (24h)\"
+                  title="Active Users (24h)"
                   value={businessMetrics.user_engagement.active_users_24h}
-                  icon={<Users className=\"w-5 h-5 text-blue-600\" />}
+                  icon={<Users className="w-5 h-5 text-blue-600" />}
                   subtitle={`${businessMetrics.user_engagement.new_users_24h} new today`}
                 />
                 <MetricCard
-                  title=\"Sessions Today\"
+                  title="Sessions Today"
                   value={businessMetrics.session_metrics.sessions_booked_24h}
-                  icon={<Calendar className=\"w-5 h-5 text-green-600\" />}
+                  icon={<Clock className="w-5 h-5 text-green-600" />}
                   subtitle={`${businessMetrics.session_metrics.sessions_completed_24h} completed`}
                 />
                 <MetricCard
-                  title=\"Files Uploaded\"
+                  title="Files Uploaded"
                   value={businessMetrics.file_metrics.files_uploaded_24h}
-                  icon={<FileText className=\"w-5 h-5 text-purple-600\" />}
+                  icon={<FileText className="w-5 h-5 text-purple-600" />}
                   subtitle={`${businessMetrics.file_metrics.files_downloaded_24h} downloads`}
                 />
                 <MetricCard
-                  title=\"System Uptime\"
+                  title="System Uptime"
                   value={systemHealth?.performance.uptime || 'N/A'}
-                  icon={<Clock className=\"w-5 h-5 text-orange-600\" />}
+                  icon={<Clock className="w-5 h-5 text-orange-600" />}
                   status={systemHealth?.status || 'unknown'}
                 />
               </>
@@ -428,13 +428,13 @@ export default function MonitoringDashboard() {
         </TabsContent>
 
         {/* Performance Tab */}
-        <TabsContent value=\"performance\" className=\"space-y-6\">
-          <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">
+        <TabsContent value="performance" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Core Web Vitals */}
             <Card>
               <CardHeader>
-                <CardTitle className=\"flex items-center\">
-                  <Zap className=\"w-5 h-5 mr-2\" />
+                <CardTitle className="flex items-center">
+                  <Zap className="w-5 h-5 mr-2" />
                   Core Web Vitals
                 </CardTitle>
                 <CardDescription>
@@ -443,17 +443,17 @@ export default function MonitoringDashboard() {
               </CardHeader>
               <CardContent>
                 {performanceMetrics ? (
-                  <div className=\"space-y-4\">
+                  <div className="space-y-4">
                     {Object.entries(performanceMetrics.webVitals).map(([key, metric]) => (
-                      <div key={key} className=\"flex items-center justify-between\">
+                      <div key={key} className="flex items-center justify-between">
                         <div>
-                          <p className=\"font-medium\">{key.toUpperCase()}</p>
-                          <p className=\"text-sm text-gray-600\">
+                          <p className="font-medium">{key.toUpperCase()}</p>
+                          <p className="text-sm text-gray-600">
                             Avg: {metric.average}ms | P95: {metric.p95}ms
                           </p>
                         </div>
-                        <div className=\"text-right\">
-                          <StatusBadge status={metric.status} size=\"sm\" />
+                        <div className="text-right">
+                          <StatusBadge status={metric.status} size="sm" />
                           <div className={`text-xs mt-1 ${
                             metric.trend === 'improving' ? 'text-green-600' : 
                             metric.trend === 'degrading' ? 'text-red-600' : 'text-gray-600'
@@ -465,7 +465,7 @@ export default function MonitoringDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div className=\"text-center py-8 text-gray-500\">
+                  <div className="text-center py-8 text-gray-500">
                     No performance data available
                   </div>
                 )}
@@ -475,8 +475,8 @@ export default function MonitoringDashboard() {
             {/* Custom Metrics */}
             <Card>
               <CardHeader>
-                <CardTitle className=\"flex items-center\">
-                  <Monitor className=\"w-5 h-5 mr-2\" />
+                <CardTitle className="flex items-center">
+                  <Monitor className="w-5 h-5 mr-2" />
                   Custom Metrics
                 </CardTitle>
                 <CardDescription>
@@ -485,12 +485,12 @@ export default function MonitoringDashboard() {
               </CardHeader>
               <CardContent>
                 {performanceMetrics ? (
-                  <div className=\"space-y-4\">
+                  <div className="space-y-4">
                     {Object.entries(performanceMetrics.customMetrics).map(([key, metric]) => (
-                      <div key={key} className=\"flex items-center justify-between\">
+                      <div key={key} className="flex items-center justify-between">
                         <div>
-                          <p className=\"font-medium\">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
-                          <p className=\"text-sm text-gray-600\">
+                          <p className="font-medium">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
+                          <p className="text-sm text-gray-600">
                             Avg: {metric.average}ms | P95: {metric.p95}ms
                           </p>
                         </div>
@@ -504,7 +504,7 @@ export default function MonitoringDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div className=\"text-center py-8 text-gray-500\">
+                  <div className="text-center py-8 text-gray-500">
                     No custom metrics available
                   </div>
                 )}
@@ -522,15 +522,15 @@ export default function MonitoringDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className=\"flex items-center space-x-4\">
-                  <div className=\"flex-1\">
-                    <Progress value={performanceMetrics.performanceScore} className=\"h-3\" />
+                <div className="flex items-center space-x-4">
+                  <div className="flex-1">
+                    <Progress value={performanceMetrics.performanceScore} className="h-3" />
                   </div>
-                  <div className=\"text-2xl font-bold\">
+                  <div className="text-2xl font-bold">
                     {performanceMetrics.performanceScore}/100
                   </div>
                 </div>
-                <p className=\"text-sm text-gray-600 mt-2\">
+                <p className="text-sm text-gray-600 mt-2">
                   {performanceMetrics.performanceScore >= 90 ? 'Excellent performance' :
                    performanceMetrics.performanceScore >= 75 ? 'Good performance' :
                    performanceMetrics.performanceScore >= 50 ? 'Needs improvement' :
@@ -542,41 +542,41 @@ export default function MonitoringDashboard() {
         </TabsContent>
 
         {/* Business Tab */}
-        <TabsContent value=\"business\" className=\"space-y-6\">
+        <TabsContent value="business" className="space-y-6">
           {businessMetrics ? (
-            <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* User Engagement */}
               <Card>
                 <CardHeader>
-                  <CardTitle className=\"flex items-center\">
-                    <Users className=\"w-5 h-5 mr-2\" />
+                  <CardTitle className="flex items-center">
+                    <Users className="w-5 h-5 mr-2" />
                     User Engagement
                   </CardTitle>
                 </CardHeader>
-                <CardContent className=\"space-y-4\">
-                  <div className=\"grid grid-cols-2 gap-4\">
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">Active Users (24h)</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.user_engagement.active_users_24h}</p>
+                      <p className="text-sm font-medium text-gray-600">Active Users (24h)</p>
+                      <p className="text-2xl font-bold">{businessMetrics.user_engagement.active_users_24h}</p>
                     </div>
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">Active Users (7d)</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.user_engagement.active_users_7d}</p>
+                      <p className="text-sm font-medium text-gray-600">Active Users (7d)</p>
+                      <p className="text-2xl font-bold">{businessMetrics.user_engagement.active_users_7d}</p>
                     </div>
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">New Users (24h)</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.user_engagement.new_users_24h}</p>
+                      <p className="text-sm font-medium text-gray-600">New Users (24h)</p>
+                      <p className="text-2xl font-bold">{businessMetrics.user_engagement.new_users_24h}</p>
                     </div>
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">Avg Session (min)</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.user_engagement.avg_session_duration_minutes}</p>
+                      <p className="text-sm font-medium text-gray-600">Avg Session (min)</p>
+                      <p className="text-2xl font-bold">{businessMetrics.user_engagement.avg_session_duration_minutes}</p>
                     </div>
                   </div>
                   <div>
-                    <p className=\"text-sm font-medium text-gray-600\">User Retention (7d)</p>
-                    <div className=\"flex items-center space-x-2 mt-1\">
-                      <Progress value={businessMetrics.user_engagement.user_retention_7d} className=\"flex-1\" />
-                      <span className=\"text-sm font-medium\">{businessMetrics.user_engagement.user_retention_7d}%</span>
+                    <p className="text-sm font-medium text-gray-600">User Retention (7d)</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Progress value={businessMetrics.user_engagement.user_retention_7d} className="flex-1" />
+                      <span className="text-sm font-medium">{businessMetrics.user_engagement.user_retention_7d}%</span>
                     </div>
                   </div>
                 </CardContent>
@@ -585,28 +585,28 @@ export default function MonitoringDashboard() {
               {/* Session Metrics */}
               <Card>
                 <CardHeader>
-                  <CardTitle className=\"flex items-center\">
-                    <Calendar className=\"w-5 h-5 mr-2\" />
+                  <CardTitle className="flex items-center">
+                    <Clock className="w-5 h-5 mr-2" />
                     Session Metrics
                   </CardTitle>
                 </CardHeader>
-                <CardContent className=\"space-y-4\">
-                  <div className=\"grid grid-cols-2 gap-4\">
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">Booked (24h)</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.session_metrics.sessions_booked_24h}</p>
+                      <p className="text-sm font-medium text-gray-600">Booked (24h)</p>
+                      <p className="text-2xl font-bold">{businessMetrics.session_metrics.sessions_booked_24h}</p>
                     </div>
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">Completed (24h)</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.session_metrics.sessions_completed_24h}</p>
+                      <p className="text-sm font-medium text-gray-600">Completed (24h)</p>
+                      <p className="text-2xl font-bold">{businessMetrics.session_metrics.sessions_completed_24h}</p>
                     </div>
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">Avg Rating</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.session_metrics.avg_session_rating}/5</p>
+                      <p className="text-sm font-medium text-gray-600">Avg Rating</p>
+                      <p className="text-2xl font-bold">{businessMetrics.session_metrics.avg_session_rating}/5</p>
                     </div>
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">Completion Rate</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.session_metrics.completion_rate_7d}%</p>
+                      <p className="text-sm font-medium text-gray-600">Completion Rate</p>
+                      <p className="text-2xl font-bold">{businessMetrics.session_metrics.completion_rate_7d}%</p>
                     </div>
                   </div>
                 </CardContent>
@@ -615,24 +615,24 @@ export default function MonitoringDashboard() {
               {/* File Metrics */}
               <Card>
                 <CardHeader>
-                  <CardTitle className=\"flex items-center\">
-                    <FileText className=\"w-5 h-5 mr-2\" />
+                  <CardTitle className="flex items-center">
+                    <FileText className="w-5 h-5 mr-2" />
                     File Activity
                   </CardTitle>
                 </CardHeader>
-                <CardContent className=\"space-y-4\">
-                  <div className=\"grid grid-cols-2 gap-4\">
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">Uploaded (24h)</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.file_metrics.files_uploaded_24h}</p>
+                      <p className="text-sm font-medium text-gray-600">Uploaded (24h)</p>
+                      <p className="text-2xl font-bold">{businessMetrics.file_metrics.files_uploaded_24h}</p>
                     </div>
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">Downloaded (24h)</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.file_metrics.files_downloaded_24h}</p>
+                      <p className="text-sm font-medium text-gray-600">Downloaded (24h)</p>
+                      <p className="text-2xl font-bold">{businessMetrics.file_metrics.files_downloaded_24h}</p>
                     </div>
-                    <div className=\"col-span-2\">
-                      <p className=\"text-sm font-medium text-gray-600\">Total Storage Used</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.file_metrics.total_storage_used_mb} MB</p>
+                    <div className="col-span-2">
+                      <p className="text-sm font-medium text-gray-600">Total Storage Used</p>
+                      <p className="text-2xl font-bold">{businessMetrics.file_metrics.total_storage_used_mb} MB</p>
                     </div>
                   </div>
                 </CardContent>
@@ -641,56 +641,56 @@ export default function MonitoringDashboard() {
               {/* Auth Metrics */}
               <Card>
                 <CardHeader>
-                  <CardTitle className=\"flex items-center\">
-                    <Shield className=\"w-5 h-5 mr-2\" />
+                  <CardTitle className="flex items-center">
+                    <Shield className="w-5 h-5 mr-2" />
                     Authentication
                   </CardTitle>
                 </CardHeader>
-                <CardContent className=\"space-y-4\">
-                  <div className=\"grid grid-cols-2 gap-4\">
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">Login Attempts (24h)</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.auth_metrics.login_attempts_24h}</p>
+                      <p className="text-sm font-medium text-gray-600">Login Attempts (24h)</p>
+                      <p className="text-2xl font-bold">{businessMetrics.auth_metrics.login_attempts_24h}</p>
                     </div>
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600\">MFA Adoption</p>
-                      <p className=\"text-2xl font-bold\">{businessMetrics.auth_metrics.mfa_adoption_rate}%</p>
+                      <p className="text-sm font-medium text-gray-600">MFA Adoption</p>
+                      <p className="text-2xl font-bold">{businessMetrics.auth_metrics.mfa_adoption_rate}%</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
           ) : (
-            <div className=\"text-center py-8 text-gray-500\">
+            <div className="text-center py-8 text-gray-500">
               No business metrics available
             </div>
           )}
         </TabsContent>
 
         {/* System Tab */}
-        <TabsContent value=\"system\" className=\"space-y-6\">
+        <TabsContent value="system" className="space-y-6">
           {systemHealth ? (
-            <div className=\"space-y-6\">
+            <div className="space-y-6">
               {/* Detailed System Checks */}
-              <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {Object.entries(systemHealth.checks).map(([key, check]) => (
                   <Card key={key}>
                     <CardHeader>
-                      <CardTitle className=\"flex items-center justify-between\">
-                        <span className=\"capitalize\">{key.replace('_', ' ')}</span>
+                      <CardTitle className="flex items-center justify-between">
+                        <span className="capitalize">{key.replace('_', ' ')}</span>
                         <StatusBadge status={check.status} />
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className=\"space-y-2 text-sm\">
+                      <div className="space-y-2 text-sm">
                         {check.latency && (
-                          <div className=\"flex justify-between\">
+                          <div className="flex justify-between">
                             <span>Latency:</span>
-                            <span className=\"font-mono\">{check.latency}</span>
+                            <span className="font-mono">{check.latency}</span>
                           </div>
                         )}
                         {check.connected !== undefined && (
-                          <div className=\"flex justify-between\">
+                          <div className="flex justify-between">
                             <span>Connected:</span>
                             <span className={check.connected ? 'text-green-600' : 'text-red-600'}>
                               {check.connected ? 'Yes' : 'No'}
@@ -698,14 +698,14 @@ export default function MonitoringDashboard() {
                           </div>
                         )}
                         {check.error && (
-                          <div className=\"flex justify-between\">
+                          <div className="flex justify-between">
                             <span>Error:</span>
-                            <span className=\"font-mono text-red-600 text-xs\">{check.error}</span>
+                            <span className="font-mono text-red-600 text-xs">{check.error}</span>
                           </div>
                         )}
-                        <div className=\"flex justify-between\">
+                        <div className="flex justify-between">
                           <span>Last Check:</span>
-                          <span className=\"text-gray-500\">
+                          <span className="text-gray-500">
                             {new Date(check.timestamp).toLocaleTimeString()}
                           </span>
                         </div>
@@ -721,25 +721,25 @@ export default function MonitoringDashboard() {
                   <CardTitle>System Performance</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className=\"grid grid-cols-1 md:grid-cols-3 gap-6\">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600 mb-2\">Response Time</p>
-                      <p className=\"text-2xl font-bold\">{systemHealth.performance.responseTime}</p>
+                      <p className="text-sm font-medium text-gray-600 mb-2">Response Time</p>
+                      <p className="text-2xl font-bold">{systemHealth.performance.responseTime}</p>
                     </div>
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600 mb-2\">Uptime</p>
-                      <p className=\"text-2xl font-bold\">{systemHealth.performance.uptime}</p>
+                      <p className="text-sm font-medium text-gray-600 mb-2">Uptime</p>
+                      <p className="text-2xl font-bold">{systemHealth.performance.uptime}</p>
                     </div>
                     <div>
-                      <p className=\"text-sm font-medium text-gray-600 mb-2\">Node.js Version</p>
-                      <p className=\"text-2xl font-bold\">{systemHealth.performance.nodeVersion}</p>
+                      <p className="text-sm font-medium text-gray-600 mb-2">Node.js Version</p>
+                      <p className="text-2xl font-bold">{systemHealth.performance.nodeVersion}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
           ) : (
-            <div className=\"text-center py-8 text-gray-500\">
+            <div className="text-center py-8 text-gray-500">
               No system health data available
             </div>
           )}
@@ -749,6 +749,3 @@ export default function MonitoringDashboard() {
   );
 }
 
-// Add missing Calendar import
-const Calendar = Clock;"
-}]

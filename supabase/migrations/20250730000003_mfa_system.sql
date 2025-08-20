@@ -60,14 +60,10 @@ CREATE INDEX idx_mfa_events_created_at ON mfa_events(created_at);
 CREATE TRIGGER update_user_mfa_updated_at BEFORE UPDATE ON user_mfa
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Add MFA column to users table to indicate if MFA is required
-ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT false;
-
--- Create index for the new column
-CREATE INDEX idx_users_mfa_enabled ON users(mfa_enabled);
+-- Note: mfa_enabled column and index already added in previous migration 20250730000001_add_mfa_support.sql
 
 -- Function to check rate limiting for MFA attempts
-CREATE OR REPLACE FUNCTION check_mfa_rate_limit(
+CREATE OR REPLACE FUNCTION check_mfa_ip_rate_limit(
     user_uuid UUID,
     ip_addr INET,
     time_window INTERVAL DEFAULT '15 minutes',
@@ -108,25 +104,28 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to clean up old MFA attempts and events (for maintenance)
-CREATE OR REPLACE FUNCTION cleanup_mfa_data(
+CREATE OR REPLACE FUNCTION cleanup_old_mfa_data(
     attempts_retention INTERVAL DEFAULT '30 days',
     events_retention INTERVAL DEFAULT '90 days'
 ) RETURNS INTEGER AS $$
 DECLARE
-    deleted_count INTEGER;
+    deleted_count INTEGER := 0;
+    temp_count INTEGER;
 BEGIN
     -- Clean up old attempts
     DELETE FROM mfa_attempts
     WHERE created_at < NOW() - attempts_retention;
     
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    GET DIAGNOSTICS temp_count = ROW_COUNT;
+    deleted_count := deleted_count + temp_count;
     
     -- Clean up old events (keep important events longer)
     DELETE FROM mfa_events
     WHERE created_at < NOW() - events_retention
     AND event_type NOT IN ('setup', 'enable', 'disable');
     
-    GET DIAGNOSTICS deleted_count = deleted_count + ROW_COUNT;
+    GET DIAGNOSTICS temp_count = ROW_COUNT;
+    deleted_count := deleted_count + temp_count;
     
     RETURN deleted_count;
 END;
@@ -189,19 +188,13 @@ FROM users
 LEFT JOIN mfa_attempts ON users.id = mfa_attempts.user_id
 LEFT JOIN mfa_events ON users.id = mfa_events.user_id;
 
--- Grant access to the statistics view for admins
-CREATE POLICY admin_mfa_statistics_policy ON mfa_statistics
-    USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE users.id = auth.uid() 
-            AND users.role = 'admin'
-        )
-    );
+-- Note: RLS policies cannot be applied to views directly
+-- Access control for the mfa_statistics view should be handled at the application level
+-- Admins can access this view through proper authentication and role checking
 
 COMMENT ON TABLE user_mfa IS 'Stores MFA configuration for each user';
 COMMENT ON TABLE mfa_attempts IS 'Logs all MFA verification attempts for security monitoring';
 COMMENT ON TABLE mfa_events IS 'Audit log for MFA-related events';
-COMMENT ON FUNCTION check_mfa_rate_limit IS 'Checks if user/IP has exceeded MFA attempt rate limits';
+COMMENT ON FUNCTION check_mfa_ip_rate_limit IS 'Checks if user/IP has exceeded MFA attempt rate limits';
 COMMENT ON FUNCTION log_mfa_event IS 'Helper function to log MFA events with metadata';
-COMMENT ON FUNCTION cleanup_mfa_data IS 'Maintenance function to clean up old MFA data';
+COMMENT ON FUNCTION cleanup_old_mfa_data IS 'Maintenance function to clean up old MFA data';

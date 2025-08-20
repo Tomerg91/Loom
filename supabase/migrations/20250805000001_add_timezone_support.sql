@@ -1,22 +1,19 @@
 -- Add timezone support to coach availability
 -- This migration addresses the critical timezone handling issue
 
--- Add timezone column to coach_availability table
+-- Add additional columns to coach_availability table (timezone already exists)
 ALTER TABLE coach_availability 
-ADD COLUMN timezone TEXT NOT NULL DEFAULT 'UTC',
 ADD COLUMN buffer_before_minutes INTEGER DEFAULT 0,
 ADD COLUMN buffer_after_minutes INTEGER DEFAULT 0,
 ADD COLUMN max_bookings_per_slot INTEGER DEFAULT 1;
 
--- Add timezone column to users table for coach's default timezone
-ALTER TABLE users 
-ADD COLUMN timezone TEXT DEFAULT 'UTC';
+-- Note: timezone column already exists in users table from initial schema
 
 -- Add indexes for performance
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_coach_availability_timezone 
+CREATE INDEX IF NOT EXISTS idx_coach_availability_timezone 
 ON coach_availability(timezone);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_coach_availability_time_range 
+CREATE INDEX IF NOT EXISTS idx_coach_availability_time_range 
 ON coach_availability(coach_id, day_of_week, start_time, end_time, timezone) 
 WHERE is_available = true;
 
@@ -50,18 +47,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Add constraint to prevent overlapping sessions with timezone awareness
--- Note: This is a simplified version - production would need more sophisticated logic
-ALTER TABLE sessions 
-ADD CONSTRAINT check_session_within_availability
-CHECK (
-  validate_session_availability_with_timezone(
-    coach_id, 
-    scheduled_at, 
-    duration_minutes,
-    (SELECT timezone FROM users WHERE id = coach_id LIMIT 1)
-  )
-);
+-- Note: Timezone-aware session validation should be handled at the application level
+-- or through triggers rather than check constraints due to PostgreSQL limitations
 
 -- Update existing coach_availability records to use coach's timezone if available
 UPDATE coach_availability 

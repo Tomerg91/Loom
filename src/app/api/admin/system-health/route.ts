@@ -139,7 +139,7 @@ async function checkServerHealth() {
   // Using a simplified approximation based on event loop delay
   const cpuUsage = await measureCpuUsage();
   
-  const status = memoryUsagePercent > 80 || cpuUsage > 90 ? 'warning' : 'healthy';
+  const status = memoryUsagePercent > 80 || cpuUsage > 90 ? 'warning' : 'healthy' as const;
   
   return {
     status,

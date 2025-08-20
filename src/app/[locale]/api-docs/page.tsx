@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronRight, Copy, ExternalLink, Shield, Clock, FileText, Code } from 'lucide-react';
+import { ChevronRight, Copy, ExternalLink, Shield, Clock, FileText, Code } from 'lucide-react';
 
 interface ApiSpec {
   info?: {
@@ -21,10 +21,39 @@ interface ApiSpec {
     url: string;
     description: string;
   }>;
-  paths?: Record<string, Record<string, any>>;
+  paths?: Record<string, Record<string, EndpointSpec>>;
   components?: {
-    schemas?: Record<string, any>;
+    schemas?: Record<string, SchemaSpec>;
   };
+}
+
+interface EndpointSpec {
+  summary?: string;
+  description?: string;
+  parameters?: ParameterSpec[];
+  responses?: Record<string, unknown>;
+}
+
+interface ParameterSpec {
+  name: string;
+  in: string;
+  required?: boolean;
+  description?: string;
+  schema?: SchemaSpec;
+}
+
+interface SchemaSpec {
+  type?: string;
+  properties?: Record<string, unknown>;
+  required?: string[];
+  [key: string]: unknown;
+}
+
+interface TestResult {
+  loading?: boolean;
+  status?: number;
+  data?: unknown;
+  error?: string;
 }
 
 /**
@@ -42,7 +71,7 @@ export default function ApiDocumentationPage() {
   const [apiSpec, setApiSpec] = useState<ApiSpec | null>(null);
   const [loading, setLoading] = useState(true);
   const [authToken, setAuthToken] = useState('');
-  const [testResults, setTestResults] = useState<Record<string, any>>({});
+  const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
 
   useEffect(() => {
     // Load the API specification
@@ -73,7 +102,7 @@ export default function ApiDocumentationPage() {
     navigator.clipboard.writeText(text);
   };
 
-  const testEndpoint = async (path: string, method: string, endpoint: any) => {
+  const testEndpoint = async (path: string, method: string, _endpoint: EndpointSpec) => {
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -166,7 +195,7 @@ export default function ApiDocumentationPage() {
     Object.entries(methods).map(([method, endpoint]) => ({
       path,
       method,
-      endpoint,
+      endpoint: endpoint as EndpointSpec,
       testKey: `${method.toUpperCase()} ${path}`
     }))
   );
@@ -314,7 +343,7 @@ export default function ApiDocumentationPage() {
                               <div>
                                 <h4 className="font-medium mb-2">Parameters</h4>
                                 <div className="space-y-2">
-                                  {endpoint.parameters.map((param: any, idx: number) => (
+                                  {endpoint.parameters.map((param: ParameterSpec, idx: number) => (
                                     <div key={idx} className="border rounded p-3">
                                       <div className="flex items-center space-x-2">
                                         <code className="text-sm font-mono">{param.name}</code>

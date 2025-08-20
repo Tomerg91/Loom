@@ -292,5 +292,191 @@ const DefaultErrorFallback: React.FC<ErrorBoundaryFallbackProps> = ({
   
   const handleReportIssue = () => {
     if (typeof window !== 'undefined') {
-      const issueUrl = `mailto:support@loomapp.com?subject=Error Report - ${errorId}&body=Error ID: ${errorId}%0AFeature: ${feature}%0AComponent: ${component}%0AError: ${error?.message}%0ATimestamp: ${new Date().toISOString()}`;\n      window.location.href = issueUrl;\n    }\n  };\n  \n  const handleGoHome = () => {\n    if (typeof window !== 'undefined') {\n      window.location.href = '/';\n    }\n  };\n  \n  return (\n    <div className=\"min-h-screen bg-gray-50 flex items-center justify-center p-4\">\n      <Card className=\"w-full max-w-md\">\n        <CardHeader className=\"text-center\">\n          <div className=\"mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4\">\n            <AlertTriangle className=\"w-6 h-6 text-red-600\" />\n          </div>\n          <CardTitle className=\"text-xl font-semibold text-gray-900\">\n            Something went wrong\n          </CardTitle>\n          <CardDescription className=\"text-gray-600\">\n            {feature \n              ? `An error occurred in the ${feature} feature`\n              : 'An unexpected error occurred'\n            }\n          </CardDescription>\n        </CardHeader>\n        \n        <CardContent className=\"space-y-4\">\n          {/* Error ID for support */}\n          {errorId && (\n            <div className=\"bg-gray-100 rounded-lg p-3 text-sm\">\n              <p className=\"text-gray-600 mb-1\">Error ID (for support):</p>\n              <p className=\"font-mono text-xs text-gray-800 break-all\">{errorId}</p>\n            </div>\n          )}\n          \n          {/* Error details (only in development or when explicitly enabled) */}\n          {(showErrorDetails || process.env.NODE_ENV === 'development') && error && (\n            <details className=\"bg-red-50 rounded-lg p-3 text-sm\">\n              <summary className=\"cursor-pointer text-red-800 font-medium mb-2\">\n                Technical Details\n              </summary>\n              <div className=\"space-y-2\">\n                <div>\n                  <p className=\"text-red-700 font-medium\">Error:</p>\n                  <p className=\"text-red-600 text-xs font-mono break-all\">{error.message}</p>\n                </div>\n                {errorInfo?.componentStack && (\n                  <div>\n                    <p className=\"text-red-700 font-medium\">Component Stack:</p>\n                    <pre className=\"text-red-600 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-32\">\n                      {errorInfo.componentStack}\n                    </pre>\n                  </div>\n                )}\n              </div>\n            </details>\n          )}\n          \n          {/* Action buttons */}\n          <div className=\"space-y-2\">\n            {canRetry && (\n              <Button\n                onClick={retryAction}\n                className=\"w-full\"\n                variant=\"default\"\n              >\n                <RefreshCw className=\"w-4 h-4 mr-2\" />\n                Try Again {retryCount > 0 && `(${retryCount}/3)`}\n              </Button>\n            )}\n            \n            <Button\n              onClick={resetError}\n              className=\"w-full\"\n              variant=\"outline\"\n            >\n              <RefreshCw className=\"w-4 h-4 mr-2\" />\n              Reset\n            </Button>\n            \n            <Button\n              onClick={handleGoHome}\n              className=\"w-full\"\n              variant=\"secondary\"\n            >\n              <Home className=\"w-4 h-4 mr-2\" />\n              Go to Home\n            </Button>\n            \n            <Button\n              onClick={handleReportIssue}\n              className=\"w-full\"\n              variant=\"ghost\"\n            >\n              <Bug className=\"w-4 h-4 mr-2\" />\n              Report Issue\n            </Button>\n          </div>\n          \n          {!canRetry && (\n            <div className=\"bg-yellow-50 border border-yellow-200 rounded-lg p-3\">\n              <p className=\"text-yellow-800 text-sm\">\n                Multiple retry attempts failed. Please refresh the page or contact support.\n              </p>\n            </div>\n          )}\n        </CardContent>\n      </Card>\n    </div>\n  );\n};\n\n// Feature-specific error boundaries\nexport const SessionErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (\n  <ProductionErrorBoundary feature=\"sessions\" component=\"session-management\">\n    {children}\n  </ProductionErrorBoundary>\n);\n\nexport const FileErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (\n  <ProductionErrorBoundary feature=\"files\" component=\"file-management\">\n    {children}\n  </ProductionErrorBoundary>\n);\n\nexport const AuthErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (\n  <ProductionErrorBoundary feature=\"authentication\" component=\"auth-flow\">\n    {children}\n  </ProductionErrorBoundary>\n);\n\nexport const DashboardErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (\n  <ProductionErrorBoundary feature=\"dashboard\" component=\"main-dashboard\">\n    {children}\n  </ProductionErrorBoundary>\n);\n\nexport const NotificationErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (\n  <ProductionErrorBoundary feature=\"notifications\" component=\"notification-system\">\n    {children}\n  </ProductionErrorBoundary>\n);\n\n// HOC for wrapping components with error boundaries\nexport function withErrorBoundary<P extends object>(\n  Component: React.ComponentType<P>,\n  feature?: string,\n  component?: string\n) {\n  const WrappedComponent = (props: P) => (\n    <ProductionErrorBoundary feature={feature} component={component}>\n      <Component {...props} />\n    </ProductionErrorBoundary>\n  );\n  \n  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;\n  \n  return WrappedComponent;\n}\n\n// Hook for manual error reporting\nexport function useErrorReporting() {\n  const reportError = React.useCallback(\n    (error: Error, context?: Record<string, unknown>) => {\n      const businessContext = {\n        timestamp: new Date().toISOString(),\n        url: typeof window !== 'undefined' ? window.location.href : 'unknown',\n        userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'unknown',\n        ...context,\n      };\n      \n      captureError(error, businessContext);\n      \n      // Track manual error report\n      alertManager.checkMetric('manual_error_reports', 1, {\n        errorType: error.name,\n        errorMessage: error.message,\n        ...context,\n      });\n    },\n    []\n  );\n  \n  return { reportError };\n}"
-}]
+      const issueUrl = `mailto:support@loomapp.com?subject=Error Report - ${errorId}&body=Error ID: ${errorId}%0AFeature: ${feature}%0AComponent: ${component}%0AError: ${error?.message}%0ATimestamp: ${new Date().toISOString()}`;
+      window.location.href = issueUrl;
+    }
+  };
+  
+  const handleGoHome = () => {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
+  };
+  
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="w-6 h-6 text-red-600" />
+          </div>
+          <CardTitle className="text-xl font-semibold text-gray-900">
+            Something went wrong
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            {feature 
+              ? `An error occurred in the ${feature} feature`
+              : 'An unexpected error occurred'
+            }
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* Error ID for support */}
+          {errorId && (
+            <div className="bg-gray-100 rounded-lg p-3 text-sm">
+              <p className="text-gray-600 mb-1">Error ID (for support):</p>
+              <p className="font-mono text-xs text-gray-800 break-all">{errorId}</p>
+            </div>
+          )}
+          
+          {/* Error details (only in development or when explicitly enabled) */}
+          {(showErrorDetails || process.env.NODE_ENV === 'development') && error && (
+            <details className="bg-red-50 rounded-lg p-3 text-sm">
+              <summary className="cursor-pointer text-red-800 font-medium mb-2">
+                Technical Details
+              </summary>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-red-700 font-medium">Error:</p>
+                  <p className="text-red-600 text-xs font-mono break-all">{error.message}</p>
+                </div>
+                {errorInfo?.componentStack && (
+                  <div>
+                    <p className="text-red-700 font-medium">Component Stack:</p>
+                    <pre className="text-red-600 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-32">
+                      {errorInfo.componentStack}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </details>
+          )}
+          
+          {/* Action buttons */}
+          <div className="space-y-2">
+            {canRetry && (
+              <Button
+                onClick={retryAction}
+                className="w-full"
+                variant="default"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try Again {retryCount > 0 && `(${retryCount}/3)`}
+              </Button>
+            )}
+            
+            <Button
+              onClick={resetError}
+              className="w-full"
+              variant="outline"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Reset
+            </Button>
+            
+            <Button
+              onClick={handleGoHome}
+              className="w-full"
+              variant="secondary"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Go to Home
+            </Button>
+            
+            <Button
+              onClick={handleReportIssue}
+              className="w-full"
+              variant="ghost"
+            >
+              <Bug className="w-4 h-4 mr-2" />
+              Report Issue
+            </Button>
+          </div>
+          
+          {!canRetry && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-yellow-800 text-sm">
+                Multiple retry attempts failed. Please refresh the page or contact support.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Feature-specific error boundaries
+export const SessionErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <ProductionErrorBoundary feature="sessions" component="session-management">
+    {children}
+  </ProductionErrorBoundary>
+);
+
+export const FileErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <ProductionErrorBoundary feature="files" component="file-management">
+    {children}
+  </ProductionErrorBoundary>
+);
+
+export const AuthErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <ProductionErrorBoundary feature="authentication" component="auth-flow">
+    {children}
+  </ProductionErrorBoundary>
+);
+
+export const DashboardErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <ProductionErrorBoundary feature="dashboard" component="main-dashboard">
+    {children}
+  </ProductionErrorBoundary>
+);
+
+export const NotificationErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <ProductionErrorBoundary feature="notifications" component="notification-system">
+    {children}
+  </ProductionErrorBoundary>
+);
+
+// HOC for wrapping components with error boundaries
+export function withErrorBoundary<P extends object>(
+  Component: React.ComponentType<P>,
+  feature?: string,
+  component?: string
+) {
+  const WrappedComponent = (props: P) => (
+    <ProductionErrorBoundary feature={feature} component={component}>
+      <Component {...props} />
+    </ProductionErrorBoundary>
+  );
+  
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
+  
+  return WrappedComponent;
+}
+
+// Hook for manual error reporting
+export function useErrorReporting() {
+  const reportError = React.useCallback(
+    (error: Error, context?: Record<string, unknown>) => {
+      const businessContext = {
+        timestamp: new Date().toISOString(),
+        url: typeof window !== 'undefined' ? window.location.href : 'unknown',
+        userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'unknown',
+        ...context,
+      };
+      
+      captureError(error, businessContext);
+      
+      // Track manual error report
+      alertManager.checkMetric('manual_error_reports', 1, {
+        errorType: error.name,
+        errorMessage: error.message,
+        ...context,
+      });
+    },
+    []
+  );
+  
+  return { reportError };
+}

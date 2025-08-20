@@ -122,20 +122,21 @@ export class MfaService {
   /**
    * Encrypt MFA secret for secure database storage
    */
-  private encryptSecret(secret: string): string {
+  private encryptSecret(secret: string, userId?: string): string {
     try {
-      const algorithm = 'aes-256-gcm';
-      const key = crypto.scryptSync(MFA_CONFIG.ENCRYPTION_KEY, 'salt', 32);
+      const algorithm = 'aes-256-cbc';
+      // Use a cryptographically secure salt derived from signing key and user ID
+      const saltBase = userId ? `${MFA_CONFIG.SIGNING_KEY}:${userId}` : MFA_CONFIG.SIGNING_KEY;
+      const salt = crypto.createHash('sha256').update(saltBase).digest().slice(0, 16);
+      const key = crypto.scryptSync(MFA_CONFIG.ENCRYPTION_KEY, salt, 32);
       const iv = crypto.randomBytes(16);
-      const cipher = crypto.createCipherGCM(algorithm, key, iv);
+      const cipher = crypto.createCipher(algorithm, key);
       
       let encrypted = cipher.update(secret, 'utf8', 'hex');
       encrypted += cipher.final('hex');
       
-      const authTag = cipher.getAuthTag();
-      
-      // Return iv + authTag + encrypted data
-      return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
+      // Return iv + encrypted data (CBC mode doesn't use auth tags)
+      return iv.toString('hex') + ':' + encrypted;
     } catch (error) {
       console.error('Failed to encrypt MFA secret:', error);
       throw new Error('Failed to encrypt MFA secret');
@@ -145,21 +146,22 @@ export class MfaService {
   /**
    * Decrypt MFA secret from database
    */
-  private decryptSecret(encryptedSecret: string): string {
+  private decryptSecret(encryptedSecret: string, userId?: string): string {
     try {
       const parts = encryptedSecret.split(':');
-      if (parts.length !== 3) {
+      if (parts.length !== 2) {
         throw new Error('Invalid encrypted secret format');
       }
 
-      const algorithm = 'aes-256-gcm';
-      const key = crypto.scryptSync(MFA_CONFIG.ENCRYPTION_KEY, 'salt', 32);
+      const algorithm = 'aes-256-cbc';
+      // Use the same salt derivation as encryption
+      const saltBase = userId ? `${MFA_CONFIG.SIGNING_KEY}:${userId}` : MFA_CONFIG.SIGNING_KEY;
+      const salt = crypto.createHash('sha256').update(saltBase).digest().slice(0, 16);
+      const key = crypto.scryptSync(MFA_CONFIG.ENCRYPTION_KEY, salt, 32);
       const iv = Buffer.from(parts[0], 'hex');
-      const authTag = Buffer.from(parts[1], 'hex');
-      const encrypted = parts[2];
+      const encrypted = parts[1];
       
-      const decipher = crypto.createDecipherGCM(algorithm, key, iv);
-      decipher.setAuthTag(authTag);
+      const decipher = crypto.createDecipher(algorithm, key);
       
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
@@ -176,7 +178,7 @@ export class MfaService {
    */
   async generateMfaSecret(userId: string): Promise<{ secret: MfaSecret | null; error: string | null }> {
     try {
-      // In a real app, you'd use a library like speakeasy or node-otp
+      // Generate cryptographically secure TOTP secret using speakeasy
       const secret = this.generateRandomSecret();
       const backupCodes = this.generateBackupCodes();
       
@@ -229,8 +231,8 @@ export class MfaService {
    */
   async enableMfa(userId: string, secret: string, verificationCode: string, backupCodes: string[]): Promise<{ success: boolean; error: string | null }> {
     try {
-      // Verify the TOTP code first
-      const isValidCode = this.verifyTotpCode(secret, verificationCode);
+      // Verify the TOTP code first with rate limiting
+      const isValidCode = await this.verifyTotpCode(secret, verificationCode, userId);
       if (!isValidCode) {
         return { success: false, error: 'Invalid verification code' };
       }
@@ -247,7 +249,7 @@ export class MfaService {
         .from('user_mfa')
         .upsert({
           user_id: userId,
-          secret: this.encryptSecret(secret),
+          secret: this.encryptSecret(secret, userId),
           backup_codes: hashedBackupCodes,
           backup_codes_used: [],
           is_enabled: true,
@@ -319,12 +321,75 @@ export class MfaService {
   }
 
   /**
-   * Verify TOTP code
+   * Check and update rate limiting for MFA verification attempts
    */
-  async verifyTotpCode(secret: string, code: string): Promise<boolean> {
+  private async checkRateLimit(userId: string, action: 'totp' | 'backup_code'): Promise<{ allowed: boolean; remainingAttempts?: number }> {
+    try {
+      const supabase = await createServerClient();
+      const now = new Date();
+      const windowStart = new Date(now.getTime() - MFA_CONFIG.RATE_LIMIT_WINDOW);
+      
+      // Get recent attempts within the time window
+      const { data: attempts, error } = await supabase
+        .from('mfa_rate_limit')
+        .select('attempts, last_attempt')
+        .eq('user_id', userId)
+        .eq('action', action)
+        .gte('last_attempt', windowStart.toISOString())
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking rate limit:', error);
+        return { allowed: false };
+      }
+
+      const currentAttempts = attempts?.attempts || 0;
+      
+      if (currentAttempts >= MFA_CONFIG.RATE_LIMIT_MAX) {
+        return { 
+          allowed: false, 
+          remainingAttempts: 0 
+        };
+      }
+
+      // Update or create rate limit record
+      const newAttempts = currentAttempts + 1;
+      await supabase
+        .from('mfa_rate_limit')
+        .upsert({
+          user_id: userId,
+          action,
+          attempts: newAttempts,
+          last_attempt: now.toISOString(),
+          window_start: windowStart.toISOString()
+        });
+
+      return { 
+        allowed: true, 
+        remainingAttempts: MFA_CONFIG.RATE_LIMIT_MAX - newAttempts 
+      };
+    } catch (error) {
+      console.error('Error in rate limiting:', error);
+      return { allowed: false };
+    }
+  }
+
+  /**
+   * Verify TOTP code with rate limiting
+   */
+  async verifyTotpCode(secret: string, code: string, userId?: string): Promise<boolean> {
     try {
       if (!secret || !code) {
         return false;
+      }
+
+      // Apply rate limiting if userId is provided
+      if (userId) {
+        const rateCheck = await this.checkRateLimit(userId, 'totp');
+        if (!rateCheck.allowed) {
+          console.warn(`Rate limit exceeded for user ${userId} TOTP verification`);
+          return false;
+        }
       }
 
       // Use speakeasy to verify TOTP code with time window tolerance
@@ -350,6 +415,16 @@ export class MfaService {
     try {
       if (!userId || !code) {
         return { success: false, error: 'User ID and backup code are required' };
+      }
+
+      // Apply rate limiting for backup code verification
+      const rateCheck = await this.checkRateLimit(userId, 'backup_code');
+      if (!rateCheck.allowed) {
+        return { 
+          success: false, 
+          error: 'Too many verification attempts. Please try again later.',
+          remainingAttempts: 0 
+        };
       }
 
       const supabase = await createServerClient();
@@ -489,8 +564,26 @@ export class MfaService {
         createdAt: new Date().toISOString()
       };
 
-      // In a real app, save to database
-      // await this.saveTrustedDevice(device);
+      // Save trusted device to database
+      const supabase = await createServerClient();
+      const { error: saveError } = await supabase
+        .from('user_trusted_devices')
+        .insert({
+          id: device.id,
+          user_id: device.userId,
+          device_name: device.deviceName,
+          device_type: device.deviceType,
+          fingerprint: device.fingerprint,
+          ip_address: device.ipAddress,
+          location: device.location,
+          last_used: device.lastUsed,
+          created_at: device.createdAt
+        });
+      
+      if (saveError) {
+        console.error('Failed to save trusted device:', saveError);
+        throw new Error('Failed to save trusted device to database');
+      }
       
       // Log security event
       await this.logSecurityEvent({
@@ -516,8 +609,18 @@ export class MfaService {
    */
   async removeTrustedDevice(userId: string, deviceId: string): Promise<{ success: boolean; error: string | null }> {
     try {
-      // In a real app, remove from database
-      // await this.deleteTrustedDevice(userId, deviceId);
+      // Remove trusted device from database
+      const supabase = await createServerClient();
+      const { error: deleteError } = await supabase
+        .from('user_trusted_devices')
+        .delete()
+        .eq('user_id', userId)
+        .eq('id', deviceId);
+      
+      if (deleteError) {
+        console.error('Failed to remove trusted device:', deleteError);
+        throw new Error('Failed to remove trusted device from database');
+      }
       
       return { success: true, error: null };
     } catch (error) {
@@ -533,12 +636,30 @@ export class MfaService {
    */
   async isDeviceTrusted(userId: string, deviceFingerprint: string): Promise<boolean> {
     try {
-      // In a real app, check against database
-      // const trustedDevices = await this.getTrustedDevices(userId);
-      // return trustedDevices.some(device => device.fingerprint === deviceFingerprint);
+      // Check if device is trusted by querying database
+      const supabase = await createServerClient();
+      const { data: device, error: fetchError } = await supabase
+        .from('user_trusted_devices')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('fingerprint', deviceFingerprint)
+        .single();
       
-      // Mock response
-      return false;
+      if (fetchError) {
+        // Device not found or database error
+        return false;
+      }
+      
+      // Update last_used timestamp for the trusted device
+      if (device) {
+        await supabase
+          .from('user_trusted_devices')
+          .update({ last_used: new Date().toISOString() })
+          .eq('user_id', userId)
+          .eq('fingerprint', deviceFingerprint);
+      }
+      
+      return !!device;
     } catch (error) {
       console.error('Error checking trusted device:', error);
       return false;
@@ -899,8 +1020,8 @@ export class MfaService {
       }
 
       // Verify the TOTP code with the user's secret
-      const decryptedSecret = this.decryptSecret(mfaData.secret);
-      const isValid = await this.verifyTotpCode(decryptedSecret, totpCode);
+      const decryptedSecret = this.decryptSecret(mfaData.secret, userId);
+      const isValid = await this.verifyTotpCode(decryptedSecret, totpCode, userId);
       if (!isValid) {
         return { success: false, error: 'Invalid verification code' };
       }
@@ -966,8 +1087,8 @@ export class MfaService {
       }
 
       // Verify TOTP code with user's secret
-      const decryptedSecret = this.decryptSecret(mfaData.secret);
-      const isValid = await this.verifyTotpCode(decryptedSecret, totpCode);
+      const decryptedSecret = this.decryptSecret(mfaData.secret, userId);
+      const isValid = await this.verifyTotpCode(decryptedSecret, totpCode, userId);
       if (!isValid) {
         return { success: false, error: 'Invalid verification code' };
       }
@@ -1023,8 +1144,8 @@ export class MfaService {
           return { success: false, error: 'MFA not enabled for user' };
         }
 
-        const decryptedSecret = this.decryptSecret(mfaData.secret);
-        const isValid = await this.verifyTotpCode(decryptedSecret, code);
+        const decryptedSecret = this.decryptSecret(mfaData.secret, userId);
+        const isValid = await this.verifyTotpCode(decryptedSecret, code, userId);
         return { success: isValid, error: isValid ? undefined : 'Invalid TOTP code' };
       } else if (method === 'backup_code') {
         const result = await this.verifyBackupCode(userId, code);
@@ -1096,6 +1217,26 @@ export class MfaService {
       const sessionToken = 'mfa_' + crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date(Date.now() + (temporary ? 10 * 60 * 1000 : 60 * 60 * 1000)).toISOString();
       
+      // Store session in database
+      const supabase = await createServerClient();
+      const { error: insertError } = await supabase
+        .from('mfa_sessions')
+        .insert({
+          token: sessionToken,
+          user_id: userId,
+          mfa_verified: false,
+          expires_at: expiresAt,
+          created_at: new Date().toISOString()
+        });
+      
+      if (insertError) {
+        console.error('Failed to create MFA session:', insertError);
+        return {
+          session: undefined,
+          error: 'Failed to create MFA session in database'
+        };
+      }
+      
       return {
         session: {
           sessionToken,
@@ -1121,20 +1262,42 @@ export class MfaService {
         return { success: false, error: 'Invalid session token' };
       }
 
-      // In a production app, you would:
-      // 1. Validate the session token against a secure session store (Redis, database)
-      // 2. Update the session to mark MFA as verified
-      // 3. Set appropriate session expiration
-      
-      // For security, we're implementing a basic validation
+      // Validate token format
       const tokenPart = sessionToken.replace('mfa_', '');
       if (tokenPart.length !== 64) { // Should be 32 bytes = 64 hex chars
         return { success: false, error: 'Invalid session token format' };
       }
-      
-      // Here you would update your session store to mark MFA as verified
-      // const supabase = await createServerClient();
-      // await supabase.from('mfa_sessions').update({ mfa_verified: true }).eq('token', sessionToken);
+
+      // Update session in database to mark MFA as verified
+      const supabase = await createServerClient();
+      const { data: session, error: fetchError } = await supabase
+        .from('mfa_sessions')
+        .select('expires_at')
+        .eq('token', sessionToken)
+        .single();
+
+      if (fetchError || !session) {
+        return { success: false, error: 'Session not found or expired' };
+      }
+
+      // Check if session is still valid
+      if (new Date(session.expires_at) < new Date()) {
+        return { success: false, error: 'Session has expired' };
+      }
+
+      // Mark session as MFA verified
+      const { error: updateError } = await supabase
+        .from('mfa_sessions')
+        .update({ 
+          mfa_verified: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('token', sessionToken);
+
+      if (updateError) {
+        console.error('Failed to update MFA session:', updateError);
+        return { success: false, error: 'Failed to update session' };
+      }
       
       return { success: true };
     } catch (error) {
@@ -1210,8 +1373,8 @@ export class MfaService {
       }
 
       // Verify TOTP code with user's secret
-      const decryptedSecret = this.decryptSecret(mfaData.secret);
-      const isValid = await this.verifyTotpCode(decryptedSecret, totpCode);
+      const decryptedSecret = this.decryptSecret(mfaData.secret, userId);
+      const isValid = await this.verifyTotpCode(decryptedSecret, totpCode, userId);
       if (!isValid) {
         return { success: false, error: 'Invalid verification code' };
       }
@@ -1248,9 +1411,9 @@ export const getMfaSecret = async (userId: string): Promise<MfaSecret | null> =>
   return secret;
 };
 
-export const verifyMfaCode = async (secret: string, code: string): Promise<boolean> => {
+export const verifyMfaCode = async (secret: string, code: string, userId?: string): Promise<boolean> => {
   const mfaService = createMfaService(true);
-  return mfaService.verifyTotpCode(secret, code);
+  return mfaService.verifyTotpCode(secret, code, userId);
 };
 
 export const getUserTrustedDevices = async (userId: string): Promise<TrustedDevice[]> => {

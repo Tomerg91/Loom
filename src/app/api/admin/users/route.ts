@@ -9,7 +9,7 @@ import { z } from 'zod';
 const getUsersQuerySchema = z.object({
   search: z.string().optional(),
   role: z.enum(['admin', 'coach', 'client']).optional(),
-  status: z.enum(['active', 'inactive', 'pending']).optional(),
+  status: z.enum(['active', 'inactive', 'suspended']).optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
 });

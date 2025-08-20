@@ -308,9 +308,9 @@ INSERT INTO notification_templates (type, language, channel, title, body, html_b
  'New message from {{sender_name}}'),
 
 -- Welcome message
-('welcome_message', 'en', 'inapp', 'Welcome to Loom!', 'Welcome to your coaching journey. We\'re excited to help you achieve your goals!', NULL, NULL),
-('welcome_message', 'en', 'email', 'Welcome to Loom!', 'Welcome to your coaching journey. We\'re excited to help you achieve your goals!', 
- '<h2>Welcome to Loom!</h2><p>Welcome to your coaching journey. We\'re excited to help you achieve your goals!</p>',
+('welcome_message', 'en', 'inapp', 'Welcome to Loom!', 'Welcome to your coaching journey. We''re excited to help you achieve your goals!', NULL, NULL),
+('welcome_message', 'en', 'email', 'Welcome to Loom!', 'Welcome to your coaching journey. We''re excited to help you achieve your goals!', 
+ '<h2>Welcome to Loom!</h2><p>Welcome to your coaching journey. We''re excited to help you achieve your goals!</p>',
  'Welcome to Loom - Your Coaching Journey Starts Here');
 
 -- Insert Hebrew templates

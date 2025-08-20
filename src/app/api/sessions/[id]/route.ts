@@ -4,80 +4,107 @@ import {
   createErrorResponse, 
   withErrorHandling,
   validateRequestBody,
+  requireAuth,
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { uuidSchema, updateSessionSchema } from '@/lib/api/validation';
 import { getSessionById, updateSession, deleteSession } from '@/lib/database/sessions';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { rateLimit } from '@/lib/security/rate-limit';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
 // GET /api/sessions/[id] - Get session by ID
-export const GET = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
-  const { id } = await params;
-  
-  // Validate UUID format
-  const validationResult = uuidSchema.safeParse(id);
-  if (!validationResult.success) {
-    return createErrorResponse('Invalid session ID format', HTTP_STATUS.BAD_REQUEST);
-  }
-  
-  const session = await getSessionById(id);
-  
-  if (!session) {
-    return createErrorResponse('Session not found', HTTP_STATUS.NOT_FOUND);
-  }
-  
-  return createSuccessResponse(session);
-});
+export const GET = withErrorHandling(
+  rateLimit(150, 60000)( // 150 requests per minute
+    requireAuth(async (user, request: NextRequest, { params }: RouteParams) => {
+      const { id } = await params;
+      
+      // Validate UUID format
+      const validationResult = uuidSchema.safeParse(id);
+      if (!validationResult.success) {
+        return createErrorResponse('Invalid session ID format', HTTP_STATUS.BAD_REQUEST);
+      }
+      
+      const session = await getSessionById(id);
+      
+      if (!session) {
+        return createErrorResponse('Session not found', HTTP_STATUS.NOT_FOUND);
+      }
+      
+      // Check if user has access to this session
+      if (session.coachId !== user.id && session.clientId !== user.id && user.role !== 'admin') {
+        return createErrorResponse('Access denied', HTTP_STATUS.FORBIDDEN);
+      }
+      
+      return createSuccessResponse(session);
+    })
+  )
+);
 
 // PUT /api/sessions/[id] - Update session
-export const PUT = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
-  const { id } = await params;
-  
-  // Validate UUID format
-  const validationResult = uuidSchema.safeParse(id);
-  if (!validationResult.success) {
-    return createErrorResponse('Invalid session ID format', HTTP_STATUS.BAD_REQUEST);
-  }
-  
-  // Parse and validate request body
-  const body = await request.json();
-  const validation = validateRequestBody(updateSessionSchema, body);
-  
-  if (!validation.success) {
-    return createErrorResponse(validation.error, HTTP_STATUS.UNPROCESSABLE_ENTITY);
-  }
-  
-  // Check if session exists
-  const existingSession = await getSessionById(id);
-  if (!existingSession) {
-    return createErrorResponse('Session not found', HTTP_STATUS.NOT_FOUND);
-  }
-  
-  // Update session
-  const updatedSession = await updateSession(id, validation.data);
-  
-  return createSuccessResponse(updatedSession, 'Session updated successfully');
-});
+export const PUT = withErrorHandling(
+  rateLimit(50, 60000)( // 50 requests per minute
+    requireAuth(async (user, request: NextRequest, { params }: RouteParams) => {
+      const { id } = await params;
+      
+      // Validate UUID format
+      const validationResult = uuidSchema.safeParse(id);
+      if (!validationResult.success) {
+        return createErrorResponse('Invalid session ID format', HTTP_STATUS.BAD_REQUEST);
+      }
+      
+      // Parse and validate request body
+      const body = await request.json();
+      const validation = validateRequestBody(updateSessionSchema, body);
+      
+      if (!validation.success) {
+        return createErrorResponse(validation.error, HTTP_STATUS.UNPROCESSABLE_ENTITY);
+      }
+      
+      // Check if session exists
+      const existingSession = await getSessionById(id);
+      if (!existingSession) {
+        return createErrorResponse('Session not found', HTTP_STATUS.NOT_FOUND);
+      }
+      
+      // Check if user has permission to update this session
+      if (existingSession.coachId !== user.id && user.role !== 'admin') {
+        return createErrorResponse('Access denied. Only the coach or admin can update sessions.', HTTP_STATUS.FORBIDDEN);
+      }
+      
+      // Update session
+      const updatedSession = await updateSession(id, validation.data);
+      
+      return createSuccessResponse(updatedSession, 'Session updated successfully');
+    })
+  )
+);
 
 // DELETE /api/sessions/[id] - Cancel/Delete session with policy enforcement
-export const DELETE = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
-  const { id } = await params;
-  
-  // Validate UUID format
-  const validationResult = uuidSchema.safeParse(id);
-  if (!validationResult.success) {
-    return createErrorResponse('Invalid session ID format', HTTP_STATUS.BAD_REQUEST);
-  }
-  
-  // Check if session exists
-  const existingSession = await getSessionById(id);
-  if (!existingSession) {
-    return createErrorResponse('Session not found', HTTP_STATUS.NOT_FOUND);
-  }
+export const DELETE = withErrorHandling(
+  rateLimit(20, 60000)( // 20 requests per minute for session cancellations
+    requireAuth(async (user, request: NextRequest, { params }: RouteParams) => {
+      const { id } = await params;
+      
+      // Validate UUID format
+      const validationResult = uuidSchema.safeParse(id);
+      if (!validationResult.success) {
+        return createErrorResponse('Invalid session ID format', HTTP_STATUS.BAD_REQUEST);
+      }
+      
+      // Check if session exists
+      const existingSession = await getSessionById(id);
+      if (!existingSession) {
+        return createErrorResponse('Session not found', HTTP_STATUS.NOT_FOUND);
+      }
+      
+      // Check if user has permission to cancel this session
+      if (existingSession.coachId !== user.id && existingSession.clientId !== user.id && user.role !== 'admin') {
+        return createErrorResponse('Access denied. You can only cancel your own sessions.', HTTP_STATUS.FORBIDDEN);
+      }
   
   // Check if session can be cancelled
   if (!['scheduled', 'in_progress'].includes(existingSession.status)) {
@@ -167,7 +194,9 @@ export const DELETE = withErrorHandling(async (request: NextRequest, { params }:
     refundRequested: cancellationData.refundRequested || false,
     notifyParticipants: cancellationData.notifyParticipants !== false, // Default to true
   }, cancellationResult.message);
-});
+    })
+  )
+);
 
 // OPTIONS /api/sessions/[id] - Handle CORS preflight
 export async function OPTIONS(request: NextRequest) {

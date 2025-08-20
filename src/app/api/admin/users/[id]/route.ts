@@ -12,7 +12,7 @@ const updateUserSchema = z.object({
   email: commonValidators.email().optional(),
   phone: z.string().optional(),
   role: z.enum(['admin', 'coach', 'client']).optional(),
-  status: z.enum(['active', 'inactive', 'pending']).optional(),
+  status: z.enum(['active', 'inactive', 'suspended']).optional(),
 });
 
 export async function GET(
