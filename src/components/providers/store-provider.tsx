@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useNotificationStore } from '@/lib/store/notification-store';
 import { useSessionStore } from '@/lib/store/session-store';
-import { createAuthService } from '@/lib/auth/auth';
+import { createClientAuthService } from '@/lib/auth/client-auth';
 import type { AuthUser } from '@/lib/auth/auth';
 
 interface StoreProviderProps {
@@ -26,7 +26,7 @@ export function StoreProvider({ children, initialUser }: StoreProviderProps) {
     } else {
       setLoading(true);
       
-      const authService = createAuthService(false);
+      const authService = createClientAuthService();
       
       // Get initial user
       authService.getCurrentUser().then((user) => {

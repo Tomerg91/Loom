@@ -2,11 +2,13 @@ import { getRequestConfig } from 'next-intl/server';
 import { routing } from './routing';
  
 export default getRequestConfig(async ({ locale }: { locale: string }) => {
-  // Validate that the incoming `locale` parameter is valid
-  if (!routing.locales.includes(locale as any)) {
-    // Instead of notFound(), redirect to default locale
-    // This will be handled by the middleware redirect logic
-    console.warn(`Invalid locale requested: ${locale}, falling back to default`);
+  // Handle undefined or invalid locale parameter
+  if (!locale || !routing.locales.includes(locale as any)) {
+    // Use default locale for undefined or invalid locales
+    // Only warn if locale was provided but invalid (not undefined)
+    if (locale && locale !== routing.defaultLocale) {
+      console.warn(`Invalid locale requested: ${locale}, falling back to default`);
+    }
     locale = routing.defaultLocale;
   }
  
