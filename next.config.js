@@ -3,6 +3,8 @@ const createNextIntlPlugin = require('next-intl/plugin');
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+console.log('NEXT_PUBLIC_SUPABASE_URL during build:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
@@ -33,11 +35,6 @@ const nextConfig = {
       '*.svg': {
         loaders: ['@svgr/webpack'],
         as: '*.js',
-      },
-      // Explicitly handle CSS files to prevent MIME type issues
-      '*.css': {
-        loaders: ['css-loader'],
-        as: '*.css',
       },
     },
   },
@@ -195,16 +192,6 @@ const nextConfig = {
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // Suppress critical dependency warnings for instrumentation libraries
     config.module.exprContextCritical = false;
-    
-    // Fix CSS MIME type issues - ensure proper CSS handling
-    if (!dev && !isServer) {
-      // Add plugin to ensure CSS files have correct MIME type
-      config.plugins.push(
-        new webpack.DefinePlugin({
-          '__CSS_MIME_TYPE_FIX__': true
-        })
-      );
-    }
     
     // More specific suppression for OpenTelemetry/Sentry
     config.ignoreWarnings = [
