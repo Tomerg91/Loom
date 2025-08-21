@@ -2,13 +2,40 @@
 // CRITICAL: Only NEXT_PUBLIC_ prefixed variables can be safely exposed to the client
 function getRequiredClientEnvVar(name) {
   const value = process.env[name];
-  if (!value) {
-    console.error(`Missing required client environment variable: ${name}`);
-    // In production, provide more helpful error but don't crash the build
+  if (!value || value.trim() === '') {
+    const errorMessage = `Missing required client environment variable: ${name}`;
+    console.error(errorMessage);
+    
+    // In production, throw an error during build time to prevent deployment with missing variables
+    // Only allow placeholders during development
     if (process.env.NODE_ENV === 'production') {
-      console.error(`Production deployment missing ${name}. Check Vercel environment variables.`);
-      // Return a placeholder that will show a user-friendly error in the UI
+      console.error(`Production deployment missing ${name}. Check environment variables.`);
+      throw new Error(`${errorMessage}. This is required for production deployment.`);
+    } else {
+      // In development, allow missing variables but warn
+      console.warn(`Development environment missing ${name}. Using placeholder.`);
       return `MISSING_${name.replace('NEXT_PUBLIC_', '')}`;
+    }
+  }
+  
+  // Check for common placeholder values that shouldn't be used in production
+  const placeholderPatterns = [
+    'your-project-id',
+    'your-supabase',
+    'localhost',
+    'MISSING_',
+    'INVALID_',
+    'your_'
+  ];
+  
+  if (placeholderPatterns.some(pattern => value.includes(pattern))) {
+    const errorMessage = `Invalid placeholder value for ${name}: ${value}`;
+    console.error(errorMessage);
+    
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`${errorMessage}. Please set a real value for production.`);
+    } else {
+      console.warn(`Development environment using placeholder for ${name}`);
     }
   }
   
@@ -17,11 +44,15 @@ function getRequiredClientEnvVar(name) {
     try {
       new URL(value);
     } catch (error) {
-      console.error(`Invalid URL format for ${name}: ${value}`);
+      const errorMessage = `Invalid URL format for ${name}: ${value}`;
+      console.error(errorMessage);
+      
       if (process.env.NODE_ENV === 'production') {
+        throw new Error(`${errorMessage}. Please provide a valid URL.`);
+      } else {
+        console.warn(`Development environment has invalid URL format for ${name}`);
         return `INVALID_${name.replace('NEXT_PUBLIC_', '')}_FORMAT`;
       }
-      throw new Error(`Invalid URL format for ${name}: ${value}`);
     }
   }
   

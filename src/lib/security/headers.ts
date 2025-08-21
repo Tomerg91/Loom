@@ -21,7 +21,7 @@ export const SECURITY_HEADERS = {
     "base-uri 'self'",
     "form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com",
     "frame-ancestors 'none'",
-    "frame-src 'self' https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io",
+    "frame-src 'self' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io",
     "connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://sentry.io https://*.sentry.io",
     "worker-src 'self' blob:",
     "manifest-src 'self'",
@@ -56,7 +56,7 @@ const DEV_CSP_OVERRIDES = {
     "base-uri 'self'",
     "form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com",
     "frame-ancestors 'none'",
-    "frame-src 'self' https://secure5.tranzila.com https://direct.tranzilla.com https://*.sentry.io",
+    "frame-src 'self' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io",
   ].join('; '),
   
   // Less restrictive COEP in development

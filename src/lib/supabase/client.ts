@@ -20,64 +20,111 @@ function validateClientEnv() {
   if (typeof window !== 'undefined') {
     // Check for missing environment variables
     if (!NEXT_PUBLIC_SUPABASE_URL) {
-      throw new Error(
-        'Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL. ' +
-        'Please set this variable in your Vercel dashboard or deployment environment.'
-      );
+      const errorMsg = 'Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL. ' +
+        'Please set this variable in your deployment environment (Vercel dashboard, .env.local, etc.).';
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
     
     if (!NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      throw new Error(
-        'Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY. ' +
-        'Please set this variable in your Vercel dashboard or deployment environment.'
-      );
+      const errorMsg = 'Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY. ' +
+        'Please set this variable in your deployment environment (Vercel dashboard, .env.local, etc.).';
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
     
     // Check for placeholder values that indicate environment variables weren't properly set
-    if (NEXT_PUBLIC_SUPABASE_URL.startsWith('MISSING_') || 
-        NEXT_PUBLIC_SUPABASE_URL.startsWith('INVALID_') ||
-        NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id') ||
-        NEXT_PUBLIC_SUPABASE_URL.includes('localhost')) {
-      throw new Error(
-        `Invalid Supabase URL configuration: "${NEXT_PUBLIC_SUPABASE_URL}". ` +
+    const placeholderPatterns = [
+      'MISSING_',
+      'INVALID_',
+      'your-project-id',
+      'your-supabase',
+      'localhost:54321' // Common local dev URL
+    ];
+    
+    if (placeholderPatterns.some(pattern => NEXT_PUBLIC_SUPABASE_URL.includes(pattern))) {
+      const errorMsg = `Invalid Supabase URL configuration: "${NEXT_PUBLIC_SUPABASE_URL}". ` +
         'This appears to be a placeholder value. Please set the correct Supabase URL ' +
-        'in your production environment variables. Expected format: https://your-project.supabase.co'
-      );
+        'in your environment variables. Expected format: https://your-project-ref.supabase.co';
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
     
     // Validate URL format
     try {
       const url = new URL(NEXT_PUBLIC_SUPABASE_URL);
-      if (!url.hostname.includes('supabase.co')) {
-        console.warn('Warning: Supabase URL does not contain expected hostname pattern.');
+      
+      // Check for valid Supabase hostname patterns
+      const validPatterns = [
+        'supabase.co',
+        'supabase.com',
+        'localhost' // Allow localhost for development
+      ];
+      
+      const isValidPattern = validPatterns.some(pattern => url.hostname.includes(pattern));
+      if (!isValidPattern) {
+        console.warn(`Warning: Supabase URL "${NEXT_PUBLIC_SUPABASE_URL}" does not match expected patterns.`);
       }
     } catch (error) {
-      throw new Error(
-        `Invalid Supabase URL format: "${NEXT_PUBLIC_SUPABASE_URL}". ` +
-        'Expected a valid URL like: https://your-project.supabase.co'
-      );
+      const errorMsg = `Invalid Supabase URL format: "${NEXT_PUBLIC_SUPABASE_URL}". ` +
+        'Expected a valid URL like: https://your-project-ref.supabase.co';
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
     
     // Validate anon key format (should be a JWT)
     if (!NEXT_PUBLIC_SUPABASE_ANON_KEY.startsWith('eyJ')) {
-      throw new Error(
-        'Invalid Supabase anon key format. Expected a JWT token starting with "eyJ".'
-      );
+      const errorMsg = `Invalid Supabase anon key format: "${NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 20)}...". ` +
+        'Expected a JWT token starting with "eyJ".';
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    // Additional validation for obvious placeholder keys
+    if (NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('your-supabase') || 
+        NEXT_PUBLIC_SUPABASE_ANON_KEY.length < 100) {
+      const errorMsg = 'Invalid Supabase anon key: appears to be a placeholder value. ' +
+        'Please set the correct anon key from your Supabase dashboard.';
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
   }
 }
 
 // Client-side Supabase client for use in React components
 export const createClient = () => {
-  validateClientEnv();
+  // Only validate on the client side to avoid build-time errors
+  if (typeof window !== 'undefined') {
+    validateClientEnv();
+  }
   
   if (clientInstance) {
     return clientInstance;
   }
   
-  clientInstance = createClientComponentClient<Database>();
-  return clientInstance;
+  try {
+    clientInstance = createClientComponentClient<Database>();
+    return clientInstance;
+  } catch (error) {
+    console.error('Failed to create Supabase client:', error);
+    
+    // Re-throw with more context
+    throw new Error(
+      `Failed to initialize Supabase client. This typically indicates missing or invalid environment variables. ` +
+      `Please ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are properly set. ` +
+      `Original error: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 };
 
-// Singleton client for client-side usage
-export const supabase = createClient();
+// Lazy singleton client for client-side usage - only created when first accessed
+let _lazyClient: ReturnType<typeof createClientComponentClient<Database>> | null = null;
+
+export const supabase = new Proxy({} as ReturnType<typeof createClientComponentClient<Database>>, {
+  get(target, prop) {
+    if (!_lazyClient) {
+      _lazyClient = createClient();
+    }
+    return _lazyClient[prop as keyof typeof _lazyClient];
+  }
+});

@@ -106,9 +106,9 @@ const nextConfig = {
           },
         ],
       },
-      // Static CSS files - Fix MIME type issues
+      // Static CSS files - Ensure correct MIME type and prevent execution
       {
-        source: '/_next/static/css/(.*\\.css)',
+        source: '/_next/static/css/(.*\\.css)$',
         headers: [
           {
             key: 'Content-Type',
@@ -129,6 +129,11 @@ const nextConfig = {
           {
             key: 'Access-Control-Allow-Origin',
             value: '*',
+          },
+          // Explicitly prevent CSS files from being executed as scripts
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow',
           },
         ],
       },
@@ -204,6 +209,9 @@ const nextConfig = {
         if (Array.isArray(rule.exclude)) {
           rule.exclude.push(/node_modules/);
         }
+        // Explicitly prevent CSS from being treated as JS modules
+        rule.type = 'css';
+        rule.sideEffects = false;
       }
     });
     
@@ -234,125 +242,35 @@ const nextConfig = {
           automaticNameDelimiter: '~',
           cacheGroups: {
             // CRITICAL: Separate CSS processing from JavaScript chunks
-            // This ensures CSS files are never included in JS bundles
+            // This ensures CSS files are never included in JS bundles and are handled correctly
             styles: {
-              test: /\.css$/,
+              test: /\.(css|scss|sass)$/,
               name: 'styles',
               chunks: 'all',
               enforce: true,
-              priority: 100, // Highest priority to prevent CSS from being bundled with JS
-              // This will create a separate CSS chunk that Next.js can properly handle
+              priority: 100,
+              type: 'css/mini-extract',
               reuseExistingChunk: true,
             },
             
-            // React/Next.js framework chunk (highest priority after CSS)
+            // Simplified framework chunk
             framework: {
               chunks: 'all',
               name: 'framework',
-              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|next)[\\/].*\.(js|jsx|ts|tsx)$/,
+              test: /[\\/]node_modules[\\/](react|react-dom|next)[\\/]/,
               priority: 50,
-              enforce: true,
               reuseExistingChunk: true,
             },
             
-            // Charts library (recharts is heavy - separate chunk)
-            charts: {
-              test: /[\\/]node_modules[\\/](recharts|d3-.*|victory-.*)[\\/].*\.(js|jsx|ts|tsx)$/,
-              name: 'charts',
-              chunks: 'all',
-              priority: 45,
-              enforce: true,
-              reuseExistingChunk: true,
-            },
-            
-            // UI component libraries
-            ui: {
-              test: /[\\/]node_modules[\\/](@radix-ui|lucide-react|react-day-picker)[\\/].*\.(js|jsx|ts|tsx)$/,
-              name: 'ui',
-              chunks: 'all',
-              priority: 40,
-              enforce: true,
-              reuseExistingChunk: true,
-            },
-            
-            // Authentication & database
-            auth: {
-              test: /[\\/]node_modules[\\/](@supabase|@tanstack\/react-query|zustand)[\\/].*\.(js|jsx|ts|tsx)$/,
-              name: 'auth',
-              chunks: 'all',
-              priority: 38,
-              enforce: true,
-              reuseExistingChunk: true,
-            },
-            
-            // Internationalization
-            i18n: {
-              test: /[\\/]node_modules[\\/](next-intl|date-fns)[\\/].*\.(js|jsx|ts|tsx)$/,
-              name: 'i18n',
-              chunks: 'all',
-              priority: 36,
-              enforce: true,
-              reuseExistingChunk: true,
-            },
-            
-            // Form handling libraries
-            forms: {
-              test: /[\\/]node_modules[\\/](react-hook-form|@hookform|zod)[\\/].*\.(js|jsx|ts|tsx)$/,
-              name: 'forms',
-              chunks: 'all',
-              priority: 34,
-              enforce: true,
-              reuseExistingChunk: true,
-            },
-            
-            // Utilities and smaller libraries
-            utils: {
-              test: /[\\/]node_modules[\\/](clsx|class-variance-authority|tailwind-merge|tailwindcss-animate)[\\/].*\.(js|jsx|ts|tsx)$/,
-              name: 'utils',
-              chunks: 'all',
-              priority: 32,
-              enforce: true,
-              reuseExistingChunk: true,
-            },
-            
-            // PDF and file processing
-            files: {
-              test: /[\\/]node_modules[\\/](pdf-lib|qrcode|speakeasy|bcryptjs)[\\/].*\.(js|jsx|ts|tsx)$/,
-              name: 'files',
-              chunks: 'all',
-              priority: 30,
-              enforce: true,
-              reuseExistingChunk: true,
-            },
-            
-            // Monitoring and analytics
-            monitoring: {
-              test: /[\\/]node_modules[\\/](@sentry|web-vitals)[\\/].*\.(js|jsx|ts|tsx)$/,
-              name: 'monitoring',
-              chunks: 'all',
-              priority: 28,
-              enforce: true,
-              reuseExistingChunk: true,
-            },
-            
-            // Common vendor libraries (lower priority) - Only include JS files
+            // Heavy libraries chunk
             vendor: {
-              test: /[\\/]node_modules[\\/].*\.(js|jsx|ts|tsx)$/,
+              test: /[\\/]node_modules[\\/]/,
               name: 'vendor',
               chunks: 'all',
               priority: 20,
               minChunks: 2,
               maxSize: 244000,
               reuseExistingChunk: true,
-            },
-            
-            // Default group for everything else - Only include JS files
-            default: {
-              test: /\.(js|jsx|ts|tsx)$/,
-              minChunks: 2,
-              priority: 10,
-              reuseExistingChunk: true,
-              maxSize: 244000,
             },
           },
         },

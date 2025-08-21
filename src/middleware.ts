@@ -53,28 +53,33 @@ export async function middleware(request: NextRequest) {
   
   // CRITICAL: Skip ALL middleware logic for Next.js static assets
   // This must be the FIRST check to prevent any middleware execution
+  // This prevents CSS files from being processed as pages/routes
   if (
     pathname.startsWith('/_next/static/') ||
     pathname.startsWith('/_next/image/') ||
     pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/static/') ||
-    pathname.includes('.css') ||
-    pathname.includes('.js') ||
-    pathname.includes('.map') ||
-    pathname.includes('.ico') ||
-    pathname.includes('.png') ||
-    pathname.includes('.jpg') ||
-    pathname.includes('.jpeg') ||
-    pathname.includes('.svg') ||
-    pathname.includes('.gif') ||
-    pathname.includes('.webp') ||
-    pathname.includes('.woff') ||
-    pathname.includes('.woff2') ||
-    pathname.includes('.ttf') ||
-    pathname.includes('.eot') ||
-    pathname.startsWith('/api/')
+    pathname.endsWith('.css') ||
+    pathname.endsWith('.js') ||
+    pathname.endsWith('.js.map') ||
+    pathname.endsWith('.css.map') ||
+    pathname.endsWith('.ico') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.jpeg') ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.gif') ||
+    pathname.endsWith('.webp') ||
+    pathname.endsWith('.woff') ||
+    pathname.endsWith('.woff2') ||
+    pathname.endsWith('.ttf') ||
+    pathname.endsWith('.eot') ||
+    pathname.startsWith('/api/') ||
+    // Additional protection for static assets with query parameters
+    pathname.match(/\.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot)(\?.*)?$/)
   ) {
     // Return immediately without any processing
+    // This ensures static assets are served directly by the web server
     return NextResponse.next();
   }
 
