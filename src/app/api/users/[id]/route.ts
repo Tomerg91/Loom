@@ -7,7 +7,7 @@ import {
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { uuidSchema, updateUserSchema } from '@/lib/api/validation';
-import { getUserById, updateUser, deleteUser } from '@/lib/database/users';
+import { UserService } from '@/lib/database/users';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 interface RouteParams {
@@ -75,7 +75,8 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
     );
   }
   
-  const result = await getUserById(id);
+  const userService = new UserService(true);
+  const result = await userService.getUserById(id);
   
   if (!result.success) {
     return createErrorResponse(result.error, HTTP_STATUS.NOT_FOUND);
@@ -154,13 +155,14 @@ export const PUT = withErrorHandling(async (request: NextRequest, { params }: Ro
   }
   
   // Check if user exists
-  const existingUserResult = await getUserById(id);
+  const userService = new UserService(true);
+  const existingUserResult = await userService.getUserById(id);
   if (!existingUserResult.success) {
     return createErrorResponse(existingUserResult.error, HTTP_STATUS.NOT_FOUND);
   }
   
   // Update user
-  const updateResult = await updateUser(id, validation.data);
+  const updateResult = await userService.updateUser(id, validation.data);
   
   if (!updateResult.success) {
     return createErrorResponse(updateResult.error, HTTP_STATUS.INTERNAL_SERVER_ERROR);
@@ -231,13 +233,14 @@ export const DELETE = withErrorHandling(async (request: NextRequest, { params }:
   }
   
   // Check if user exists
-  const existingUserResult = await getUserById(id);
+  const userService = new UserService(true);
+  const existingUserResult = await userService.getUserById(id);
   if (!existingUserResult.success) {
     return createErrorResponse(existingUserResult.error, HTTP_STATUS.NOT_FOUND);
   }
   
   // Delete user
-  const deleteResult = await deleteUser(id);
+  const deleteResult = await userService.deleteUser(id);
   
   if (!deleteResult.success) {
     return createErrorResponse(deleteResult.error, HTTP_STATUS.INTERNAL_SERVER_ERROR);

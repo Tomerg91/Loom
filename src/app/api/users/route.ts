@@ -11,7 +11,7 @@ import {
 } from '@/lib/api/utils';
 import { validateQuery } from '@/lib/api/validation';
 import { paginationSchema, sortSchema } from '@/lib/api/validation';
-import { getUsersPaginated, getUsersCount } from '@/lib/database/users';
+import { UserService } from '@/lib/database/users';
 import { rateLimit } from '@/lib/security/rate-limit';
 
 // GET /api/users - List users with pagination (Admin only)
@@ -42,9 +42,11 @@ export const GET = withErrorHandling(
       
       const { offset } = parsePagination({ page: page.toString(), limit: limit.toString() });
       
+      const userService = new UserService(true);
+
       // Fetch users from database
       const [users, total] = await Promise.all([
-        getUsersPaginated({
+        userService.getUsersPaginated({
           limit,
           offset,
           sortBy,
@@ -53,7 +55,7 @@ export const GET = withErrorHandling(
           search,
           status,
         }),
-        getUsersCount({ role, search, status }),
+        userService.getUsersCount({ role, search, status }),
       ]);
       
       // Calculate pagination metadata

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { authService } from '@/lib/services/auth-service';
-import { userService } from '@/lib/services/user-service';
+import { UserService } from '@/lib/services/user-service';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
 import { z } from 'zod';
@@ -29,6 +29,7 @@ export async function GET(
     }
 
     // Get user by ID
+    const userService = new UserService();
     const user = await userService.getUserById(id);
     
     if (!user) {
@@ -75,6 +76,7 @@ export async function PUT(
     }
 
     // Update user
+    const userService = new UserService();
     const updatedUser = await userService.updateUser(id, validation.data);
     
     if (!updatedUser) {
@@ -116,6 +118,7 @@ export async function DELETE(
     }
 
     // Delete user
+    const userService = new UserService();
     const deleted = await userService.deleteUser(id);
     
     if (!deleted) {

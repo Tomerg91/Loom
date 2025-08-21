@@ -1,3 +1,6 @@
+// TODO: Re-add server-only after auth refactor
+// import 'server-only';
+
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { type NextRequest, type NextResponse } from 'next/server';

@@ -969,11 +969,3 @@ export class UserService {
     }
 }
 
-// Export individual functions for API usage
-const userService = new UserService(true);
-
-export const getUsersPaginated = (options: GetUsersOptions) => userService.getUsersPaginated(options);
-export const getUsersCount = (options: GetUsersCountOptions) => userService.getUsersCount(options);
-export const getUserById = (userId: string) => userService.getUserById(userId);
-export const updateUser = (userId: string, updates: Partial<User>) => userService.updateUser(userId, updates);
-export const deleteUser = (userId: string) => userService.deleteUserById(userId);

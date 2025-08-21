@@ -1,5 +1,4 @@
-'use client';
-
+// Server component for environment validation
 import { env } from '@/env.mjs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink, Settings } from 'lucide-react';
@@ -104,19 +103,23 @@ export function EnvironmentCheck() {
             <div className="flex flex-col sm:flex-row gap-2 pt-4">
               <Button 
                 variant="outline" 
-                onClick={() => window.open('https://vercel.com/dashboard', '_blank')}
+                asChild
                 className="flex items-center gap-2"
               >
-                <ExternalLink className="h-4 w-4" />
-                Open Vercel Dashboard
+                <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4" />
+                  Open Vercel Dashboard
+                </a>
               </Button>
               <Button 
                 variant="outline"
-                onClick={() => window.open('https://supabase.com/dashboard', '_blank')}
+                asChild
                 className="flex items-center gap-2"
               >
-                <Settings className="h-4 w-4" />
-                Open Supabase Dashboard
+                <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer">
+                  <Settings className="h-4 w-4" />
+                  Open Supabase Dashboard
+                </a>
               </Button>
             </div>
             

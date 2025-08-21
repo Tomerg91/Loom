@@ -1,3 +1,6 @@
+// TODO: Re-add server-only after auth refactor
+// import 'server-only';
+
 // Server-only environment variables
 // This file should only be imported by server-side code
 function getRequiredServerEnvVar(name) {

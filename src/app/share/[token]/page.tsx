@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -72,11 +71,20 @@ export default function SharePage() {
       setLoading(true);
       setError(null);
 
-      const result = await temporarySharesDatabase.validateShareAccess(
-        token,
-        inputPassword || password
-      );
+      const response = await fetch('/api/share/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          password: inputPassword || password
+        })
+      });
 
+      if (!response.ok) {
+        throw new Error('Failed to validate access');
+      }
+
+      const result = await response.json();
       setValidation(result);
 
       if (!result.can_access && result.failure_reason === 'Invalid password') {
@@ -103,16 +111,20 @@ export default function SharePage() {
     bytesServed?: number
   ) => {
     try {
-      // Get client IP and user agent
+      // Get user agent
       const userAgent = navigator.userAgent;
       
-      await temporarySharesDatabase.logShareAccess({
-        share_id: shareId,
-        user_agent: userAgent,
-        access_type: accessType,
-        success,
-        failure_reason: failureReason || undefined,
-        bytes_served: bytesServed,
+      await fetch('/api/share/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          share_id: shareId,
+          user_agent: userAgent,
+          access_type: accessType,
+          success,
+          failure_reason: failureReason || undefined,
+          bytes_served: bytesServed,
+        })
       });
     } catch (error) {
       console.error('Failed to log access:', error);
