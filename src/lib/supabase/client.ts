@@ -1,10 +1,11 @@
 import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/types/supabase';
+import { env } from '@/env.mjs';
 
 // Direct access to client-safe environment variables
 // Note: Only NEXT_PUBLIC_ prefixed variables are available on the client
-const NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const NEXT_PUBLIC_SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
+const NEXT_PUBLIC_SUPABASE_ANON_KEY = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // Debug logging for production issues (only in development)
 if (process.env.NODE_ENV === 'development') {
