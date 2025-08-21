@@ -1,10 +1,10 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/types/supabase';
 
 // Direct access to client-safe environment variables
 // Note: Only NEXT_PUBLIC_ prefixed variables are available on the client
-const NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // Debug logging for production issues (only in development)
 if (process.env.NODE_ENV === 'development') {
@@ -12,8 +12,8 @@ if (process.env.NODE_ENV === 'development') {
   console.log('Has Anon Key:', !!NEXT_PUBLIC_SUPABASE_ANON_KEY);
 }
 
-// Singleton instance to prevent multiple GoTrueClient creation
-let clientInstance: ReturnType<typeof createClientComponentClient<Database>> | null = null;
+// Singleton instance to prevent multiple client creation
+let clientInstance: ReturnType<typeof createBrowserClient<Database>> | null = null;
 
 // Validate environment variables on client side
 function validateClientEnv() {
@@ -103,7 +103,10 @@ export const createClient = () => {
   }
   
   try {
-    clientInstance = createClientComponentClient<Database>();
+    clientInstance = createBrowserClient<Database>(
+      NEXT_PUBLIC_SUPABASE_URL,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
     return clientInstance;
   } catch (error) {
     console.error('Failed to create Supabase client:', error);
@@ -118,9 +121,9 @@ export const createClient = () => {
 };
 
 // Lazy singleton client for client-side usage - only created when first accessed
-let _lazyClient: ReturnType<typeof createClientComponentClient<Database>> | null = null;
+let _lazyClient: ReturnType<typeof createBrowserClient<Database>> | null = null;
 
-export const supabase = new Proxy({} as ReturnType<typeof createClientComponentClient<Database>>, {
+export const supabase = new Proxy({} as ReturnType<typeof createBrowserClient<Database>>, {
   get(target, prop) {
     if (!_lazyClient) {
       _lazyClient = createClient();
