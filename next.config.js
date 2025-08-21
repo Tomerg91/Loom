@@ -195,6 +195,18 @@ const nextConfig = {
     // Suppress critical dependency warnings for instrumentation libraries
     config.module.exprContextCritical = false;
     
+    // CRITICAL FIX: Ensure CSS files are never treated as JavaScript modules
+    // This prevents CSS files from being included in JavaScript chunks
+    config.module.rules.forEach((rule) => {
+      if (rule.test && rule.test.toString().includes('css')) {
+        // Ensure CSS files are only processed by CSS loaders, not JavaScript loaders
+        rule.exclude = rule.exclude || [];
+        if (Array.isArray(rule.exclude)) {
+          rule.exclude.push(/node_modules/);
+        }
+      }
+    });
+    
     // More specific suppression for OpenTelemetry/Sentry
     config.ignoreWarnings = [
       {
@@ -221,11 +233,23 @@ const nextConfig = {
           maxInitialRequests: 25, // Allow more initial chunks
           automaticNameDelimiter: '~',
           cacheGroups: {
-            // React/Next.js framework chunk (highest priority)
+            // CRITICAL: Separate CSS processing from JavaScript chunks
+            // This ensures CSS files are never included in JS bundles
+            styles: {
+              test: /\.css$/,
+              name: 'styles',
+              chunks: 'all',
+              enforce: true,
+              priority: 100, // Highest priority to prevent CSS from being bundled with JS
+              // This will create a separate CSS chunk that Next.js can properly handle
+              reuseExistingChunk: true,
+            },
+            
+            // React/Next.js framework chunk (highest priority after CSS)
             framework: {
               chunks: 'all',
               name: 'framework',
-              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|next)[\\/]/,
+              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|next)[\\/].*\.(js|jsx|ts|tsx)$/,
               priority: 50,
               enforce: true,
               reuseExistingChunk: true,
@@ -233,7 +257,7 @@ const nextConfig = {
             
             // Charts library (recharts is heavy - separate chunk)
             charts: {
-              test: /[\\/]node_modules[\\/](recharts|d3-.*|victory-.*)[\\/]/,
+              test: /[\\/]node_modules[\\/](recharts|d3-.*|victory-.*)[\\/].*\.(js|jsx|ts|tsx)$/,
               name: 'charts',
               chunks: 'all',
               priority: 45,
@@ -243,7 +267,7 @@ const nextConfig = {
             
             // UI component libraries
             ui: {
-              test: /[\\/]node_modules[\\/](@radix-ui|lucide-react|react-day-picker)[\\/]/,
+              test: /[\\/]node_modules[\\/](@radix-ui|lucide-react|react-day-picker)[\\/].*\.(js|jsx|ts|tsx)$/,
               name: 'ui',
               chunks: 'all',
               priority: 40,
@@ -253,7 +277,7 @@ const nextConfig = {
             
             // Authentication & database
             auth: {
-              test: /[\\/]node_modules[\\/](@supabase|@tanstack\/react-query|zustand)[\\/]/,
+              test: /[\\/]node_modules[\\/](@supabase|@tanstack\/react-query|zustand)[\\/].*\.(js|jsx|ts|tsx)$/,
               name: 'auth',
               chunks: 'all',
               priority: 38,
@@ -263,7 +287,7 @@ const nextConfig = {
             
             // Internationalization
             i18n: {
-              test: /[\\/]node_modules[\\/](next-intl|date-fns)[\\/]/,
+              test: /[\\/]node_modules[\\/](next-intl|date-fns)[\\/].*\.(js|jsx|ts|tsx)$/,
               name: 'i18n',
               chunks: 'all',
               priority: 36,
@@ -273,7 +297,7 @@ const nextConfig = {
             
             // Form handling libraries
             forms: {
-              test: /[\\/]node_modules[\\/](react-hook-form|@hookform|zod)[\\/]/,
+              test: /[\\/]node_modules[\\/](react-hook-form|@hookform|zod)[\\/].*\.(js|jsx|ts|tsx)$/,
               name: 'forms',
               chunks: 'all',
               priority: 34,
@@ -283,7 +307,7 @@ const nextConfig = {
             
             // Utilities and smaller libraries
             utils: {
-              test: /[\\/]node_modules[\\/](clsx|class-variance-authority|tailwind-merge|tailwindcss-animate)[\\/]/,
+              test: /[\\/]node_modules[\\/](clsx|class-variance-authority|tailwind-merge|tailwindcss-animate)[\\/].*\.(js|jsx|ts|tsx)$/,
               name: 'utils',
               chunks: 'all',
               priority: 32,
@@ -293,7 +317,7 @@ const nextConfig = {
             
             // PDF and file processing
             files: {
-              test: /[\\/]node_modules[\\/](pdf-lib|qrcode|speakeasy|bcryptjs)[\\/]/,
+              test: /[\\/]node_modules[\\/](pdf-lib|qrcode|speakeasy|bcryptjs)[\\/].*\.(js|jsx|ts|tsx)$/,
               name: 'files',
               chunks: 'all',
               priority: 30,
@@ -303,7 +327,7 @@ const nextConfig = {
             
             // Monitoring and analytics
             monitoring: {
-              test: /[\\/]node_modules[\\/](@sentry|web-vitals)[\\/]/,
+              test: /[\\/]node_modules[\\/](@sentry|web-vitals)[\\/].*\.(js|jsx|ts|tsx)$/,
               name: 'monitoring',
               chunks: 'all',
               priority: 28,
@@ -311,9 +335,9 @@ const nextConfig = {
               reuseExistingChunk: true,
             },
             
-            // Common vendor libraries (lower priority)
+            // Common vendor libraries (lower priority) - Only include JS files
             vendor: {
-              test: /[\\/]node_modules[\\/]/,
+              test: /[\\/]node_modules[\\/].*\.(js|jsx|ts|tsx)$/,
               name: 'vendor',
               chunks: 'all',
               priority: 20,
@@ -322,8 +346,9 @@ const nextConfig = {
               reuseExistingChunk: true,
             },
             
-            // Default group for everything else
+            // Default group for everything else - Only include JS files
             default: {
+              test: /\.(js|jsx|ts|tsx)$/,
               minChunks: 2,
               priority: 10,
               reuseExistingChunk: true,
