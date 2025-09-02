@@ -1,6 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/types/supabase';
-import { env } from '@/env.mjs';
+import { env } from '@/env';
 
 // Direct access to client-safe environment variables
 // Note: Only NEXT_PUBLIC_ prefixed variables are available on the client

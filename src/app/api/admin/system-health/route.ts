@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { authService } from '@/lib/services/auth-service';
 import { ApiResponseHelper } from '@/lib/api/types';
-import { rateLimit } from '@/lib/security/rate-limit';
+import { compose, withAuth, withRole, withRateLimit } from '@/lib/api';
 
 interface SystemHealth {
   database: {
@@ -37,14 +37,7 @@ interface SystemHealth {
   lastChecked: string;
 }
 
-// Rate limit for admin system health checks
-const rateLimitedGET = rateLimit(30, 60000, { // 30 requests per minute
-  keyExtractor: (request: NextRequest) => {
-    return `admin-health:${request.headers.get('x-forwarded-for') || 'unknown'}`;
-  }
-});
-
-export const GET = rateLimitedGET(async function(request: NextRequest) {
+export const GET = compose(async function(request: NextRequest) {
   try {
     // Verify admin authentication
     const session = await authService.getSession();
@@ -80,7 +73,7 @@ export const GET = rateLimitedGET(async function(request: NextRequest) {
     console.error('System health check error:', error);
     return ApiResponseHelper.internalError('Failed to check system health');
   }
-});
+}, withAuth, withRole(['admin']), withRateLimit());
 
 async function checkDatabaseHealth(supabase: any) {
   const startTime = Date.now();

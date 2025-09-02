@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthService } from '@/lib/auth/auth';
+import { compose, withAuth, withRateLimit } from '@/lib/api';
 import { handlePreflight } from '@/lib/api/utils';
 
-export async function GET(_request: NextRequest) {
+export const GET = compose(async function GET(_request: NextRequest) {
   try {
     const authService = createAuthService(true);
     const session = await authService.getSession();
@@ -48,9 +49,9 @@ export async function GET(_request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, withRateLimit());
 
-export async function DELETE(_request: NextRequest) {
+export const DELETE = compose(async function DELETE(_request: NextRequest) {
   try {
     const authService = createAuthService(true);
     const { error } = await authService.signOut();
@@ -74,7 +75,7 @@ export async function DELETE(_request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, withAuth, withRateLimit());
 
 export async function OPTIONS(request: NextRequest) {
   return handlePreflight(request);

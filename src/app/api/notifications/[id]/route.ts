@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { compose, withAuth, withRateLimit } from '@/lib/api';
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -15,7 +16,7 @@ interface RouteParams {
 }
 
 // GET /api/notifications/[id] - Get specific notification
-export const GET = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
+export const GET = compose(withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
   
   // Authenticate user
@@ -69,10 +70,10 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
   }
 
   return createSuccessResponse(notification);
-});
+}), withAuth, withRateLimit());
 
 // DELETE /api/notifications/[id] - Delete notification
-export const DELETE = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
+export const DELETE = compose(withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
   
   // Authenticate user
@@ -126,7 +127,7 @@ export const DELETE = withErrorHandling(async (request: NextRequest, { params }:
   }
 
   return createSuccessResponse({ message: 'Notification deleted successfully' });
-});
+}), withAuth, withRateLimit());
 
 // OPTIONS /api/notifications/[id] - Handle CORS preflight
 export async function OPTIONS(request: NextRequest) {

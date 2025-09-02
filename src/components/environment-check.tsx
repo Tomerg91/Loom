@@ -1,5 +1,5 @@
 // Server component for environment validation
-import { env } from '@/env.mjs';
+import { env } from '@/env';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';

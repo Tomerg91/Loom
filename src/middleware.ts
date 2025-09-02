@@ -48,6 +48,10 @@ const publicRoutes = [
   '/auth/mfa-setup',
 ];
 
+// Feature flag to control whether auth gating runs in middleware.
+// Keep enabled by default to avoid behavior changes until routes are fully guarded.
+const AUTH_GATING_ENABLED = process.env.MIDDLEWARE_AUTH_ENABLED !== 'false';
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
@@ -83,10 +87,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Apply security validation
+  // Apply basic UA validation in production only (can be disabled via env flag)
   const userAgent = request.headers.get('user-agent') || '';
-  if (process.env.NODE_ENV === 'production' && !validateUserAgent(userAgent)) {
-    return new NextResponse('Forbidden', { status: 403 });
+  if (process.env.NODE_ENV === 'production' && process.env.MIDDLEWARE_UA_CHECK !== 'false') {
+    if (!validateUserAgent(userAgent)) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
   }
 
   // Check for invalid locale patterns first
@@ -108,7 +114,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // If we get here, the locale is already validated by next-intl
-  // Now handle authentication for locale-prefixed routes using simplified approach
+  // Optionally handle authentication for locale-prefixed routes
   try {
     // Use simplified cookie-based auth checking
     const hasAuthSession = getSessionFromCookies(request);
@@ -128,26 +134,26 @@ export async function middleware(request: NextRequest) {
 
     const isAuthRoute = pathWithoutLocale.startsWith('/auth/');
 
-    // Redirect authenticated users away from auth pages
-    if (hasAuthSession && isAuthRoute) {
-      return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
+    if (AUTH_GATING_ENABLED) {
+      // Redirect authenticated users away from auth pages
+      if (hasAuthSession && isAuthRoute) {
+        return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
+      }
+
+      // Allow access to public routes
+      if (isPublicRoute) {
+        return applySecurityHeaders(request, NextResponse.next());
+      }
+
+      // Require authentication for protected routes
+      if (isProtectedRoute && !hasAuthSession) {
+        const redirectUrl = new URL(`/${locale}/auth/signin`, request.url);
+        redirectUrl.searchParams.set('redirectTo', pathWithoutLocale);
+        return NextResponse.redirect(redirectUrl);
+      }
     }
 
-    // Allow access to public routes
-    if (isPublicRoute) {
-      return applySecurityHeaders(request, NextResponse.next());
-    }
-
-    // Require authentication for protected routes
-    if (isProtectedRoute && !hasAuthSession) {
-      const redirectUrl = new URL(`/${locale}/auth/signin`, request.url);
-      redirectUrl.searchParams.set('redirectTo', pathWithoutLocale);
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    // For protected routes with authenticated users, allow access
-    // Role-based access control and MFA will be handled in API routes and pages
-    // This keeps the middleware lightweight and Edge Runtime compatible
+    // Either auth gating disabled or checks passed
     return applySecurityHeaders(request, NextResponse.next());
   } catch (error) {
     console.error('Auth middleware error:', error);
@@ -156,7 +162,7 @@ export async function middleware(request: NextRequest) {
     const locale = pathname.split('/')[1];
     const pathWithoutLocale = pathname.slice(locale.length + 1) || '/';
     
-    if (protectedRoutes.some(route => pathWithoutLocale.startsWith(route))) {
+    if (AUTH_GATING_ENABLED && protectedRoutes.some(route => pathWithoutLocale.startsWith(route))) {
       return NextResponse.redirect(new URL(`/${locale}/auth/signin`, request.url));
     }
     

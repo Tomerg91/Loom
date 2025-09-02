@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { rateLimit } from '@/lib/security/rate-limit';
+import { compose, withRateLimit } from '@/lib/api';
 import { createPublicCorsResponse } from '@/lib/security/cors';
 
-// Apply rate limiting for health checks to prevent abuse
-const rateLimitedHealthCheck = rateLimit(60, 60000)( // 60 requests per minute
-  async (request: NextRequest) => {
+async function baseHealthHandler(request: NextRequest) {
   const start = Date.now();
   
   try {
@@ -70,7 +68,6 @@ const rateLimitedHealthCheck = rateLimit(60, 60000)( // 60 requests per minute
     response.headers.set('X-Deployment-ID', process.env.VERCEL_DEPLOYMENT_ID || 'local');
     
     return response;
-    
   } catch (error) {
     const errorData = {
       status: 'unhealthy',
@@ -85,17 +82,12 @@ const rateLimitedHealthCheck = rateLimit(60, 60000)( // 60 requests per minute
 
     return NextResponse.json(errorData, { status: 503 });
   }
-  }
-);
-
-// GET /api/health - Health check endpoint
-export async function GET(request: NextRequest) {
-  return rateLimitedHealthCheck(request);
 }
 
-// Apply rate limiting for HEAD requests too
-const rateLimitedHeadCheck = rateLimit(60, 60000)( // 60 requests per minute
-  async (request: NextRequest) => {
+// GET /api/health - Health check endpoint
+export const GET = compose(baseHealthHandler, withRateLimit());
+
+async function baseHeadHandler(request: NextRequest) {
   try {
     const supabase = await createClient();
     const { error } = await supabase
@@ -107,13 +99,10 @@ const rateLimitedHeadCheck = rateLimit(60, 60000)( // 60 requests per minute
   } catch (_error) {
     return new NextResponse(null, { status: 503 });
   }
-  }
-);
+}
 
 // HEAD /api/health - Readiness check endpoint
-export async function HEAD(request: NextRequest) {
-  return rateLimitedHeadCheck(request);
-}
+export const HEAD = compose(baseHeadHandler, withRateLimit());
 
 // OPTIONS /api/health - Handle CORS preflight
 export async function OPTIONS(request: NextRequest) {

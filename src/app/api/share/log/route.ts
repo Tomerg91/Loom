@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
-
-export async function POST(request: NextRequest) {
+import { compose, withRateLimit } from '@/lib/api';
+export const POST = compose(async function POST(request: NextRequest) {
   try {
     const logData = await request.json();
 
@@ -32,4 +32,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, withRateLimit());
