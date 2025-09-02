@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Heebo, Inter } from 'next/font/google';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Providers } from '@/components/providers/providers';
@@ -8,6 +8,7 @@ import { routing } from '@/i18n/routing';
 import { PerformanceMonitorComponent } from '@/components/monitoring/performance-monitor';
 import { SkipLink } from '@/components/ui/skip-link';
 import { EnvironmentCheck } from '@/components/environment-check';
+import { AppFooter } from '@/components/layout/app-footer';
 import '../globals.css';
 
 // Optimize for faster initial loads - reduce server work
@@ -20,6 +21,15 @@ const inter = Inter({
   preload: true,
   display: 'swap',
   fallback: ['system-ui', 'arial'],
+});
+
+// Hebrew-first font for RTL locales
+const heebo = Heebo({
+  subsets: ['hebrew'],
+  variable: '--font-hebrew',
+  preload: true,
+  display: 'swap',
+  fallback: ['system-ui', 'Arial', 'sans-serif'],
 });
 
 export function generateStaticParams() {
@@ -72,7 +82,7 @@ export default async function LocaleLayout({
           `
         }} />
       </head>
-      <body className={`${inter.variable} font-sans antialiased layout-stabilizer`}>
+      <body className={`${inter.variable} ${heebo.variable} font-sans antialiased layout-stabilizer premium-app-surface`}>
         {/* Skip navigation links for keyboard users */}
         <SkipLink href="#main-content">
           {locale === 'he' ? 'עבור לתוכן הראשי' : 'Skip to main content'}
@@ -89,6 +99,7 @@ export default async function LocaleLayout({
           <main id="main-content" tabIndex={-1} className="flex-1">
             {children}
           </main>
+          <AppFooter />
           <PerformanceMonitorComponent />
         </Providers>
       </body>

@@ -37,9 +37,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     const variantClasses = {
-      default: 'border border-input bg-background',
-      ghost: 'border-0 bg-transparent hover:bg-accent',
-      filled: 'border-0 bg-muted hover:bg-muted/80',
+      default: 'border border-border/60 bg-card/70 backdrop-blur supports-[backdrop-filter]:backdrop-blur-sm shadow-soft',
+      ghost: 'border-0 bg-transparent hover:bg-accent/40',
+      filled: 'border border-border/60 bg-muted/70 hover:bg-muted/80 shadow-soft',
     };
 
     return (
@@ -68,7 +68,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             id={inputId}
             className={cn(
-              'flex w-full rounded-md ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors',
+              'flex w-full rounded-xl ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-gold))] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors',
               sizeClasses[inputSize],
               variantClasses[variant],
               error && 'border-destructive focus-visible:ring-destructive',

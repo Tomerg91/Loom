@@ -51,14 +51,14 @@ export function SessionsPageClient({ locale }: SessionsPageClientProps) {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="border-b bg-card">
+      <div className="border-b bg-card/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="page-title text-foreground">
                 {getPageTitle()}
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="page-subtitle mt-1">
                 {getPageDescription()}
               </p>
             </div>
@@ -83,6 +83,7 @@ export function SessionsPageClient({ locale }: SessionsPageClientProps) {
               </Dialog>
             )}
           </div>
+          <div className="premium-divider mt-4" />
         </div>
       </div>
 

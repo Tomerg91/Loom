@@ -1031,11 +1031,12 @@ function SettingsPageContent() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Settings</h1>
-        <p className="text-muted-foreground">
+      <div className="mb-6">
+        <h1 className="page-title mb-1">Settings</h1>
+        <p className="page-subtitle">
           Manage your account settings and preferences
         </p>
+        <div className="premium-divider mt-4" />
       </div>
 
       {/* Tab Navigation */}
