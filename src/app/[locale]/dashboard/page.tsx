@@ -69,14 +69,14 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="border-b bg-card">
+      <div className="border-b bg-card/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="page-title text-foreground">
                 {t('welcome', { name: user.firstName || user.email })}
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="page-subtitle mt-1">
                 {t('subtitle')}
               </p>
             </div>
@@ -84,6 +84,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
               {user.role === 'admin' ? t('roles.admin') : user.role === 'coach' ? t('roles.coach') : t('roles.client')}
             </Badge>
           </div>
+          <div className="premium-divider mt-4" />
         </div>
       </div>
 
