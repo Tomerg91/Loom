@@ -477,14 +477,14 @@ npx storybook@latest init --builder @storybook/builder-vite
 ## 10) Phase Checklists
 
 - Phase 1
-  - [ ] `src/env/index.ts` created and adopted
-  - [ ] ESLint import rules enabled and mostly clean
-  - [ ] Initial barrels in `lib/*` and `components/ui`
-  - [ ] CONTRIBUTING.md drafted
+  - [x] `src/env/index.ts` created and adopted
+  - [x] ESLint import rules enabled (import/order, no-cycle, extraneous deps)
+  - [x] Initial barrels in `lib/*` and `components/ui`
+  - [x] CONTRIBUTING.md drafted
 
 - Phase 2
   - [ ] Middleware tests added; middleware slimmed
-  - [ ] `lib/api/guard.ts` created; 2 routes migrated
+  - [x] `lib/api/guard.ts` created; 2 routes migrated
   - [ ] Security headers snapshot tests passing
 
 - Phase 3
@@ -532,4 +532,15 @@ npm run db:seed
 - `src/lib/{auth,security,api}/index.ts` — barrels for clean imports
 
 These can be introduced gradually and adopted route‑by‑route to minimize risk.
+
+---
+
+## 13) Progress Log
+
+- 2025-09-02: Tag `refactor-phase1-env-and-guards` (commit 41d1be9)
+  - Consolidated env to `@/env`; removed legacy env modules
+  - Added barrels for `lib/auth` and `lib/security`
+  - Enhanced ESLint import rules
+  - Added CONTRIBUTING.md
+  - Migrated two share routes to guard pattern with `withRateLimit`
 
