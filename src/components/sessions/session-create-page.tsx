@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { SessionInformationForm } from './forms/session-information-form';
 import { SessionTypeSelector } from './forms/session-type-selector';
 import { ParticipantSelector } from './forms/participant-selector';

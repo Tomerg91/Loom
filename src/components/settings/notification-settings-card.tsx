@@ -24,7 +24,7 @@ import {
   Clock,
   AlertCircle,
 } from 'lucide-react';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { useToast } from '@/components/ui/toast-provider';
 
 interface NotificationSettings {

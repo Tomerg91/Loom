@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { PushNotificationService } from '@/lib/services/push-notification-service';
 
 interface UsePushNotificationsReturn {

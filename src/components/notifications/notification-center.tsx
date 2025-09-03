@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRealtimeNotifications } from '@/lib/realtime/hooks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

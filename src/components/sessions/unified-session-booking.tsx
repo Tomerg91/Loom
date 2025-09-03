@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRealtimeBookings } from '@/hooks/use-realtime-bookings';
 import { useRealtimeBooking } from '@/hooks/use-realtime-booking';

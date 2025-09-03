@@ -15,7 +15,7 @@ import {
   Edit,
   Shield
 } from 'lucide-react';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { AvatarUpload } from '@/components/ui/file-upload';
 import { useFormToast } from '@/components/ui/toast-provider';
 

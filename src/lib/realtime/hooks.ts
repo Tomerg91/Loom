@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { useQueryClient } from '@tanstack/react-query';
 import { realtimeClient } from './realtime-client';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';

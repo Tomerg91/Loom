@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { 
   hasPermission, 
   hasAnyPermission, 

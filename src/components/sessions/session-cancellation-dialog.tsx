@@ -29,7 +29,7 @@ import {
   RefreshCw,
   X
 } from 'lucide-react';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 
 interface Session {
   id: string;

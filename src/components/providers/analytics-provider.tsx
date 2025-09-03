@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 // Use the app's active AuthProvider hook to avoid context mismatch
-import { useUser } from '@/components/auth/auth-provider';
+import { useUser } from '@/lib/auth/use-user';
 import { 
   GA_TRACKING_ID, 
   POSTHOG_KEY, 
@@ -31,7 +31,7 @@ declare global {
 export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user } = useUser();
+  const user = useUser();
 
   // Initialize Google Analytics
   useEffect(() => {
