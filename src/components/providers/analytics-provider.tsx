@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useUser } from '@/lib/auth/auth-context';
+// Use the app's active AuthProvider hook to avoid context mismatch
+import { useUser } from '@/components/auth/auth-provider';
 import { 
   GA_TRACKING_ID, 
   POSTHOG_KEY, 

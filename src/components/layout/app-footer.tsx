@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { CompactLanguageSwitcher } from '@/components/ui/language-switcher';
 
 export function AppFooter() {
@@ -17,4 +17,3 @@ export function AppFooter() {
     </footer>
   );
 }
-
