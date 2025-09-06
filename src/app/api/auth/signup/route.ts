@@ -7,7 +7,8 @@ import {
   withErrorHandling,
   validateRequestBody,
   rateLimit,
-  HTTP_STATUS
+  HTTP_STATUS,
+  withRequestLogging
 } from '@/lib/api/utils';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { z } from 'zod';
@@ -56,7 +57,7 @@ const rateLimitedHandler = rateLimit(5, 60000, { // 5 requests per minute
 
 // Main POST handler with comprehensive security
 export const POST = withErrorHandling(
-  rateLimitedHandler(async (request: NextRequest) => {
+  withRequestLogging(rateLimitedHandler(async (request: NextRequest) => {
     try {
       // Parse and validate request body with security measures
       const body = await request.json();
@@ -172,7 +173,7 @@ export const POST = withErrorHandling(
         HTTP_STATUS.INTERNAL_SERVER_ERROR
       );
     }
-  })
+  }), { name: 'auth:signup' })
 );
 
 // Handle CORS preflight requests

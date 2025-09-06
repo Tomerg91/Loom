@@ -54,6 +54,18 @@ const AUTH_GATING_ENABLED = process.env.MIDDLEWARE_AUTH_ENABLED !== 'false';
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const logRequests = process.env.LOG_REQUESTS === 'true';
+  const reqId = crypto.randomUUID();
+  const start = Date.now();
+  if (logRequests) {
+    console.info('[REQ]', {
+      id: reqId,
+      method: request.method,
+      path: pathname,
+      ua: request.headers.get('user-agent') || '',
+      ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+    });
+  }
   
   // CRITICAL: Skip ALL middleware logic for Next.js static assets
   // This must be the FIRST check to prevent any middleware execution
@@ -84,14 +96,24 @@ export async function middleware(request: NextRequest) {
   ) {
     // Return immediately without any processing
     // This ensures static assets are served directly by the web server
-    return NextResponse.next();
+    const res = NextResponse.next();
+    if (logRequests) {
+      res.headers.set('X-Request-ID', reqId);
+      console.info('[RES]', { id: reqId, path: pathname, status: 200, durMs: Date.now() - start, static: true });
+    }
+    return res;
   }
 
   // Apply basic UA validation in production only (can be disabled via env flag)
   const userAgent = request.headers.get('user-agent') || '';
   if (process.env.NODE_ENV === 'production' && process.env.MIDDLEWARE_UA_CHECK !== 'false') {
     if (!validateUserAgent(userAgent)) {
-      return new NextResponse('Forbidden', { status: 403 });
+      const res = new NextResponse('Forbidden', { status: 403 });
+      if (logRequests) {
+        res.headers.set('X-Request-ID', reqId);
+        console.warn('[RES]', { id: reqId, path: pathname, status: 403, reason: 'UA invalid', durMs: Date.now() - start });
+      }
+      return res;
     }
   }
 
@@ -103,14 +125,24 @@ export async function middleware(request: NextRequest) {
   if (firstSegment && firstSegment.length === 2 && !routing.locales.includes(firstSegment as 'en' | 'he')) {
     const pathWithoutInvalidLocale = '/' + segments.slice(1).join('/');
     const redirectUrl = new URL(`/${routing.defaultLocale}${pathWithoutInvalidLocale}`, request.url);
-    return applySecurityHeaders(request, NextResponse.redirect(redirectUrl));
+    const res = applySecurityHeaders(request, NextResponse.redirect(redirectUrl));
+    if (logRequests) {
+      res.headers.set('X-Request-ID', reqId);
+      console.info('[RES]', { id: reqId, path: pathname, status: 307, redirect: redirectUrl.toString(), reason: 'invalid locale', durMs: Date.now() - start });
+    }
+    return res;
   }
 
   // Handle internationalization first - let next-intl handle ALL locale routing
   const intlResponse = intlMiddleware(request);
   if (intlResponse) {
     // Apply security headers to the intl response
-    return applySecurityHeaders(request, intlResponse);
+    const res = applySecurityHeaders(request, intlResponse);
+    if (logRequests) {
+      res.headers.set('X-Request-ID', reqId);
+      console.info('[RES]', { id: reqId, path: pathname, status: res.status, durMs: Date.now() - start, intl: true });
+    }
+    return res;
   }
 
   // If we get here, the locale is already validated by next-intl
@@ -137,24 +169,44 @@ export async function middleware(request: NextRequest) {
     if (AUTH_GATING_ENABLED) {
       // Redirect authenticated users away from auth pages
       if (hasAuthSession && isAuthRoute) {
-        return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
+        const res = NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
+        if (logRequests) {
+          res.headers.set('X-Request-ID', reqId);
+          console.info('[RES]', { id: reqId, path: pathname, status: 307, redirect: `/${locale}/dashboard`, reason: 'auth route, already authed', durMs: Date.now() - start });
+        }
+        return res;
       }
 
       // Allow access to public routes
       if (isPublicRoute) {
-        return applySecurityHeaders(request, NextResponse.next());
+        const res = applySecurityHeaders(request, NextResponse.next());
+        if (logRequests) {
+          res.headers.set('X-Request-ID', reqId);
+          console.info('[RES]', { id: reqId, path: pathname, status: 200, reason: 'public route', durMs: Date.now() - start });
+        }
+        return res;
       }
 
       // Require authentication for protected routes
       if (isProtectedRoute && !hasAuthSession) {
         const redirectUrl = new URL(`/${locale}/auth/signin`, request.url);
         redirectUrl.searchParams.set('redirectTo', pathWithoutLocale);
-        return NextResponse.redirect(redirectUrl);
+        const res = NextResponse.redirect(redirectUrl);
+        if (logRequests) {
+          res.headers.set('X-Request-ID', reqId);
+          console.info('[RES]', { id: reqId, path: pathname, status: 307, redirect: redirectUrl.toString(), reason: 'protected route not authed', durMs: Date.now() - start });
+        }
+        return res;
       }
     }
 
     // Either auth gating disabled or checks passed
-    return applySecurityHeaders(request, NextResponse.next());
+    const res = applySecurityHeaders(request, NextResponse.next());
+    if (logRequests) {
+      res.headers.set('X-Request-ID', reqId);
+      console.info('[RES]', { id: reqId, path: pathname, status: 200, durMs: Date.now() - start });
+    }
+    return res;
   } catch (error) {
     console.error('Auth middleware error:', error);
     
@@ -163,10 +215,19 @@ export async function middleware(request: NextRequest) {
     const pathWithoutLocale = pathname.slice(locale.length + 1) || '/';
     
     if (AUTH_GATING_ENABLED && protectedRoutes.some(route => pathWithoutLocale.startsWith(route))) {
-      return NextResponse.redirect(new URL(`/${locale}/auth/signin`, request.url));
+      const res = NextResponse.redirect(new URL(`/${locale}/auth/signin`, request.url));
+      if (logRequests) {
+        res.headers.set('X-Request-ID', reqId);
+        console.warn('[RES]', { id: reqId, path: pathname, status: 307, redirect: `/${locale}/auth/signin`, reason: 'middleware error on protected route', durMs: Date.now() - start });
+      }
+      return res;
     }
-    
-    return applySecurityHeaders(request, NextResponse.next());
+    const res = applySecurityHeaders(request, NextResponse.next());
+    if (logRequests) {
+      res.headers.set('X-Request-ID', reqId);
+      console.info('[RES]', { id: reqId, path: pathname, status: 200, durMs: Date.now() - start, errorHandled: true });
+    }
+    return res;
   }
 }
 

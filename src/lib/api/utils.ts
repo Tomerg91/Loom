@@ -297,6 +297,51 @@ export function withErrorHandling<T extends unknown[]>(
   };
 }
 
+// Request logging wrapper with correlation ID
+export function withRequestLogging<T extends [NextRequest, ...any[]]>(
+  handler: (...args: T) => Promise<NextResponse>,
+  opts: { name?: string } = {}
+) {
+  return async (request: NextRequest, ...rest: any[]): Promise<NextResponse> => {
+    const enabled = process.env.LOG_REQUESTS === 'true';
+    const id = (request.headers.get('x-request-id') as string) || crypto.randomUUID?.() || Math.random().toString(36).slice(2);
+    const start = Date.now();
+    if (enabled) {
+      console.info('[API REQ]', {
+        id,
+        name: opts.name || 'handler',
+        method: request.method,
+        url: request.nextUrl.pathname + (request.nextUrl.search || ''),
+        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        ua: request.headers.get('user-agent') || '',
+      });
+    }
+    try {
+      const res = await handler(request, ...rest);
+      if (enabled) {
+        res.headers.set('X-Request-ID', id);
+        console.info('[API RES]', {
+          id,
+          name: opts.name || 'handler',
+          status: res.status,
+          durMs: Date.now() - start,
+        });
+      }
+      return res;
+    } catch (err) {
+      if (enabled) {
+        console.error('[API ERR]', {
+          id,
+          name: opts.name || 'handler',
+          error: err instanceof Error ? err.message : String(err),
+          durMs: Date.now() - start,
+        });
+      }
+      throw err;
+    }
+  };
+}
+
 // Authentication helpers
 export function requireAuth<T extends unknown[]>(
   handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
