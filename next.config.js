@@ -54,6 +54,13 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
+          // Enforce HTTPS in production (HSTS)
+          ...(process.env.NODE_ENV === 'production'
+            ? [{
+                key: 'Strict-Transport-Security',
+                value: 'max-age=63072000; includeSubDomains; preload',
+              }]
+            : []),
           {
             key: 'X-Frame-Options',
             value: 'DENY',
@@ -178,14 +185,13 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
-      // Supabase storage - Matches any subdomain of supabase.co
-      // Note: In production, you should replace this with your specific Supabase project URL
-      // for better security: e.g., 'your-project-ref.supabase.co'
-      {
-        protocol: 'https',
-        hostname: '*.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
+      // Supabase storage - prefer specific project host via env
+      (() => {
+        const host = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_HOST; // e.g., 'abc123.supabase.co'
+        return host
+          ? { protocol: 'https', hostname: host, pathname: '/storage/v1/object/public/**' }
+          : { protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' };
+      })(),
     ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

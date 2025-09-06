@@ -82,18 +82,22 @@ export const formatters = {
   // Currency formatting with multiple currency support
   currency: createFormatterFactory(
     (amount: number, options: Intl.NumberFormatOptions & { locale?: string } = {}) => {
-      const locale = options.locale || 'en-US';
-      const { locale: _, ...numberOptions } = options;
-      
-      const defaultOptions: Intl.NumberFormatOptions = {
+      const requestedLocale = options.locale || 'en-US';
+      const locale = requestedLocale === 'he' ? 'he-IL' : requestedLocale;
+      const { locale: _, ...restOptions } = options;
+
+      // Default currency by locale (ILS for Hebrew, USD otherwise)
+      const defaultCurrency = locale === 'he-IL' ? 'ILS' : 'USD';
+
+      const numberOptions: Intl.NumberFormatOptions = {
         style: 'currency',
-        currency: 'USD',
-        ...numberOptions
+        currency: restOptions.currency || defaultCurrency,
+        ...restOptions,
       };
-      
-      return new Intl.NumberFormat(locale, defaultOptions).format(amount);
+
+      return new Intl.NumberFormat(locale, numberOptions).format(amount);
     },
-    { locale: 'en-US', currency: 'USD' }
+    { locale: 'en-US' }
   ),
   
   // Number formatting

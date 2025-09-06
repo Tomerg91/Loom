@@ -40,6 +40,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Install curl for container healthcheck
+RUN apk add --no-cache curl
+
 # Copy built application
 COPY --from=builder /app/public ./public
 

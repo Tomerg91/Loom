@@ -51,7 +51,8 @@
   "functions": {
     "src/app/api/**/route.ts": {
       "memory": 512,
-      "maxDuration": 10
+      "maxDuration": 10,
+      "regions": ["fra1"]
     }
   },
   "buildCommand": "npm run build",
