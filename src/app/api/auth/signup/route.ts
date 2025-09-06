@@ -26,14 +26,15 @@ const signUpSchema = z.object({
       return !blockedDomains.includes(domain);
     }, { message: 'Email domain not allowed' }),
   password: strongPasswordSchema,
+  // Allow international names, including Hebrew letters
   firstName: z.string()
     .min(1, 'First name is required')
     .max(50, 'First name must be less than 50 characters')
-    .regex(/^[a-zA-Z\s\-']+$/, 'First name contains invalid characters'),
+    .regex(/^[\p{L}\p{M}\s\-']+$/u, 'First name contains invalid characters'),
   lastName: z.string()
     .min(1, 'Last name is required')
     .max(50, 'Last name must be less than 50 characters')
-    .regex(/^[a-zA-Z\s\-']+$/, 'Last name contains invalid characters'),
+    .regex(/^[\p{L}\p{M}\s\-']+$/u, 'Last name contains invalid characters'),
   role: z.enum(['client', 'coach'], {
     errorMap: () => ({ message: 'Role must be client or coach' })
   }),
@@ -42,7 +43,7 @@ const signUpSchema = z.object({
     .optional(),
   language: z.enum(['en', 'he'], {
     errorMap: () => ({ message: 'Language must be en or he' })
-  }).default('en'),
+  }).default('he'),
   acceptedTerms: z.boolean()
     .refine(val => val === true, { message: 'You must accept the terms and conditions' }),
 });
