@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { useQuery } from '@tanstack/react-query';
 import { useRealtimeBookings } from '@/hooks/use-realtime-bookings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

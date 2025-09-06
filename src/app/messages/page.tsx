@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { useQuery } from '@tanstack/react-query';
 import { useRealtimeConversations } from '@/lib/realtime/hooks';
 import { useSearchParams } from 'next/navigation';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRealtimeMessages, useTypingIndicators } from '@/lib/realtime/hooks';
 import { OptimizedThumbnailImage } from '@/components/ui/optimized-image';

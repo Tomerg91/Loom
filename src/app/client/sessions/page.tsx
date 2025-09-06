@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, Suspense } from 'react';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { useFilteredSessions, useSessionHistory } from '@/lib/queries/sessions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

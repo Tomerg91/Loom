@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { SessionCancellationDialog } from './session-cancellation-dialog';
 import { SessionHeader } from './display/session-header';
 import { SessionInfo } from './display/session-info';

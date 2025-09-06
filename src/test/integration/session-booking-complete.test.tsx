@@ -14,7 +14,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionBookingForm } from '@/components/sessions/booking';
 import { SessionCalendar } from '@/components/sessions/session-calendar';
-import { AuthProvider } from '@/lib/auth/auth-context';
+import { AuthProvider } from '@/components/auth/auth-provider';
 // MSW is not installed - using simple mocks instead
 // import { server } from '../mocks/server';
 // import { http, HttpResponse } from 'msw';

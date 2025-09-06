@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { useRealtimeSubscriptions } from '@/lib/realtime/hooks';
 import { Badge } from '@/components/ui/badge';
 import { Wifi, WifiOff, RotateCcw } from 'lucide-react';

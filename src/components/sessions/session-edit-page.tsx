@@ -26,7 +26,7 @@ import {
   X,
   Plus
 } from 'lucide-react';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { SessionFileManager } from './session-file-manager';
 
 interface Session {

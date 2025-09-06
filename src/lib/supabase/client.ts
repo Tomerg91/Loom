@@ -14,7 +14,10 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Singleton instance to prevent multiple client creation
-let clientInstance: ReturnType<typeof createBrowserClient<Database>> | null = null;
+// Keep a single client across HMR to avoid multiple GoTrue instances
+type SBClient = ReturnType<typeof createBrowserClient<Database>>;
+const globalForSupabase = globalThis as unknown as { __sbClient?: SBClient };
+let clientInstance: SBClient | null = globalForSupabase.__sbClient ?? null;
 
 // Validate environment variables on client side
 function validateClientEnv() {
@@ -106,8 +109,21 @@ export const createClient = () => {
   try {
     clientInstance = createBrowserClient<Database>(
       NEXT_PUBLIC_SUPABASE_URL,
-      NEXT_PUBLIC_SUPABASE_ANON_KEY
+      NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        auth: {
+          // Use a stable storage key and defaults suitable for SPA
+          storageKey: 'loom-auth',
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+        },
+      }
     );
+    // Persist across HMR in development
+    if (process.env.NODE_ENV !== 'production') {
+      globalForSupabase.__sbClient = clientInstance;
+    }
     return clientInstance;
   } catch (error) {
     console.error('Failed to create Supabase client:', error);

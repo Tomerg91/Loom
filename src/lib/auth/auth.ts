@@ -23,7 +23,7 @@ export interface AuthUser {
   mfaSetupCompleted?: boolean;
   mfaVerifiedAt?: string;
   rememberDeviceEnabled?: boolean;
-  // Additional fields used in auth-context
+  // Additional fields used in the app's AuthProvider
   emailVerified?: boolean;
   isActive?: boolean;
   phoneNumber?: string;

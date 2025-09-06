@@ -43,6 +43,39 @@ export const SECURITY_HEADERS = {
   'Cross-Origin-Resource-Policy': 'cross-origin',
 };
 
+// Build CSP with optional nonce (preparation for nonce-based CSP rollout)
+export function buildCsp({ nonce, dev = false }: { nonce?: string; dev?: boolean }) {
+  const common = [
+    "default-src 'self'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "img-src 'self' data: blob: https:",
+    "media-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com",
+    "frame-ancestors 'none'",
+    "frame-src 'self' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io",
+    "connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://sentry.io https://*.sentry.io",
+    "worker-src 'self' blob:",
+    "manifest-src 'self'",
+  ];
+
+  if (dev) {
+    return [
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://js.sentry-cdn.com https://*.sentry.io",
+      ...common,
+    ].join('; ');
+  }
+
+  // In prod, prefer nonce when enabled; otherwise keep current inline policy until rollout
+  const scriptDirectives = nonce
+    ? `script-src 'self' 'nonce-${nonce}' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://js.sentry-cdn.com https://*.sentry.io`
+    : "script-src 'self' 'unsafe-inline' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://js.sentry-cdn.com https://*.sentry.io";
+
+  return [scriptDirectives, ...common].join('; ');
+}
+
 // Development environment adjustments - Still secure but allows localhost
 const DEV_CSP_OVERRIDES = {
   'Content-Security-Policy': [
@@ -66,14 +99,27 @@ const DEV_CSP_OVERRIDES = {
 
 export function applySecurityHeaders(request: NextRequest, response: NextResponse) {
   const isDevelopment = process.env.NODE_ENV === 'development';
-  const headers = isDevelopment 
-    ? { ...SECURITY_HEADERS, ...DEV_CSP_OVERRIDES }
-    : SECURITY_HEADERS;
 
-  // Apply all security headers
+  // Prepare CSP nonce rollout: if enabled, attach a nonce-based CSP
+  const useNonce = process.env.CSP_NONCE_ENABLED === 'true' && !isDevelopment;
+  const nonce = useNonce ? generateNonce() : undefined;
+
+  // Apply base headers
+  const headers = isDevelopment ? { ...SECURITY_HEADERS, ...DEV_CSP_OVERRIDES } : SECURITY_HEADERS;
   Object.entries(headers).forEach(([key, value]) => {
-    response.headers.set(key, value);
+    if (key !== 'Content-Security-Policy') {
+      response.headers.set(key, value as string);
+    }
   });
+
+  // Apply CSP (nonce in prod if enabled; relaxed in dev)
+  const csp = isDevelopment ? DEV_CSP_OVERRIDES['Content-Security-Policy'] : buildCsp({ nonce, dev: false });
+  response.headers.set('Content-Security-Policy', csp);
+
+  // Expose nonce for potential use by pages (prep only)
+  if (nonce) {
+    response.headers.set('X-CSP-Nonce', nonce);
+  }
 
   // Add security headers for API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {

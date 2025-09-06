@@ -53,7 +53,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-provider';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 
 // Validation schemas
 const notificationPreferencesSchema = z.object({

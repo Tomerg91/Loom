@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/store/auth-store';
+import { useUser } from '@/lib/auth/use-user';
 import { AdminOnly, CoachOnly, ClientOnly } from '@/components/ui/conditional-render';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
