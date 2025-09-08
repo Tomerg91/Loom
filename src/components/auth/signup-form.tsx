@@ -27,6 +27,9 @@ const signupSchema = z.object({
   role: z.enum(['client', 'coach'] as const),
   phone: z.string().optional(),
   language: z.enum(['en', 'he'] as const),
+  acceptedTerms: z.boolean().refine(val => val === true, { 
+    message: 'You must accept the terms and conditions' 
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -55,8 +58,9 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      language: 'en',
+      language: 'he',
       role: 'client',
+      acceptedTerms: false,
     },
   });
 
@@ -68,26 +72,34 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
     setError(null);
 
     try {
-      const authService = createAuthService(false);
-      const { user, error: authError } = await authService.signUp({
-        email: data.email,
-        password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        role: data.role,
-        phone: data.phone,
-        language: data.language,
+      // Use the API route for signup to ensure proper validation and user creation
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          role: data.role,
+          phone: data.phone,
+          language: data.language,
+          acceptedTerms: data.acceptedTerms,
+        }),
       });
 
-      if (authError) {
-        setError(authError);
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || 'An unexpected error occurred');
         return;
       }
 
-      if (user) {
-        router.push(redirectTo as '/dashboard');
-        router.refresh();
-      }
+      // Success - redirect to dashboard
+      router.push(redirectTo as '/dashboard');
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
@@ -272,6 +284,30 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
               </Button>
             </div>
           </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              id="acceptedTerms"
+              type="checkbox"
+              {...register('acceptedTerms')}
+              disabled={isLoading}
+              className="h-4 w-4 text-primary border-border rounded focus:ring-primary focus:ring-2"
+              data-testid="terms-checkbox"
+            />
+            <Label htmlFor="acceptedTerms" className="text-sm">
+              {t('acceptTerms')}{' '}
+              <Link
+                href="/terms"
+                target="_blank"
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                {t('termsAndConditions')}
+              </Link>
+            </Label>
+          </div>
+          {errors.acceptedTerms && (
+            <p className="text-sm text-destructive">{errors.acceptedTerms.message}</p>
+          )}
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={isLoading} data-testid="signup-button">
