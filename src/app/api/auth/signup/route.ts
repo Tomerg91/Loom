@@ -40,8 +40,23 @@ const signUpSchema = z.object({
     errorMap: () => ({ message: 'Role must be client or coach' })
   }),
   phone: z.string()
-    .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format')
-    .optional(),
+    .max(25)
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      // Normalize Israeli local formats like 05X-XXXXXXX to +9725XXXXXXXX
+      const digits = val.replace(/[^\d+]/g, '');
+      if (digits.startsWith('+')) return digits; // assume E.164
+      // If starts with 0 and length >= 9, convert to +972 without leading 0
+      if (/^0\d{8,}$/.test(digits)) {
+        return '+972' + digits.slice(1);
+      }
+      return digits; // fallback, will be re-validated below
+    })
+    .refine((val) => {
+      if (val === undefined) return true;
+      return /^\+[1-9]\d{7,14}$/.test(val); // E.164 minimal check
+    }, { message: 'Invalid phone number format' }),
   language: z.enum(['en', 'he'], {
     errorMap: () => ({ message: 'Language must be en or he' })
   }).default('he'),
@@ -75,11 +90,14 @@ export const POST = withErrorHandling(
           timestamp: new Date().toISOString(),
           validationErrors: validation.error.details
         });
-        
-        return createErrorResponse(
-          validation.error.message,
-          HTTP_STATUS.BAD_REQUEST
-        );
+        // Surface first validation issue message for better UX
+        const issues: any[] = (validation.error as any).details?.issues || [];
+        const firstMessage = issues.length ? issues[0]?.message : 'Validation failed';
+        return createErrorResponse({
+          code: 'VALIDATION_ERROR',
+          message: firstMessage,
+          details: (validation.error as any).details
+        }, HTTP_STATUS.BAD_REQUEST);
       }
 
       const { acceptedTerms, ...rest } = validation.data;
