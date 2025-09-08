@@ -137,11 +137,14 @@ export const POST = withErrorHandling(
             HTTP_STATUS.CONFLICT
           );
         }
-        
-        return createErrorResponse(
-          'Failed to create account. Please try again.',
-          HTTP_STATUS.BAD_REQUEST
-        );
+
+        // Surface upstream auth error for troubleshooting (safe string)
+        const safe = error.replace(/[^\x20-\x7E]+/g, '').slice(0, 200);
+        return createErrorResponse({
+          code: 'SUPABASE_SIGNUP_ERROR',
+          message: safe || 'Failed to create account. Please try again.',
+          details: undefined,
+        }, HTTP_STATUS.BAD_REQUEST);
       }
 
       if (!user) {
