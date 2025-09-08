@@ -4,25 +4,28 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 will-change-transform',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold tracking-wide ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 will-change-transform active:scale-[0.98] relative overflow-hidden',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft hover:shadow-strong',
-        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        outline: 'border border-input bg-background/70 backdrop-blur hover:bg-accent hover:text-accent-foreground shadow-soft',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-soft',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
-        coach: 'bg-coach-600 text-white hover:bg-coach-700',
-        client: 'bg-client-600 text-white hover:bg-client-700',
-        session: 'bg-session-600 text-white hover:bg-session-700',
+        default: 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground hover:from-primary/95 hover:to-primary/85 shadow-luxury hover:shadow-floating hover:-translate-y-0.5',
+        premium: 'bg-gradient-to-br from-champagne-500 to-champagne-600 text-champagne-950 hover:from-champagne-400 hover:to-champagne-500 shadow-gold hover:shadow-floating hover:-translate-y-0.5 font-semibold',
+        destructive: 'bg-gradient-to-br from-destructive to-destructive/90 text-destructive-foreground hover:from-destructive/95 hover:to-destructive/85 shadow-soft hover:shadow-strong',
+        outline: 'border-2 border-border bg-card/60 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground shadow-soft hover:shadow-luxury hover:border-ring/50',
+        secondary: 'bg-gradient-to-br from-secondary to-secondary/95 text-secondary-foreground hover:from-secondary/90 hover:to-secondary/85 shadow-soft hover:shadow-medium',
+        ghost: 'hover:bg-accent/80 hover:text-accent-foreground backdrop-blur-sm rounded-lg transition-all duration-200',
+        glass: 'glass-morphism text-foreground hover:bg-white/10 backdrop-blur-lg border border-white/20',
+        link: 'text-primary underline-offset-4 hover:underline font-medium',
+        luxury: 'bg-gradient-luxury text-white shadow-luxury hover:shadow-floating hover:-translate-y-1 font-semibold tracking-wide',
+        coach: 'bg-gradient-to-br from-coach-500 to-coach-600 text-white hover:from-coach-400 hover:to-coach-500 shadow-soft hover:shadow-strong',
+        client: 'bg-gradient-to-br from-client-500 to-client-600 text-white hover:from-client-400 hover:to-client-500 shadow-soft hover:shadow-strong',
+        session: 'bg-gradient-to-br from-session-500 to-session-600 text-white hover:from-session-400 hover:to-session-500 shadow-soft hover:shadow-strong',
       },
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-9 rounded-md px-3',
-        lg: 'h-11 rounded-md px-8',
-        icon: 'h-10 w-10',
+        default: 'h-11 px-6 py-2.5 text-sm',
+        sm: 'h-9 px-4 py-2 text-xs rounded-lg',
+        lg: 'h-13 px-8 py-3 text-base rounded-xl',
+        icon: 'h-11 w-11 rounded-xl',
       },
     },
     defaultVariants: {

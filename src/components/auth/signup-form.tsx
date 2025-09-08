@@ -108,12 +108,15 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">{t('signup.title')}</CardTitle>
-        <CardDescription className="text-center">
+    <Card className="w-full max-w-lg mx-auto luxury-card shimmer-effect">
+      <CardHeader className="space-y-3 text-center">
+        <div className="floating-animation">
+          <CardTitle className="text-3xl font-bold text-gradient-gold">{t('signup.title')}</CardTitle>
+        </div>
+        <CardDescription className="text-lg text-muted-foreground/90">
           {t('signup.description')}
         </CardDescription>
+        <div className="luxury-divider" />
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
@@ -309,9 +312,16 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
             <p className="text-sm text-destructive">{errors.acceptedTerms.message}</p>
           )}
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={isLoading} data-testid="signup-button">
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <CardFooter className="flex flex-col space-y-5">
+          <Button 
+            type="submit" 
+            variant="premium" 
+            size="lg"
+            className="w-full shadow-gold hover:shadow-floating" 
+            disabled={isLoading} 
+            data-testid="signup-button"
+          >
+            {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
             {t('signup.button')}
           </Button>
           

@@ -31,15 +31,15 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || generatedId;
 
     const sizeClasses = {
-      sm: 'h-8 px-2 py-1 text-sm',
-      md: 'h-10 px-3 py-2 text-sm',
-      lg: 'h-12 px-4 py-3 text-base',
+      sm: 'h-10 px-4 py-2 text-sm',
+      md: 'h-12 px-5 py-3 text-base',
+      lg: 'h-14 px-6 py-4 text-lg',
     };
 
     const variantClasses = {
-      default: 'border border-border/60 bg-card/70 backdrop-blur supports-[backdrop-filter]:backdrop-blur-sm shadow-soft',
-      ghost: 'border-0 bg-transparent hover:bg-accent/40',
-      filled: 'border border-border/60 bg-muted/70 hover:bg-muted/80 shadow-soft',
+      default: 'border-2 border-border/40 bg-gradient-to-br from-card/80 to-card/70 backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm shadow-soft hover:shadow-medium transition-all duration-200',
+      ghost: 'border-0 bg-transparent hover:bg-accent/20 backdrop-blur-sm',
+      filled: 'border-2 border-border/30 bg-gradient-to-br from-muted/50 to-muted/70 hover:from-muted/60 hover:to-muted/80 shadow-soft backdrop-blur-sm',
     };
 
     return (
@@ -68,16 +68,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             id={inputId}
             className={cn(
-              'flex w-full rounded-xl ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-gold))] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors',
+              'flex w-full rounded-xl ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-semibold placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300 font-medium',
               sizeClasses[inputSize],
               variantClasses[variant],
-              error && 'border-destructive focus-visible:ring-destructive',
-              LeftIcon && 'pl-10',
-              RightIcon && 'pr-10',
-              // Enhanced mobile styles
+              error && 'border-destructive/60 focus-visible:ring-destructive/30 focus-visible:border-destructive',
+              LeftIcon && 'pl-12',
+              RightIcon && 'pr-12',
               'touch-manipulation',
-              // Better focus states for mobile
-              'focus:ring-2 focus:ring-offset-1',
+              'focus:scale-[1.02] hover:scale-[1.01]',
               className
             )}
             ref={ref}
