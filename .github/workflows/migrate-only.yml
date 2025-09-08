@@ -17,15 +17,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Validate database secrets
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+            echo "::error::DATABASE_URL secret is not set for environment '${{ github.event.inputs.environment }}'." && exit 1
+          fi
+          # Mask and show minimal info to help debugging
+          REDACTED=$(echo "${{ secrets.DATABASE_URL }}" | sed -E 's#://[^:@]+:[^@]+@#://***:***@#')
+          echo "Using DATABASE_URL: ${REDACTED}"
+          if [[ "${{ secrets.DATABASE_URL }}" == *"supabase.co"* && "${{ secrets.DATABASE_URL }}" != *"sslmode="* ]]; then
+            echo "::warning::DATABASE_URL appears to be a Supabase URL without sslmode=require. Appending for this job."
+            echo "DATABASE_URL_WITH_SSL=${{ secrets.DATABASE_URL }}?sslmode=require" >> $GITHUB_ENV
+          else
+            echo "DATABASE_URL_WITH_SSL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
+          fi
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
+      - name: Install psql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Test DB connectivity
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL_WITH_SSL }}
+        run: |
+          psql "$DATABASE_URL" -c 'select 1;' || (echo "::error::Failed to connect to Postgres. Check DATABASE_URL and network access." && exit 1)
+
       - name: Run database migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ env.DATABASE_URL_WITH_SSL }}
         run: |
-          supabase db push --db-url "$DATABASE_URL"
-
+          supabase db push --debug --db-url "$DATABASE_URL"
