@@ -51,10 +51,12 @@ CREATE INDEX IF NOT EXISTS idx_users_id_email ON users(id, email);
 -- Add comment for documentation
 COMMENT ON FUNCTION handle_new_user() IS 'Automatically creates user profile in users table when new user signs up via auth.users';
 -- Commenting on trigger requires ownership of auth.users; skip if insufficient privileges
-DO $$
+DO $do$
 BEGIN
-  EXECUTE $$COMMENT ON TRIGGER on_auth_user_created ON auth.users IS 'Trigger to create user profile when new auth user is created'$$;
-EXCEPTION WHEN insufficient_privilege THEN
-  RAISE NOTICE 'Skipping trigger comment on auth.users due to insufficient privileges';
-END;
-$$;
+  BEGIN
+    COMMENT ON TRIGGER on_auth_user_created ON auth.users IS 'Trigger to create user profile when new auth user is created';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'Skipping trigger comment on auth.users due to insufficient privileges';
+  END;
+END
+$do$;
