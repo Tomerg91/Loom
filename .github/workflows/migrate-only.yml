@@ -56,11 +56,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
-      - name: Test DB connectivity
+      - name: Test DB connectivity (non-blocking)
+        id: conn
         env:
           DATABASE_URL: ${{ env.DATABASE_URL_WITH_SSL }}
         run: |
-          set -e
+          set +e
+          OK=false
           # Resolve IPv4 for Supabase host and force IPv4 to avoid IPv6 issues on runners
           HOSTNAME=$(node -e "try{const u=new URL(process.env.DATABASE_URL);console.log(u.hostname)}catch(e){process.exit(1)}") || { echo "::warning::Failed to parse hostname from DATABASE_URL"; }
           if [ -n "$HOSTNAME" ]; then
@@ -76,15 +78,34 @@ jobs:
               echo "::warning::Could not resolve IPv4 for $HOSTNAME; attempting default connection"
             fi
           fi
-          # Use PGHOSTADDR if available to force IPv4 via libpq
-          psql "$DATABASE_URL" -c 'select 1;' || (echo "::error::Failed to connect to Postgres. Check DATABASE_URL, IPv4 resolution (PGHOSTADDR), and any IP allowlists." && exit 1)
+          psql "$DATABASE_URL" -c 'select 1;'
+          if [ $? -eq 0 ]; then
+            OK=true
+          else
+            echo "::warning::Direct Postgres connection failed; will attempt Supabase remote link if configured."
+          fi
+          echo "conn_ok=$OK" >> $GITHUB_OUTPUT
 
-      - name: Run database migrations
+      - name: Run migrations via direct DB
+        if: steps.conn.outputs.conn_ok == 'true'
         env:
-          # Fallbacks for token as well
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.REPO_SUPABASE_ACCESS_TOKEN }}
           DATABASE_URL: ${{ env.DATABASE_URL_WITH_SSL }}
           PGHOSTADDR: ${{ env.PGHOSTADDR }}
         run: |
-          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then echo "::warning::SUPABASE_ACCESS_TOKEN not set; supabase CLI may still work for db push if not required."; fi
           supabase db push --debug --db-url "$DATABASE_URL"
+
+      - name: Link Supabase project (fallback)
+        if: steps.conn.outputs.conn_ok != 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.REPO_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then echo "::error::SUPABASE_ACCESS_TOKEN is required for remote linking." && exit 1; fi
+          REF="${{ secrets.SUPABASE_PROJECT_REF || secrets.PROJECT_REF }}"
+          if [ -z "$REF" ]; then echo "::error::SUPABASE_PROJECT_REF (or PROJECT_REF) secret not set. Cannot use remote linking fallback." && exit 1; fi
+          supabase link --project-ref "$REF"
+
+      - name: Run migrations via linked project (fallback)
+        if: steps.conn.outputs.conn_ok != 'true'
+        run: |
+          supabase db push --debug
