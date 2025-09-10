@@ -76,7 +76,8 @@ jobs:
               echo "::warning::Could not resolve IPv4 for $HOSTNAME; attempting default connection"
             fi
           fi
-          psql -4 "$DATABASE_URL" -c 'select 1;' || (echo "::error::Failed to connect to Postgres. Check DATABASE_URL, IPv4 resolution, and any IP allowlists." && exit 1)
+          # Use PGHOSTADDR if available to force IPv4 via libpq
+          psql "$DATABASE_URL" -c 'select 1;' || (echo "::error::Failed to connect to Postgres. Check DATABASE_URL, IPv4 resolution (PGHOSTADDR), and any IP allowlists." && exit 1)
 
       - name: Run database migrations
         env:
