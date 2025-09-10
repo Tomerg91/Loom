@@ -1,0 +1,107 @@
+name: Supabase DB Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to audit'
+        required: true
+        default: 'production'
+
+jobs:
+  audit:
+    name: Run DB Advisor Queries
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup psql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Resolve DATABASE_URL (env/repo fallback)
+        id: resolve
+        shell: bash
+        run: |
+          ENV_DB_URL='${{ secrets.DATABASE_URL }}'
+          REPO_DB_URL='${{ secrets.REPO_DATABASE_URL }}'
+          PROD_DB_URL='${{ secrets.PRODUCTION_DATABASE_URL }}'
+          ALT_DB_URL='${{ secrets.DB_URL }}'
+          DB_URL="$ENV_DB_URL"; [ -z "$DB_URL" ] && DB_URL="$REPO_DB_URL"; [ -z "$DB_URL" ] && DB_URL="$PROD_DB_URL"; [ -z "$DB_URL" ] && DB_URL="$ALT_DB_URL";
+          if [ -z "$DB_URL" ]; then echo "::error::DATABASE_URL not set in environment or repository secrets." && exit 1; fi
+          if [[ "$DB_URL" == *"supabase.co"* && "$DB_URL" != *"sslmode="* ]]; then DB_URL="$DB_URL?sslmode=require"; fi
+          echo "DATABASE_URL_WITH_SSL=$DB_URL" >> $GITHUB_ENV
+          echo "DB_URL_RESOLVED=true" >> $GITHUB_OUTPUT
+
+      - name: Run advisor queries
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL_WITH_SSL }}
+        run: |
+          set -e
+          REDACTED=$(echo "$DATABASE_URL" | sed -E 's#://[^:@]+:[^@]+@#://***:***@#')
+          echo "Auditing: $REDACTED"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          \timing
+          -- Tables in public without RLS enabled
+          SELECT 'NO_RLS' AS type, n.nspname AS schema, c.relname AS table
+          FROM pg_class c
+          JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relrowsecurity = false
+          ORDER BY 2,3;
+
+          -- Tables without primary key
+          SELECT 'NO_PK' AS type, schemaname, tablename
+          FROM pg_tables t
+          WHERE schemaname = 'public'
+          AND NOT EXISTS (
+            SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid = i.indrelid
+            WHERE c.relname = t.tablename AND i.indisprimary
+          )
+          ORDER BY 2,3;
+
+          -- Foreign keys missing index on referencing columns
+          WITH fks AS (
+            SELECT c.oid AS conoid, conrelid, conname, unnest(conkey) AS attnum
+            FROM pg_constraint c
+            WHERE c.contype='f'
+          )
+          SELECT 'FK_NO_INDEX' AS type, n.nspname AS schema, cl.relname AS table, a.attname AS column
+          FROM fks
+          JOIN pg_class cl ON cl.oid = fks.conrelid
+          JOIN pg_namespace n ON n.oid = cl.relnamespace
+          JOIN pg_attribute a ON a.attrelid = fks.conrelid AND a.attnum = fks.attnum
+          WHERE n.nspname='public' AND NOT EXISTS (
+            SELECT 1
+            FROM pg_index i
+            WHERE i.indrelid = fks.conrelid
+              AND array_position(i.indkey, a.attnum) IS NOT NULL
+              AND i.indisvalid
+          )
+          ORDER BY 2,3,4;
+
+          -- Public grants on tables
+          SELECT 'PUBLIC_GRANT' AS type, table_schema, table_name, privilege_type
+          FROM information_schema.role_table_grants
+          WHERE grantee = 'PUBLIC' AND table_schema='public'
+          ORDER BY 2,3,4;
+
+          -- SECURITY DEFINER functions outside postgres-owned schemas
+          SELECT 'SECDEF_FUNC' AS type, n.nspname AS schema, p.proname AS function
+          FROM pg_proc p
+          JOIN pg_namespace n ON n.oid = p.pronamespace
+          WHERE p.prosecdef = true AND n.nspname NOT IN ('pg_catalog','information_schema')
+          ORDER BY 2,3;
+          SQL
+
+      - name: Upload audit output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-audit-results
+          path: |
+            ${{ github.workspace }}/
+          retention-days: 7
+
