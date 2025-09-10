@@ -125,6 +125,24 @@ jobs:
           if [ -z "$REF" ]; then echo "::error::SUPABASE_PROJECT_REF (or PROJECT_REF) not set and could not be derived from DATABASE_URL or NEXT_PUBLIC_SUPABASE_URL." && exit 1; fi
           supabase link --project-ref "$REF"
 
+      - name: Prune legacy migrations (fallback)
+        if: steps.conn.outputs.conn_ok != 'true'
+        run: |
+          mkdir -p supabase/migrations-pruned
+          # Copy only recent migrations that we need to apply now
+          # Adjust the cutoff timestamp if needed
+          for f in supabase/migrations/*.sql; do
+            base=$(basename "$f")
+            # Keep payments fix and db health checks and any 202509* migration
+            if echo "$base" | grep -E '202509'; then
+              cp "$f" supabase/migrations-pruned/
+            fi
+          done
+          echo "Pruned migrations:" && ls -la supabase/migrations-pruned || true
+          # Replace migrations directory for this job only
+          mv supabase/migrations supabase/migrations-backup
+          mv supabase/migrations-pruned supabase/migrations
+
       - name: Run migrations via linked project (fallback)
         if: steps.conn.outputs.conn_ok != 'true'
         env:
