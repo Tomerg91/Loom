@@ -35,7 +35,7 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { createAuthService } from '@/lib/auth/auth';
+import { createClientAuthService } from '@/lib/auth/client-auth';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 import { CompactLanguageSwitcher } from '@/components/ui/language-switcher';
 
@@ -55,7 +55,7 @@ export function NavMenu() {
     return null;
   }
 
-  const authService = createAuthService(false);
+  const authService = createClientAuthService();
 
   const handleSignOut = async () => {
     await authService.signOut();

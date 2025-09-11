@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createAuthService } from '@/lib/auth/auth';
+import { createClientAuthService } from '@/lib/auth/client-auth';
 import { createMfaService } from '@/lib/services/mfa-service';
 import { basicPasswordSchema } from '@/lib/security/password';
 import { Button } from '@/components/ui/button';
@@ -51,7 +51,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
     setError(null);
 
     try {
-      const authService = createAuthService(false);
+      const authService = createClientAuthService();
       const { user, error: authError } = await authService.signIn(data);
 
       if (authError) {

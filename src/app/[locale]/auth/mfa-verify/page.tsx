@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { createMfaService } from '@/lib/services/mfa-service';
-import { createAuthService } from '@/lib/auth/auth';
+import { createClientAuthService } from '@/lib/auth/client-auth';
 import { MfaVerificationForm } from '@/components/auth/mfa-verification-form';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -24,7 +24,7 @@ export default function MfaVerifyPage() {
     async function initializeMfaVerification() {
       try {
         // Get current authenticated user
-        const authService = createAuthService(false);
+        const authService = createClientAuthService();
         const user = await authService.getCurrentUser();
 
         if (!user) {

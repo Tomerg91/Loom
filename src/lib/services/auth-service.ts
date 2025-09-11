@@ -2,11 +2,12 @@ import { createAuthService } from '@/lib/auth/auth';
 
 // This service wraps the auth library for consistent API access
 class AuthService {
-  private authLib = createAuthService(true);
+  private authLibPromise = createAuthService(true);
 
   async getSession() {
     try {
-      const user = await this.authLib.getCurrentUser();
+      const authLib = await this.authLibPromise;
+      const user = await authLib.getCurrentUser();
       if (!user) return null;
       
       return {
@@ -28,7 +29,8 @@ class AuthService {
 
   async updateUser(userId: string, updates: Record<string, unknown>) {
     try {
-      return await this.authLib.updateUser(userId, updates);
+      const authLib = await this.authLibPromise;
+      return await authLib.updateUser(userId, updates);
     } catch (error) {
       console.error('Error updating user:', error);
       throw error;
@@ -37,7 +39,8 @@ class AuthService {
 
   async getCurrentUser() {
     try {
-      return await this.authLib.getCurrentUser();
+      const authLib = await this.authLibPromise;
+      return await authLib.getCurrentUser();
     } catch (error) {
       console.error('Error getting current user:', error);
       return null;
@@ -46,7 +49,8 @@ class AuthService {
 
   async updatePasswordWithToken(token: string, password: string) {
     try {
-      return await this.authLib.updatePasswordWithToken(token, password);
+      const authLib = await this.authLibPromise;
+      return await authLib.updatePasswordWithToken(token, password);
     } catch (error) {
       console.error('Error updating password with token:', error);
       throw error;

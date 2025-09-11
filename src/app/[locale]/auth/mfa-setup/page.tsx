@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { createAuthService } from '@/lib/auth/auth';
+import { createClientAuthService } from '@/lib/auth/client-auth';
 import { MfaSetupForm } from '@/components/auth/mfa-setup-form';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -25,7 +25,7 @@ export default function MfaSetupPage() {
     async function initializeMfaSetup() {
       try {
         // Get current authenticated user
-        const authService = createAuthService(false);
+        const authService = createClientAuthService();
         const user = await authService.getCurrentUser();
 
         if (!user) {

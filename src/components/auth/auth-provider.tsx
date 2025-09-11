@@ -1,7 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { createAuthService, type AuthUser } from '@/lib/auth/auth';
+import { type AuthUser } from '@/lib/auth/auth';
+import { createClientAuthService } from '@/lib/auth/client-auth';
+import { useMemo } from 'react';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -30,7 +32,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children, initialUser = null }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(initialUser);
   const [loading, setLoading] = useState(!initialUser);
-  const authService = createAuthService(false);
+  const authService = useMemo(() => createClientAuthService(), []);
 
   useEffect(() => {
     let mounted = true;
