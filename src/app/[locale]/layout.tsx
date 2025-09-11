@@ -9,6 +9,7 @@ import { PerformanceMonitorComponent } from '@/components/monitoring/performance
 import { SkipLink } from '@/components/ui/skip-link';
 import { EnvironmentCheck } from '@/components/environment-check';
 import { AppFooter } from '@/components/layout/app-footer';
+import { PwaBootstrap } from '@/components/pwa/pwa-bootstrap';
 import '../globals.css';
 
 // Optimize for faster initial loads - reduce server work
@@ -71,6 +72,13 @@ export default async function LocaleLayout({
         {/* Preload critical resources for faster LCP */}
         <link rel="dns-prefetch" href="https://*.supabase.co" />
         <link rel="preconnect" href="https://*.supabase.co" crossOrigin="" />
+        {/* PWA manifest and theming */}
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#0ea5e9" />
+        {/* iOS PWA support */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
         {/* Google Fonts Inter is loaded automatically - no preload needed */}
         {/* Critical CSS inlined in globals.css */}
         <style dangerouslySetInnerHTML={{
@@ -83,6 +91,8 @@ export default async function LocaleLayout({
         }} />
       </head>
       <body className={`${inter.variable} ${heebo.variable} font-sans antialiased layout-stabilizer premium-app-surface`}>
+        {/* Register service worker for PWA */}
+        <PwaBootstrap />
         {/* Skip navigation links for keyboard users */}
         <SkipLink href="#main-content">
           {locale === 'he' ? 'עבור לתוכן הראשי' : 'Skip to main content'}
