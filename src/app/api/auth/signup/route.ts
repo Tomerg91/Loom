@@ -117,7 +117,7 @@ export const POST = withErrorHandling(
       }
 
       // Create auth service and attempt signup
-      const authService = createAuthService(true);
+      const authService = await createAuthService(true);
       const { user, error } = await authService.signUp(signupData);
 
       if (error) {

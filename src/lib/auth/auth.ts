@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { supabase as clientSupabase } from '@/lib/supabase/client';
 import { createUserService } from '@/lib/database';
 import type { User, UserRole, UserStatus, Language } from '@/types';
@@ -65,14 +65,29 @@ let serverAuthServiceInstance: AuthService | null = null;
 let clientAuthServiceInstance: AuthService | null = null;
 
 export class AuthService {
-  private supabase: ReturnType<typeof createServerClient> | typeof clientSupabase;
+  private supabase: Awaited<ReturnType<typeof createClient>> | typeof clientSupabase;
   private userService: ReturnType<typeof createUserService>;
   private userProfileCache = new Map<string, { data: AuthUser; expires: number }>();
 
-  constructor(isServer = true) {
+  private constructor(isServer = true, supabase?: Awaited<ReturnType<typeof createClient>>) {
     // Use singleton clients to prevent multiple GoTrueClient instances
-    this.supabase = isServer ? createServerClient() : clientSupabase;
+    this.supabase = isServer && supabase ? supabase : clientSupabase;
     this.userService = createUserService(isServer);
+  }
+
+  public static async create(isServer = true): Promise<AuthService> {
+    if (isServer) {
+      if (!serverAuthServiceInstance) {
+        const supabase = await createClient();
+        serverAuthServiceInstance = new AuthService(true, supabase);
+      }
+      return serverAuthServiceInstance;
+    } else {
+      if (!clientAuthServiceInstance) {
+        clientAuthServiceInstance = new AuthService(false);
+      }
+      return clientAuthServiceInstance;
+    }
   }
 
   private getCachedUserProfile(cacheKey: string, userId: string): AuthUser | null {
@@ -488,22 +503,12 @@ export class AuthService {
 
 // Convenience factory functions with singleton pattern
 export const createAuthService = (isServer = true) => {
-  if (isServer) {
-    if (!serverAuthServiceInstance) {
-      serverAuthServiceInstance = new AuthService(true);
-    }
-    return serverAuthServiceInstance;
-  } else {
-    if (!clientAuthServiceInstance) {
-      clientAuthServiceInstance = new AuthService(false);
-    }
-    return clientAuthServiceInstance;
-  }
+  return AuthService.create(isServer);
 };
 
 // Server-side auth helpers
 export const getServerUser = async (): Promise<AuthUser | null> => {
-  const authService = createAuthService(true);
+  const authService = await createAuthService(true);
   return authService.getCurrentUser();
 };
 
