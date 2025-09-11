@@ -29,10 +29,13 @@ export class ClientAuthService {
    */
   async signUp(data: SignUpData): Promise<{ user: AuthUser | null; error: string | null }> {
     try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const emailRedirectTo = `${siteUrl}/api/auth/verify`;
       const { data: authData, error: authError } = await this.supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
+          emailRedirectTo,
           data: {
             first_name: data.firstName,
             last_name: data.lastName,

@@ -110,10 +110,15 @@ export class AuthService {
    */
   async signUp(data: SignUpData): Promise<{ user: AuthUser | null; error: string | null }> {
     try {
+      // Determine email verification redirect URL
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      const emailRedirectTo = `${siteUrl}/api/auth/verify`;
+
       const { data: authData, error: authError } = await this.supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
+          emailRedirectTo,
           data: {
             first_name: data.firstName,
             last_name: data.lastName,
@@ -132,37 +137,70 @@ export class AuthService {
         return { user: null, error: 'Failed to create user' };
       }
 
-      // Create user profile in our database
-      const userProfileResult = await this.userService.getUserProfile(authData.user.id);
-
-      if (userProfileResult.success) {
-        const userProfile = userProfileResult.data;
-        return {
-          user: {
-            id: userProfile.id,
-            email: userProfile.email,
-            role: userProfile.role,
-            firstName: userProfile.firstName,
-            lastName: userProfile.lastName,
-            phone: userProfile.phone,
-            avatarUrl: userProfile.avatarUrl,
-            timezone: userProfile.timezone,
-            language: userProfile.language,
-            status: userProfile.status,
-            createdAt: userProfile.createdAt,
-            updatedAt: userProfile.updatedAt,
-            lastSeenAt: userProfile.lastSeenAt,
-            // MFA fields
-            mfaEnabled: userProfile.mfaEnabled,
-            mfaSetupCompleted: userProfile.mfaSetupCompleted,
-            mfaVerifiedAt: userProfile.mfaVerifiedAt,
-            rememberDeviceEnabled: userProfile.rememberDeviceEnabled,
-          },
-          error: null,
+      // Try to fetch the newly created user profile using admin client to avoid RLS issues
+      try {
+        const { createAdminClient } = await import('@/lib/supabase/server');
+        const admin = createAdminClient();
+        
+        // Ensure a profile row exists (trigger should create it, but upsert defensively)
+        const upsertPayload: any = {
+          id: authData.user.id,
+          email: authData.user.email,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          role: data.role,
+          language: data.language,
+          phone: data.phone || null,
         };
+        
+        await admin.from('users').upsert(upsertPayload, { onConflict: 'id' });
+
+        const { data: profile, error: profileError } = await admin
+          .from('users')
+          .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (!profileError && profile) {
+          return {
+            user: {
+              id: profile.id,
+              email: profile.email,
+              role: profile.role as any,
+              firstName: profile.first_name || undefined,
+              lastName: profile.last_name || undefined,
+              phone: profile.phone || undefined,
+              avatarUrl: profile.avatar_url || undefined,
+              timezone: profile.timezone || undefined,
+              language: profile.language as any,
+              status: profile.status as any,
+              createdAt: profile.created_at,
+              updatedAt: profile.updated_at,
+              lastSeenAt: profile.last_seen_at || undefined,
+            },
+            error: null,
+          };
+        }
+      } catch (adminError) {
+        // Non-fatal: fallback below
+        console.warn('Admin profile fetch/upsert failed after signup:', adminError);
       }
 
-      return { user: null, error: userProfileResult.error || 'Failed to create user profile' };
+      // Fallback: return minimal user data from auth payload
+      return {
+        user: {
+          id: authData.user.id,
+          email: authData.user.email!,
+          role: (authData.user.user_metadata?.role as any) || 'client',
+          firstName: authData.user.user_metadata?.first_name,
+          lastName: authData.user.user_metadata?.last_name,
+          language: (authData.user.user_metadata?.language as any) || 'he',
+          status: 'active',
+          createdAt: authData.user.created_at,
+          updatedAt: authData.user.updated_at,
+        },
+        error: null,
+      };
     } catch (error) {
       return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
