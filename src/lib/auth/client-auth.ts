@@ -102,7 +102,10 @@ export class ClientAuthService {
             body: JSON.stringify({ access_token, refresh_token }),
           });
         }
-      } catch {}
+      } catch (sessionError) {
+        console.warn('Failed to establish server session:', sessionError);
+        // Continue with client-only auth for now
+      }
 
       // Update last seen via API call
       await this.updateLastSeenViaAPI(authData.user.id).catch(() => {});

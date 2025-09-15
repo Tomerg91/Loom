@@ -90,7 +90,8 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
         }
 
         // No MFA required or device is trusted, proceed to dashboard
-        router.push(redirectTo as '/dashboard');
+        const safeRedirectTo = redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+        router.push(safeRedirectTo);
         router.refresh();
       }
     } catch (err) {
@@ -214,21 +215,6 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
               </Link>
             </div>
 
-            {/* Test MFA Flow Button */}
-            <div className="pt-2 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setTempCredentials({ email: 'test@example.com', password: 'password' });
-                  setRequiresMfa(true);
-                }}
-                className="text-xs"
-              >
-                Test MFA Flow
-              </Button>
-            </div>
           </div>
         </CardFooter>
       </form>
