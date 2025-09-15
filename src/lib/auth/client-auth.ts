@@ -87,9 +87,14 @@ export class ClientAuthService {
 
       // Establish server-side session cookies so SSR/middleware can see auth
       try {
-        const { data: sess } = await this.supabase.auth.getSession();
-        const access_token = sess?.session?.access_token;
-        const refresh_token = sess?.session?.refresh_token;
+        // Prefer tokens returned from signIn for immediacy; fallback to getSession
+        let access_token = authData.session?.access_token;
+        let refresh_token = authData.session?.refresh_token;
+        if (!access_token || !refresh_token) {
+          const { data: sess } = await this.supabase.auth.getSession();
+          access_token = access_token || sess?.session?.access_token;
+          refresh_token = refresh_token || sess?.session?.refresh_token;
+        }
         if (access_token && refresh_token) {
           await fetch('/api/auth/session', {
             method: 'POST',

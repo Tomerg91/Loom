@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClientWithRequest } from '@/lib/supabase/server';
-import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from '@/lib/api/utils';
+import { createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
 
 // POST /api/auth/session
 // Body: { access_token: string, refresh_token: string }
@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a response and a server client wired to set cookies on it
-    const res = new NextResponse();
+    // Create a JSON response upfront so Supabase can attach cookies to it
+    const res = NextResponse.json({ ok: true, message: 'Session established' });
     const supabase = createServerClientWithRequest(request as any, res as any);
 
     const { error } = await supabase.auth.setSession({
@@ -27,8 +28,8 @@ export async function POST(request: NextRequest) {
       return createErrorResponse(error.message, HTTP_STATUS.UNAUTHORIZED);
     }
 
-    // Include cookies set by Supabase in the response
-    return createSuccessResponse({ ok: true }, 'Session established');
+    // Return the same response object so Set-Cookie headers from Supabase are preserved
+    return res;
   } catch (error) {
     return createErrorResponse('Failed to establish session', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
