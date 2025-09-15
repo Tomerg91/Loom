@@ -210,7 +210,12 @@ export class ClientAuthService {
    */
   private async fetchUserProfileFromAPI(userId: string): Promise<AuthUser | null> {
     try {
-      const response = await fetch(`/api/users/${userId}/profile`);
+      const { data: { session } } = await this.supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      const response = await fetch(`/api/users/${userId}/profile`, { headers });
       
       if (!response.ok) {
         console.error('Failed to fetch user profile from API');
@@ -230,8 +235,14 @@ export class ClientAuthService {
    */
   private async updateLastSeenViaAPI(userId: string): Promise<void> {
     try {
+      const { data: { session } } = await this.supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
       await fetch(`/api/users/${userId}/last-seen`, {
         method: 'PATCH',
+        headers,
       });
     } catch (error) {
       console.error('Error updating last seen via API:', error);

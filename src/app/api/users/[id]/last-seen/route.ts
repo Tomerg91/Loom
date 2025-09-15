@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase';
+import { env } from '@/env';
 import { createSuccessResponse, createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
 
 interface RouteParams {
@@ -11,8 +14,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: userId } = await params;
     
-    // Create server client
-    const supabase = createServerClient();
+    // Create client from Authorization bearer if provided; fallback to cookie-based server client
+    const authHeader = request.headers.get('authorization');
+    const supabase = authHeader
+      ? createSupabaseClient<Database>(
+          env.NEXT_PUBLIC_SUPABASE_URL!,
+          env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          { global: { headers: { Authorization: authHeader } } }
+        )
+      : createServerClient();
     
     // Get current session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
