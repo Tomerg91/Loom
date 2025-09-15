@@ -119,6 +119,11 @@ export class MfaService {
     this.userService = createUserService(isServer);
   }
 
+  // Helper to use the correct Supabase client in both server and client contexts
+  private supbaseOrServer() {
+    return this.supabase;
+  }
+
   /**
    * Encrypt MFA secret for secure database storage
    */
@@ -238,7 +243,7 @@ export class MfaService {
       }
 
       // Save MFA settings to database
-      const supabase = await createServerClient();
+      const supabase = this.supbaseOrServer();
       
       // Hash backup codes before storing
       const hashedBackupCodes = backupCodes.map(code => 
@@ -286,7 +291,7 @@ export class MfaService {
   async disableMfa(userId: string): Promise<{ success: boolean; error: string | null }> {
     try {
       // Remove MFA settings from database
-      const supabase = await createServerClient();
+      const supabase = this.supbaseOrServer();
       
       const { error: removeError } = await supabase
         .from('user_mfa')
@@ -325,7 +330,7 @@ export class MfaService {
    */
   private async checkRateLimit(userId: string, action: 'totp' | 'backup_code'): Promise<{ allowed: boolean; remainingAttempts?: number }> {
     try {
-      const supabase = await createServerClient();
+      const supabase = this.supbaseOrServer();
       const now = new Date();
       const windowStart = new Date(now.getTime() - MFA_CONFIG.RATE_LIMIT_WINDOW);
       
@@ -1180,7 +1185,7 @@ export class MfaService {
       const { data: session, error } = await supabase
         .from('mfa_sessions')
         .select('user_id, mfa_verified, expires_at')
-        .eq('token', sessionToken)
+        .eq('session_token', sessionToken)
         .single();
 
       if (error || !session) {
@@ -1222,7 +1227,7 @@ export class MfaService {
       const { error: insertError } = await supabase
         .from('mfa_sessions')
         .insert({
-          token: sessionToken,
+          session_token: sessionToken,
           user_id: userId,
           mfa_verified: false,
           expires_at: expiresAt,
@@ -1273,7 +1278,7 @@ export class MfaService {
       const { data: session, error: fetchError } = await supabase
         .from('mfa_sessions')
         .select('expires_at')
-        .eq('token', sessionToken)
+        .eq('session_token', sessionToken)
         .single();
 
       if (fetchError || !session) {
@@ -1292,7 +1297,7 @@ export class MfaService {
           mfa_verified: true,
           updated_at: new Date().toISOString()
         })
-        .eq('token', sessionToken);
+        .eq('session_token', sessionToken);
 
       if (updateError) {
         console.error('Failed to update MFA session:', updateError);

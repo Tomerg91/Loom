@@ -86,16 +86,30 @@ export class ClientAuthService {
       }
 
       // Update last seen via API call
-      await this.updateLastSeenViaAPI(authData.user.id);
+      await this.updateLastSeenViaAPI(authData.user.id).catch(() => {});
 
       // Fetch user profile via API
-      const userProfile = await this.fetchUserProfileFromAPI(authData.user.id);
-      
+      const userProfile = await this.fetchUserProfileFromAPI(authData.user.id).catch(() => null);
       if (userProfile) {
         return { user: userProfile, error: null };
       }
 
-      return { user: null, error: 'User profile not found' };
+      // Fallback: construct minimal user from auth payload to allow redirect
+      const u = authData.user;
+      return {
+        user: {
+          id: u.id,
+          email: u.email || data.email,
+          role: (u.user_metadata?.role as any) || 'client',
+          firstName: u.user_metadata?.first_name,
+          lastName: u.user_metadata?.last_name,
+          language: (u.user_metadata?.language as any) || 'en',
+          status: 'active',
+          createdAt: u.created_at,
+          updatedAt: u.updated_at,
+        },
+        error: null,
+      };
     } catch (error) {
       return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
