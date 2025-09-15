@@ -16,10 +16,14 @@ function getSessionFromCookies(request: NextRequest) {
     
     // Check for the new cookie format used by newer Supabase versions
     const authCookie = request.cookies.get('sb-auth-token')?.value;
+    // Also check any sb-* token cookie variants (project-scoped names)
+    const anySbToken = request.cookies
+      .getAll()
+      .some(c => c.name.startsWith('sb-') && (c.name.includes('auth') || c.name.includes('access')) && !!c.value);
     
     // Simple validation - if we have tokens, assume user is authenticated
     // For more robust validation, this should be done in API routes
-    return !!(accessToken || refreshToken || authCookie);
+    return !!(accessToken || refreshToken || authCookie || anySbToken);
   } catch (error) {
     console.warn('Error checking auth cookies in middleware:', error);
     return false;

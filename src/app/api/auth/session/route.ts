@@ -1,82 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAuthService } from '@/lib/auth/auth';
-import { compose, withAuth, withRateLimit } from '@/lib/api';
-import { handlePreflight } from '@/lib/api/utils';
+import { createServerClient } from '@/lib/supabase/server';
+import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from '@/lib/api/utils';
 
-export const GET = compose(async function GET(_request: NextRequest) {
+// POST /api/auth/session
+// Body: { access_token: string, refresh_token: string }
+// Sets HTTP-only Supabase auth cookies on the response so SSR/middleware can see the session
+export async function POST(request: NextRequest) {
   try {
-    const authService = createAuthService(true);
-    const session = await authService.getSession();
+    const body = await request.json().catch(() => ({}));
+    const { access_token, refresh_token } = body || {};
 
-    if (!session) {
-      return NextResponse.json(
-        { 
-          success: true,
-          session: null,
-          authenticated: false
-        }
-      );
+    if (!access_token || !refresh_token) {
+      return createErrorResponse('Missing access_token or refresh_token', HTTP_STATUS.BAD_REQUEST);
     }
 
-    // Get user details
-    const user = await authService.getCurrentUser();
+    // Create a server client with response cookie support
+    const supabase = createServerClient();
 
-    return NextResponse.json({
-      success: true,
-      session: {
-        access_token: session.access_token,
-        token_type: session.token_type,
-        expires_in: session.expires_in,
-        expires_at: session.expires_at,
-        refresh_token: session.refresh_token,
-      },
-      user: user ? {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        avatarUrl: user.avatarUrl,
-        language: user.language,
-      } : null,
-      authenticated: !!user
-    });
-
-  } catch (error) {
-    console.error('Get session error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}, withRateLimit());
-
-export const DELETE = compose(async function DELETE(_request: NextRequest) {
-  try {
-    const authService = createAuthService(true);
-    const { error } = await authService.signOut();
+    const { error } = await supabase.auth.setSession({
+      access_token,
+      refresh_token,
+    } as any);
 
     if (error) {
-      return NextResponse.json(
-        { error },
-        { status: 400 }
-      );
+      return createErrorResponse(error.message, HTTP_STATUS.UNAUTHORIZED);
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Session terminated successfully'
-    });
-
+    return createSuccessResponse({ ok: true }, 'Session established');
   } catch (error) {
-    console.error('Delete session error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse('Failed to establish session', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
-}, withAuth, withRateLimit());
-
-export async function OPTIONS(request: NextRequest) {
-  return handlePreflight(request);
 }
+

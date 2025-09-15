@@ -85,6 +85,20 @@ export class ClientAuthService {
         return { user: null, error: 'Failed to sign in' };
       }
 
+      // Establish server-side session cookies so SSR/middleware can see auth
+      try {
+        const { data: sess } = await this.supabase.auth.getSession();
+        const access_token = sess?.session?.access_token;
+        const refresh_token = sess?.session?.refresh_token;
+        if (access_token && refresh_token) {
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ access_token, refresh_token }),
+          });
+        }
+      } catch {}
+
       // Update last seen via API call
       await this.updateLastSeenViaAPI(authData.user.id).catch(() => {});
 
