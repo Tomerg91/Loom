@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design System Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        orange: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                            950: '#431407',
+                        },
+                        red: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            200: '#fecaca',
+                            300: '#fca5a5',
+                            400: '#f87171',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                            950: '#450a0a',
+                        },
+                        neutral: {
+                            50: '#fafafa',
+                            100: '#f5f5f5',
+                            200: '#e5e5e5',
+                            300: '#d4d4d4',
+                            400: '#a3a3a3',
+                            500: '#737373',
+                            600: '#525252',
+                            700: '#404040',
+                            800: '#262626',
+                            900: '#171717',
+                            950: '#0a0a0a',
+                        },
+                    },
+                    fontWeight: {
+                        'thin': '100',
+                        'extralight': '200',
+                        'light': '300',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-white font-light">
+    <!-- Hero Section -->
+    <section class="py-20 md:py-32 bg-gradient-to-br from-orange-50 via-white to-red-50 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-5">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(0,0,0)_1px,transparent_0)] bg-[length:20px_20px]"></div>
+        </div>
+        
+        <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto text-center">
+                <div class="mb-6 animate-fade-in opacity-0" style="animation-delay: 200ms; animation-fill-mode: forwards;">
+                    <span class="inline-flex items-center rounded-full bg-orange-100 px-4 py-2 text-sm font-light text-orange-800 ring-1 ring-orange-200">
+                        Modern SaaS Platform
+                    </span>
+                </div>
+                
+                <h1 class="text-5xl md:text-6xl lg:text-7xl font-extralight tracking-tight text-neutral-900 mb-8 animate-fade-in opacity-0" style="animation-delay: 400ms; animation-fill-mode: forwards;">
+                    Developers Digest
+                </h1>
+                
+                <p class="mx-auto max-w-2xl text-lg md:text-xl font-light leading-relaxed text-neutral-600 mb-10 animate-fade-in opacity-0" style="animation-delay: 600ms; animation-fill-mode: forwards;">
+                    Experience our clean, professional design system with light backgrounds, dark accents, and beautiful orange and red primary colors.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in opacity-0" style="animation-delay: 800ms; animation-fill-mode: forwards;">
+                    <button class="inline-flex items-center justify-center px-8 py-3 text-base font-normal bg-orange-600 text-white rounded-xl shadow-md hover:bg-orange-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+                        Get Started
+                        <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                        </svg>
+                    </button>
+                    <button class="inline-flex items-center justify-center px-8 py-3 text-base font-normal border-2 border-neutral-300 bg-white text-neutral-900 rounded-xl shadow-sm hover:bg-neutral-50 hover:border-orange-500 hover:shadow-md transition-all duration-200">
+                        <svg class="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1M9 10V9a4 4 0 118 0v1M9 10h6v6a2 2 0 01-2 2H11a2 2 0 01-2-2v-6z"></path>
+                        </svg>
+                        Watch Demo
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Decorative elements -->
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-orange-200 rounded-full opacity-20 blur-3xl animate-pulse"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-red-200 rounded-full opacity-20 blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+    </section>
+
+    <!-- Components Showcase -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-light text-neutral-900 mb-4">Design System Components</h2>
+                <p class="text-lg font-light text-neutral-600 max-w-2xl mx-auto">Clean, professional components with no gradients - exactly as requested.</p>
+            </div>
+
+            <!-- Buttons -->
+            <div class="mb-16">
+                <h3 class="text-2xl font-light text-neutral-900 mb-6">Buttons</h3>
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-lg font-normal text-neutral-700 mb-4">Primary Buttons</h4>
+                        <div class="flex flex-wrap gap-4">
+                            <button class="px-6 py-2.5 text-sm font-normal bg-orange-600 text-white rounded-xl shadow-md hover:bg-orange-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">Dark Orange Primary</button>
+                            <button class="px-6 py-2.5 text-sm font-normal bg-orange-500 text-white rounded-xl shadow-md hover:bg-orange-600 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">Orange</button>
+                            <button class="px-6 py-2.5 text-sm font-normal bg-red-500 text-white rounded-xl shadow-md hover:bg-red-600 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">Red</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-normal text-neutral-700 mb-4">Secondary Buttons</h4>
+                        <div class="flex flex-wrap gap-4">
+                            <button class="px-6 py-2.5 text-sm font-normal bg-neutral-900 text-white rounded-xl shadow-md hover:bg-neutral-800 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">Black Secondary</button>
+                            <button class="px-6 py-2.5 text-sm font-normal border-2 border-neutral-300 bg-white text-neutral-900 rounded-xl shadow-sm hover:bg-neutral-50 hover:border-orange-500 hover:shadow-md transition-all duration-200">Outline</button>
+                            <button class="px-6 py-2.5 text-sm font-normal text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl transition-all duration-200">Ghost</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inputs -->
+            <div class="mb-16">
+                <h3 class="text-2xl font-light text-neutral-900 mb-6">Form Inputs</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-neutral-900">Email Address</label>
+                        <input type="email" placeholder="enter@example.com" class="w-full h-12 px-4 py-3 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200 placeholder:text-neutral-400">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-neutral-900">Password</label>
+                        <input type="password" placeholder="Enter your password" class="w-full h-12 px-4 py-3 text-sm font-light border border-neutral-300 bg-neutral-50 rounded-xl shadow-sm hover:bg-neutral-100 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200 placeholder:text-neutral-400">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tiles -->
+            <div class="mb-16">
+                <h3 class="text-2xl font-light text-neutral-900 mb-6">Tiles</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-6 bg-white border border-neutral-300 rounded-xl shadow-md hover:shadow-lg hover:border-orange-500 hover:-translate-y-1 transition-all duration-200 cursor-pointer">
+                        <div class="flex items-center justify-between mb-3">
+                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-light text-neutral-900 mb-2">Fast Performance</h3>
+                        <p class="text-sm font-light text-neutral-600 leading-relaxed">Lightning-fast load times and smooth interactions for the best user experience.</p>
+                    </div>
+                    
+                    <div class="p-6 bg-orange-50 border border-orange-200 rounded-xl hover:bg-orange-100 hover:border-orange-400 transition-all duration-200 cursor-pointer">
+                        <div class="flex items-center justify-between mb-3">
+                            <svg class="w-6 h-6 text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            <span class="px-2 py-1 text-xs font-medium bg-neutral-200 text-neutral-800 rounded-full">Popular</span>
+                        </div>
+                        <h3 class="text-lg font-light text-neutral-900 mb-2">Secure & Reliable</h3>
+                        <p class="text-sm font-light text-neutral-600 leading-relaxed">Enterprise-grade security with 99.9% uptime guarantee.</p>
+                    </div>
+                    
+                    <div class="p-6 bg-white border border-neutral-300 rounded-xl shadow-md hover:shadow-lg hover:border-orange-500 hover:-translate-y-1 transition-all duration-200 cursor-pointer">
+                        <div class="flex items-center justify-between mb-3">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-light text-neutral-900 mb-2">Team Collaboration</h3>
+                        <p class="text-sm font-light text-neutral-600 leading-relaxed">Work together seamlessly with real-time collaboration tools.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="mb-16">
+                <h3 class="text-2xl font-light text-neutral-900 mb-6">Table View</h3>
+                <div class="overflow-auto rounded-xl border border-neutral-300 bg-white shadow-md">
+                    <table class="w-full text-sm font-light">
+                        <thead class="bg-neutral-50 border-b">
+                            <tr>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-neutral-600">Customer</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-neutral-600">Plan</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-neutral-600">Status</th>
+                                <th class="h-12 px-4 text-right align-middle font-medium text-neutral-600">Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-neutral-200 hover:bg-orange-50 transition-colors">
+                                <td class="p-4 align-middle font-light text-neutral-900">John Doe</td>
+                                <td class="p-4 align-middle font-light text-neutral-900">Pro</td>
+                                <td class="p-4 align-middle font-light text-neutral-900">
+                                    <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Active</span>
+                                </td>
+                                <td class="p-4 align-middle font-light text-neutral-900 text-right">$299</td>
+                            </tr>
+                            <tr class="border-b border-neutral-200 hover:bg-orange-50 transition-colors">
+                                <td class="p-4 align-middle font-light text-neutral-900">Sarah Miller</td>
+                                <td class="p-4 align-middle font-light text-neutral-900">Enterprise</td>
+                                <td class="p-4 align-middle font-light text-neutral-900">
+                                    <span class="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">Pending</span>
+                                </td>
+                                <td class="p-4 align-middle font-light text-neutral-900 text-right">$999</td>
+                            </tr>
+                            <tr class="hover:bg-orange-50 transition-colors">
+                                <td class="p-4 align-middle font-light text-neutral-900">Mike Brown</td>
+                                <td class="p-4 align-middle font-light text-neutral-900">Free</td>
+                                <td class="p-4 align-middle font-light text-neutral-900">
+                                    <span class="px-2 py-1 text-xs font-medium border border-neutral-300 text-neutral-700 rounded-full">Trial</span>
+                                </td>
+                                <td class="p-4 align-middle font-light text-neutral-900 text-right">$0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-orange-600">
+        <div class="max-w-4xl mx-auto text-center px-6 lg:px-8">
+            <h2 class="text-3xl md:text-4xl font-light text-white mb-6">Ready to get started?</h2>
+            <p class="text-lg font-light text-orange-100 mb-8 max-w-2xl mx-auto">Join thousands of developers who are already building amazing products with our platform.</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button class="px-8 py-3 text-base font-normal bg-neutral-900 text-white rounded-xl shadow-md hover:bg-neutral-800 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">Start Free Trial</button>
+                <button class="px-8 py-3 text-base font-normal border-2 border-white text-white hover:bg-white hover:text-orange-600 rounded-xl transition-all duration-200">Contact Sales</button>
+            </div>
+        </div>
+    </section>
+
+    <style>
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fade-in {
+            animation: fade-in 0.7s ease-out;
+        }
+    </style>
+</body>
+</html>

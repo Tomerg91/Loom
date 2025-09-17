@@ -5,45 +5,39 @@
 
 /* CSS Variables for Design System */
 :root {
-  /* Premium light theme tokens - Luxury color palette */
-  --background: 51 40% 97%; /* Warm pearl white */
-  --foreground: 215 25% 15%; /* Rich charcoal */
-  --card: 50 30% 99%; /* Soft ivory */
-  --card-foreground: 215 25% 18%;
-  --popover: 50 30% 99%;
-  --popover-foreground: 215 25% 15%;
-  --primary: 215 25% 15%; /* Sophisticated obsidian */
-  --primary-foreground: 51 40% 97%;
-  --secondary: 45 25% 94%; /* Champagne mist */
-  --secondary-foreground: 215 25% 25%;
-  --muted: 45 20% 96%;
-  --muted-foreground: 215 12% 45%;
-  --accent: 46 65% 85%; /* Warm gold accent */
-  --accent-foreground: 215 25% 25%;
-  --destructive: 0 65% 51%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 45 15% 88%; /* Subtle platinum border */
-  --input: 45 15% 90%;
-  --ring: 46 75% 55%; /* Refined gold ring */
-  --radius: 1rem; /* More refined corners */
+  /* Modern SaaS Light Theme - Clean and Professional */
+  --background: 0 0% 100%; /* Pure white */
+  --foreground: 0 0% 9%; /* Near black */
+  --card: 0 0% 100%; /* White cards */
+  --card-foreground: 0 0% 9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 9%;
+  --primary: 24 100% 50%; /* Orange primary */
+  --primary-foreground: 0 0% 100%; /* White text on orange */
+  --secondary: 0 0% 9%; /* Black secondary */
+  --secondary-foreground: 0 0% 100%; /* White text on black */
+  --muted: 0 0% 96%; /* Light gray */
+  --muted-foreground: 0 0% 45%;
+  --accent: 0 84% 60%; /* Red accent */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%; /* Red for destructive actions */
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 90%; /* Light border */
+  --input: 0 0% 96%; /* Light input background */
+  --ring: 24 100% 50%; /* Orange focus ring */
+  --radius: 0.75rem; /* Refined corners */
 
-  /* Premium brand accents */
-  --brand-gold: 46 75% 55%;
-  --brand-gold-foreground: 215 25% 18%;
-  --brand-champagne: 43 45% 75%;
-  --brand-platinum: 210 15% 85%;
-  --brand-obsidian: 215 25% 15%;
+  /* Brand colors */
+  --brand-orange: 24 100% 50%; /* Primary orange */
+  --brand-orange-dark: 24 100% 40%; /* Dark orange */
+  --brand-red: 0 84% 60%; /* Primary red */
+  --brand-black: 0 0% 9%; /* Professional black */
 
-  /* Luxury material tokens */
-  --glass-background: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --surface-elevation: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-
-  /* Custom coaching platform variables */
-  --coach-primary: 207 89% 42%;
-  --client-primary: 276 100% 50%;
-  --session-primary: 142 71% 45%;
+  /* Material tokens */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
 }
 
 .dark {
@@ -522,53 +516,54 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Premium typography system */
+/* Modern SaaS Typography System - Thin and Professional */
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 300; /* Default to light weight */
+  line-height: 1.6;
+}
+
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
+  font-weight: 300; /* Thin headings */
   line-height: 1.2;
   color: hsl(var(--foreground));
-  letter-spacing: -0.025em;
-  text-shadow: var(--text-shadow);
+  letter-spacing: -0.02em;
 }
 
 h1 {
-  font-size: clamp(2.25rem, 4vw, 3.5rem);
-  font-weight: 800;
-  letter-spacing: -0.035em;
-  background: linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--brand-gold)) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 200; /* Extra light for hero */
+  letter-spacing: -0.03em;
 }
 
 h2 {
-  font-size: clamp(1.875rem, 3.5vw, 2.75rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 300;
+  letter-spacing: -0.025em;
 }
 
 h3 {
   font-size: clamp(1.5rem, 3vw, 2.25rem);
-  font-weight: 650;
-  letter-spacing: -0.025em;
+  font-weight: 300;
+  letter-spacing: -0.02em;
 }
 
 h4 {
   font-size: clamp(1.25rem, 2.5vw, 1.75rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 400;
+  letter-spacing: -0.015em;
 }
 
 h5 {
   font-size: clamp(1.125rem, 2vw, 1.5rem);
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
 h6 {
   font-size: clamp(1rem, 1.5vw, 1.25rem);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 500;
+  letter-spacing: -0.005em;
 }
 
 /* Responsive typography */

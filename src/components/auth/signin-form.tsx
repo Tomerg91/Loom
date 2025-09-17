@@ -127,23 +127,23 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">{t('signin.title')}</CardTitle>
-        <CardDescription className="text-center">
+    <Card className="w-full max-w-md mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
+      <CardHeader className="space-y-4 text-center px-8 pt-8 pb-6">
+        <CardTitle className="text-3xl font-light text-neutral-900">{t('signin.title')}</CardTitle>
+        <CardDescription className="text-base font-light text-neutral-600">
           {t('signin.description')}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6 px-8">
           {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+            <Alert variant="destructive" className="border-red-500 bg-red-50 text-red-800">
+              <AlertDescription className="font-light">{error}</AlertDescription>
             </Alert>
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="email">{t('email')}</Label>
+            <Label htmlFor="email" className="text-sm font-medium text-neutral-900">{t('email')}</Label>
             <Input
               id="email"
               type="email"
@@ -152,11 +152,13 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
               error={errors.email?.message}
               disabled={isLoading}
               data-testid="email-input"
+              variant="default"
+              inputSize="md"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">{t('password')}</Label>
+            <Label htmlFor="password" className="text-sm font-medium text-neutral-900">{t('password')}</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -166,55 +168,46 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
                 error={errors.password?.message}
                 disabled={isLoading}
                 data-testid="password-input"
+                variant="default"
+                inputSize="md"
+                rightIcon={showPassword ? EyeOff : Eye}
+                onRightIconClick={() => setShowPassword(!showPassword)}
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute rtl:left-0 rtl:right-auto ltr:right-0 ltr:left-auto top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={isLoading}
-                aria-pressed={showPassword}
-                aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <Eye className="h-4 w-4" aria-hidden="true" />
-                )}
-                <span className="sr-only">
-                  {showPassword ? t('hidePassword') : t('showPassword')}
-                </span>
-              </Button>
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={isLoading} data-testid="signin-button">
+        <CardFooter className="flex flex-col space-y-6 px-8 pb-8">
+          <Button 
+            type="submit" 
+            variant="default" 
+            size="lg" 
+            className="w-full" 
+            disabled={isLoading} 
+            data-testid="signin-button"
+          >
             {isLoading && <Loader2 className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4 animate-spin" />}
             {t('signin.button')}
           </Button>
           
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-3">
             <Link
               href="/auth/reset-password"
-              className="text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
+              className="text-sm font-light text-neutral-600 hover:text-orange-600 underline-offset-4 hover:underline transition-colors duration-200"
               data-testid="forgot-password-link"
             >
               {t('forgotPassword')}
             </Link>
             
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm font-light text-neutral-600">
               {t('noAccount')}{' '}
               <Link
                 href="/auth/signup"
-                className="text-primary underline-offset-4 hover:underline"
+                className="text-orange-600 underline-offset-4 hover:underline font-normal transition-colors duration-200"
                 data-testid="signup-link"
               >
                 {t('signup.link')}
               </Link>
             </div>
-
           </div>
         </CardFooter>
       </form>

@@ -37,9 +37,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     const variantClasses = {
-      default: 'border-2 border-border/40 bg-gradient-to-br from-card/80 to-card/70 backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm shadow-soft hover:shadow-medium transition-all duration-200',
-      ghost: 'border-0 bg-transparent hover:bg-accent/20 backdrop-blur-sm',
-      filled: 'border-2 border-border/30 bg-gradient-to-br from-muted/50 to-muted/70 hover:from-muted/60 hover:to-muted/80 shadow-soft backdrop-blur-sm',
+      default: 'border border-neutral-300 bg-white hover:border-orange-500 focus:border-orange-500 shadow-sm hover:shadow-md transition-all duration-200',
+      ghost: 'border-0 bg-transparent hover:bg-neutral-50',
+      filled: 'border border-neutral-300 bg-neutral-50 hover:bg-neutral-100 focus:bg-white focus:border-orange-500 shadow-sm',
     };
 
     return (
@@ -68,14 +68,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             id={inputId}
             className={cn(
-              'flex w-full rounded-xl ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-semibold placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300 font-medium',
+              'flex w-full rounded-xl ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-light placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/30 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 font-light',
               sizeClasses[inputSize],
               variantClasses[variant],
-              error && 'border-destructive/60 focus-visible:ring-destructive/30 focus-visible:border-destructive',
+              error && 'border-red-500 focus-visible:ring-red-500/30 focus-visible:border-red-500',
               LeftIcon && 'pl-12',
               RightIcon && 'pr-12',
               'touch-manipulation',
-              'focus:scale-[1.02] hover:scale-[1.01]',
               className
             )}
             ref={ref}

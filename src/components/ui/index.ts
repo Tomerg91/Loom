@@ -8,3 +8,7 @@ export * from './avatar';
 export * from './dialog';
 export * from './skeleton';
 export * from './responsive-grid';
+export * from './tile';
+export * from './hero';
+export * from './table';
+export * from './select';

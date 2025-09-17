@@ -108,27 +108,24 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-lg mx-auto luxury-card shimmer-effect">
-      <CardHeader className="space-y-3 text-center">
-        <div className="floating-animation">
-          <CardTitle className="text-3xl font-bold text-gradient-gold">{t('signup.title')}</CardTitle>
-        </div>
-        <CardDescription className="text-lg text-muted-foreground/90">
+    <Card className="w-full max-w-lg mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
+      <CardHeader className="space-y-4 text-center px-8 pt-8 pb-6">
+        <CardTitle className="text-3xl font-light text-neutral-900">{t('signup.title')}</CardTitle>
+        <CardDescription className="text-base font-light text-neutral-600">
           {t('signup.description')}
         </CardDescription>
-        <div className="luxury-divider" />
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5 px-8">
           {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+            <Alert variant="destructive" className="border-red-500 bg-red-50 text-red-800">
+              <AlertDescription className="font-light">{error}</AlertDescription>
             </Alert>
           )}
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName">{t('firstName')}</Label>
+              <Label htmlFor="firstName" className="text-sm font-medium text-neutral-900">{t('firstName')}</Label>
               <Input
                 id="firstName"
                 placeholder={t('firstNamePlaceholder')}
@@ -136,11 +133,13 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 error={errors.firstName?.message}
                 disabled={isLoading}
                 data-testid="first-name-input"
+                variant="default"
+                inputSize="md"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="lastName">{t('lastName')}</Label>
+              <Label htmlFor="lastName" className="text-sm font-medium text-neutral-900">{t('lastName')}</Label>
               <Input
                 id="lastName"
                 placeholder={t('lastNamePlaceholder')}
@@ -148,12 +147,14 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 error={errors.lastName?.message}
                 disabled={isLoading}
                 data-testid="last-name-input"
+                variant="default"
+                inputSize="md"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">{t('email')}</Label>
+            <Label htmlFor="email" className="text-sm font-medium text-neutral-900">{t('email')}</Label>
             <Input
               id="email"
               type="email"
@@ -162,11 +163,13 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
               error={errors.email?.message}
               disabled={isLoading}
               data-testid="email-input"
+              variant="default"
+              inputSize="md"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">{t('phone')} ({t('optional')})</Label>
+            <Label htmlFor="phone" className="text-sm font-medium text-neutral-900">{t('phone')} ({t('optional')})</Label>
             <Input
               id="phone"
               type="tel"
@@ -175,12 +178,14 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
               error={errors.phone?.message}
               disabled={isLoading}
               data-testid="phone-input"
+              variant="default"
+              inputSize="md"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>{t('role')}</Label>
+              <Label className="text-sm font-medium text-neutral-900">{t('role')}</Label>
               <Select
                 value={watchRole}
                 onValueChange={(value: 'client' | 'coach') => setValue('role', value)}
@@ -195,12 +200,12 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 </SelectContent>
               </Select>
               {errors.role && (
-                <p className="text-sm text-destructive">{errors.role.message}</p>
+                <p className="text-sm font-light text-red-600">{errors.role.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label>{t('language')}</Label>
+              <Label className="text-sm font-medium text-neutral-900">{t('language')}</Label>
               <Select
                 value={watchLanguage}
                 onValueChange={(value: Language) => setValue('language', value)}
@@ -215,109 +220,75 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 </SelectContent>
               </Select>
               {errors.language && (
-                <p className="text-sm text-destructive">{errors.language.message}</p>
+                <p className="text-sm font-light text-red-600">{errors.language.message}</p>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">{t('password')}</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder={t('passwordPlaceholder')}
-                {...register('password')}
-                error={errors.password?.message}
-                disabled={isLoading}
-                data-testid="password-input"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={isLoading}
-                aria-pressed={showPassword}
-                aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <Eye className="h-4 w-4" aria-hidden="true" />
-                )}
-                <span className="sr-only">
-                  {showPassword ? t('hidePassword') : t('showPassword')}
-                </span>
-              </Button>
-            </div>
+            <Label htmlFor="password" className="text-sm font-medium text-neutral-900">{t('password')}</Label>
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder={t('passwordPlaceholder')}
+              {...register('password')}
+              error={errors.password?.message}
+              disabled={isLoading}
+              data-testid="password-input"
+              variant="default"
+              inputSize="md"
+              rightIcon={showPassword ? EyeOff : Eye}
+              onRightIconClick={() => setShowPassword(!showPassword)}
+            />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
-            <div className="relative">
-              <Input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                placeholder={t('confirmPasswordPlaceholder')}
-                {...register('confirmPassword')}
-                error={errors.confirmPassword?.message}
-                disabled={isLoading}
-                data-testid="confirm-password-input"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                disabled={isLoading}
-                aria-pressed={showConfirmPassword}
-                aria-label={showConfirmPassword ? t('hidePassword') : t('showPassword')}
-              >
-                {showConfirmPassword ? (
-                  <EyeOff className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <Eye className="h-4 w-4" aria-hidden="true" />
-                )}
-                <span className="sr-only">
-                  {showConfirmPassword ? t('hidePassword') : t('showPassword')}
-                </span>
-              </Button>
-            </div>
+            <Label htmlFor="confirmPassword" className="text-sm font-medium text-neutral-900">{t('confirmPassword')}</Label>
+            <Input
+              id="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              placeholder={t('confirmPasswordPlaceholder')}
+              {...register('confirmPassword')}
+              error={errors.confirmPassword?.message}
+              disabled={isLoading}
+              data-testid="confirm-password-input"
+              variant="default"
+              inputSize="md"
+              rightIcon={showConfirmPassword ? EyeOff : Eye}
+              onRightIconClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            />
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-start space-x-3">
             <input
               id="acceptedTerms"
               type="checkbox"
               {...register('acceptedTerms')}
               disabled={isLoading}
-              className="h-4 w-4 text-primary border-border rounded focus:ring-primary focus:ring-2"
+              className="mt-1 h-4 w-4 text-orange-600 bg-white border-neutral-300 rounded focus:ring-orange-500 focus:ring-2"
               data-testid="terms-checkbox"
             />
-            <Label htmlFor="acceptedTerms" className="text-sm">
+            <Label htmlFor="acceptedTerms" className="text-sm font-light text-neutral-700 leading-relaxed">
               {t('acceptTerms')}{' '}
               <Link
                 href="/terms"
                 target="_blank"
-                className="text-primary underline-offset-4 hover:underline"
+                className="text-orange-600 underline-offset-4 hover:underline font-normal transition-colors duration-200"
               >
                 {t('termsAndConditions')}
               </Link>
             </Label>
           </div>
           {errors.acceptedTerms && (
-            <p className="text-sm text-destructive">{errors.acceptedTerms.message}</p>
+            <p className="text-sm font-light text-red-600">{errors.acceptedTerms.message}</p>
           )}
         </CardContent>
-        <CardFooter className="flex flex-col space-y-5">
+        <CardFooter className="flex flex-col space-y-6 px-8 pb-8">
           <Button 
             type="submit" 
-            variant="premium" 
+            variant="default" 
             size="lg"
-            className="w-full shadow-gold hover:shadow-floating" 
+            className="w-full" 
             disabled={isLoading} 
             data-testid="signup-button"
           >
@@ -325,11 +296,11 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
             {t('signup.button')}
           </Button>
           
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-sm font-light text-neutral-600">
             {t('haveAccount')}{' '}
             <Link
               href="/auth/signin"
-              className="text-primary underline-offset-4 hover:underline"
+              className="text-orange-600 underline-offset-4 hover:underline font-normal transition-colors duration-200"
               data-testid="signin-link"
             >
               {t('signin.link')}

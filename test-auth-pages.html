@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Pages Preview - New Design System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        orange: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                            950: '#431407',
+                        },
+                        red: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            200: '#fecaca',
+                            300: '#fca5a5',
+                            400: '#f87171',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                            950: '#450a0a',
+                        },
+                        neutral: {
+                            50: '#fafafa',
+                            100: '#f5f5f5',
+                            200: '#e5e5e5',
+                            300: '#d4d4d4',
+                            400: '#a3a3a3',
+                            500: '#737373',
+                            600: '#525252',
+                            700: '#404040',
+                            800: '#262626',
+                            900: '#171717',
+                            950: '#0a0a0a',
+                        },
+                    },
+                    fontWeight: {
+                        'thin': '100',
+                        'extralight': '200',
+                        'light': '300',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-white font-light">
+    <!-- Navigation -->
+    <div class="fixed top-0 left-0 right-0 bg-white border-b border-neutral-200 z-50">
+        <div class="max-w-4xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <h1 class="text-lg font-medium text-neutral-900">Auth Pages Preview</h1>
+                <div class="flex space-x-4">
+                    <button onclick="showSignIn()" class="px-4 py-2 text-sm font-light text-neutral-600 hover:text-orange-600 transition-colors">Sign In</button>
+                    <button onclick="showSignUp()" class="px-4 py-2 text-sm font-light text-neutral-600 hover:text-orange-600 transition-colors">Sign Up</button>
+                    <button onclick="showReset()" class="px-4 py-2 text-sm font-light text-neutral-600 hover:text-orange-600 transition-colors">Reset Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign In Page -->
+    <div id="signin-page" class="page">
+        <div class="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 relative pt-20">
+            <!-- Background pattern -->
+            <div class="absolute inset-0 opacity-5">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(0,0,0)_1px,transparent_0)] bg-[length:20px_20px]"></div>
+            </div>
+            
+            <!-- Decorative elements -->
+            <div class="absolute -top-40 -right-40 w-80 h-80 bg-orange-200 rounded-full opacity-20 blur-3xl"></div>
+            <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-red-200 rounded-full opacity-20 blur-3xl"></div>
+            
+            <div class="relative flex items-center justify-center min-h-screen px-4">
+                <div class="w-full max-w-md space-y-8">
+                    <div class="text-center space-y-3">
+                        <h1 class="text-4xl font-extralight text-neutral-900 tracking-tight">Welcome Back</h1>
+                        <p class="text-lg font-light text-neutral-600">Sign in to your account to continue</p>
+                    </div>
+                    
+                    <!-- Sign In Form -->
+                    <div class="w-full max-w-md mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
+                        <div class="space-y-4 text-center px-8 pt-8 pb-6">
+                            <h2 class="text-3xl font-light text-neutral-900">Sign In</h2>
+                            <p class="text-base font-light text-neutral-600">Enter your credentials to access your account</p>
+                        </div>
+                        
+                        <div class="space-y-6 px-8">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-neutral-900">Email</label>
+                                <input type="email" placeholder="Enter your email" class="w-full h-12 px-4 py-3 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200 placeholder:text-neutral-400">
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-neutral-900">Password</label>
+                                <div class="relative">
+                                    <input type="password" placeholder="Enter your password" class="w-full h-12 px-4 py-3 pr-12 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200 placeholder:text-neutral-400">
+                                    <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col space-y-6 px-8 pb-8 pt-6">
+                            <button class="w-full h-13 px-8 py-3 text-base font-normal bg-orange-600 text-white rounded-xl shadow-md hover:bg-orange-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+                                Sign In
+                            </button>
+                            
+                            <div class="text-center space-y-3">
+                                <a href="#" class="text-sm font-light text-neutral-600 hover:text-orange-600 underline-offset-4 hover:underline transition-colors duration-200">
+                                    Forgot Password?
+                                </a>
+                                
+                                <div class="text-sm font-light text-neutral-600">
+                                    Don't have an account? 
+                                    <a href="#" onclick="showSignUp()" class="text-orange-600 underline-offset-4 hover:underline font-normal transition-colors duration-200">
+                                        Sign up
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign Up Page -->
+    <div id="signup-page" class="page hidden">
+        <div class="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 relative pt-20">
+            <!-- Background pattern -->
+            <div class="absolute inset-0 opacity-5">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(0,0,0)_1px,transparent_0)] bg-[length:20px_20px]"></div>
+            </div>
+            
+            <!-- Decorative elements -->
+            <div class="absolute -top-40 -right-40 w-80 h-80 bg-orange-200 rounded-full opacity-20 blur-3xl"></div>
+            <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-red-200 rounded-full opacity-20 blur-3xl"></div>
+            
+            <div class="relative flex items-center justify-center min-h-screen px-4 py-12">
+                <div class="w-full max-w-lg space-y-8">
+                    <div class="text-center space-y-3">
+                        <h1 class="text-4xl font-extralight text-neutral-900 tracking-tight">Join Us</h1>
+                        <p class="text-lg font-light text-neutral-600">Create your account to get started</p>
+                    </div>
+                    
+                    <!-- Sign Up Form -->
+                    <div class="w-full max-w-lg mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
+                        <div class="space-y-4 text-center px-8 pt-8 pb-6">
+                            <h2 class="text-3xl font-light text-neutral-900">Create Account</h2>
+                            <p class="text-base font-light text-neutral-600">Fill in your information to get started</p>
+                        </div>
+                        
+                        <div class="space-y-5 px-8">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-neutral-900">First Name</label>
+                                    <input type="text" placeholder="John" class="w-full h-12 px-4 py-3 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200 placeholder:text-neutral-400">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-neutral-900">Last Name</label>
+                                    <input type="text" placeholder="Doe" class="w-full h-12 px-4 py-3 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200 placeholder:text-neutral-400">
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-neutral-900">Email</label>
+                                <input type="email" placeholder="john@example.com" class="w-full h-12 px-4 py-3 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200 placeholder:text-neutral-400">
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-neutral-900">Phone (Optional)</label>
+                                <input type="tel" placeholder="+1 (555) 123-4567" class="w-full h-12 px-4 py-3 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200 placeholder:text-neutral-400">
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-neutral-900">Role</label>
+                                    <select class="w-full h-12 px-4 py-3 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200">
+                                        <option>Select Role</option>
+                                        <option>Client</option>
+                                        <option>Coach</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-neutral-900">Language</label>
+                                    <select class="w-full h-12 px-4 py-3 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200">
+                                        <option>English</option>
+                                        <option>Hebrew</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-neutral-900">Password</label>
+                                <div class="relative">
+                                    <input type="password" placeholder="Create a strong password" class="w-full h-12 px-4 py-3 pr-12 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200 placeholder:text-neutral-400">
+                                    <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-neutral-900">Confirm Password</label>
+                                <div class="relative">
+                                    <input type="password" placeholder="Confirm your password" class="w-full h-12 px-4 py-3 pr-12 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200 placeholder:text-neutral-400">
+                                    <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" class="mt-1 h-4 w-4 text-orange-600 bg-white border-neutral-300 rounded focus:ring-orange-500 focus:ring-2">
+                                <label class="text-sm font-light text-neutral-700 leading-relaxed">
+                                    I agree to the 
+                                    <a href="#" class="text-orange-600 underline-offset-4 hover:underline font-normal transition-colors duration-200">
+                                        Terms and Conditions
+                                    </a>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col space-y-6 px-8 pb-8 pt-6">
+                            <button class="w-full h-13 px-8 py-3 text-base font-normal bg-orange-600 text-white rounded-xl shadow-md hover:bg-orange-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+                                Create Account
+                            </button>
+                            
+                            <div class="text-center text-sm font-light text-neutral-600">
+                                Already have an account? 
+                                <a href="#" onclick="showSignIn()" class="text-orange-600 underline-offset-4 hover:underline font-normal transition-colors duration-200">
+                                    Sign in
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Password Page -->
+    <div id="reset-page" class="page hidden">
+        <div class="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 relative pt-20">
+            <!-- Background pattern -->
+            <div class="absolute inset-0 opacity-5">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(0,0,0)_1px,transparent_0)] bg-[length:20px_20px]"></div>
+            </div>
+            
+            <!-- Decorative elements -->
+            <div class="absolute -top-40 -right-40 w-80 h-80 bg-orange-200 rounded-full opacity-20 blur-3xl"></div>
+            <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-red-200 rounded-full opacity-20 blur-3xl"></div>
+            
+            <div class="relative flex items-center justify-center min-h-screen px-4 py-12">
+                <div class="w-full max-w-md space-y-8">
+                    <div class="text-center space-y-3">
+                        <h1 class="text-4xl font-extralight text-neutral-900 tracking-tight">Reset Password</h1>
+                        <p class="text-lg font-light text-neutral-600">Enter your email address and we'll send you a reset link</p>
+                    </div>
+                    
+                    <!-- Reset Password Form -->
+                    <div class="w-full max-w-md mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
+                        <div class="space-y-4 text-center px-8 pt-8 pb-6">
+                            <h2 class="text-3xl font-light text-neutral-900">Reset Password</h2>
+                            <p class="text-base font-light text-neutral-600">We'll send you instructions to reset your password</p>
+                        </div>
+                        
+                        <div class="space-y-6 px-8">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-neutral-900">Email Address</label>
+                                <input type="email" placeholder="Enter your email" class="w-full h-12 px-4 py-3 text-sm font-light border border-neutral-300 bg-white rounded-xl shadow-sm hover:border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none transition-all duration-200 placeholder:text-neutral-400">
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col space-y-6 px-8 pb-8 pt-6">
+                            <button class="w-full h-13 px-8 py-3 text-base font-normal bg-orange-600 text-white rounded-xl shadow-md hover:bg-orange-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+                                Send Reset Link
+                            </button>
+                            
+                            <div class="text-center">
+                                <a href="#" onclick="showSignIn()" class="text-sm font-light text-neutral-600 hover:text-orange-600 underline-offset-4 hover:underline transition-colors duration-200">
+                                    Back to Sign In
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden');
+            });
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+
+        function showSignIn() {
+            showPage('signin-page');
+        }
+
+        function showSignUp() {
+            showPage('signup-page');
+        }
+
+        function showReset() {
+            showPage('reset-page');
+        }
+
+        // Show sign in by default
+        showSignIn();
+    </script>
+</body>
+</html>

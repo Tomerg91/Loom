@@ -4,22 +4,26 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold tracking-wide ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 will-change-transform active:scale-[0.98] relative overflow-hidden',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-light tracking-wide ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 will-change-transform active:scale-[0.98] relative overflow-hidden',
   {
     variants: {
       variant: {
-        default: 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground hover:from-primary/95 hover:to-primary/85 shadow-luxury hover:shadow-floating hover:-translate-y-0.5',
-        premium: 'bg-gradient-to-br from-champagne-500 to-champagne-600 text-champagne-950 hover:from-champagne-400 hover:to-champagne-500 shadow-gold hover:shadow-floating hover:-translate-y-0.5 font-semibold',
-        destructive: 'bg-gradient-to-br from-destructive to-destructive/90 text-destructive-foreground hover:from-destructive/95 hover:to-destructive/85 shadow-soft hover:shadow-strong',
-        outline: 'border-2 border-border bg-card/60 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground shadow-soft hover:shadow-luxury hover:border-ring/50',
-        secondary: 'bg-gradient-to-br from-secondary to-secondary/95 text-secondary-foreground hover:from-secondary/90 hover:to-secondary/85 shadow-soft hover:shadow-medium',
-        ghost: 'hover:bg-accent/80 hover:text-accent-foreground backdrop-blur-sm rounded-lg transition-all duration-200',
-        glass: 'glass-morphism text-foreground hover:bg-white/10 backdrop-blur-lg border border-white/20',
-        link: 'text-primary underline-offset-4 hover:underline font-medium',
-        luxury: 'bg-gradient-luxury text-white shadow-luxury hover:shadow-floating hover:-translate-y-1 font-semibold tracking-wide',
-        coach: 'bg-gradient-to-br from-coach-500 to-coach-600 text-white hover:from-coach-400 hover:to-coach-500 shadow-soft hover:shadow-strong',
-        client: 'bg-gradient-to-br from-client-500 to-client-600 text-white hover:from-client-400 hover:to-client-500 shadow-soft hover:shadow-strong',
-        session: 'bg-gradient-to-br from-session-500 to-session-600 text-white hover:from-session-400 hover:to-session-500 shadow-soft hover:shadow-strong',
+        // Primary Orange Button (Dark Orange)
+        default: 'bg-orange-600 text-white hover:bg-orange-700 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
+        // Secondary Black Button
+        secondary: 'bg-neutral-900 text-white hover:bg-neutral-800 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
+        // Destructive Red Button
+        destructive: 'bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
+        // Outline Button
+        outline: 'border-2 border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50 hover:border-orange-500 shadow-sm hover:shadow-md',
+        // Ghost Button
+        ghost: 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 rounded-lg transition-all duration-200',
+        // Link Button
+        link: 'text-orange-600 underline-offset-4 hover:underline font-normal hover:text-orange-700',
+        // Orange Primary (alternative)
+        orange: 'bg-orange-500 text-white hover:bg-orange-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
+        // Red Accent
+        red: 'bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
       },
       size: {
         default: 'h-11 px-6 py-2.5 text-sm',

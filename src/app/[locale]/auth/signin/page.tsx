@@ -22,9 +22,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 function SigninFormSkeleton() {
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
       <CardContent className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
       </CardContent>
     </Card>
   );
@@ -36,20 +36,31 @@ export default async function SigninPage({ params, searchParams }: SigninPagePro
   const t = await getTranslations({ locale, namespace: 'auth' });
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">
-            {t('welcome')}
-          </h1>
-          <p className="text-muted-foreground">
-            {t('welcomeDescription')}
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 relative">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(0,0,0)_1px,transparent_0)] bg-[length:20px_20px]" />
+      </div>
+      
+      {/* Decorative elements */}
+      <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-200 rounded-full opacity-20 blur-3xl" />
+      <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-200 rounded-full opacity-20 blur-3xl" />
+      
+      <div className="relative flex items-center justify-center min-h-screen px-4">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center space-y-3">
+            <h1 className="text-4xl font-extralight text-neutral-900 tracking-tight">
+              {t('welcome')}
+            </h1>
+            <p className="text-lg font-light text-neutral-600">
+              {t('welcomeDescription')}
+            </p>
+          </div>
+          
+          <Suspense fallback={<SigninFormSkeleton />}>
+            <SigninForm redirectTo={redirectTo} />
+          </Suspense>
         </div>
-        
-        <Suspense fallback={<SigninFormSkeleton />}>
-          <SigninForm redirectTo={redirectTo} />
-        </Suspense>
       </div>
     </div>
   );

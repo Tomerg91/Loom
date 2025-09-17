@@ -133,7 +133,7 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
 
   if (success && !token) {
     return (
-      <Card className="w-full max-w-md mx-auto">
+      <Card className="w-full max-w-md mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
         <CardHeader className="text-center">
           <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
           <CardTitle>{t('resetEmailSent')}</CardTitle>
@@ -159,7 +159,7 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
 
   if (success) {
     return (
-      <Card className="w-full max-w-md mx-auto">
+      <Card className="w-full max-w-md mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
         <CardHeader className="text-center">
           <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
           <CardTitle>{t('passwordUpdated')}</CardTitle>
@@ -182,7 +182,7 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
   // Verification code step
   if (verificationStep === 'code') {
     return (
-      <Card className="w-full max-w-md mx-auto">
+      <Card className="w-full max-w-md mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
         <CardHeader>
           <CardTitle>Verify Your Email</CardTitle>
           <CardDescription>
