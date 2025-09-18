@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
     const tags = searchParams.get('tags');
     const category = searchParams.get('category');
     const isArchived = searchParams.get('isArchived') === 'true';
+    const hasIsArchived = searchParams.has('isArchived');
     const isFavorite = searchParams.get('isFavorite') === 'true';
 
     const offset = (page - 1) * limit;
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
     if (category) {
       query = query.eq('category', category);
     }
-    if (isArchived !== undefined) {
+    if (hasIsArchived) {
       query = query.eq('is_archived', isArchived);
     }
     if (isFavorite) {
@@ -127,7 +128,7 @@ export async function GET(request: NextRequest) {
     if (category) {
       countQuery = countQuery.eq('category', category);
     }
-    if (isArchived !== undefined) {
+    if (hasIsArchived) {
       countQuery = countQuery.eq('is_archived', isArchived);
     }
     if (isFavorite) {
