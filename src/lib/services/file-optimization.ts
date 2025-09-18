@@ -306,7 +306,6 @@ class FileOptimizationService {
     inputMimeType: string,
     options: DocumentConversionOptions
   ): Promise<ConversionResult> {
-    const originalSize = inputBuffer.length;
 
     try {
       // For now, we'll implement basic conversions

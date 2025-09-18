@@ -289,7 +289,7 @@ class FileService {
         const bucketName = this.getBucketName(options.directory);
         
         // Upload to Supabase Storage
-        const { data, error } = await supabase.storage
+        const { error } = await supabase.storage
           .from(bucketName)
           .upload(fileName, fileBuffer, {
             contentType: file.type,
