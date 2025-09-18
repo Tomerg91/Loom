@@ -174,9 +174,6 @@ class FileOptimizationService {
       // Load the PDF
       const pdfDoc = await PDFDocument.load(inputBuffer);
       
-      // Get page count
-      const pageCount = pdfDoc.getPageCount();
-      
       // Remove metadata to reduce size
       pdfDoc.setTitle('');
       pdfDoc.setAuthor('');

@@ -151,7 +151,7 @@ export function NotificationAnalyticsDashboard() {
   const [selectedType, setSelectedType] = useState<string>('all');
 
   // Fetch analytics data
-  const { data: analytics, isLoading, error, refetch } = useQuery({
+  const { data: analytics, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['notification-analytics', dateRange, selectedChannel, selectedType],
     queryFn: async (): Promise<NotificationAnalytics> => {
       const params = new URLSearchParams({
@@ -270,9 +270,9 @@ export function NotificationAnalyticsDashboard() {
             variant="outline"
             size="sm"
             onClick={() => refetch()}
-            disabled={isLoading}
+            disabled={isFetching}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button
