@@ -1,9 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
-import { ApiError } from '@/lib/api/errors';
 import { Result } from '@/lib/types/result';
 import { Database } from '@/types/supabase';
 import { fileService } from './file-service';
-import crypto from 'crypto';
 
 // Type definitions
 type Tables = Database['public']['Tables'];

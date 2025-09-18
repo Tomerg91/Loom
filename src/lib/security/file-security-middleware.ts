@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
-import crypto from 'crypto';
 
 export interface SecurityCheckResult {
   allowed: boolean;
@@ -317,8 +316,6 @@ export class FileSecurityMiddleware {
     // For state-changing operations, check CSRF token
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
       const headersList = await headers();
-      const csrfToken = headersList.get('x-csrf-token');
-      const referer = headersList.get('referer');
       const origin = headersList.get('origin');
       
       // In production, implement proper CSRF token validation
@@ -349,8 +346,8 @@ export class FileSecurityMiddleware {
     // For now, implement basic rate limiting for suspicious IPs
     
     // Suspicious IPs get more restrictive rate limits
-    const suspiciousRateLimit = 10; // 10 requests per minute
-    const timeWindow = 60 * 1000; // 1 minute
+    // const suspiciousRateLimit = 10; // 10 requests per minute
+    // const timeWindow = 60 * 1000; // 1 minute
     
     // This is a simplified implementation
     // In production, you'd use a distributed cache like Redis

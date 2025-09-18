@@ -1,4 +1,4 @@
-import { db, getSupabaseClient } from '@/lib/db';
+import { getSupabaseClient } from '@/lib/db';
 import { ApiError } from '@/lib/api/errors';
 import type { Database } from '@/types/supabase';
 
@@ -332,4 +332,3 @@ export { UserService };
 
 // Export a singleton instance
 export const userService = new UserService();
-

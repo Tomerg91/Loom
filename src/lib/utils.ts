@@ -447,10 +447,6 @@ export function stringToColor(str: string): string {
 export function sanitizeHtml(html: string): string {
   if (!html) return '';
   
-  // List of allowed tags and attributes
-  const allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'mark'];
-  const allowedAttributes = ['href', 'class'];
-  
   // Remove script tags and their content
   let sanitized = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
   

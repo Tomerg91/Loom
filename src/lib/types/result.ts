@@ -33,8 +33,9 @@ export const Result = {
    */
   fromSupabase: <T>(data: T | null, error: unknown): Result<T> => {
     if (error) {
-      const message = (typeof error === 'object' && error !== null && 'message' in error)
-        ? (error as { message: string }).message
+      const maybeMessage = (error as any)?.message;
+      const message = typeof maybeMessage === 'string'
+        ? maybeMessage
         : 'Database operation failed';
       return Result.error(message);
     }
