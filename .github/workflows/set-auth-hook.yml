@@ -3,6 +3,10 @@ name: Set Supabase Access Token Hook
 on:
   workflow_dispatch:
     inputs:
+      environment:
+        description: "Environment (for environment-scoped secrets)"
+        required: false
+        default: "production"
       project_ref:
         description: "Supabase project ref (optional; derived if omitted)"
         required: false
@@ -13,6 +17,7 @@ on:
 jobs:
   set-hook:
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -72,4 +77,3 @@ jobs:
           set -euo pipefail
           API="https://api.supabase.com/v1/projects/${PROJECT_REF}/config/auth"
           curl -sS "$API" -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" | jq '{hook: .hook}'
-
