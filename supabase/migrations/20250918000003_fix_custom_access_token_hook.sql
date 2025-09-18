@@ -5,13 +5,15 @@ CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, extensions
+SET search_path = public, auth, extensions
 AS $$
 DECLARE
   claims jsonb := '{}'::jsonb;
   user_role text;
   user_id uuid;
 BEGIN
+  -- Guard the entire routine against any unexpected errors
+  BEGIN
   -- Extract user id if present
   user_id := NULLIF(event->>'user_id', '')::uuid;
 
@@ -43,6 +45,10 @@ BEGIN
 
   -- Return updated event with claims
   RETURN jsonb_set(event, '{claims}', claims);
+  EXCEPTION WHEN OTHERS THEN
+    -- Never fail token issuance; return original event on error
+    RETURN event;
+  END;
 END;
 $$;
 
@@ -51,5 +57,7 @@ GRANT EXECUTE ON FUNCTION public.custom_access_token_hook(jsonb) TO supabase_aut
 GRANT EXECUTE ON FUNCTION public.custom_access_token_hook(jsonb) TO postgres;
 GRANT EXECUTE ON FUNCTION public.custom_access_token_hook(jsonb) TO service_role;
 
-COMMENT ON FUNCTION public.custom_access_token_hook(jsonb) IS 'Access token hook: sets claims.role from user/app metadata, with safe fallback.';
+-- Ensure owner can bypass RLS when needed
+ALTER FUNCTION public.custom_access_token_hook(jsonb) OWNER TO postgres;
 
+COMMENT ON FUNCTION public.custom_access_token_hook(jsonb) IS 'Access token hook: sets claims.role from user/app metadata, with safe fallback.';
