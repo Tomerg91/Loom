@@ -52,6 +52,16 @@ jobs:
       env:
         # Skip type checking during build for CodeQL
         SKIP_TYPE_CHECK: true
+        # Avoid SSG data fetching during CodeQL builds
+        NEXT_SKIP_BUILD_STATIC_GENERATION: true
+        # Disable Next telemetry for CI
+        NEXT_TELEMETRY_DISABLED: 1
+        # Provide safe defaults to satisfy env validation
+        NEXT_PUBLIC_SUPABASE_URL: https://example.com
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+        SUPABASE_SERVICE_ROLE_KEY: dummy-service-role
+        # Optional envs to reduce warnings during build
+        NEXT_PUBLIC_APP_URL: http://localhost:3000
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
