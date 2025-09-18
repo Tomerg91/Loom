@@ -169,15 +169,15 @@ GROUP BY u.id, u.first_name, u.last_name, u.email;
 DROP VIEW IF EXISTS security_dashboard CASCADE;
 CREATE VIEW security_dashboard AS
 SELECT 
-    date_trunc('hour', sal.created_at) as hour,
+    date_trunc('hour', sal."timestamp") as hour,
     sal.event_type,
     sal.severity,
     COUNT(*) as event_count,
     COUNT(DISTINCT sal.user_id) as unique_users,
     COUNT(DISTINCT sal.ip_address) as unique_ips
 FROM security_audit_log sal
-WHERE sal.created_at > NOW() - INTERVAL '24 hours'
-GROUP BY date_trunc('hour', sal.created_at), sal.event_type, sal.severity
+WHERE sal."timestamp" > NOW() - INTERVAL '24 hours'
+GROUP BY date_trunc('hour', sal."timestamp"), sal.event_type, sal.severity
 ORDER BY hour DESC, event_count DESC;
 
 -- Recreate coach_stats view
