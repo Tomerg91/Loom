@@ -373,8 +373,6 @@ export class FileSecurityMiddleware {
     request: NextRequest
   ): Promise<SecurityCheckResult> {
     const headersList = await headers();
-    const userAgent = headersList.get('user-agent') || '';
-    const clientIp = headersList.get('x-forwarded-for')?.split(',')[0] || 'unknown';
 
     // In production, you might want to:
     // 1. Track user sessions and detect concurrent sessions from different IPs
