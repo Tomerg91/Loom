@@ -39,30 +39,15 @@ export function ConditionalRender({
   const hasRole = useHasRole(role || '' as UserRole);
   const hasAnyRole = useHasAnyRole(anyRole || []);
 
-  // Calculate shouldShow based on conditions
-  let shouldShow = true;
+  // Calculate shouldShow based on provided conditions
+  const conditions: boolean[] = [];
+  if (permission) conditions.push(hasPermission);
+  if (anyPermission && anyPermission.length > 0) conditions.push(hasAnyPermission);
+  if (allPermissions && allPermissions.length > 0) conditions.push(hasAllPermissions);
+  if (role) conditions.push(hasRole);
+  if (anyRole && anyRole.length > 0) conditions.push(hasAnyRole);
 
-  // Apply permission checks
-  if (permission) {
-    shouldShow = shouldShow && hasPermission;
-  }
-
-  if (anyPermission) {
-    shouldShow = shouldShow && hasAnyPermission;
-  }
-
-  if (allPermissions) {
-    shouldShow = shouldShow && hasAllPermissions;
-  }
-
-  // Apply role checks
-  if (role) {
-    shouldShow = shouldShow && hasRole;
-  }
-
-  if (anyRole) {
-    shouldShow = shouldShow && hasAnyRole;
-  }
+  let shouldShow = conditions.length === 0 ? true : conditions.every(Boolean);
 
   // Authentication is implicitly handled by permission hooks
   // They return false when no user is present

@@ -13,8 +13,9 @@ export async function withDatabaseErrorHandling<T>(
     return await operation();
   } catch (error) {
     console.error(`Database error: ${errorMessage}`, error);
-    
-    if (error instanceof DatabaseError) {
+
+    // Treat objects that look like DatabaseError as such
+    if (isDatabaseErrorObject(error)) {
       throw error;
     }
     
@@ -107,6 +108,10 @@ export const DB_ERROR_CODES = {
  */
 export function isDatabaseError(error: any, code: string): error is DatabaseError {
   return error && error.code === code;
+}
+
+function isDatabaseErrorObject(error: unknown): error is DatabaseError {
+  return typeof error === 'object' && error !== null && 'code' in (error as any);
 }
 
 /**

@@ -271,8 +271,8 @@ export class ProductionErrorBoundary extends Component<
         />
       );
     }
-    
-    return this.props.children;
+    // Expose retrying state for UI/telemetry if needed
+    return <div data-retrying={this.state.isRetrying ? 'true' : 'false'}>{this.props.children}</div>;
   }
 }
 

@@ -176,17 +176,17 @@ export const POST = withErrorHandling(
     // Don't fail the session creation if notifications fail
   }
 
-    // Log successful session booking for auditing
-    console.info('Session booked successfully:', {
-      sessionId: transformedSession.id,
-      userId: user.id,
-      coachId: validatedData.coachId,
-      scheduledAt: validatedData.scheduledAt,
-      timestamp: new Date().toISOString(),
-      ip: request.headers.get('x-forwarded-for') || 'unknown'
-    });
+  // Log successful session booking for auditing
+  console.info('Session booked successfully:', {
+    sessionId: transformedSession.id,
+    userId: user.id,
+    coachId: validatedData.coachId,
+    scheduledAt: validatedData.scheduledAt,
+    timestamp: new Date().toISOString(),
+    ip: request.headers.get('x-forwarded-for') || 'unknown'
+  });
 
-    return createSuccessResponse(transformedSession, 'Session booked successfully', HTTP_STATUS.CREATED);
+  return createSuccessResponse(transformedSession, 'Session booked successfully', HTTP_STATUS.CREATED);
   })
 );
 
