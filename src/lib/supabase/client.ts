@@ -76,19 +76,21 @@ function validateClientEnv() {
       throw new Error(errorMsg);
     }
     
-    // Validate anon key format (should be a JWT)
-    if (!NEXT_PUBLIC_SUPABASE_ANON_KEY.startsWith('eyJ')) {
-      const errorMsg = `Invalid Supabase anon key format: "${NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 20)}...". ` +
-        'Expected a JWT token starting with "eyJ".';
+    // Validate publishable key format: allow legacy JWT (eyJ...) and new keys (sb_...)
+    const looksLegacyJwt = NEXT_PUBLIC_SUPABASE_ANON_KEY.startsWith('eyJ');
+    const looksNewKey = NEXT_PUBLIC_SUPABASE_ANON_KEY.startsWith('sb_');
+    if (!looksLegacyJwt && !looksNewKey) {
+      const prefix = NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 8);
+      const errorMsg = `Invalid Supabase publishable/anon key prefix: "${prefix}...". ` +
+        'Expected a legacy JWT (eyJ...) or a new publishable key (sb_...).';
       console.error(errorMsg);
       throw new Error(errorMsg);
     }
     
-    // Additional validation for obvious placeholder keys
-    if (NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('your-supabase') || 
-        NEXT_PUBLIC_SUPABASE_ANON_KEY.length < 100) {
-      const errorMsg = 'Invalid Supabase anon key: appears to be a placeholder value. ' +
-        'Please set the correct anon key from your Supabase dashboard.';
+    // Additional placeholder detection
+    if (NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('your-supabase')) {
+      const errorMsg = 'Invalid Supabase key: appears to be a placeholder value. ' +
+        'Please set the correct publishable key from your Supabase dashboard.';
       console.error(errorMsg);
       throw new Error(errorMsg);
     }

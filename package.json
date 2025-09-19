@@ -42,6 +42,7 @@
     "validate:env": "node scripts/validate-env.js",
     "validate:api-docs": "node scripts/validate-api-docs.js",
     "setup:vercel-env": "node scripts/setup-vercel-env.js",
+    "verify:auth-hook": "node scripts/verify-auth-hook.js",
     "prepare": "husky install",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
