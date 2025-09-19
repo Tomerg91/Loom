@@ -7,7 +7,8 @@ import { z } from 'zod';
 
 export const env = createEnv({
   server: {
-    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+    // Make server key optional at build time; specific code paths will throw if truly required at runtime
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
     DATABASE_URL: z.string().url().optional(),
     SENTRY_DSN: z.string().optional(),
   },
