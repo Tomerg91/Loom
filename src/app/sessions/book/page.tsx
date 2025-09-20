@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,7 @@ async function fetchClients(): Promise<Client[]> {
 
 export default function BookSessionPage() {
   const router = useRouter();
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -73,7 +75,7 @@ export default function BookSessionPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       toast({ title: 'Session booked successfully' });
-      router.push('/dashboard');
+      router.push(`/${locale}/dashboard`);
     },
     onError: () => {
       toast({ title: 'Failed to book session', variant: 'destructive' });

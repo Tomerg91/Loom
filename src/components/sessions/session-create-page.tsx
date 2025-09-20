@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useUser } from '@/lib/auth/use-user';
@@ -16,6 +17,7 @@ import { User, SessionFormData, SessionFormField } from '@/types';
 
 export function SessionCreatePage() {
   const router = useRouter();
+  const locale = useLocale();
   const user = useUser();
   const queryClient = useQueryClient();
   
@@ -92,7 +94,7 @@ export function SessionCreatePage() {
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      router.push(`/sessions/${response.id}`);
+      router.push(`/${locale}/sessions/${response.id}`);
     },
   });
 
@@ -112,7 +114,7 @@ export function SessionCreatePage() {
   };
 
   const handleCancel = () => {
-    router.push('/sessions');
+    router.push(`/${locale}/sessions`);
   };
 
   // Set default date/time to next hour
@@ -136,7 +138,7 @@ export function SessionCreatePage() {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => router.push('/sessions')}
+            onClick={() => router.push(`/${locale}/sessions`)}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Sessions

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useUser } from '@/lib/auth/use-user';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRealtimeNotifications } from '@/lib/realtime/hooks';
@@ -241,6 +241,7 @@ NotificationItem.displayName = 'NotificationItem';
 function NotificationCenterComponent() {
   const t = useTranslations('notifications');
   const router = useRouter();
+  const locale = useLocale();
   const user = useUser();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -1132,7 +1133,7 @@ function NotificationCenterComponent() {
                       size="sm"
                       onClick={() => {
                         setIsOpen(false);
-                        router.push('/settings?tab=notifications');
+                        router.push(`/${locale}/settings?tab=notifications`);
                       }}
                       className="h-8 w-8 p-0"
                       aria-label="Notification settings"

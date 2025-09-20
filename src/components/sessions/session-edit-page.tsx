@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,6 +60,7 @@ interface SessionEditPageProps {
 
 export function SessionEditPage({ sessionId }: SessionEditPageProps) {
   const router = useRouter();
+  const locale = useLocale();
   const user = useUser();
   const queryClient = useQueryClient();
   
@@ -231,7 +233,7 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
             <p className="text-muted-foreground mb-4">
               The session you&apos;re trying to edit doesn&apos;t exist or you don&apos;t have permission to edit it.
             </p>
-            <Button onClick={() => router.push('/sessions')}>
+            <Button onClick={() => router.push(`/${locale}/sessions`)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Sessions
             </Button>
@@ -251,7 +253,7 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
             <p className="text-muted-foreground mb-4">
               You don&apos;t have permission to edit this session.
             </p>
-            <Button onClick={() => router.push(`/sessions/${sessionId}`)}>
+            <Button onClick={() => router.push(`/${locale}/sessions/${sessionId}`)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Session
             </Button>
@@ -269,7 +271,7 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => router.push(`/sessions/${sessionId}`)}
+            onClick={() => router.push(`/${locale}/sessions/${sessionId}`)}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Session

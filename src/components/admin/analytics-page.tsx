@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { 
   Dialog,
   DialogContent,
@@ -85,6 +86,7 @@ interface AnalyticsData {
 export function AdminAnalyticsPage() {
   const t = useTranslations('admin.analytics');
   const router = useRouter();
+  const locale = useLocale();
   const [timeRange, setTimeRange] = useState('30d');
   const [isExporting, setIsExporting] = useState(false);
   const [systemHealthOpen, setSystemHealthOpen] = useState(false);
@@ -177,11 +179,11 @@ export function AdminAnalyticsPage() {
 
   // Quick Action Handlers
   const handleManageUsers = () => {
-    router.push('/admin/users');
+    router.push(`/${locale}/admin/users`);
   };
 
   const handleViewSessions = () => {
-    router.push('/sessions');
+    router.push(`/${locale}/sessions`);
   };
 
   const handleGenerateReport = async () => {

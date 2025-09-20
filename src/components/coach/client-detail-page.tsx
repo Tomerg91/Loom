@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { ArrowLeft, Calendar, Clock, Edit, MessageSquare, Star, Video, FileText, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,6 +55,7 @@ interface Session {
 export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const router = useRouter();
+  const locale = useLocale();
 
   // Fetch client details from API
   const { data: client, isLoading, error } = useQuery<ClientDetail>({
@@ -149,7 +151,7 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
             variant="ghost" 
             size="sm" 
             data-testid="back-button"
-            onClick={() => router.push('/coach/clients')}
+            onClick={() => router.push(`/${locale}/coach/clients`)}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Clients
@@ -177,7 +179,7 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
           <Button 
             data-testid="start-session-button"
             onClick={() => {
-              router.push(`/sessions/book?clientId=${clientId}&type=instant`);
+              router.push(`/${locale}/sessions/book?clientId=${clientId}&type=instant`);
             }}
           >
             <Video className="h-4 w-4 mr-2" />
@@ -187,7 +189,7 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
             variant="outline" 
             data-testid="message-client-button"
             onClick={() => {
-              router.push(`/messages?clientId=${clientId}`);
+              router.push(`/${locale}/messages?clientId=${clientId}`);
             }}
           >
             <MessageSquare className="h-4 w-4 mr-2" />
@@ -203,7 +205,7 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
               <DropdownMenuItem 
                 data-testid="edit-client"
                 onClick={() => {
-                  router.push(`/coach/clients/${clientId}/edit`);
+                  router.push(`/${locale}/coach/clients/${clientId}/edit`);
                 }}
               >
                 <Edit className="h-4 w-4 mr-2" />
@@ -212,7 +214,7 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
               <DropdownMenuItem 
                 data-testid="schedule-session"
                 onClick={() => {
-                  router.push(`/sessions/book?clientId=${clientId}`);
+                  router.push(`/${locale}/sessions/book?clientId=${clientId}`);
                 }}
               >
                 <Calendar className="h-4 w-4 mr-2" />

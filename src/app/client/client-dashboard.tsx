@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, Suspense, memo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { useUser } from '@/lib/auth/use-user';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -159,6 +160,8 @@ StatsCard.displayName = 'StatsCard';
 export function ClientDashboard() {
   const user = useUser();
   const router = useRouter();
+  const locale = useLocale();
+  const withLocale = (path: string) => (/^\/(en|he)\//.test(path) ? path : `/${locale}${path}`);
   
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -235,7 +238,7 @@ export function ClientDashboard() {
             <p className="text-muted-foreground mb-4">
               Please sign in to access your dashboard.
             </p>
-            <Button onClick={() => router.push('/auth/signin')}>
+            <Button onClick={() => router.push(withLocale('/auth/signin'))}>
               Sign In
             </Button>
           </CardContent>
@@ -282,14 +285,14 @@ export function ClientDashboard() {
         <div className="flex items-center space-x-2 mt-4 sm:mt-0">
           <Button 
             variant="outline" 
-            onClick={() => router.push('/client/book')}
+            onClick={() => router.push(withLocale('/client/book'))}
             className="flex items-center space-x-2"
           >
             <Calendar className="h-4 w-4" />
             <span>Book Session</span>
           </Button>
           <Button 
-            onClick={() => router.push('/messages')}
+            onClick={() => router.push(withLocale('/messages'))}
             className="flex items-center space-x-2"
           >
             <MessageSquare className="h-4 w-4" />
@@ -394,7 +397,7 @@ export function ClientDashboard() {
                     <div className="text-center py-8">
                       <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground mb-4">No upcoming sessions</p>
-                      <Button size="sm" onClick={() => router.push('/client/book')}>
+                      <Button size="sm" onClick={() => router.push(withLocale('/client/book'))}>
                         <Plus className="h-4 w-4 mr-2" />
                         Book a Session
                       </Button>
@@ -434,7 +437,7 @@ export function ClientDashboard() {
                   <div className="text-center py-8">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground mb-4">No reflections yet</p>
-                    <Button size="sm" onClick={() => router.push('/client/reflections')}>
+                    <Button size="sm" onClick={() => router.push(withLocale('/client/reflections'))}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Reflection
                     </Button>
@@ -490,19 +493,19 @@ export function ClientDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" size="sm" onClick={() => router.push('/client/notes')}>
+                    <Button variant="outline" size="sm" onClick={() => router.push(withLocale('/client/notes'))}>
                     <FileText className="h-4 w-4 mr-2" />
                     My Notes
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => router.push('/client/progress')}>
+                    <Button variant="outline" size="sm" onClick={() => router.push(withLocale('/client/progress'))}>
                     <BarChart3 className="h-4 w-4 mr-2" />
                     Progress
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => router.push('/client/coaches')}>
+                    <Button variant="outline" size="sm" onClick={() => router.push(withLocale('/client/coaches'))}>
                     <User className="h-4 w-4 mr-2" />
                     Find Coaches
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => router.push('/settings')}>
+                  <Button variant="outline" size="sm" onClick={() => router.push(withLocale('/settings'))}>
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
                   </Button>
@@ -525,7 +528,7 @@ export function ClientDashboard() {
                 <p className="text-muted-foreground mb-6">
                   Detailed session management interface coming soon.
                 </p>
-                <Button onClick={() => router.push('/client/sessions')}>
+                <Button onClick={() => router.push(withLocale('/client/sessions'))}>
                   View All Sessions
                 </Button>
               </div>
@@ -546,7 +549,7 @@ export function ClientDashboard() {
                 <p className="text-muted-foreground mb-6">
                   Comprehensive progress tracking and analytics coming soon.
                 </p>
-                <Button onClick={() => router.push('/client/progress')}>
+                <Button onClick={() => router.push(withLocale('/client/progress'))}>
                   View Progress Details
                 </Button>
               </div>

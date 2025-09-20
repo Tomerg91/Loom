@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/lib/auth/use-user';
@@ -25,6 +26,7 @@ interface SessionDetailsPageProps {
 
 export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
   const router = useRouter();
+  const locale = useLocale();
   const user = useUser();
   const queryClient = useQueryClient();
   
@@ -140,16 +142,16 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
       return response.json();
     },
     onSuccess: () => {
-      router.push('/sessions');
+      router.push(`/${locale}/sessions`);
     },
   });
 
   const handleBack = () => {
-    router.push('/sessions');
+    router.push(`/${locale}/sessions`);
   };
 
   const handleEdit = () => {
-    router.push(`/sessions/${sessionId}/edit`);
+    router.push(`/${locale}/sessions/${sessionId}/edit`);
   };
 
   if (isLoading) {
@@ -172,7 +174,7 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
             <p className="text-muted-foreground mb-4">
               The session you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.
             </p>
-            <Button onClick={() => router.push('/sessions')}>
+            <Button onClick={() => router.push(`/${locale}/sessions`)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Sessions
             </Button>
@@ -231,7 +233,7 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
           queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
           queryClient.invalidateQueries({ queryKey: ['sessions'] });
           setIsCancelDialogOpen(false);
-          router.push('/sessions');
+          router.push(`/${locale}/sessions`);
         }}
       />
 
