@@ -115,11 +115,12 @@ DROP POLICY IF EXISTS "Admins can view MFA dashboard" ON mfa_admin_dashboard;
 -- Recreate without recursive users table query (only if table exists)
 DO $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'mfa_admin_dashboard') THEN
+    IF EXISTS (
+      SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relname = 'mfa_admin_dashboard' AND c.relkind = 'r'
+    ) THEN
         EXECUTE 'CREATE POLICY "Admins can view MFA dashboard" ON mfa_admin_dashboard
-            FOR SELECT USING (
-                (auth.jwt() ->> ''role'' = ''admin'')
-            )';
+            FOR SELECT USING ((auth.jwt() ->> ''role'') = ''admin'')';
     END IF;
 END $$;
 

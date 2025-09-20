@@ -499,5 +499,5 @@ COMMENT ON TABLE rate_limit_violations IS 'Records of rate limiting violations f
 
 COMMENT ON FUNCTION is_ip_blocked IS 'Check if an IP address is currently blocked';
 COMMENT ON FUNCTION block_ip_address IS 'Block an IP address with optional expiration';
-COMMENT ON FUNCTION log_security_event IS 'Log a general security event';
+COMMENT ON FUNCTION log_security_event(INET, TEXT, TEXT, UUID, TEXT, TEXT, TEXT, TEXT, security_severity) IS 'Log a general security event';
 COMMENT ON FUNCTION log_file_security_event IS 'Log a file-specific security event';

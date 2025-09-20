@@ -10,38 +10,47 @@ ALTER TABLE notification_delivery_logs ENABLE ROW LEVEL SECURITY;
 
 -- Notifications table policies
 -- Users can only see their own notifications
+DROP POLICY IF EXISTS "Users can view their own notifications" ON notifications;
 CREATE POLICY "Users can view their own notifications" ON notifications
     FOR SELECT USING (auth.uid() = user_id);
 
 -- Users can only update their own notifications (marking as read)
+DROP POLICY IF EXISTS "Users can update their own notifications" ON notifications;
 CREATE POLICY "Users can update their own notifications" ON notifications
     FOR UPDATE USING (auth.uid() = user_id);
 
 -- System can insert notifications for any user (for system-generated notifications)
+DROP POLICY IF EXISTS "System can insert notifications" ON notifications;
 CREATE POLICY "System can insert notifications" ON notifications
     FOR INSERT WITH CHECK (true);
 
 -- Users can delete their own notifications
+DROP POLICY IF EXISTS "Users can delete their own notifications" ON notifications;
 CREATE POLICY "Users can delete their own notifications" ON notifications
     FOR DELETE USING (auth.uid() = user_id);
 
 -- Notification preferences policies
 -- Users can only see and modify their own preferences
+DROP POLICY IF EXISTS "Users can view their own notification preferences" ON notification_preferences;
 CREATE POLICY "Users can view their own notification preferences" ON notification_preferences
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own notification preferences" ON notification_preferences;
 CREATE POLICY "Users can update their own notification preferences" ON notification_preferences
     FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own notification preferences" ON notification_preferences;
 CREATE POLICY "Users can insert their own notification preferences" ON notification_preferences
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Notification templates policies
 -- All authenticated users can view active templates (needed for system notifications)
+DROP POLICY IF EXISTS "Authenticated users can view active notification templates" ON notification_templates;
 CREATE POLICY "Authenticated users can view active notification templates" ON notification_templates
     FOR SELECT USING (auth.role() = 'authenticated' AND is_active = true);
 
 -- Only admins can manage templates
+DROP POLICY IF EXISTS "Admins can manage notification templates" ON notification_templates;
 CREATE POLICY "Admins can manage notification templates" ON notification_templates
     FOR ALL USING (
         auth.uid() IN (
@@ -51,6 +60,7 @@ CREATE POLICY "Admins can manage notification templates" ON notification_templat
 
 -- Notification delivery logs policies
 -- Users can view delivery logs for their own notifications
+DROP POLICY IF EXISTS "Users can view delivery logs for their notifications" ON notification_delivery_logs;
 CREATE POLICY "Users can view delivery logs for their notifications" ON notification_delivery_logs
     FOR SELECT USING (
         notification_id IN (
@@ -59,14 +69,17 @@ CREATE POLICY "Users can view delivery logs for their notifications" ON notifica
     );
 
 -- System can insert delivery logs for any notification
+DROP POLICY IF EXISTS "System can insert delivery logs" ON notification_delivery_logs;
 CREATE POLICY "System can insert delivery logs" ON notification_delivery_logs
     FOR INSERT WITH CHECK (true);
 
 -- System can update delivery logs (status updates, tracking)
+DROP POLICY IF EXISTS "System can update delivery logs" ON notification_delivery_logs;
 CREATE POLICY "System can update delivery logs" ON notification_delivery_logs
     FOR UPDATE USING (true);
 
 -- Admins can view all delivery logs for analytics
+DROP POLICY IF EXISTS "Admins can view all delivery logs" ON notification_delivery_logs;
 CREATE POLICY "Admins can view all delivery logs" ON notification_delivery_logs
     FOR SELECT USING (
         auth.uid() IN (
@@ -145,7 +158,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION can_send_notification(UUID, UUID, notification_type) TO authenticated;
 
 -- Add a more restrictive insert policy for notifications based on relationships
-DROP POLICY "System can insert notifications" ON notifications;
+DROP POLICY IF EXISTS "System can insert notifications" ON notifications;
 
 CREATE POLICY "Authorized users can insert notifications" ON notifications
     FOR INSERT WITH CHECK (

@@ -153,10 +153,11 @@ END;
 $$;
 
 -- Create indexes to support the analytics functions
-CREATE INDEX IF NOT EXISTS idx_users_created_at_date ON users(DATE(created_at));
-CREATE INDEX IF NOT EXISTS idx_users_last_seen_at_date ON users(DATE(last_seen_at)) WHERE last_seen_at IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_sessions_scheduled_at_date ON sessions(DATE(scheduled_at));
-CREATE INDEX IF NOT EXISTS idx_sessions_coach_status_date ON sessions(coach_id, status, DATE(scheduled_at));
+-- Use immutable expressions by normalizing to UTC before casting to date
+CREATE INDEX IF NOT EXISTS idx_users_created_at_date ON users(((created_at AT TIME ZONE 'UTC')::date));
+CREATE INDEX IF NOT EXISTS idx_users_last_seen_at_date ON users(((last_seen_at AT TIME ZONE 'UTC')::date)) WHERE last_seen_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_sessions_scheduled_at_date ON sessions(((scheduled_at AT TIME ZONE 'UTC')::date));
+CREATE INDEX IF NOT EXISTS idx_sessions_coach_status_date ON sessions(coach_id, status, ((scheduled_at AT TIME ZONE 'UTC')::date));
 
 -- Comments for documentation
 COMMENT ON FUNCTION get_daily_user_growth IS 'Returns daily user growth metrics including new users, active users, and running totals';

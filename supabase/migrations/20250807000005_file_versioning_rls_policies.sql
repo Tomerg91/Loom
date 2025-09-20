@@ -1,5 +1,15 @@
 -- Row Level Security policies for File Versioning System
 
+-- Ensure comparison table exists (if a previous migration skipped it)
+CREATE TABLE IF NOT EXISTS file_version_comparisons (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  version_a_id UUID NOT NULL REFERENCES file_versions(id) ON DELETE CASCADE,
+  version_b_id UUID NOT NULL REFERENCES file_versions(id) ON DELETE CASCADE,
+  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  result JSONB
+);
+
 -- Enable RLS on new tables
 ALTER TABLE file_versions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE file_version_shares ENABLE ROW LEVEL SECURITY;
@@ -8,6 +18,7 @@ ALTER TABLE file_version_comparisons ENABLE ROW LEVEL SECURITY;
 -- File Versions RLS Policies
 
 -- Users can view versions of files they own or have shared access to
+DROP POLICY IF EXISTS "Users can view file versions they have access to" ON file_versions;
 CREATE POLICY "Users can view file versions they have access to" ON file_versions
     FOR SELECT USING (
         -- File owner can see all versions
@@ -42,6 +53,7 @@ CREATE POLICY "Users can view file versions they have access to" ON file_version
     );
 
 -- File owners can create new versions
+DROP POLICY IF EXISTS "File owners can create versions" ON file_versions;
 CREATE POLICY "File owners can create versions" ON file_versions
     FOR INSERT WITH CHECK (
         EXISTS (
@@ -53,6 +65,7 @@ CREATE POLICY "File owners can create versions" ON file_versions
     );
 
 -- File owners can update their file versions (limited fields)
+DROP POLICY IF EXISTS "File owners can update versions" ON file_versions;
 CREATE POLICY "File owners can update versions" ON file_versions
     FOR UPDATE USING (
         EXISTS (
@@ -63,6 +76,7 @@ CREATE POLICY "File owners can update versions" ON file_versions
     );
 
 -- File owners can delete their file versions (with restrictions)
+DROP POLICY IF EXISTS "File owners can delete versions" ON file_versions;
 CREATE POLICY "File owners can delete versions" ON file_versions
     FOR DELETE USING (
         EXISTS (
@@ -70,23 +84,13 @@ CREATE POLICY "File owners can delete versions" ON file_versions
             WHERE fu.id = file_versions.file_id 
             AND fu.user_id = auth.uid()
         )
-        -- Cannot delete the current active version
-        AND file_versions.id != (
-            SELECT current_version_id FROM file_uploads 
-            WHERE id = file_versions.file_id
-        )
-        -- Cannot delete if it's the only version
-        AND EXISTS (
-            SELECT 1 FROM file_versions fv2
-            WHERE fv2.file_id = file_versions.file_id
-            AND fv2.id != file_versions.id
-            AND fv2.status = 'active'
-        )
+        AND is_current_version = FALSE
     );
 
 -- File Version Shares RLS Policies
 
 -- Users can view version shares they're involved in
+DROP POLICY IF EXISTS "Users can view their version shares" ON file_version_shares;
 CREATE POLICY "Users can view their version shares" ON file_version_shares
     FOR SELECT USING (
         shared_by = auth.uid() 
@@ -108,6 +112,7 @@ CREATE POLICY "Users can view their version shares" ON file_version_shares
     );
 
 -- Users can create version shares for files they own or have edit permission on
+DROP POLICY IF EXISTS "Users can create version shares" ON file_version_shares;
 CREATE POLICY "Users can create version shares" ON file_version_shares
     FOR INSERT WITH CHECK (
         shared_by = auth.uid()
@@ -134,6 +139,7 @@ CREATE POLICY "Users can create version shares" ON file_version_shares
     );
 
 -- Users can update version shares they created or for files they own
+DROP POLICY IF EXISTS "Users can update their version shares" ON file_version_shares;
 CREATE POLICY "Users can update their version shares" ON file_version_shares
     FOR UPDATE USING (
         shared_by = auth.uid()
@@ -147,6 +153,7 @@ CREATE POLICY "Users can update their version shares" ON file_version_shares
     );
 
 -- Users can delete version shares they created or for files they own
+DROP POLICY IF EXISTS "Users can delete their version shares" ON file_version_shares;
 CREATE POLICY "Users can delete their version shares" ON file_version_shares
     FOR DELETE USING (
         shared_by = auth.uid()
@@ -163,6 +170,7 @@ CREATE POLICY "Users can delete their version shares" ON file_version_shares
 -- File Version Comparisons RLS Policies
 
 -- Users can view comparisons for versions they have access to
+DROP POLICY IF EXISTS "Users can view version comparisons they have access to" ON file_version_comparisons;
 CREATE POLICY "Users can view version comparisons they have access to" ON file_version_comparisons
     FOR SELECT USING (
         -- User has access to both versions being compared
@@ -214,6 +222,7 @@ CREATE POLICY "Users can view version comparisons they have access to" ON file_v
     );
 
 -- Users can create comparisons for versions they have access to
+DROP POLICY IF EXISTS "Users can create version comparisons" ON file_version_comparisons;
 CREATE POLICY "Users can create version comparisons" ON file_version_comparisons
     FOR INSERT WITH CHECK (
         -- User has access to both versions being compared
@@ -251,6 +260,7 @@ CREATE POLICY "Users can create version comparisons" ON file_version_comparisons
     );
 
 -- System/admin cleanup of comparisons
+DROP POLICY IF EXISTS "System can manage version comparisons" ON file_version_comparisons;
 CREATE POLICY "System can manage version comparisons" ON file_version_comparisons
     FOR ALL USING (
         EXISTS (
@@ -339,11 +349,45 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON file_versions TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON file_version_shares TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON file_version_comparisons TO authenticated;
 
--- Grant execute permissions on functions
-GRANT EXECUTE ON FUNCTION get_next_version_number(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION create_file_version(UUID, TEXT, version_type, TEXT, TEXT, TEXT, UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION rollback_to_version(UUID, UUID, UUID, BOOLEAN) TO authenticated;
-GRANT EXECUTE ON FUNCTION cleanup_old_versions(UUID, INTEGER) TO authenticated;
-GRANT EXECUTE ON FUNCTION get_file_version_history(UUID, INTEGER, INTEGER) TO authenticated;
-GRANT EXECUTE ON FUNCTION user_has_version_access(UUID, UUID, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION get_user_versioning_storage_usage(UUID) TO authenticated;
+-- Conditionally grant execute permissions on functions if they exist
+DO $$ BEGIN
+  PERFORM 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.proname = 'get_next_version_number';
+  IF FOUND THEN EXECUTE 'GRANT EXECUTE ON FUNCTION get_next_version_number(UUID) TO authenticated'; END IF;
+END $$;
+
+DO $$ BEGIN
+  PERFORM 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.proname = 'create_file_version';
+  IF FOUND THEN EXECUTE 'GRANT EXECUTE ON FUNCTION create_file_version(UUID, TEXT, TEXT, TEXT, TEXT, BIGINT, TEXT, TEXT, TEXT, BOOLEAN, UUID) TO authenticated'; END IF;
+END $$;
+
+DO $$ BEGIN
+  PERFORM 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.proname = 'rollback_to_version';
+  IF FOUND THEN EXECUTE 'GRANT EXECUTE ON FUNCTION rollback_to_version(UUID, INTEGER, UUID, TEXT) TO authenticated'; END IF;
+END $$;
+
+DO $$ BEGIN
+  PERFORM 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.proname = 'cleanup_old_versions';
+  IF FOUND THEN EXECUTE 'GRANT EXECUTE ON FUNCTION cleanup_old_versions(UUID, INTEGER) TO authenticated'; END IF;
+END $$;
+
+DO $$ BEGIN
+  PERFORM 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.proname = 'get_file_version_history';
+  IF FOUND THEN EXECUTE 'GRANT EXECUTE ON FUNCTION get_file_version_history(UUID, INTEGER, INTEGER) TO authenticated'; END IF;
+END $$;
+
+DO $$ BEGIN
+  PERFORM 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.proname = 'user_has_version_access';
+  IF FOUND THEN EXECUTE 'GRANT EXECUTE ON FUNCTION user_has_version_access(UUID, UUID, TEXT) TO authenticated'; END IF;
+END $$;
+
+DO $$ BEGIN
+  PERFORM 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.proname = 'get_user_versioning_storage_usage';
+  IF FOUND THEN EXECUTE 'GRANT EXECUTE ON FUNCTION get_user_versioning_storage_usage(UUID) TO authenticated'; END IF;
+END $$;

@@ -209,7 +209,6 @@ CREATE POLICY "Admins can view all push subscriptions" ON push_subscriptions
 
 -- Grant permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON push_subscriptions TO authenticated;
-GRANT USAGE ON SEQUENCE push_subscriptions_id_seq TO authenticated;
 
 -- Add comments for documentation
 COMMENT ON TABLE push_subscriptions IS 'Stores push notification subscriptions for users';

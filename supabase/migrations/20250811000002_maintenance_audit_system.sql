@@ -254,7 +254,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE OR REPLACE FUNCTION log_audit_event(
-    p_user_id UUID DEFAULT NULL,
+    p_user_id UUID,
     p_action audit_action_type,
     p_resource TEXT DEFAULT NULL,
     p_resource_id TEXT DEFAULT NULL,
@@ -424,12 +424,27 @@ GRANT SELECT, INSERT ON system_audit_logs TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON system_health_checks TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON database_backups TO authenticated;
 
--- Grant execute permissions on functions
-GRANT EXECUTE ON FUNCTION log_maintenance_action TO authenticated;
-GRANT EXECUTE ON FUNCTION log_audit_event TO authenticated;
-GRANT EXECUTE ON FUNCTION get_recent_maintenance_operations TO authenticated;
-GRANT EXECUTE ON FUNCTION get_system_health_stats TO authenticated;
-GRANT EXECUTE ON FUNCTION cleanup_old_logs TO authenticated;
+-- Grant execute permissions on functions (handle overloads safely)
+DO $$
+DECLARE r RECORD;
+BEGIN
+  FOR r IN 
+    SELECT p.proname, oidvectortypes(p.proargtypes) AS args
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname IN (
+        'log_maintenance_action',
+        'log_audit_event',
+        'get_recent_maintenance_operations',
+        'get_system_health_stats',
+        'cleanup_old_logs'
+      )
+  LOOP
+    EXECUTE format('GRANT EXECUTE ON FUNCTION public.%I(%s) TO authenticated', r.proname, r.args);
+  END LOOP;
+END
+$$;
 
 -- Comment on tables and functions
 COMMENT ON TABLE maintenance_logs IS 'Tracks all maintenance operations performed on the system';
@@ -438,7 +453,7 @@ COMMENT ON TABLE system_health_checks IS 'Records of system health check results
 COMMENT ON TABLE database_backups IS 'Tracking information for database backup operations';
 
 COMMENT ON FUNCTION log_maintenance_action IS 'Helper function to log maintenance operations with proper user tracking';
-COMMENT ON FUNCTION log_audit_event IS 'Helper function to log audit events with metadata';
+COMMENT ON FUNCTION log_audit_event(UUID, audit_action_type, TEXT, TEXT, TEXT, JSONB, TEXT, INET, TEXT) IS 'Helper function to log audit events with metadata';
 COMMENT ON FUNCTION get_recent_maintenance_operations IS 'Retrieves recent maintenance operations with optional filtering';
 COMMENT ON FUNCTION get_system_health_stats IS 'Provides aggregated system health statistics';
 COMMENT ON FUNCTION cleanup_old_logs IS 'Utility function to cleanup old log entries (supports dry-run mode)';

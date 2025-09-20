@@ -4,7 +4,7 @@
 
 -- Fix 1: is_time_slot_available - resolve ambiguous column reference "coach_id"
 CREATE OR REPLACE FUNCTION is_time_slot_available(
-  p_coach_id UUID,
+  coach_id UUID,
   start_time TIMESTAMP WITH TIME ZONE,
   duration_minutes INTEGER DEFAULT 60
 )
@@ -18,7 +18,7 @@ BEGIN
   SELECT COUNT(*)
   INTO conflict_count
   FROM sessions s
-  WHERE s.coach_id = p_coach_id
+  WHERE s.coach_id = coach_id
     AND s.status IN ('scheduled', 'in_progress')
     AND (
       (s.scheduled_at <= start_time AND s.scheduled_at + (s.duration_minutes || ' minutes')::INTERVAL > start_time)

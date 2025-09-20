@@ -365,7 +365,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER set_timestamp_temporary_file_shares
   BEFORE UPDATE ON temporary_file_shares
   FOR EACH ROW
-  EXECUTE FUNCTION trigger_set_timestamp();
+  EXECUTE FUNCTION update_updated_at_column();
 
 -- Grant necessary permissions
 GRANT EXECUTE ON FUNCTION generate_share_token() TO authenticated;

@@ -147,10 +147,10 @@ CREATE OR REPLACE FUNCTION log_file_download(
   p_bandwidth_used BIGINT DEFAULT NULL,
   p_client_info JSONB DEFAULT '{}'
 )
-RETURNS UUID AS $$
-DECLARE
-  log_id UUID;
-  current_date DATE;
+RETURNS UUID AS $$                                            
+DECLARE                                                       
+  log_id UUID;                                                
+  v_current_date DATE;                                        
 BEGIN
   -- Insert download log
   INSERT INTO file_download_logs (
@@ -186,8 +186,8 @@ BEGIN
   ) RETURNING id INTO log_id;
   
   -- Update analytics summary (only for successful downloads)
-  IF p_success THEN
-    current_date := CURRENT_DATE;
+  IF p_success THEN                                           
+    v_current_date := CURRENT_DATE;                           
     
     INSERT INTO file_analytics_summary (
       file_id,
@@ -200,7 +200,7 @@ BEGIN
       download_methods
     ) VALUES (
       p_file_id,
-      current_date,
+      v_current_date,                                         
       1,
       1,
       CASE WHEN p_downloaded_by IS NOT NULL THEN 1 ELSE 0 END,
@@ -216,7 +216,7 @@ BEGIN
         SELECT COUNT(DISTINCT downloaded_by)
         FROM file_download_logs
         WHERE file_id = p_file_id 
-          AND downloaded_at::date = current_date
+          AND downloaded_at::date = v_current_date
           AND downloaded_by IS NOT NULL
           AND success = true
       ),
@@ -224,7 +224,7 @@ BEGIN
         SELECT COUNT(DISTINCT ip_address)
         FROM file_download_logs
         WHERE file_id = p_file_id 
-          AND downloaded_at::date = current_date
+          AND downloaded_at::date = v_current_date
           AND ip_address IS NOT NULL
           AND success = true
       ),
@@ -264,7 +264,7 @@ BEGIN
     END IF;
   ELSE
     -- Update failed downloads count
-    current_date := CURRENT_DATE;
+    v_current_date := CURRENT_DATE;                           
     
     INSERT INTO file_analytics_summary (
       file_id,
@@ -273,7 +273,7 @@ BEGIN
       failed_downloads
     ) VALUES (
       p_file_id,
-      current_date,
+      v_current_date,                                         
       1,
       1
     )
@@ -468,12 +468,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER set_timestamp_file_analytics_summary
   BEFORE UPDATE ON file_analytics_summary
   FOR EACH ROW
-  EXECUTE FUNCTION trigger_set_timestamp();
+  EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER set_timestamp_user_download_statistics
   BEFORE UPDATE ON user_download_statistics
   FOR EACH ROW
-  EXECUTE FUNCTION trigger_set_timestamp();
+  EXECUTE FUNCTION update_updated_at_column();
 
 -- Grant necessary permissions
 GRANT EXECUTE ON FUNCTION log_file_download TO anon, authenticated;

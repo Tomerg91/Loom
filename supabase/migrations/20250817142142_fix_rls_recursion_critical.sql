@@ -120,17 +120,16 @@ CREATE POLICY "Admins can view audit logs" ON security_audit_log
 -- Note: This table may not exist, so we check first
 DO $$
 BEGIN
-    -- Only drop the policy if the table exists
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'mfa_admin_dashboard') THEN
+    -- Only manage policy if a BASE TABLE named mfa_admin_dashboard exists
+    IF EXISTS (
+      SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relname = 'mfa_admin_dashboard' AND c.relkind = 'r'
+    ) THEN
         EXECUTE 'DROP POLICY IF EXISTS "Admins can view MFA dashboard" ON mfa_admin_dashboard';
-        
-        -- Recreate without recursive users table query
         EXECUTE 'CREATE POLICY "Admins can view MFA dashboard" ON mfa_admin_dashboard
-            FOR SELECT USING (
-                (auth.jwt() ->> ''role'' = ''admin'')
-            )';
+            FOR SELECT USING ((auth.jwt() ->> ''role'') = ''admin'')';
     ELSE
-        RAISE NOTICE 'Table mfa_admin_dashboard does not exist, skipping policy creation';
+        RAISE NOTICE 'mfa_admin_dashboard is not a base table; skipping policy creation';
     END IF;
 END $$;
 

@@ -12,7 +12,6 @@ ALTER TYPE notification_type ADD VALUE 'session_rescheduled';
 ALTER TYPE notification_type ADD VALUE 'reflection_reminder';
 ALTER TYPE notification_type ADD VALUE 'system_announcement';
 ALTER TYPE notification_type ADD VALUE 'payment_reminder';
-ALTER TYPE notification_type ADD VALUE 'welcome_message';
 
 -- Create notification preferences table
 CREATE TABLE notification_preferences (

@@ -10,7 +10,17 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 ON CONFLICT (id) DO NOTHING;
 
 -- Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  BEGIN
+    EXECUTE 'ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'Skipping enabling RLS on storage.objects due to insufficient privileges';
+  WHEN undefined_table THEN
+    RAISE NOTICE 'Skipping enabling RLS on storage.objects because table does not exist';
+  END;
+END
+$$;
 
 -- Storage policies for avatars bucket (public)
 CREATE POLICY "Avatar uploads are publicly viewable" ON storage.objects

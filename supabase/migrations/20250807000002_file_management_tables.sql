@@ -95,8 +95,9 @@ CREATE INDEX idx_file_shares_file_id ON file_shares(file_id);
 CREATE INDEX idx_file_shares_shared_with ON file_shares(shared_with);
 CREATE INDEX idx_file_shares_shared_by ON file_shares(shared_by);
 CREATE INDEX idx_file_shares_expires_at ON file_shares(expires_at) WHERE expires_at IS NOT NULL;
+-- Avoid non-immutable predicate; index rows without expiration for common lookups
 CREATE INDEX idx_file_shares_active ON file_shares(shared_with, created_at) 
-  WHERE expires_at IS NULL OR expires_at > NOW();
+  WHERE expires_at IS NULL;
 
 CREATE INDEX idx_session_files_session_id ON session_files(session_id);
 CREATE INDEX idx_session_files_file_id ON session_files(file_id);

@@ -3,11 +3,13 @@
 -- Purpose: Add any missing enums and minor enhancements to complete the comprehensive schema
 
 -- Add missing enum value for session_status if not exists
-DO $$ 
+DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM unnest(enum_range(NULL::session_status)) AS e(enumval) WHERE e.enumval = 'no_show') THEN
-        ALTER TYPE session_status ADD VALUE 'no_show';
-    END IF;
+  BEGIN
+    ALTER TYPE session_status ADD VALUE IF NOT EXISTS 'no_show';
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
 END $$;
 
 -- Add missing enum values for file_permission_type (already exists but ensuring completeness)

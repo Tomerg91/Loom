@@ -404,8 +404,6 @@ CREATE POLICY "Admin can manage notification jobs" ON notification_jobs
 -- Grant permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON scheduled_notifications TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON notification_jobs TO authenticated;
-GRANT USAGE ON SEQUENCE scheduled_notifications_id_seq TO authenticated;
-GRANT USAGE ON SEQUENCE notification_jobs_id_seq TO authenticated;
 
 -- Add comments for documentation
 COMMENT ON TABLE scheduled_notifications IS 'Stores notifications scheduled to be sent at specific times';
