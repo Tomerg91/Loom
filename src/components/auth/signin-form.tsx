@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
@@ -32,6 +33,7 @@ interface SigninFormProps {
 export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   const t = useTranslations('auth');
   const router = useRouter();
+  const locale = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,8 +92,11 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
         }
 
         // No MFA required or device is trusted, proceed to dashboard
-        const safeRedirectTo = redirectTo.startsWith('/') ? redirectTo : '/dashboard';
-        router.push(safeRedirectTo);
+        const safeRedirectTo = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+        const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
+          ? safeRedirectTo
+          : `/${locale}${safeRedirectTo}`;
+        router.push(finalRedirectTo);
         router.refresh();
       }
     } catch (err) {
@@ -102,7 +107,11 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   };
 
   const handleMfaSuccess = () => {
-    router.push(redirectTo as '/dashboard');
+    const safeRedirectTo = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+    const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
+      ? safeRedirectTo
+      : `/${locale}${safeRedirectTo}`;
+    router.push(finalRedirectTo);
     router.refresh();
   };
 

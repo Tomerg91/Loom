@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -44,6 +44,7 @@ export function MfaVerificationForm({
 }: MfaVerificationFormProps) {
   const t = useTranslations('auth.mfa');
   const router = useRouter();
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +52,11 @@ export function MfaVerificationForm({
   const [attempts, setAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
 
-  const finalRedirectTo = redirectTo || searchParams.get('redirectTo') || '/dashboard';
+  const rawRedirectTo = redirectTo || searchParams.get('redirectTo') || '/dashboard';
+  const safeRedirectTo = rawRedirectTo && rawRedirectTo.startsWith('/') ? rawRedirectTo : '/dashboard';
+  const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
+    ? safeRedirectTo
+    : `/${locale}${safeRedirectTo}`;
 
   const {
     register,
@@ -134,7 +139,7 @@ export function MfaVerificationForm({
     if (onCancel) {
       onCancel();
     } else {
-      router.push('/auth/signin');
+      router.push(`/${locale}/auth/signin`);
     }
   };
 

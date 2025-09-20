@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { createClientAuthService } from '@/lib/auth/client-auth';
 import { MfaSetupForm } from '@/components/auth/mfa-setup-form';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,13 +12,18 @@ import { Loader2, Shield } from 'lucide-react';
 export default function MfaSetupPage() {
   const t = useTranslations('auth.mfa');
   const router = useRouter();
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+  const rawRedirectTo = searchParams.get('redirectTo') || '/dashboard';
+  const safeRedirectTo = rawRedirectTo && rawRedirectTo.startsWith('/') ? rawRedirectTo : '/dashboard';
+  const redirectTo = /^\/(en|he)\//.test(safeRedirectTo)
+    ? safeRedirectTo
+    : `/${locale}${safeRedirectTo}`;
   const isRequired = searchParams.get('required') === 'true';
 
   useEffect(() => {
@@ -29,13 +34,13 @@ export default function MfaSetupPage() {
         const user = await authService.getCurrentUser();
 
         if (!user) {
-          router.push('/auth/signin');
+          router.push(`/${locale}/auth/signin`);
           return;
         }
 
         if (user.mfaEnabled && user.mfaSetupCompleted) {
           // User already has MFA set up, redirect to dashboard or manage page
-          router.push(redirectTo === '/dashboard' ? '/settings/security' : redirectTo);
+          router.push(redirectTo === `/${locale}/dashboard` ? `/${locale}/settings/security` : redirectTo);
           return;
         }
 
@@ -60,10 +65,10 @@ export default function MfaSetupPage() {
   const handleCancel = () => {
     if (isRequired) {
       // If MFA is required, redirect to dashboard with a message
-      router.push('/dashboard?mfa_required=true');
+      router.push(`/${locale}/dashboard?mfa_required=true`);
     } else {
       // Otherwise go back to security settings
-      router.push('/settings/security');
+      router.push(`/${locale}/settings/security`);
     }
   };
 
@@ -90,7 +95,7 @@ export default function MfaSetupPage() {
             <div className="space-y-4">
               <p className="text-destructive">{error}</p>
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push(`/${locale}/dashboard`)}
                 className="text-primary hover:underline"
               >
                 {t('backToDashboard')}

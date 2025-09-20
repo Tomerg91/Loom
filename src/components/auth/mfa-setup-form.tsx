@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -45,6 +45,7 @@ export function MfaSetupForm({
 }: MfaSetupFormProps) {
   const t = useTranslations('auth.mfa');
   const router = useRouter();
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +55,11 @@ export function MfaSetupForm({
   const [copiedCodes, setCopiedCodes] = useState<number[]>([]);
   const [showBackupCodes, setShowBackupCodes] = useState(false);
 
-  const finalRedirectTo = redirectTo || searchParams.get('redirectTo') || '/dashboard';
+  const rawRedirectTo = redirectTo || searchParams.get('redirectTo') || '/dashboard';
+  const safeRedirectTo = rawRedirectTo && rawRedirectTo.startsWith('/') ? rawRedirectTo : '/dashboard';
+  const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
+    ? safeRedirectTo
+    : `/${locale}${safeRedirectTo}`;
   const required = isRequired || searchParams.get('required') === 'true';
 
   const {
@@ -181,11 +186,11 @@ export function MfaSetupForm({
   const handleCancel = () => {
     if (required) {
       // If MFA is required, redirect to appropriate page
-      router.push('/dashboard');
+      router.push(`/${locale}/dashboard`);
     } else if (onCancel) {
       onCancel();
     } else {
-      router.push('/settings/security');
+      router.push(`/${locale}/settings/security`);
     }
   };
 
