@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { useUser, useAuthLoading } from '@/lib/store/auth-store';
 import { usePermission, useAnyPermission, useHasAnyRole } from '@/lib/permissions/hooks';
 import type { Permission } from '@/lib/permissions/permissions';
@@ -41,6 +42,7 @@ export function RouteGuard({
   showLoading = true,
 }: RouteGuardProps) {
   const router = useRouter();
+  const locale = useLocale();
   const user = useUser();
   const isLoading = useAuthLoading();
   
@@ -60,8 +62,12 @@ export function RouteGuard({
     const checkAuthAndRedirect = () => {
       // Check if authentication is required
       if (requireAuth && !user) {
-        const loginPath = redirectTo || '/auth/signin';
-        router.push(loginPath as '/auth/signin');
+        const rawLoginPath = redirectTo || '/auth/signin';
+        const safeLoginPath = rawLoginPath && rawLoginPath.startsWith('/') ? rawLoginPath : '/auth/signin';
+        const finalLoginPath = /^\/(en|he)\//.test(safeLoginPath)
+          ? safeLoginPath
+          : `/${locale}${safeLoginPath}`;
+        router.push(finalLoginPath as '/auth/signin');
         return;
       }
 
@@ -72,15 +78,23 @@ export function RouteGuard({
 
       // Check role requirements
       if ((requireRole || requireAnyRole) && !hasRequiredRole) {
-        const unauthorizedPath = redirectTo || '/dashboard';
-        router.push(unauthorizedPath as '/dashboard');
+        const rawUnauthorizedPath = redirectTo || '/dashboard';
+        const safeUnauthorizedPath = rawUnauthorizedPath && rawUnauthorizedPath.startsWith('/') ? rawUnauthorizedPath : '/dashboard';
+        const finalUnauthorizedPath = /^\/(en|he)\//.test(safeUnauthorizedPath)
+          ? safeUnauthorizedPath
+          : `/${locale}${safeUnauthorizedPath}`;
+        router.push(finalUnauthorizedPath as '/dashboard');
         return;
       }
 
       // Check permission requirements
       if (!permissionSatisfied || !anyPermissionSatisfied) {
-        const unauthorizedPath = redirectTo || '/dashboard';
-        router.push(unauthorizedPath as '/dashboard');
+        const rawUnauthorizedPath = redirectTo || '/dashboard';
+        const safeUnauthorizedPath = rawUnauthorizedPath && rawUnauthorizedPath.startsWith('/') ? rawUnauthorizedPath : '/dashboard';
+        const finalUnauthorizedPath = /^\/(en|he)\//.test(safeUnauthorizedPath)
+          ? safeUnauthorizedPath
+          : `/${locale}${safeUnauthorizedPath}`;
+        router.push(finalUnauthorizedPath as '/dashboard');
         return;
       }
     };

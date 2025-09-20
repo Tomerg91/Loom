@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { createMfaService } from '@/lib/services/mfa-service';
 import { createClientAuthService } from '@/lib/auth/client-auth';
 import { MfaVerificationForm } from '@/components/auth/mfa-verification-form';
@@ -12,13 +12,18 @@ import { Loader2 } from 'lucide-react';
 export default function MfaVerifyPage() {
   const t = useTranslations('auth.mfa');
   const router = useRouter();
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [mfaSessionToken, setMfaSessionToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+  const rawRedirectTo = searchParams.get('redirectTo') || '/dashboard';
+  const safeRedirectTo = rawRedirectTo && rawRedirectTo.startsWith('/') ? rawRedirectTo : '/dashboard';
+  const redirectTo = /^\/(en|he)\//.test(safeRedirectTo)
+    ? safeRedirectTo
+    : `/${locale}${safeRedirectTo}`;
 
   useEffect(() => {
     async function initializeMfaVerification() {
@@ -28,7 +33,7 @@ export default function MfaVerifyPage() {
         const user = await authService.getCurrentUser();
 
         if (!user) {
-          router.push('/auth/signin');
+          router.push(`/${locale}/auth/signin`);
           return;
         }
 
@@ -109,7 +114,7 @@ export default function MfaVerifyPage() {
   const handleCancel = () => {
     // Clear MFA session and redirect to signin
     document.cookie = 'mfa_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
-    router.push('/auth/signin');
+    router.push(`/${locale}/auth/signin`);
   };
 
   if (isLoading) {
@@ -135,7 +140,7 @@ export default function MfaVerifyPage() {
             <div className="space-y-4">
               <p className="text-destructive">{error}</p>
               <button
-                onClick={() => router.push('/auth/signin')}
+                onClick={() => router.push(`/${locale}/auth/signin`)}
                 className="text-primary hover:underline"
               >
                 {t('backToSignin')}
