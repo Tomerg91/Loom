@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Hero } from '@/components/ui/hero';
 import { Tile } from '@/components/ui/tile';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Users, Calendar, BookOpen, Zap, Globe, Shield } from 'lucide-react';
 
 export default function HomePage() {
@@ -19,12 +19,12 @@ export default function HomePage() {
       >
         {/* Language Switcher */}
         <div className="flex gap-2 mb-6">
-          <Link href="/en">
+          <Link href="/" locale="en">
             <Button variant="outline" size="sm">
               English
             </Button>
           </Link>
-          <Link href="/he">
+          <Link href="/" locale="he">
             <Button variant="outline" size="sm">
               עברית
             </Button>
@@ -33,12 +33,12 @@ export default function HomePage() {
         
         {/* Action Buttons */}
         <div className="flex gap-4">
-          <Link href="/en/dashboard">
+          <Link href="/dashboard" locale="en">
             <Button size="lg">
               Get Started
             </Button>
           </Link>
-          <Link href="/he/dashboard">
+          <Link href="/dashboard" locale="he">
             <Button size="lg" variant="secondary">
               התחל כעת
             </Button>
@@ -58,7 +58,7 @@ export default function HomePage() {
             description="Manage your coaching practice with powerful tools designed for professional growth."
             badge={<Badge className="bg-orange-100 text-orange-800 border-orange-200">Coach</Badge>}
             action={
-              <Link href="/en/coach">
+              <Link href="/coach" locale="en">
                 <Button variant="outline" size="sm" className="w-full">
                   Coach Dashboard
                 </Button>
@@ -74,7 +74,7 @@ export default function HomePage() {
             description="Track your personal development journey with intuitive tools and insights."
             badge={<Badge className="bg-neutral-100 text-neutral-800 border-neutral-200">Client</Badge>}
             action={
-              <Link href="/en/client">
+              <Link href="/client" locale="en">
                 <Button variant="outline" size="sm" className="w-full">
                   Client Portal
                 </Button>
@@ -90,7 +90,7 @@ export default function HomePage() {
             description="Seamless session management and scheduling for coaches and clients."
             badge={<Badge className="bg-red-100 text-red-800 border-red-200">Sessions</Badge>}
             action={
-              <Link href="/en/sessions">
+              <Link href="/sessions" locale="en">
                 <Button variant="outline" size="sm" className="w-full">
                   View Sessions
                 </Button>

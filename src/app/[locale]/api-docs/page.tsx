@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronRight, Copy, ExternalLink, Shield, Clock, FileText, Code } from 'lucide-react';
+import { useLocale } from 'next-intl';
 
 interface ApiSpec {
   info?: {
@@ -68,6 +69,7 @@ interface TestResult {
  */
 
 export default function ApiDocumentationPage() {
+  const locale = useLocale();
   const [apiSpec, setApiSpec] = useState<ApiSpec | null>(null);
   const [loading, setLoading] = useState(true);
   const [authToken, setAuthToken] = useState('');
@@ -227,7 +229,7 @@ export default function ApiDocumentationPage() {
             </div>
             <div className="flex space-x-2">
               <Button variant="outline" size="sm" asChild>
-                <a href="/auth/signin" target="_blank" rel="noopener noreferrer">
+                <a href={`/${locale}/auth/signin`} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="w-4 h-4 mr-1" />
                   Get Token
                 </a>

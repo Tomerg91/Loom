@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/lib/auth/use-user';
 import { AdminOnly, CoachOnly, ClientOnly } from '@/components/ui/conditional-render';
@@ -50,6 +51,7 @@ export function NavMenu() {
   const t = useTranslations('navigation');
   const user = useUser();
   const pathname = usePathname();
+  const locale = useLocale();
   
   if (!user) {
     return null;
@@ -59,7 +61,7 @@ export function NavMenu() {
 
   const handleSignOut = async () => {
     await authService.signOut();
-    window.location.href = '/auth/signin';
+    window.location.href = `/${locale}/auth/signin`;
   };
 
   // Common navigation items
@@ -90,10 +92,11 @@ export function NavMenu() {
   ];
 
   const isActive = (href: string, exact = false) => {
+    const normalized = pathname.replace(/^\/(en|he)/, '');
     if (exact) {
-      return pathname === href;
+      return normalized === href;
     }
-    return pathname.startsWith(href);
+    return normalized.startsWith(href);
   };
 
   const getUserInitials = (user: { firstName?: string; lastName?: string; email: string }) => {

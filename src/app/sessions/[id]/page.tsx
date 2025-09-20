@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import type { Session } from '@/types';
 
 async function fetchSession(id: string): Promise<Session> {
