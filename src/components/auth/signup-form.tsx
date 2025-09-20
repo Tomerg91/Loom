@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
@@ -44,6 +45,7 @@ interface SignupFormProps {
 export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
   const t = useTranslations('auth');
   const router = useRouter();
+  const locale = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -97,8 +99,12 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
         return;
       }
 
-      // Success - redirect to dashboard
-      router.push(redirectTo as '/dashboard');
+      // Success - redirect to dashboard (locale-aware and safe)
+      const safeRedirectTo = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+      const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
+        ? safeRedirectTo
+        : `/${locale}${safeRedirectTo}`;
+      router.push(finalRedirectTo);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
