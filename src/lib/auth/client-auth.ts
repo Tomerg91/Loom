@@ -96,12 +96,15 @@ export class ClientAuthService {
           refresh_token = refresh_token || sess?.session?.refresh_token;
         }
         if (access_token && refresh_token) {
-          // Fire-and-forget; don't block redirect
-          fetch('/api/auth/session', {
+          // Ensure server HTTP-only cookies are set before navigating
+          const resp = await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ access_token, refresh_token }),
-          }).catch(() => {});
+          });
+          if (!resp.ok) {
+            console.warn('Establishing server session failed with status', resp.status);
+          }
         }
       } catch (sessionError) {
         console.warn('Failed to establish server session:', sessionError);
