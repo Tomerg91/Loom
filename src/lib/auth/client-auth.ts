@@ -96,27 +96,19 @@ export class ClientAuthService {
           refresh_token = refresh_token || sess?.session?.refresh_token;
         }
         if (access_token && refresh_token) {
-          await fetch('/api/auth/session', {
+          // Fire-and-forget; don't block redirect
+          fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ access_token, refresh_token }),
-          });
+          }).catch(() => {});
         }
       } catch (sessionError) {
         console.warn('Failed to establish server session:', sessionError);
         // Continue with client-only auth for now
       }
 
-      // Update last seen via API call
-      await this.updateLastSeenViaAPI(authData.user.id).catch(() => {});
-
-      // Fetch user profile via API
-      const userProfile = await this.fetchUserProfileFromAPI(authData.user.id).catch(() => null);
-      if (userProfile) {
-        return { user: userProfile, error: null };
-      }
-
-      // Fallback: construct minimal user from auth payload to allow redirect
+      // Return minimal user immediately for faster redirect
       const u = authData.user;
       return {
         user: {
@@ -129,6 +121,7 @@ export class ClientAuthService {
           status: 'active',
           createdAt: u.created_at,
           updatedAt: u.updated_at,
+          mfaEnabled: !!u.user_metadata?.mfaEnabled,
         },
         error: null,
       };

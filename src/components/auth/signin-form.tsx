@@ -62,36 +62,18 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
       }
 
       if (user) {
-        // Check if user has MFA enabled
-        const mfaService = createMfaService(false);
-        
-        // Check if device is already trusted
-        const isDeviceTrusted = await mfaService.isDeviceTrusted(user.id);
-        
-        if (user.mfaEnabled && !isDeviceTrusted) {
-          // Create MFA session for partial authentication
-          const { session, error: sessionError } = await mfaService.createMfaSession(user.id);
-          
-          if (sessionError) {
-            setError(sessionError);
-            return;
-          }
-
-          if (session) {
-            // Set MFA session cookie
-            document.cookie = `mfa_session=${session.sessionToken}; path=/; secure; samesite=strict; max-age=600`;
-            
-            // Show MFA challenge
-            setMfaData({
-              userId: user.id,
-              sessionToken: session.sessionToken,
-            });
-            setShowMfaChallenge(true);
-            return;
-          }
+        // If MFA is enabled, defer checks to the dedicated MFA page for speed and reliability
+        if (user.mfaEnabled) {
+          const safeRedirectTo = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+          const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
+            ? safeRedirectTo
+            : `/${locale}${safeRedirectTo}`;
+          const mfaUrl = `/${locale}/auth/mfa-verify?redirectTo=${encodeURIComponent(finalRedirectTo)}`;
+          router.push(mfaUrl as '/auth/mfa-verify');
+          return;
         }
 
-        // No MFA required or device is trusted, proceed to dashboard
+        // No MFA required, proceed to app quickly
         const safeRedirectTo = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
         const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
           ? safeRedirectTo
