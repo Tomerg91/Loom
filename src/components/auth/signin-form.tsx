@@ -68,7 +68,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
           const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
             ? safeRedirectTo
             : `/${locale}${safeRedirectTo}`;
-          const mfaUrl = `/${locale}/auth/mfa-verify?redirectTo=${encodeURIComponent(finalRedirectTo)}`;
+          const mfaUrl = `/${locale}/auth/mfa-verify?userId=${encodeURIComponent(user.id)}&redirectTo=${encodeURIComponent(finalRedirectTo)}`;
           router.push(mfaUrl as '/auth/mfa-verify');
           return;
         }
