@@ -3,31 +3,36 @@ import { routing } from './i18n/routing';
 import { applySecurityHeaders } from './lib/security/headers';
 import { validateUserAgent } from './lib/security/validation';
 import createMiddleware from 'next-intl/middleware';
+import { createServerClientWithRequest } from '@/lib/supabase/server';
 
 // Create next-intl middleware
 const intlMiddleware = createMiddleware(routing);
 
 // Simplified auth checking for middleware - avoid complex Supabase imports
-function getSessionFromCookies(request: NextRequest) {
+async function getHasSession(request: NextRequest): Promise<boolean> {
   try {
-    // Get auth cookies that Supabase sets
-    const accessToken = request.cookies.get('sb-access-token')?.value;
-    const refreshToken = request.cookies.get('sb-refresh-token')?.value;
-    
-    // Check for the new cookie format used by newer Supabase versions
-    const authCookie = request.cookies.get('sb-auth-token')?.value;
-    // Also check any sb-* token cookie variants (project-scoped names)
-    const anySbToken = request.cookies
-      .getAll()
-      .some(c => c.name.startsWith('sb-') && (c.name.includes('auth') || c.name.includes('access')) && !!c.value);
-    
-    // Simple validation - if we have tokens, assume user is authenticated
-    // For more robust validation, this should be done in API routes
-    return !!(accessToken || refreshToken || authCookie || anySbToken);
+    // Use a throwaway response for session check; we'll refresh on the final response later
+    const tempRes = NextResponse.next();
+    const supabase = createServerClientWithRequest(request, tempRes);
+    const { data, error } = await supabase.auth.getSession();
+    if (error) return false;
+    return !!data.session?.user;
   } catch (error) {
-    console.warn('Error checking auth cookies in middleware:', error);
+    console.warn('Error checking auth session in middleware:', error);
     return false;
   }
+}
+
+async function refreshSessionOnResponse(request: NextRequest, response: NextResponse) {
+  try {
+    const supabase = createServerClientWithRequest(request, response);
+    // This ensures rotating access tokens are re-cookies on every request
+    await supabase.auth.getSession();
+  } catch (error) {
+    // Non-fatal; proceed without refresh
+    console.warn('Failed to refresh Supabase session in middleware:', error);
+  }
+  return response;
 }
 
 // Routes that require authentication
@@ -140,8 +145,9 @@ export async function middleware(request: NextRequest) {
   // Handle internationalization first - let next-intl handle ALL locale routing
   const intlResponse = intlMiddleware(request);
   if (intlResponse) {
-    // Apply security headers to the intl response
-    const res = applySecurityHeaders(request, intlResponse);
+    // Apply security headers and refresh Supabase session on the intl response
+    let res = applySecurityHeaders(request, intlResponse);
+    res = await refreshSessionOnResponse(request, res);
     if (logRequests) {
       res.headers.set('X-Request-ID', reqId);
       console.info('[RES]', { id: reqId, path: pathname, status: res.status, durMs: Date.now() - start, intl: true });
@@ -152,8 +158,8 @@ export async function middleware(request: NextRequest) {
   // If we get here, the locale is already validated by next-intl
   // Optionally handle authentication for locale-prefixed routes
   try {
-    // Use simplified cookie-based auth checking
-    const hasAuthSession = getSessionFromCookies(request);
+    // Check session via Supabase (more reliable than cookie heuristics)
+    const hasAuthSession = await getHasSession(request);
 
     // Extract locale and path without locale
     const locale = pathname.split('/')[1];
@@ -173,7 +179,8 @@ export async function middleware(request: NextRequest) {
     if (AUTH_GATING_ENABLED) {
       // Redirect authenticated users away from auth pages
       if (hasAuthSession && isAuthRoute) {
-        const res = NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
+        let res = NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
+        res = await refreshSessionOnResponse(request, res);
         if (logRequests) {
           res.headers.set('X-Request-ID', reqId);
           console.info('[RES]', { id: reqId, path: pathname, status: 307, redirect: `/${locale}/dashboard`, reason: 'auth route, already authed', durMs: Date.now() - start });
@@ -183,7 +190,8 @@ export async function middleware(request: NextRequest) {
 
       // Allow access to public routes
       if (isPublicRoute) {
-        const res = applySecurityHeaders(request, NextResponse.next());
+        let res = applySecurityHeaders(request, NextResponse.next());
+        res = await refreshSessionOnResponse(request, res);
         if (logRequests) {
           res.headers.set('X-Request-ID', reqId);
           console.info('[RES]', { id: reqId, path: pathname, status: 200, reason: 'public route', durMs: Date.now() - start });
@@ -195,7 +203,8 @@ export async function middleware(request: NextRequest) {
       if (isProtectedRoute && !hasAuthSession) {
         const redirectUrl = new URL(`/${locale}/auth/signin`, request.url);
         redirectUrl.searchParams.set('redirectTo', pathWithoutLocale);
-        const res = NextResponse.redirect(redirectUrl);
+        let res = NextResponse.redirect(redirectUrl);
+        res = await refreshSessionOnResponse(request, res);
         if (logRequests) {
           res.headers.set('X-Request-ID', reqId);
           console.info('[RES]', { id: reqId, path: pathname, status: 307, redirect: redirectUrl.toString(), reason: 'protected route not authed', durMs: Date.now() - start });
@@ -205,7 +214,8 @@ export async function middleware(request: NextRequest) {
     }
 
     // Either auth gating disabled or checks passed
-    const res = applySecurityHeaders(request, NextResponse.next());
+    let res = applySecurityHeaders(request, NextResponse.next());
+    res = await refreshSessionOnResponse(request, res);
     if (logRequests) {
       res.headers.set('X-Request-ID', reqId);
       console.info('[RES]', { id: reqId, path: pathname, status: 200, durMs: Date.now() - start });
@@ -219,14 +229,16 @@ export async function middleware(request: NextRequest) {
     const pathWithoutLocale = pathname.slice(locale.length + 1) || '/';
     
     if (AUTH_GATING_ENABLED && protectedRoutes.some(route => pathWithoutLocale.startsWith(route))) {
-      const res = NextResponse.redirect(new URL(`/${locale}/auth/signin`, request.url));
+      let res = NextResponse.redirect(new URL(`/${locale}/auth/signin`, request.url));
+      res = await refreshSessionOnResponse(request, res);
       if (logRequests) {
         res.headers.set('X-Request-ID', reqId);
         console.warn('[RES]', { id: reqId, path: pathname, status: 307, redirect: `/${locale}/auth/signin`, reason: 'middleware error on protected route', durMs: Date.now() - start });
       }
       return res;
     }
-    const res = applySecurityHeaders(request, NextResponse.next());
+    let res = applySecurityHeaders(request, NextResponse.next());
+    res = await refreshSessionOnResponse(request, res);
     if (logRequests) {
       res.headers.set('X-Request-ID', reqId);
       console.info('[RES]', { id: reqId, path: pathname, status: 200, durMs: Date.now() - start, errorHandled: true });

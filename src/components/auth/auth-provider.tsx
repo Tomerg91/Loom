@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { type AuthUser } from '@/lib/auth/auth';
 import { createClientAuthService } from '@/lib/auth/client-auth';
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -158,6 +160,8 @@ export function useUser(): AuthUser | null {
 
 export function useRequireAuth(): AuthUser | null {
   const { user, loading } = useAuth();
+  const router = useRouter();
+  const locale = useLocale();
   
   if (loading) {
     // Return null during loading state
@@ -167,7 +171,8 @@ export function useRequireAuth(): AuthUser | null {
   if (!user) {
     // Redirect to login instead of throwing
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      const path = `/${locale}/auth/signin`;
+      router.push(path as '/auth/signin');
     }
     return null;
   }
@@ -177,6 +182,8 @@ export function useRequireAuth(): AuthUser | null {
 
 export function useRequireRole(role: 'client' | 'coach' | 'admin'): AuthUser | null {
   const user = useRequireAuth();
+  const router = useRouter();
+  const locale = useLocale();
   
   if (!user) {
     return null;
@@ -185,7 +192,8 @@ export function useRequireRole(role: 'client' | 'coach' | 'admin'): AuthUser | n
   if (user.role !== role) {
     // Redirect to unauthorized page instead of throwing
     if (typeof window !== 'undefined') {
-      window.location.href = '/unauthorized';
+      const path = `/${locale}/unauthorized`;
+      router.push(path as '/unauthorized');
     }
     return null;
   }
