@@ -3,12 +3,12 @@
 
 -- Fix the create_session function to work with existing schema
 CREATE OR REPLACE FUNCTION create_session(
-  p_coach_id UUID,
-  p_client_id UUID,
-  p_title TEXT,
-  p_scheduled_at TIMESTAMP WITH TIME ZONE,
-  p_duration_minutes INTEGER DEFAULT 60,
-  p_description TEXT DEFAULT NULL
+  coach_id UUID,
+  client_id UUID,
+  title TEXT,
+  scheduled_at TIMESTAMP WITH TIME ZONE,
+  duration_minutes INTEGER DEFAULT 60,
+  description TEXT DEFAULT NULL
 )
 RETURNS UUID AS $$
 DECLARE
@@ -17,8 +17,8 @@ DECLARE
   client_role user_role;
 BEGIN
   -- Validate user roles
-  SELECT u.role INTO coach_role FROM users u WHERE u.id = p_coach_id;
-  SELECT u.role INTO client_role FROM users u WHERE u.id = p_client_id;
+  SELECT u.role INTO coach_role FROM users u WHERE u.id = coach_id;
+  SELECT u.role INTO client_role FROM users u WHERE u.id = client_id;
   
   IF coach_role != 'coach' THEN
     RAISE EXCEPTION 'Coach ID must reference a user with coach role';
@@ -29,13 +29,13 @@ BEGIN
   END IF;
   
   -- Check if time slot is available using the fixed function
-  IF NOT is_time_slot_available(p_coach_id, p_scheduled_at, p_duration_minutes) THEN
+  IF NOT is_time_slot_available(coach_id, scheduled_at, duration_minutes) THEN
     RAISE EXCEPTION 'Time slot is not available';
   END IF;
   
   -- Create the session
   INSERT INTO sessions (coach_id, client_id, title, description, scheduled_at, duration_minutes)
-  VALUES (p_coach_id, p_client_id, p_title, p_description, p_scheduled_at, p_duration_minutes)
+  VALUES (coach_id, client_id, title, description, scheduled_at, duration_minutes)
   RETURNING id INTO new_session_id;
   
   RETURN new_session_id;

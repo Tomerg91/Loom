@@ -34,7 +34,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Fix 2: get_available_time_slots - resolve missing FROM-clause and ambiguous references
 CREATE OR REPLACE FUNCTION get_available_time_slots(
-  p_coach_id UUID,
+  coach_id UUID,
   target_date DATE,
   slot_duration INTEGER DEFAULT 60
 )
@@ -57,7 +57,7 @@ BEGIN
   FOR availability_record IN
     SELECT ca.start_time, ca.end_time, ca.is_available
     FROM coach_availability ca
-    WHERE ca.coach_id = p_coach_id
+    WHERE ca.coach_id = coach_id
       AND ca.day_of_week = day_of_week
       AND ca.is_available = true
   LOOP
@@ -74,7 +74,7 @@ BEGIN
         slot_start,
         slot_end,
         is_time_slot_available(
-          p_coach_id,
+          coach_id,
           target_date + slot_start,
           slot_duration
         );
@@ -89,7 +89,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Fix 3: check_suspicious_activity - resolve ambiguous column reference "user_id"
 CREATE OR REPLACE FUNCTION check_suspicious_activity(
-  p_user_id UUID,
+  user_id UUID,
   time_window INTERVAL DEFAULT '1 hour'
 )
 RETURNS JSONB AS $$
@@ -103,33 +103,33 @@ BEGIN
   -- Count failed authentication attempts
   SELECT COUNT(*) INTO failed_attempts
   FROM security_audit_log sal
-  WHERE sal.user_id = p_user_id
+  WHERE sal.user_id = user_id
   AND sal.event_type LIKE '%_failed'
   AND sal.timestamp > NOW() - time_window;
   
   -- Count warning events
   SELECT COUNT(*) INTO warning_events
   FROM security_audit_log sal
-  WHERE sal.user_id = p_user_id
+  WHERE sal.user_id = user_id
   AND sal.severity = 'warning'
   AND sal.timestamp > NOW() - time_window;
   
   -- Count error events
   SELECT COUNT(*) INTO error_events
   FROM security_audit_log sal
-  WHERE sal.user_id = p_user_id
+  WHERE sal.user_id = user_id
   AND sal.severity = 'error'
   AND sal.timestamp > NOW() - time_window;
   
   -- Count different IP addresses
   SELECT COUNT(DISTINCT sal.ip_address) INTO different_ips
   FROM security_audit_log sal
-  WHERE sal.user_id = p_user_id
+  WHERE sal.user_id = user_id
   AND sal.ip_address IS NOT NULL
   AND sal.timestamp > NOW() - time_window;
   
   result := jsonb_build_object(
-    'user_id', p_user_id,
+    'user_id', user_id,
     'time_window', time_window,
     'failed_attempts', failed_attempts,
     'warning_events', warning_events,
@@ -142,7 +142,7 @@ BEGIN
   -- Log if suspicious activity detected
   IF (result->>'is_suspicious')::boolean THEN
     INSERT INTO security_audit_log (user_id, event_type, event_details, severity)
-    VALUES (p_user_id, 'suspicious_activity_detected', result, 'error');
+    VALUES (user_id, 'suspicious_activity_detected', result, 'error');
   END IF;
   
   RETURN result;
@@ -221,12 +221,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Fix 5: Update create_session function to use the corrected parameter name
 CREATE OR REPLACE FUNCTION create_session(
-  p_coach_id UUID,
-  p_client_id UUID,
-  p_title TEXT,
-  p_scheduled_at TIMESTAMP WITH TIME ZONE,
-  p_duration_minutes INTEGER DEFAULT 60,
-  p_description TEXT DEFAULT NULL
+  coach_id UUID,
+  client_id UUID,
+  title TEXT,
+  scheduled_at TIMESTAMP WITH TIME ZONE,
+  duration_minutes INTEGER DEFAULT 60,
+  description TEXT DEFAULT NULL
 )
 RETURNS UUID AS $$
 DECLARE
@@ -235,8 +235,8 @@ DECLARE
   client_role user_role;
 BEGIN
   -- Validate user roles
-  SELECT u.role INTO coach_role FROM users u WHERE u.id = p_coach_id;
-  SELECT u.role INTO client_role FROM users u WHERE u.id = p_client_id;
+  SELECT u.role INTO coach_role FROM users u WHERE u.id = coach_id;
+  SELECT u.role INTO client_role FROM users u WHERE u.id = client_id;
   
   IF coach_role != 'coach' THEN
     RAISE EXCEPTION 'Coach ID must reference a user with coach role';
@@ -247,13 +247,13 @@ BEGIN
   END IF;
   
   -- Check if time slot is available using the fixed function
-  IF NOT is_time_slot_available(p_coach_id, p_scheduled_at, p_duration_minutes) THEN
+  IF NOT is_time_slot_available(coach_id, scheduled_at, duration_minutes) THEN
     RAISE EXCEPTION 'Time slot is not available';
   END IF;
   
   -- Create the session
   INSERT INTO sessions (coach_id, client_id, title, description, scheduled_at, duration_minutes)
-  VALUES (p_coach_id, p_client_id, p_title, p_description, p_scheduled_at, p_duration_minutes)
+  VALUES (coach_id, client_id, title, description, scheduled_at, duration_minutes)
   RETURNING id INTO new_session_id;
   
   RETURN new_session_id;
