@@ -117,15 +117,11 @@ export default async function HomePage({ params }: HomePageProps) {
       >
         <div className="flex flex-col items-center gap-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <Link href={hero.primaryHref as '/auth/signin'} locale={locale}>
-              <Button size="lg" className="min-w-[200px]">
-                {hero.primaryCta}
-              </Button>
+            <Link href={hero.primaryHref as '/auth/signin'} locale={locale} className="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-light tracking-wide bg-orange-600 text-white hover:bg-orange-700 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal h-13 px-8 py-3 text-base min-w-[200px]">
+              {hero.primaryCta}
             </Link>
-            <Link href={hero.secondaryHref as '/auth/signup'} locale={locale}>
-              <Button size="lg" variant="secondary" className="min-w-[200px]">
-                {hero.secondaryCta}
-              </Button>
+            <Link href={hero.secondaryHref as '/auth/signup'} locale={locale} className="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-light tracking-wide bg-neutral-900 text-white hover:bg-neutral-800 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal h-13 px-8 py-3 text-base min-w-[200px]">
+              {hero.secondaryCta}
             </Link>
           </div>
           <LanguageSwitcher variant="button" size="sm" className="justify-center" />

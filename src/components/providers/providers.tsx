@@ -108,18 +108,18 @@ export function Providers({ children, locale, messages, initialUser }: Providers
                 <ErrorBoundary>
                   <AuthProvider initialUser={initialUser}>
                     {/* Load realtime and analytics after critical path */}
-                    <Suspense fallback={mounted ? null : <LayoutStabilizer />}>
-                      <RealtimeProvider>
-                        {mounted && loadAnalytics && (
+                    {/* <Suspense fallback={mounted ? null : <LayoutStabilizer />}> */}
+                      {/* <RealtimeProvider> */}
+                        {/* {mounted && loadAnalytics && (
                           <AnalyticsProvider>
                             <Suspense fallback={null}>
                               <PerformanceMonitor />
                             </Suspense>
                           </AnalyticsProvider>
-                        )}
+                        )} */}
                         {children}
-                      </RealtimeProvider>
-                    </Suspense>
+                      {/* </RealtimeProvider> */}
+                    {/* </Suspense> */}
                   </AuthProvider>
                 </ErrorBoundary>
               </StoreProvider>
