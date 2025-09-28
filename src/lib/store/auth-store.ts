@@ -34,7 +34,7 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       // State
       user: null,
-      isLoading: false,
+      isLoading: true, // Start as loading until auth state is determined
       error: null,
       // MFA state
       mfaRequired: false,

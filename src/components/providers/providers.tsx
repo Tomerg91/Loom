@@ -98,11 +98,6 @@ export function Providers({ children, locale, messages, initialUser }: Providers
     return loadAnalyticsDelayed();
   }, [initialUser]);
   
-  // Provide layout stabilization during hydration
-  if (!mounted) {
-    return <LayoutStabilizer />;
-  }
-
   return (
     <ErrorBoundary>
       <NextIntlClientProvider locale={locale} messages={messages}>
@@ -113,9 +108,9 @@ export function Providers({ children, locale, messages, initialUser }: Providers
                 <ErrorBoundary>
                   <AuthProvider initialUser={initialUser}>
                     {/* Load realtime and analytics after critical path */}
-                    <Suspense fallback={null}>
+                    <Suspense fallback={mounted ? null : <LayoutStabilizer />}>
                       <RealtimeProvider>
-                        {loadAnalytics && (
+                        {mounted && loadAnalytics && (
                           <AnalyticsProvider>
                             <Suspense fallback={null}>
                               <PerformanceMonitor />

@@ -30,15 +30,20 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
 
   const authService = useMemo(() => createClientAuthService(), []);
 
+  // Immediately hydrate store with SSR user if available
+  useMemo(() => {
+    if (initialUser && !user) {
+      setUser(initialUser);
+      setLoading(false);
+    }
+  }, [initialUser, user, setUser, setLoading]);
+
   // Session hydration + auth state subscription
   useEffect(() => {
     let isMounted = true;
 
-    // If SSR provided an initial user, hydrate store immediately
-    if (initialUser) {
-      setUser(initialUser);
-      setLoading(false);
-    } else {
+    // Only validate session if we don't have an initial user from SSR
+    if (!initialUser) {
       // Ensure we validate current session and hydrate user on app startup
       setLoading(true);
       (async () => {
