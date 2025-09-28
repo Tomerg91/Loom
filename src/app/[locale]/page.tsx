@@ -34,9 +34,78 @@ export default async function HomePage({ params }: HomePageProps) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'landing' });
 
-  const hero = t.raw('hero') as HeroContent;
-  const actionBar = t.raw('actionBar') as ActionBarContent;
-  const techStack = t.raw('tech.stack') as string[];
+  const getHeroContent = (): HeroContent => {
+    try {
+      const raw = t.raw('hero') as Partial<HeroContent> | undefined;
+      if (!raw) {
+        throw new Error('Missing hero translations');
+      }
+      return {
+        chip: raw.chip ?? 'Loom',
+        title: raw.title ?? 'Loom',
+        description: raw.description ?? '',
+        primaryCta: raw.primaryCta ?? 'Explore the platform',
+        primaryHref: (raw.primaryHref as HeroContent['primaryHref']) ?? '/auth/signin',
+        secondaryCta: raw.secondaryCta ?? 'See it in action',
+        secondaryHref: (raw.secondaryHref as HeroContent['secondaryHref']) ?? '/auth/signup',
+      };
+    } catch (error) {
+      console.warn('Falling back to default hero content', error);
+      return {
+        chip: 'Loom',
+        title: 'Build thriving coaching relationships',
+        description: 'All-in-one coaching OS for coaches, clients, and admins.',
+        primaryCta: 'Explore the platform',
+        primaryHref: '/auth/signin',
+        secondaryCta: 'See it in action',
+        secondaryHref: '/auth/signup',
+      };
+    }
+  };
+
+  const getActionBarContent = (): ActionBarContent => {
+    try {
+      const raw = t.raw('actionBar') as Partial<ActionBarContent> | undefined;
+      if (!raw) {
+        throw new Error('Missing action bar translations');
+      }
+      return {
+        headline: raw.headline ?? 'Ready to experience Loom?',
+        supporting: raw.supporting ?? 'Sign in to continue or request a guided tour from our team.',
+        primary: raw.primary ?? 'Sign in',
+        primaryHref: (raw.primaryHref as ActionBarContent['primaryHref']) ?? '/auth/signin',
+        secondary: raw.secondary ?? 'Request a tour',
+        secondaryHref: (raw.secondaryHref as ActionBarContent['secondaryHref']) ?? 'mailto:hello@loom.app',
+      };
+    } catch (error) {
+      console.warn('Falling back to default action bar content', error);
+      return {
+        headline: 'Ready to experience Loom?',
+        supporting: 'Sign in to continue or request a guided tour from our team.',
+        primary: 'Sign in',
+        primaryHref: '/auth/signin',
+        secondary: 'Request a tour',
+        secondaryHref: 'mailto:hello@loom.app',
+      };
+    }
+  };
+
+  const getTechStack = (): string[] => {
+    try {
+      const raw = t.raw('tech.stack');
+      if (Array.isArray(raw)) {
+        return raw.map(String);
+      }
+      return [];
+    } catch (error) {
+      console.warn('Falling back to default tech stack', error);
+      return ['Next.js 15', 'React 19', 'TypeScript', 'Supabase'];
+    }
+  };
+
+  const hero = getHeroContent();
+  const actionBar = getActionBarContent();
+  const techStack = getTechStack();
 
   return (
     <div className="min-h-screen bg-background">
