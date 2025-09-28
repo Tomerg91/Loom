@@ -13,6 +13,34 @@ interface HeroProps extends React.HTMLAttributes<HTMLDivElement> {
   animationDelay?: number
 }
 
+const usePrefersReducedMotion = () => {
+  const [prefersReducedMotion, setPrefersReducedMotion] = React.useState(false)
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
+      setPrefersReducedMotion(event.matches)
+    }
+
+    // Set initial value
+    handleChange(mediaQuery)
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
+    }
+
+    mediaQuery.addListener(handleChange)
+    return () => mediaQuery.removeListener(handleChange)
+  }, [])
+
+  return prefersReducedMotion
+}
+
 const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
   ({
     className,
@@ -25,15 +53,21 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
     animationDelay = 0,
     ...props
   }, ref) => {
-    const [isVisible, setIsVisible] = React.useState(false)
+    const prefersReducedMotion = usePrefersReducedMotion()
+    const [isVisible, setIsVisible] = React.useState(prefersReducedMotion)
 
     React.useEffect(() => {
-      const timer = setTimeout(() => {
+      if (prefersReducedMotion) {
+        setIsVisible(true)
+        return
+      }
+
+      const timer = window.setTimeout(() => {
         setIsVisible(true)
       }, animationDelay)
 
-      return () => clearTimeout(timer)
-    }, [animationDelay])
+      return () => window.clearTimeout(timer)
+    }, [animationDelay, prefersReducedMotion])
 
     const backgroundClasses = {
       default: 'bg-white',
@@ -69,7 +103,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
             {subtitle && (
               <div
                 className={cn(
-                  'mb-6 opacity-0 transform translate-y-4 transition-all duration-700 ease-out',
+                  'mb-6 opacity-0 transform translate-y-4 transition-all duration-700 ease-out motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:transition-none',
                   isVisible && 'opacity-100 translate-y-0'
                 )}
                 style={{ transitionDelay: '200ms' }}
@@ -83,7 +117,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
             {/* Main Title */}
             <h1
               className={cn(
-                'font-extralight tracking-tight text-neutral-900 mb-8 opacity-0 transform translate-y-6 transition-all duration-800 ease-out',
+                'font-extralight tracking-tight text-neutral-900 mb-8 opacity-0 transform translate-y-6 transition-all duration-800 ease-out motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:transition-none',
                 titleSizeClasses[titleSize],
                 isVisible && 'opacity-100 translate-y-0'
               )}
@@ -96,7 +130,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
             {description && (
               <p
                 className={cn(
-                  'mx-auto max-w-2xl text-lg md:text-xl font-light leading-relaxed text-neutral-600 mb-10 opacity-0 transform translate-y-4 transition-all duration-700 ease-out',
+                  'mx-auto max-w-2xl text-lg md:text-xl font-light leading-relaxed text-neutral-600 mb-10 opacity-0 transform translate-y-4 transition-all duration-700 ease-out motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:transition-none',
                   isVisible && 'opacity-100 translate-y-0'
                 )}
                 style={{ transitionDelay: '600ms' }}
@@ -109,7 +143,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
             {children && (
               <div
                 className={cn(
-                  'flex flex-col sm:flex-row gap-4 justify-center items-center opacity-0 transform translate-y-4 transition-all duration-700 ease-out',
+                  'flex flex-col sm:flex-row gap-4 justify-center items-center opacity-0 transform translate-y-4 transition-all duration-700 ease-out motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:transition-none',
                   isVisible && 'opacity-100 translate-y-0'
                 )}
                 style={{ transitionDelay: '800ms' }}
@@ -123,14 +157,14 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         {/* Decorative elements */}
         <div
           className={cn(
-            'absolute -top-40 -right-40 w-80 h-80 bg-orange-200 rounded-full opacity-20 blur-3xl transition-all duration-1000 ease-out',
+            'absolute -top-40 -right-40 w-80 h-80 bg-orange-200 rounded-full opacity-20 blur-3xl transition-all duration-1000 ease-out motion-reduce:opacity-20 motion-reduce:scale-100 motion-reduce:transition-none',
             isVisible && 'opacity-30 scale-110'
           )}
           style={{ transitionDelay: '1000ms' }}
         />
         <div
           className={cn(
-            'absolute -bottom-40 -left-40 w-80 h-80 bg-red-200 rounded-full opacity-20 blur-3xl transition-all duration-1000 ease-out',
+            'absolute -bottom-40 -left-40 w-80 h-80 bg-red-200 rounded-full opacity-20 blur-3xl transition-all duration-1000 ease-out motion-reduce:opacity-20 motion-reduce:scale-100 motion-reduce:transition-none',
             isVisible && 'opacity-30 scale-110'
           )}
           style={{ transitionDelay: '1200ms' }}

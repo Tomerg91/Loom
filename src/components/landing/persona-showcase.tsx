@@ -35,9 +35,13 @@ export function PersonaShowcase() {
     const keys: PersonaKey[] = ['coach', 'client', 'admin'];
 
     return keys.map((key) => {
-      const highlights = t.raw(`${key}.highlights`) as string[];
-      const walkthrough = t.raw(`${key}.walkthrough`) as string[];
-      const cta = t.raw(`${key}.cta`) as { label: string } | undefined;
+      const rawHighlights = t.raw(`${key}.highlights`);
+      const highlights = Array.isArray(rawHighlights) ? rawHighlights.map(String) : [];
+
+      const rawWalkthrough = t.raw(`${key}.walkthrough`);
+      const walkthrough = Array.isArray(rawWalkthrough) ? rawWalkthrough.map(String) : [];
+
+      const cta = t.raw(`${key}.cta`) as { label?: string } | undefined;
 
       return {
         id: key,
@@ -69,7 +73,7 @@ export function PersonaShowcase() {
 
       <div className="max-w-6xl mx-auto mt-10">
         <Tabs defaultValue={personas[0].id} className="w-full">
-          <TabsList className="mx-auto flex-wrap gap-2 bg-muted/60 p-1.5">
+          <TabsList className="mx-auto flex-wrap gap-2 bg-muted/60 p-1.5" aria-label={t('title')}>
             {personas.map((persona) => (
               <TabsTrigger
                 key={persona.id}

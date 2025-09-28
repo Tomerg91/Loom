@@ -98,6 +98,13 @@ interface QuickActionConfig {
 const UPCOMING_LIMIT = 5;
 const DEFAULT_CURRENCY = 'USD';
 
+const resolveCurrency = (locale: string) => {
+  if (locale?.startsWith('he')) {
+    return 'ILS';
+  }
+  return DEFAULT_CURRENCY;
+};
+
 const defaultCoachStats: CoachStats = {
   totalSessions: 0,
   completedSessions: 0,
@@ -219,7 +226,12 @@ export function DashboardContent({ translations, locale }: DashboardContentProps
 
   const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
   const currencyFormatter = useMemo(
-    () => new Intl.NumberFormat(locale, { style: 'currency', currency: DEFAULT_CURRENCY, maximumFractionDigits: 0 }),
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: resolveCurrency(locale),
+        maximumFractionDigits: 0,
+      }),
     [locale]
   );
   const decimalFormatter = useMemo(
@@ -504,7 +516,11 @@ export function DashboardContent({ translations, locale }: DashboardContentProps
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {isError && (
-          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+          <div
+            className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
+            role="alert"
+            aria-live="polite"
+          >
             {t('loadError')}
           </div>
         )}
