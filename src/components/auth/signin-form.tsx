@@ -1,30 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { createClientAuthService } from '@/lib/auth/client-auth';
-import { createMfaService } from '@/lib/services/mfa-service';
-import { basicPasswordSchema } from '@/lib/security/password';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
-import { MfaVerificationForm } from './mfa-verification-form';
-
-const signinSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: basicPasswordSchema,
-});
-
-type SigninFormData = z.infer<typeof signinSchema>;
 
 interface SigninFormProps {
   redirectTo?: string;
@@ -32,90 +14,7 @@ interface SigninFormProps {
 
 export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   const t = useTranslations('auth');
-  const router = useRouter();
   const locale = useLocale();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showMfaChallenge, setShowMfaChallenge] = useState(false);
-  const [mfaData, setMfaData] = useState<{ userId: string; sessionToken?: string } | null>(null);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<SigninFormData>({
-    resolver: zodResolver(signinSchema),
-  });
-
-  const onSubmit = async (data: SigninFormData) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const authService = createClientAuthService();
-      const { user, error: authError } = await authService.signIn(data);
-
-      if (authError) {
-        setError(authError);
-        return;
-      }
-
-      if (user) {
-        // If MFA is enabled, defer checks to the dedicated MFA page for speed and reliability
-        if (user.mfaEnabled) {
-          const safeRedirectTo = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
-          const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
-            ? safeRedirectTo
-            : `/${locale}${safeRedirectTo}`;
-          const mfaUrl = `/${locale}/auth/mfa-verify?userId=${encodeURIComponent(user.id)}&redirectTo=${encodeURIComponent(finalRedirectTo)}`;
-          router.push(mfaUrl as '/auth/mfa-verify');
-          return;
-        }
-
-        // No MFA required, proceed to app quickly
-        const safeRedirectTo = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
-        const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
-          ? safeRedirectTo
-          : `/${locale}${safeRedirectTo}`;
-        router.push(finalRedirectTo);
-        router.refresh();
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleMfaSuccess = () => {
-    const safeRedirectTo = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
-    const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
-      ? safeRedirectTo
-      : `/${locale}${safeRedirectTo}`;
-    router.push(finalRedirectTo);
-    router.refresh();
-  };
-
-  const handleMfaCancel = () => {
-    setShowMfaChallenge(false);
-    setMfaData(null);
-    // Clear MFA session cookie
-    document.cookie = 'mfa_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
-  };
-
-  // Show MFA challenge if required
-  if (showMfaChallenge && mfaData) {
-    return (
-      <MfaVerificationForm
-        userId={mfaData.userId}
-        mfaSessionToken={mfaData.sessionToken}
-        redirectTo={redirectTo}
-        onSuccess={handleMfaSuccess}
-        onCancel={handleMfaCancel}
-      />
-    );
-  }
 
   return (
     <Card className="w-full max-w-md mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
@@ -125,23 +24,18 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
           {t('signin.description')}
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form method="POST" action="/api/auth/signin/browser">
         <CardContent className="space-y-6 px-8">
-          {error && (
-            <Alert variant="destructive" className="border-red-500 bg-red-50 text-red-800">
-              <AlertDescription className="font-light">{error}</AlertDescription>
-            </Alert>
-          )}
-          
+          <input type="hidden" name="redirectTo" value={redirectTo} />
+          <input type="hidden" name="locale" value={locale} />
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium text-neutral-900">{t('email')}</Label>
             <Input
               id="email"
               type="email"
               placeholder={t('emailPlaceholder')}
-              {...register('email')}
-              error={errors.email?.message}
-              disabled={isLoading}
+              name="email"
+              required
               data-testid="email-input"
               variant="default"
               inputSize="md"
@@ -150,21 +44,16 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
 
           <div className="space-y-2">
             <Label htmlFor="password" className="text-sm font-medium text-neutral-900">{t('password')}</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder={t('passwordPlaceholder')}
-                {...register('password')}
-                error={errors.password?.message}
-                disabled={isLoading}
-                data-testid="password-input"
-                variant="default"
-                inputSize="md"
-                rightIcon={showPassword ? EyeOff : Eye}
-                onRightIconClick={() => setShowPassword(!showPassword)}
-              />
-            </div>
+            <Input
+              id="password"
+              type="password"
+              placeholder={t('passwordPlaceholder')}
+              name="password"
+              required
+              data-testid="password-input"
+              variant="default"
+              inputSize="md"
+            />
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-6 px-8 pb-8">
@@ -173,10 +62,8 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
             variant="default" 
             size="lg" 
             className="w-full" 
-            disabled={isLoading} 
             data-testid="signin-button"
           >
-            {isLoading && <Loader2 className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4 animate-spin" />}
             {t('signin.button')}
           </Button>
           

@@ -111,8 +111,10 @@ export function MfaVerificationForm({
           await mfaService.completeMfaSession(mfaSessionToken);
         }
 
-        // Set MFA session cookie
+        // Mark MFA complete for this browser session
         document.cookie = `mfa_verified=true; path=/; secure; samesite=strict; max-age=3600`;
+        // Clear pending flag set during password sign-in
+        document.cookie = `mfa_pending=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`;
         
         if (onSuccess) {
           onSuccess();

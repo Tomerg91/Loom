@@ -160,6 +160,7 @@ export async function middleware(request: NextRequest) {
   try {
     // Check session via Supabase (more reliable than cookie heuristics)
     const hasAuthSession = await getHasSession(request);
+    const mfaPending = request.cookies.get('mfa_pending')?.value === 'true';
 
     // Extract locale and path without locale
     const locale = pathname.split('/')[1];
@@ -175,10 +176,25 @@ export async function middleware(request: NextRequest) {
     );
 
     const isAuthRoute = pathWithoutLocale.startsWith('/auth/');
+    const isMfaVerifyRoute = pathWithoutLocale.startsWith('/auth/mfa-verify');
 
     if (AUTH_GATING_ENABLED) {
-      // Redirect authenticated users away from auth pages
-      if (hasAuthSession && isAuthRoute) {
+      // MFA gating: if authenticated and pending MFA, force to MFA verify page
+      if (hasAuthSession && mfaPending && !isMfaVerifyRoute) {
+        const redirectUrl = new URL(`/${locale}/auth/mfa-verify`, request.url);
+        const origRedirect = request.nextUrl.searchParams.get('redirectTo') || '/dashboard';
+        redirectUrl.searchParams.set('redirectTo', origRedirect);
+        let res = NextResponse.redirect(redirectUrl);
+        res = await refreshSessionOnResponse(request, res);
+        if (logRequests) {
+          res.headers.set('X-Request-ID', reqId);
+          console.info('[RES]', { id: reqId, path: pathname, status: 307, redirect: redirectUrl.toString(), reason: 'mfa pending redirect', durMs: Date.now() - start });
+        }
+        return res;
+      }
+
+      // Redirect authenticated users away from other auth pages
+      if (hasAuthSession && isAuthRoute && !mfaPending) {
         let res = NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
         res = await refreshSessionOnResponse(request, res);
         if (logRequests) {

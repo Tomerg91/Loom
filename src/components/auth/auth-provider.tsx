@@ -1,11 +1,10 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext } from 'react';
 import { type AuthUser } from '@/lib/auth/auth';
-import { createClientAuthService } from '@/lib/auth/client-auth';
-import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import { useUnifiedAuth } from '@/lib/auth/use-auth';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -32,116 +31,15 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children, initialUser = null }: AuthProviderProps) {
-  const [user, setUser] = useState<AuthUser | null>(initialUser);
-  const [loading, setLoading] = useState(!initialUser);
-  const authService = useMemo(() => createClientAuthService(), []);
+  const { user, loading, signIn, signUp, signOut, updateProfile } = useUnifiedAuth({ initialUser });
 
-  useEffect(() => {
-    let mounted = true;
-
-    const getInitialUser = async () => {
-      try {
-        const currentUser = await authService.getCurrentUser();
-        if (mounted) {
-          setUser(currentUser);
-        }
-      } catch (error) {
-        console.error('Error getting initial user:', error);
-        if (mounted) {
-          setUser(null);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    if (!initialUser) {
-      getInitialUser();
-    }
-
-    // Listen to auth state changes
-    const { data: { subscription } } = authService.onAuthStateChange((user) => {
-      if (mounted) {
-        setUser(user);
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription?.unsubscribe();
-    };
-  }, [authService, initialUser]);
-
-  const signIn = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const result = await authService.signIn({ email, password });
-      if (result.user) {
-        setUser(result.user);
-      }
-      return result;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signUp = async (data: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    role: 'client' | 'coach';
-    phone?: string;
-    language: 'en' | 'he';
-  }) => {
-    setLoading(true);
-    try {
-      const result = await authService.signUp(data);
-      if (result.user) {
-        setUser(result.user);
-      }
-      return result;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    setLoading(true);
-    try {
-      const result = await authService.signOut();
-      setUser(null);
-      return result;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateProfile = async (updates: Partial<AuthUser>) => {
-    try {
-      const result = await authService.updateProfile(updates);
-      if (result.user) {
-        setUser(result.user);
-      }
-      return result;
-    } catch (error) {
-      return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-  };
-
-  const value: AuthContextType = {
-    user,
-    loading,
-    signIn,
-    signUp,
-    signOut,
-    updateProfile,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{ user, loading, signIn, signUp, signOut, updateProfile }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthContextType {

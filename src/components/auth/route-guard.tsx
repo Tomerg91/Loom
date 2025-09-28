@@ -9,6 +9,7 @@ import type { Permission } from '@/lib/permissions/permissions';
 import type { UserRole } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { resolveRedirect } from '@/lib/utils/redirect';
 
 interface RouteGuardProps {
   children: React.ReactNode;
@@ -62,11 +63,7 @@ export function RouteGuard({
     const checkAuthAndRedirect = () => {
       // Check if authentication is required
       if (requireAuth && !user) {
-        const rawLoginPath = redirectTo || '/auth/signin';
-        const safeLoginPath = rawLoginPath && rawLoginPath.startsWith('/') ? rawLoginPath : '/auth/signin';
-        const finalLoginPath = /^\/(en|he)\//.test(safeLoginPath)
-          ? safeLoginPath
-          : `/${locale}${safeLoginPath}`;
+        const finalLoginPath = resolveRedirect(locale, redirectTo || '/auth/signin');
         router.push(finalLoginPath as '/auth/signin');
         return;
       }
@@ -78,22 +75,14 @@ export function RouteGuard({
 
       // Check role requirements
       if ((requireRole || requireAnyRole) && !hasRequiredRole) {
-        const rawUnauthorizedPath = redirectTo || '/dashboard';
-        const safeUnauthorizedPath = rawUnauthorizedPath && rawUnauthorizedPath.startsWith('/') ? rawUnauthorizedPath : '/dashboard';
-        const finalUnauthorizedPath = /^\/(en|he)\//.test(safeUnauthorizedPath)
-          ? safeUnauthorizedPath
-          : `/${locale}${safeUnauthorizedPath}`;
+        const finalUnauthorizedPath = resolveRedirect(locale, redirectTo || '/dashboard');
         router.push(finalUnauthorizedPath as '/dashboard');
         return;
       }
 
       // Check permission requirements
       if (!permissionSatisfied || !anyPermissionSatisfied) {
-        const rawUnauthorizedPath = redirectTo || '/dashboard';
-        const safeUnauthorizedPath = rawUnauthorizedPath && rawUnauthorizedPath.startsWith('/') ? rawUnauthorizedPath : '/dashboard';
-        const finalUnauthorizedPath = /^\/(en|he)\//.test(safeUnauthorizedPath)
-          ? safeUnauthorizedPath
-          : `/${locale}${safeUnauthorizedPath}`;
+        const finalUnauthorizedPath = resolveRedirect(locale, redirectTo || '/dashboard');
         router.push(finalUnauthorizedPath as '/dashboard');
         return;
       }
