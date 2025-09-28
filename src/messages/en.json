@@ -53,6 +53,99 @@
       "client": "Client"
     }
   },
+  "landing": {
+    "hero": {
+      "chip": "Modern coaching OS",
+      "title": "Build thriving coaching relationships",
+      "description": "Loom orchestrates enrollment, sessions, and outcomes with experiences tailored to coaches, clients, and admins.",
+      "primaryCta": "Explore the platform",
+      "primaryHref": "/auth/signin",
+      "secondaryCta": "See it in action",
+      "secondaryHref": "/auth/signup"
+    },
+    "personas": {
+      "title": "Pick your journey",
+      "subtitle": "Switch between roles to preview a personalized workspace.",
+      "coach": {
+        "label": "Coach",
+        "tagline": "Grow every client with clarity",
+        "description": "Stay ahead of every engagement with live session timelines, insight-ready notes, and outcome dashboards you can trust.",
+        "highlights": [
+          "AI-drafted prep and follow-up notes",
+          "Availability syncing with smart conflict detection",
+          "Client progress snapshots your leadership team can share"
+        ],
+        "walkthrough": [
+          "Review today’s priorities across clients",
+          "Launch co-created agendas and track commitments",
+          "Send outcome recaps that auto-sync to reports"
+        ],
+        "cta": {
+          "label": "Open the coach workspace",
+          "href": "/coach"
+        }
+      },
+      "client": {
+        "label": "Client",
+        "tagline": "Feel guided every step",
+        "description": "Session reminders, reflection nudges, and goal summaries keep your growth journey connected and motivating.",
+        "highlights": [
+          "Mobile-friendly reflections with mood tracking",
+          "Smart reminders that adapt to your schedule",
+          "Progress visualizations your coach curates"
+        ],
+        "walkthrough": [
+          "Confirm upcoming sessions in two taps",
+          "Capture wins and blockers with guided prompts",
+          "Celebrate milestones with shareable insights"
+        ],
+        "cta": {
+          "label": "Enter the client portal",
+          "href": "/client"
+        }
+      },
+      "admin": {
+        "label": "Admin",
+        "tagline": "Run programs at executive scale",
+        "description": "Operational visibility across cohorts, compliance guardrails, and ROI analytics out of the box.",
+        "highlights": [
+          "Health dashboard across teams and cohorts",
+          "Automated policy and billing workflows",
+          "Executive-ready outcome and adoption reporting"
+        ],
+        "walkthrough": [
+          "Spot risks with live adoption signals",
+          "Trigger playbooks for stalled engagements",
+          "Share ROI rollups with leadership in minutes"
+        ],
+        "cta": {
+          "label": "Review the admin console",
+          "href": "/admin/analytics"
+        }
+      }
+    },
+    "actionBar": {
+      "headline": "Ready to experience Loom?",
+      "supporting": "Sign in to continue or request a guided tour from our team.",
+      "primary": "Sign in",
+      "primaryHref": "/auth/signin",
+      "secondary": "Request a tour",
+      "secondaryHref": "mailto:hello@loom.app"
+    },
+    "tech": {
+      "title": "Built with the modern product toolkit",
+      "stack": [
+        "Next.js 15",
+        "React 19",
+        "TypeScript",
+        "Supabase",
+        "Edge-first APIs",
+        "Tailwind CSS",
+        "Radix UI",
+        "TanStack Query"
+      ]
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "description": "Your coaching platform overview",
@@ -69,6 +162,15 @@
       "completedSessions": "Completed Sessions",
       "activeClients": "Active Clients",
       "notifications": "Notifications",
+      "averageRating": "Average Rating",
+      "totalRevenue": "Revenue",
+      "totalReflections": "Reflections",
+      "averageMood": "Avg. Mood",
+      "goalsAchieved": "Goals Achieved",
+      "currentStreak": "Current Streak",
+      "totalUsers": "Total Users",
+      "activeUsers": "Active Users",
+      "activeCoaches": "Active Coaches",
       "allTime": "All time",
       "thisWeek": "This week",
       "thisMonth": "This month",
@@ -81,6 +183,7 @@
       "with": "with",
       "empty": "No upcoming sessions scheduled"
     },
+    "loadError": "We couldn't load your latest insights. Please try refreshing.",
     "quickActions": {
       "title": "Quick Actions",
       "description": "Common tasks and shortcuts",
@@ -89,7 +192,10 @@
       "addNote": "Add Coach Note",
       "bookSession": "Book a Session",
       "addReflection": "Add Reflection",
-      "viewProgress": "View My Progress"
+      "viewProgress": "View My Progress",
+      "manageUsers": "Manage Users",
+      "reviewAnalytics": "Review Analytics",
+      "systemHealth": "System Health"
     }
   },
   "mfa": {
