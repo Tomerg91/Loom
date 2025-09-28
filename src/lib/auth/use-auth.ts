@@ -56,8 +56,10 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
             clearSessions();
             clearNotifications();
             setLoading(false);
+          } else {
+            // Session is valid, keep the initial user and stop loading
+            setLoading(false);
           }
-          // If session is valid, keep the initial user (already set)
         } else {
           // No initial user, validate and hydrate session
           setLoading(true);
