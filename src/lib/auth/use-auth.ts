@@ -42,12 +42,25 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
   useEffect(() => {
     let isMounted = true;
 
-    // Only validate session if we don't have an initial user from SSR
-    if (!initialUser) {
-      // Ensure we validate current session and hydrate user on app startup
-      setLoading(true);
-      (async () => {
-        try {
+    // Always validate session, but handle initial user differently
+    (async () => {
+      try {
+        // If we have initial user, validate their session is still valid
+        if (initialUser) {
+          const session = await authService.getSession();
+          if (!isMounted) return;
+          
+          if (!session?.user) {
+            // SSR user but no valid client session - session expired
+            clearAuth();
+            clearSessions();
+            clearNotifications();
+            setLoading(false);
+          }
+          // If session is valid, keep the initial user (already set)
+        } else {
+          // No initial user, validate and hydrate session
+          setLoading(true);
           const session = await authService.getSession();
           if (!isMounted) return;
 
@@ -61,24 +74,26 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
             clearSessions();
             clearNotifications();
           }
-        } catch (err) {
-          if (!isMounted) return;
-          setError(err instanceof Error ? err.message : 'Failed to hydrate session');
-          clearAuth();
-        } finally {
-          if (isMounted) setLoading(false);
+          setLoading(false);
         }
-      })();
-    }
+      } catch (err) {
+        if (!isMounted) return;
+        setError(err instanceof Error ? err.message : 'Failed to hydrate session');
+        clearAuth();
+        setLoading(false);
+      }
+    })();
 
     // Subscribe to Supabase auth state changes and keep store in sync
     const { data: { subscription } } = authService.onAuthStateChange(async (u) => {
       if (!isMounted) return;
+      
       if (u) {
+        // User signed in
         setUser(u);
         setLoading(false);
       } else {
-        // Signed out or no session
+        // User signed out - always clear regardless of initial state
         clearAuth();
         clearSessions();
         clearNotifications();
