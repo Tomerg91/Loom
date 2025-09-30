@@ -24,22 +24,24 @@ import {
 import { SessionList } from '@/components/sessions/session-list';
 import { SessionCalendar } from '@/components/sessions/session-calendar';
 import { CoachClientsPage } from '@/components/coach/clients-page';
+import { ReflectionSpaceWidget } from '@/components/coach/reflection-space-widget';
 import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { Session } from '@/types';
 
 // Helper function moved outside component to prevent re-creation
+// Updated with Satya Method colors: moss green for completion, teal for actions
 const getActivityIcon = (type: RecentActivity['type']) => {
   switch (type) {
     case 'session_completed':
-      return <CheckCircle className="h-4 w-4 text-green-600" />;
+      return <CheckCircle className="h-4 w-4 text-moss-600" />;
     case 'note_added':
-      return <MessageSquare className="h-4 w-4 text-blue-600" />;
+      return <MessageSquare className="h-4 w-4 text-teal-600" />;
     case 'client_joined':
-      return <UserPlus className="h-4 w-4 text-purple-600" />;
+      return <UserPlus className="h-4 w-4 text-teal-500" />;
     case 'session_scheduled':
-      return <Calendar className="h-4 w-4 text-orange-600" />;
+      return <Calendar className="h-4 w-4 text-teal-600" />;
     default:
-      return <Clock className="h-4 w-4 text-gray-600" />;
+      return <Clock className="h-4 w-4 text-sand-500" />;
   }
 };
 
@@ -175,156 +177,123 @@ export function CoachDashboard() {
         {statsLoading ? 'Loading coach dashboard statistics...' : 'Coach dashboard loaded successfully'}
       </div>
       
-      {/* Header */}
+      {/* Header - Satya Method */}
       <div>
-        <h1 className="text-3xl font-bold">Coach Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back, {user?.firstName}! Here&apos;s your coaching overview.
+        <h1 className="text-3xl font-semibold text-sand-900">{t('coachTitle')}</h1>
+        <p className="text-sand-500 mt-1">
+          {t('welcome', { name: user?.firstName || '' })}
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3 max-w-md" role="tablist" aria-label="Coach dashboard navigation">
-          <TabsTrigger value="overview" aria-label="Overview dashboard">Overview</TabsTrigger>
-          <TabsTrigger value="sessions" aria-label="Sessions management">Sessions</TabsTrigger>
-          <TabsTrigger value="clients" aria-label="Client management">Clients</TabsTrigger>
+          <TabsTrigger value="overview" aria-label="Overview dashboard">{t('tabs.overview')}</TabsTrigger>
+          <TabsTrigger value="sessions" aria-label="Sessions management">{t('tabs.sessions')}</TabsTrigger>
+          <TabsTrigger value="clients" aria-label="Client management">{t('tabs.clients')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          {/* Stats Grid - Satya Method: Focus on practice, not business */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card data-testid="upcoming-sessions">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="text-sm font-medium text-sand-700">
                   {t('stats.upcomingSessions')}
                 </CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Clock className="h-4 w-4 text-teal-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-semibold text-sand-900">
                   {statsLoading ? '...' : stats?.upcomingSessions || 0}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {thisWeekSessions.length} this week
+                <p className="text-xs text-sand-500">
+                  {thisWeekSessions.length} {t('stats.thisWeek')}
                 </p>
               </CardContent>
             </Card>
 
             <Card data-testid="total-clients">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="text-sm font-medium text-sand-700">
                   {t('stats.activeClients')}
                 </CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <Users className="h-4 w-4 text-teal-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-semibold text-sand-900">
                   {statsLoading ? '...' : stats?.activeClients || 0}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  of {stats?.totalClients || 0} total clients
+                <p className="text-xs text-sand-500">
+                  {t('stats.of')} {stats?.totalClients || 0} {t('stats.total')}
                 </p>
               </CardContent>
             </Card>
 
             <Card data-testid="completed-sessions">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="text-sm font-medium text-sand-700">
                   {t('stats.completedSessions')}
                 </CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                <CheckCircle className="h-4 w-4 text-moss-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-semibold text-sand-900">
                   {statsLoading ? '...' : stats?.completedSessions || 0}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  of {stats?.totalSessions || 0} total sessions
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card data-testid="average-rating">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Average Rating
-                </CardTitle>
-                <Star className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {statsLoading ? '...' : stats?.averageRating || 0}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  from client feedback
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card data-testid="total-revenue">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Revenue
-                </CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {statsLoading ? '...' : `$${(stats?.totalRevenue || 0).toLocaleString()}`}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  from {stats?.completedSessions || 0} completed sessions
+                <p className="text-xs text-sand-500">
+                  {t('stats.of')} {stats?.totalSessions || 0} {t('stats.total')}
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Main Widgets Grid - Satya Method Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Upcoming Sessions */}
-            <Card data-testid="upcoming-sessions-list">
+            <Card data-testid="upcoming-sessions-list" className="lg:col-span-2">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Next Sessions
+                <CardTitle className="flex items-center gap-2 text-sand-900">
+                  <Calendar className="h-5 w-5 text-teal-600" />
+                  {t('upcomingSessions.title')}
                 </CardTitle>
-                <CardDescription>
-                  Your upcoming scheduled sessions
+                <CardDescription className="text-sand-500">
+                  {t('upcomingSessions.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {!upcomingSessions || upcomingSessions.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground">
+                  <div className="text-center py-6 text-sand-400">
                     <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No upcoming sessions</p>
+                    <p>{t('upcomingSessions.empty')}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {upcomingSessions.slice(0, 3).map((session) => (
                       <div
                         key={session.id}
-                        className="flex items-center justify-between p-3 border rounded-lg"
+                        className="flex items-center justify-between p-3 border border-sand-200 rounded-lg hover:border-teal-200 transition-colors"
                       >
                         <div>
-                          <h4 className="font-medium">{session.title}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            with {session.client.firstName} {session.client.lastName}
+                          <h4 className="font-medium text-sand-900">{session.title}</h4>
+                          <p className="text-sm text-sand-500">
+                            {t('upcomingSessions.with')} {session.client.firstName} {session.client.lastName}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-sand-400">
                             {format(parseISO(session.scheduledAt), 'PPp')}
                           </p>
                         </div>
-                        <Badge variant="outline">
-                          {session.duration}m
+                        <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">
+                          {session.duration}{t('upcomingSessions.duration')}
                         </Badge>
                       </div>
                     ))}
                     {upcomingSessions.length > 3 && (
-                      <Button 
-                        variant="ghost" 
-                        className="w-full"
+                      <Button
+                        variant="ghost"
+                        className="w-full text-teal-600 hover:text-teal-700 hover:bg-teal-50"
                         onClick={() => setActiveTab('sessions')}
                       >
-                        View all sessions
+                        {t('upcomingSessions.viewAll')}
                         <ArrowUpRight className="h-4 w-4 ml-2" />
                       </Button>
                     )}
@@ -333,94 +302,97 @@ export function CoachDashboard() {
               </CardContent>
             </Card>
 
-            {/* Recent Activity */}
-            <Card data-testid="recent-notes">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Recent Activity
-                </CardTitle>
-                <CardDescription>
-                  Your latest coaching activities
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {!recentActivity || recentActivity.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No recent activity</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {recentActivity.map((activity) => (
-                      <div
-                        key={activity.id}
-                        className="flex items-start gap-3"
-                      >
-                        {getActivityIcon(activity.type)}
-                        <div className="flex-1 space-y-1">
-                          <p className="text-sm font-medium">
-                            {activity.description}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(parseISO(activity.timestamp), 'PPp')}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Space for Reflection Widget - NEW */}
+            <ReflectionSpaceWidget className="lg:col-span-1" />
           </div>
 
-          {/* Recent Clients */}
+          {/* Recent Activity */}
+          <Card data-testid="recent-activity">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-sand-900">
+                <TrendingUp className="h-5 w-5 text-teal-600" />
+                {t('recentActivity.title')}
+              </CardTitle>
+              <CardDescription className="text-sand-500">
+                {t('recentActivity.description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!recentActivity || recentActivity.length === 0 ? (
+                <div className="text-center py-6 text-sand-400">
+                  <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>{t('recentActivity.empty')}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {recentActivity.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-start gap-3 p-3 border border-sand-200 rounded-lg"
+                    >
+                      {getActivityIcon(activity.type)}
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-medium text-sand-900">
+                          {activity.description}
+                        </p>
+                        <p className="text-xs text-sand-400">
+                          {format(parseISO(activity.timestamp), 'PPp')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Clients - Satya Method: "מתאמנים" (Practitioners) */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Recent Clients
+              <CardTitle className="flex items-center gap-2 text-sand-900">
+                <Users className="h-5 w-5 text-teal-600" />
+                {t('recentClients.title')}
               </CardTitle>
-              <CardDescription>
-                Clients you&apos;ve worked with recently
+              <CardDescription className="text-sand-500">
+                {t('recentClients.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {!recentClients || recentClients.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
+                <div className="text-center py-6 text-sand-400">
                   <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No recent clients</p>
+                  <p>{t('recentClients.empty')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {recentClients.map((client) => (
                     <div
                       key={client.id}
-                      className="flex items-center gap-3 p-3 border rounded-lg"
+                      className="flex items-center gap-3 p-3 border border-sand-200 rounded-lg hover:border-teal-200 transition-colors"
                     >
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium">
+                      <div className="w-10 h-10 bg-teal-50 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-teal-700">
                           {client.firstName[0]}{client.lastName[0]}
                         </span>
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-sm">
+                        <h4 className="font-medium text-sm text-sand-900">
                           {client.firstName} {client.lastName}
                         </h4>
-                        <p className="text-xs text-muted-foreground">
-                          {client.totalSessions} sessions
+                        <p className="text-xs text-sand-500">
+                          {client.totalSessions} {t('recentClients.sessions')}
                         </p>
                         {client.lastSession && (
-                          <p className="text-xs text-muted-foreground">
-                            Last: {format(parseISO(client.lastSession), 'PP')}
+                          <p className="text-xs text-sand-400">
+                            {t('recentClients.lastSession')}: {format(parseISO(client.lastSession), 'PP')}
                           </p>
                         )}
                       </div>
-                      <Badge 
-                        variant={client.status === 'active' ? 'default' : 'secondary'}
+                      <Badge
+                        variant={client.status === 'active' ? 'success' : 'secondary'}
                         className="text-xs"
                       >
-                        {client.status}
+                        {t(`recentClients.status.${client.status}`)}
                       </Badge>
                     </div>
                   ))}

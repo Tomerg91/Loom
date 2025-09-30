@@ -147,23 +147,29 @@
     }
   },
   "dashboard": {
-    "title": "לוח בקרה",
-    "description": "סקירה כללית של פלטפורמת הקואצ'ינג",
-    "welcome": "ברוך השב, {name}!",
-    "subtitle": "הנה מה קורה עם מסע הקואצ'ינג שלך",
+    "title": "מרחב התרגול",
+    "coachTitle": "מרחב התרגול",
+    "clientTitle": "המסע הסומטי שלך",
+    "description": "סקירה כללית של מסע התרגול",
+    "welcome": "שלום {name}",
+    "subtitle": "הנה מה מתרחש במרחב התרגול שלך",
     "roles": {
-      "client": "לקוח",
+      "client": "מתאמן",
       "coach": "מאמן",
       "admin": "מנהל מערכת"
     },
     "stats": {
-      "totalSessions": "סך סשנים",
-      "upcomingSessions": "סשנים קרובים",
-      "completedSessions": "סשנים שהושלמו",
-      "activeClients": "לקוחות פעילים",
+      "totalSessions": "סך פגישות",
+      "upcomingSessions": "פגישות קרובות",
+      "completedSessions": "פגישות שהושלמו",
+      "activeClients": "מתאמנים פעילים",
+      "totalClients": "סך מתאמנים",
       "notifications": "התראות",
-      "averageRating": "דירוג ממוצע",
-      "totalRevenue": "הכנסות",
+      "thisWeekSessions": "פגישות השבוע",
+      "totalPractices": "סך תרגולים",
+      "recentPractices": "תרגולים אחרונים",
+      "somaticDiscoveries": "גילויים סומטיים",
+      "awarenessShifts": "שינויי מודעות",
       "totalReflections": "רפלקציות",
       "averageMood": "מצב רוח ממוצע",
       "goalsAchieved": "יעדים שהושגו",
@@ -175,27 +181,73 @@
       "thisWeek": "השבוע",
       "thisMonth": "החודש",
       "total": "סך הכל",
-      "unread": "לא נקראו"
+      "unread": "לא נקראו",
+      "of": "מתוך"
     },
     "upcomingSessions": {
-      "title": "סשנים קרובים",
-      "description": "הסשנים הקרובים שלך שמתוכננים",
+      "title": "פגישות קרובות",
+      "description": "הפגישות הקרובות שלך",
       "with": "עם",
-      "empty": "אין סשנים קרובים מתוכננים"
+      "empty": "אין פגישות קרובות",
+      "viewAll": "צפה בכל הפגישות",
+      "duration": "משך"
     },
-    "loadError": "לא הצלחנו לטעון את הנתונים העדכניים. נסו לרענן את הדף.",
+    "recentActivity": {
+      "title": "פעילות אחרונה",
+      "description": "הפעילות האחרונה במרחב התרגול",
+      "empty": "אין פעילות אחרונה",
+      "types": {
+        "sessionCompleted": "{clientName} השלים/ה תרגול",
+        "noteAdded": "הערות מפגישה התווספו",
+        "clientJoined": "{clientName} הצטרף/ה למרחב",
+        "sessionScheduled": "פגישה חדשה נקבעה עם {clientName}",
+        "messageReceived": "הודעה חדשה מ{clientName}",
+        "practiceLogged": "{clientName} תיעד/ה תרגול חדש"
+      }
+    },
+    "reflectionSpace": {
+      "title": "מרחב להתבוננות",
+      "description": "מקום לשאלות והרהורים יומיים",
+      "defaultPrompts": [
+        "מה עלה בגוף שלי היום?",
+        "איפה הרגשתי נוכחות?",
+        "אילו תחושות מתעוררות עכשיו?",
+        "מה מבקש תשומת לב?",
+        "איך נושם הגוף שלי?"
+      ],
+      "customPrompt": "הגדר שאלה אישית",
+      "edit": "ערוך",
+      "save": "שמור"
+    },
+    "recentClients": {
+      "title": "מתאמנים אחרונים",
+      "description": "מתאמנים שעבדת איתם לאחרונה",
+      "empty": "אין מתאמנים אחרונים",
+      "sessions": "פגישות",
+      "lastSession": "פגישה אחרונה",
+      "status": {
+        "active": "פעיל",
+        "inactive": "לא פעיל"
+      }
+    },
+    "loadError": "לא הצלחנו לטעון את הנתונים. נסו לרענן את הדף.",
     "quickActions": {
       "title": "פעולות מהירות",
-      "description": "משימות נפוצות וקיצורי דרך",
-      "scheduleSession": "תזמן סשן חדש",
-      "viewClients": "צפה בכל הלקוחות",
-      "addNote": "הוסף הערת מאמן",
-      "bookSession": "הזמן סשן",
+      "description": "משימות נפוצות",
+      "scheduleSession": "קבע פגישה חדשה",
+      "viewClients": "צפה בכל המתאמנים",
+      "addNote": "הוסף הערה",
+      "bookSession": "הזמן פגישה",
       "addReflection": "הוסף הרהור",
-      "viewProgress": "צפה בהתקדמות שלי",
+      "viewProgress": "צפה בהתקדמות",
       "manageUsers": "ניהול משתמשים",
       "reviewAnalytics": "צפה באנליטיקה",
       "systemHealth": "בריאות המערכת"
+    },
+    "tabs": {
+      "overview": "סקירה",
+      "sessions": "פגישות",
+      "clients": "מתאמנים"
     }
   },
   "mfa": {
