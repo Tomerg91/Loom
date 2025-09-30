@@ -2,7 +2,6 @@ import { getTranslations } from 'next-intl/server';
 
 import { PersonaShowcase } from '@/components/landing/persona-showcase';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Hero } from '@/components/ui/hero';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { Link } from '@/i18n/routing';
@@ -158,16 +157,19 @@ export default async function HomePage({ params }: HomePageProps) {
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Button asChild size="lg" className="min-w-[160px]">
-                  <Link href={actionBar.primaryHref as '/auth/signin'} locale={locale}>
-                    {actionBar.primary}
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline" className="min-w-[160px]">
-                  <a href={actionBar.secondaryHref}>
-                    {actionBar.secondary}
-                  </a>
-                </Button>
+                <Link
+                  href={actionBar.primaryHref as '/auth/signin'}
+                  locale={locale}
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8 min-w-[160px]"
+                >
+                  {actionBar.primary}
+                </Link>
+                <a
+                  href={actionBar.secondaryHref}
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-11 px-8 min-w-[160px]"
+                >
+                  {actionBar.secondary}
+                </a>
               </div>
             </div>
           </div>
