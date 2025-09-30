@@ -158,11 +158,11 @@ export default async function HomePage({ params }: HomePageProps) {
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Link href={actionBar.primaryHref as '/auth/signin'} locale={locale}>
-                  <Button size="lg" className="min-w-[160px]">
+                <Button asChild size="lg" className="min-w-[160px]">
+                  <Link href={actionBar.primaryHref as '/auth/signin'} locale={locale}>
                     {actionBar.primary}
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
                 <Button asChild size="lg" variant="outline" className="min-w-[160px]">
                   <a href={actionBar.secondaryHref}>
                     {actionBar.secondary}
