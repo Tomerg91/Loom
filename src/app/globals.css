@@ -3,40 +3,57 @@
 /* Import accessibility styles */
 @import '../styles/accessibility.css';
 
-/* CSS Variables for Design System */
+/* CSS Variables for Design System - Satya Method */
 :root {
-  /* Modern SaaS Light Theme - Clean and Professional */
-  --background: 0 0% 100%; /* Pure white */
-  --foreground: 0 0% 9%; /* Near black */
-  --card: 0 0% 100%; /* White cards */
-  --card-foreground: 0 0% 9%;
+  /* Satya Method Light Theme - Grounded & Calming */
+  --background: 20 33% 99%; /* Custom off-white (#fdfcfb) */
+  --foreground: 20 14% 11%; /* Stone 900 (#1c1917) */
+  --card: 20 33% 99%; /* Matching background */
+  --card-foreground: 20 14% 11%;
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 9%;
-  --primary: 24 100% 50%; /* Orange primary */
-  --primary-foreground: 0 0% 100%; /* White text on orange */
-  --secondary: 0 0% 9%; /* Black secondary */
-  --secondary-foreground: 0 0% 100%; /* White text on black */
-  --muted: 0 0% 96%; /* Light gray */
-  --muted-foreground: 0 0% 45%;
-  --accent: 0 84% 60%; /* Red accent */
+  --popover-foreground: 20 14% 11%;
+
+  /* Primary - Soft Teal (Satya Method) */
+  --primary: 174 72% 56%; /* Teal 400 (#2dd4bf) */
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary - Warm neutrals */
+  --secondary: 20 6% 90%; /* Sand 200 (#e7e5e4) */
+  --secondary-foreground: 20 25% 27%; /* Sand 700 (#44403c) */
+
+  /* Muted - Grounded tones */
+  --muted: 20 6% 90%; /* Sand 200 */
+  --muted-foreground: 20 16% 45%; /* Sand 500 (#78716c) */
+
+  /* Accent - Can be used for highlights */
+  --accent: 174 64% 47%; /* Teal 500 (#14b8a6) */
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%; /* Red for destructive actions */
+
+  /* Destructive - Warm Terracotta */
+  --destructive: 24 95% 53%; /* Terracotta 500 (#f97316) */
   --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 90%; /* Light border */
-  --input: 0 0% 96%; /* Light input background */
-  --ring: 24 100% 50%; /* Orange focus ring */
-  --radius: 0.75rem; /* Refined corners */
 
-  /* Brand colors */
-  --brand-orange: 24 100% 50%; /* Primary orange */
-  --brand-orange-dark: 24 100% 40%; /* Dark orange */
-  --brand-red: 0 84% 60%; /* Primary red */
-  --brand-black: 0 0% 9%; /* Professional black */
+  /* Success - Moss Green */
+  --success: 84 81% 44%; /* Moss 500 (#84cc16) */
+  --success-foreground: 0 0% 100%;
 
-  /* Material tokens */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  /* Borders & Inputs */
+  --border: 20 6% 90%; /* Sand 200 (#e7e5e4) */
+  --input: 20 33% 99%; /* Matching background */
+  --ring: 174 72% 56%; /* Teal 400 - focus ring */
+  --radius: 0.75rem; /* Soft, rounded corners */
+
+  /* Satya Method Brand Colors */
+  --brand-teal: 174 72% 56%; /* Primary action */
+  --brand-terracotta: 24 95% 53%; /* Warm alert */
+  --brand-moss: 84 81% 44%; /* Success */
+  --brand-sand: 20 33% 99%; /* Background */
+  --brand-stone: 20 14% 11%; /* Text */
+
+  /* Calm, subtle shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
 }
 
@@ -69,16 +86,15 @@
   --text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-/* Premium app surface: sophisticated luxury gradient + texture */
+/* Satya Method app surface: calm, grounded, with subtle organic texture */
 body.premium-app-surface {
   background-color: hsl(var(--background));
   background-image:
-    radial-gradient(ellipse 1500px 800px at 120% -20%, hsla(var(--brand-gold), 0.08), transparent 65%),
-    radial-gradient(ellipse 1200px 600px at -20% 120%, hsla(var(--brand-champagne), 0.06), transparent 60%),
-    radial-gradient(ellipse 800px 400px at 50% 50%, hsla(var(--brand-platinum), 0.04), transparent 40%),
-    linear-gradient(135deg, hsla(var(--brand-gold), 0.02) 0%, transparent 50%, hsla(var(--brand-champagne), 0.03) 100%);
+    radial-gradient(ellipse 1200px 600px at 110% -10%, hsla(var(--brand-teal), 0.04), transparent 60%),
+    radial-gradient(ellipse 1000px 500px at -10% 110%, hsla(var(--brand-moss), 0.03), transparent 55%),
+    radial-gradient(ellipse 800px 400px at 50% 50%, hsla(var(--brand-teal), 0.02), transparent 40%);
   background-attachment: fixed;
-  background-size: 100% 100%, 100% 100%, 80% 80%, 100% 100%;
+  background-size: 100% 100%, 100% 100%, 80% 80%;
   position: relative;
 }
 
@@ -89,27 +105,25 @@ body.premium-app-surface::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
-    radial-gradient(circle at 25% 25%, hsla(var(--brand-gold), 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, hsla(var(--brand-champagne), 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 50% 0%, hsla(var(--brand-platinum), 0.08) 0%, transparent 50%);
-  background-size: 150% 150%, 120% 120%, 100% 100%;
-  animation: luxury-bg-float 20s ease-in-out infinite;
+  background-image:
+    radial-gradient(circle at 20% 20%, hsla(var(--brand-teal), 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, hsla(var(--brand-moss), 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 50% 0%, hsla(var(--brand-teal), 0.03) 0%, transparent 35%);
+  background-size: 120% 120%, 100% 100%, 90% 90%;
+  animation: satya-bg-breathe 25s ease-in-out infinite;
   pointer-events: none;
   z-index: -1;
+  opacity: 0.7;
 }
 
-@keyframes luxury-bg-float {
-  0%, 100% { 
-    background-position: 0% 0%, 100% 100%, 50% 0%; 
-    opacity: 0.6;
+/* Slower, more meditative breathing animation */
+@keyframes satya-bg-breathe {
+  0%, 100% {
+    background-position: 0% 0%, 100% 100%, 50% 0%;
+    opacity: 0.5;
   }
-  33% { 
-    background-position: 100% 50%, 0% 50%, 25% 100%; 
-    opacity: 0.8;
-  }
-  66% { 
-    background-position: 50% 100%, 50% 0%, 75% 50%; 
+  50% {
+    background-position: 50% 50%, 50% 50%, 50% 50%;
     opacity: 0.7;
   }
 }
@@ -119,9 +133,9 @@ body.premium-app-surface::before {
   text-align: right;
 }
 
-/* Prefer the Hebrew font for RTL locales */
+/* Prefer the Assistant font (Hebrew) for RTL locales */
 [dir="rtl"] body {
-  font-family: var(--font-hebrew), var(--font-inter), system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  font-family: var(--font-assistant), var(--font-inter), system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 }
 
 /* Flex direction reversals for RTL */
@@ -516,18 +530,18 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Modern SaaS Typography System - Thin and Professional */
+/* Satya Method Typography System - Mindful and Readable */
 body {
-  font-family: 'Inter', system-ui, sans-serif;
-  font-weight: 300; /* Default to light weight */
-  line-height: 1.6;
+  font-family: var(--font-assistant), var(--font-inter), system-ui, sans-serif;
+  font-weight: 400; /* Regular for readability */
+  line-height: 1.65; /* Comfortable reading */
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 300; /* Thin headings */
-  line-height: 1.2;
+  font-weight: 400; /* Regular, grounded headings */
+  line-height: 1.3;
   color: hsl(var(--foreground));
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
 }
 
 h1 {

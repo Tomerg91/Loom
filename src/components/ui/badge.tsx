@@ -3,27 +3,34 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border border-border/60 px-2.5 py-0.5 text-xs font-semibold transition-colors shadow-soft focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-gold))] focus:ring-offset-2',
+  'inline-flex items-center rounded-full border border-sand-200 px-2.5 py-0.5 text-xs font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
-        secondary: 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        destructive: 'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-        outline: 'text-foreground',
-        success: 'border-transparent bg-session-100 text-session-800 hover:bg-session-200',
-        warning: 'border-transparent bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
-        info: 'border-transparent bg-coach-100 text-coach-800 hover:bg-coach-200',
+        // Primary - Soft Teal
+        default: 'border-transparent bg-teal-100 text-teal-800 hover:bg-teal-200',
+        // Secondary - Warm neutrals
+        secondary: 'border-transparent bg-sand-200 text-sand-700 hover:bg-sand-300',
+        // Destructive - Warm Terracotta
+        destructive: 'border-transparent bg-terracotta-100 text-terracotta-800 hover:bg-terracotta-200',
+        // Success - Moss Green
+        success: 'border-transparent bg-moss-100 text-moss-800 hover:bg-moss-200',
+        // Outline - Grounded border
+        outline: 'text-sand-700 border-sand-200',
+        // Warning
+        warning: 'border-transparent bg-terracotta-100 text-terracotta-800 hover:bg-terracotta-200',
+        // Info
+        info: 'border-transparent bg-teal-100 text-teal-800 hover:bg-teal-200',
         // Session status badges
-        scheduled: 'border-transparent bg-blue-100 text-blue-800',
-        'in-progress': 'border-transparent bg-orange-100 text-orange-800',
-        completed: 'border-transparent bg-session-100 text-session-800',
-        cancelled: 'border-transparent bg-red-100 text-red-800',
-        rescheduled: 'border-transparent bg-yellow-100 text-yellow-800',
+        scheduled: 'border-transparent bg-teal-100 text-teal-800',
+        'in-progress': 'border-transparent bg-terracotta-100 text-terracotta-800',
+        completed: 'border-transparent bg-moss-100 text-moss-800',
+        cancelled: 'border-transparent bg-sand-200 text-sand-600',
+        rescheduled: 'border-transparent bg-terracotta-100 text-terracotta-700',
         // User role badges
         client: 'border-transparent bg-client-100 text-client-800',
         coach: 'border-transparent bg-coach-100 text-coach-800',
-        admin: 'border-transparent bg-purple-100 text-purple-800',
+        admin: 'border-transparent bg-teal-100 text-teal-800',
       },
     },
     defaultVariants: {

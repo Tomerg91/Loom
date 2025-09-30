@@ -4,32 +4,33 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-light tracking-wide ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 will-change-transform active:scale-[0.98] relative overflow-hidden',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-normal tracking-normal ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 will-change-transform active:scale-[0.98] relative overflow-hidden touch-target',
   {
     variants: {
       variant: {
-        // Primary Orange Button (Dark Orange)
-        default: 'bg-orange-600 text-white hover:bg-orange-700 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
-        // Secondary Black Button
-        secondary: 'bg-neutral-900 text-white hover:bg-neutral-800 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
-        // Destructive Red Button
-        destructive: 'bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
-        // Outline Button
-        outline: 'border-2 border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50 hover:border-orange-500 shadow-sm hover:shadow-md',
-        // Ghost Button
-        ghost: 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 rounded-lg transition-all duration-200',
-        // Link Button
-        link: 'text-orange-600 underline-offset-4 hover:underline font-normal hover:text-orange-700',
-        // Orange Primary (alternative)
-        orange: 'bg-orange-500 text-white hover:bg-orange-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
-        // Red Accent
-        red: 'bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
+        // Primary - Soft Teal (Satya Method primary action)
+        default: 'bg-teal-400 text-white hover:bg-teal-500 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
+        // Secondary - Warm neutrals
+        secondary: 'bg-sand-200 text-sand-700 hover:bg-sand-300 shadow-sm hover:shadow-md hover:-translate-y-0.5',
+        // Destructive - Warm Terracotta
+        destructive: 'bg-terracotta-500 text-white hover:bg-terracotta-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
+        // Success - Moss Green
+        success: 'bg-moss-500 text-white hover:bg-moss-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
+        // Outline - Grounded border
+        outline: 'border-2 border-sand-200 bg-transparent text-sand-700 hover:bg-sand-50 hover:border-teal-400 shadow-sm hover:shadow-md transition-colors',
+        // Ghost - Subtle interaction
+        ghost: 'text-sand-700 hover:bg-sand-100 hover:text-sand-900 rounded-lg transition-all duration-200',
+        // Link - Teal text
+        link: 'text-teal-500 underline-offset-4 hover:underline font-normal hover:text-teal-600',
+        // Legacy support
+        orange: 'bg-terracotta-500 text-white hover:bg-terracotta-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
+        red: 'bg-terracotta-500 text-white hover:bg-terracotta-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
       },
       size: {
-        default: 'h-11 px-6 py-2.5 text-sm',
-        sm: 'h-9 px-4 py-2 text-xs rounded-lg',
-        lg: 'h-13 px-8 py-3 text-base rounded-xl',
-        icon: 'h-11 w-11 rounded-xl',
+        default: 'h-11 px-6 py-2.5 text-sm min-h-[44px]',
+        sm: 'h-9 px-4 py-2 text-xs rounded-lg min-h-[36px]',
+        lg: 'h-13 px-8 py-3 text-base rounded-xl min-h-[52px]',
+        icon: 'h-11 w-11 rounded-xl min-w-[44px] min-h-[44px]',
       },
     },
     defaultVariants: {

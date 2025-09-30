@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Heebo, Inter } from 'next/font/google';
+import { Assistant, Inter } from 'next/font/google';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Providers } from '@/components/providers/providers';
@@ -16,18 +16,21 @@ import '../globals.css';
 export const dynamic = 'force-dynamic'; // Required for auth
 export const revalidate = false; // Disable for auth-dependent content
 
+// English font - Secondary
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+  weight: ['300', '400', '500', '600', '700'],
   preload: true,
   display: 'swap',
   fallback: ['system-ui', 'arial'],
 });
 
-// Hebrew-first font for RTL locales
-const heebo = Heebo({
+// Hebrew font - Primary (Satya Method)
+const assistant = Assistant({
   subsets: ['hebrew'],
-  variable: '--font-hebrew',
+  variable: '--font-assistant',
+  weight: ['300', '400', '500', '600', '700'],
   preload: true,
   display: 'swap',
   fallback: ['system-ui', 'Arial', 'sans-serif'],
@@ -90,7 +93,7 @@ export default async function LocaleLayout({
           `
         }} />
       </head>
-      <body className={`${inter.variable} ${heebo.variable} font-sans antialiased layout-stabilizer premium-app-surface`}>
+      <body className={`${inter.variable} ${assistant.variable} font-sans antialiased layout-stabilizer premium-app-surface`}>
         {/* Register service worker for PWA */}
         <PwaBootstrap />
         {/* Skip navigation links for keyboard users */}

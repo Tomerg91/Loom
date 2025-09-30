@@ -59,32 +59,80 @@ const config: Config = {
           foreground: 'hsl(var(--card-foreground))',
         },
 
-        // Modern SaaS Design System - Light with Dark Accents
+        // Satya Method Design System - Grounded & Calming
+        // Primary Action - Soft Teal
+        teal: {
+          50: '#f0fdfa',
+          100: '#ccfbf1',
+          200: '#99f6e4',
+          300: '#5eead4',
+          400: '#2dd4bf', // Primary action color
+          500: '#14b8a6',
+          600: '#0d9488',
+          700: '#0f766e',
+          800: '#115e59',
+          900: '#134e4a',
+          950: '#042f2e',
+        },
+
+        // Destructive/Alert - Warm Terracotta
+        terracotta: {
+          50: '#fff7ed',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          300: '#fdba74',
+          400: '#fb923c',
+          500: '#f97316', // Warm alert color
+          600: '#ea580c',
+          700: '#c2410c',
+          800: '#9a3412',
+          900: '#7c2d12',
+          950: '#431407',
+        },
+
+        // Success - Moss Green
+        moss: {
+          50: '#f7fee7',
+          100: '#ecfccb',
+          200: '#d9f99d',
+          300: '#bef264',
+          400: '#a3e635',
+          500: '#84cc16', // Success color
+          600: '#65a30d',
+          700: '#4d7c0f',
+          800: '#3f6212',
+          900: '#365314',
+          950: '#1a2e05',
+        },
+
+        // Neutrals - Sand/Stone Scale (Grounded & Calming)
+        sand: {
+          50: '#fdfcfb',  // Custom off-white - page background
+          100: '#faf9f8',
+          200: '#e7e5e4', // Stone 200 - borders, dividers
+          300: '#d6d3d1',
+          400: '#a8a29e',
+          500: '#78716c', // Stone 500 - body text, secondary info
+          600: '#57534e',
+          700: '#44403c', // Stone 700 - headings, titles
+          800: '#292524',
+          900: '#1c1917', // Stone 900 - darkest UI elements
+          950: '#0c0a09',
+        },
+
+        // Legacy color mappings for backward compatibility
         orange: {
           50: '#fff7ed',
           100: '#ffedd5',
           200: '#fed7aa',
           300: '#fdba74',
           400: '#fb923c',
-          500: '#f97316', // Primary orange
-          600: '#ea580c', // Dark orange
+          500: '#f97316',
+          600: '#ea580c',
           700: '#c2410c',
           800: '#9a3412',
           900: '#7c2d12',
           950: '#431407',
-        },
-        red: {
-          50: '#fef2f2',
-          100: '#fee2e2',
-          200: '#fecaca',
-          300: '#fca5a5',
-          400: '#f87171',
-          500: '#ef4444', // Primary red
-          600: '#dc2626',
-          700: '#b91c1c',
-          800: '#991b1b',
-          900: '#7f1d1d',
-          950: '#450a0a',
         },
         neutral: {
           50: '#fafafa',
@@ -100,60 +148,6 @@ const config: Config = {
           950: '#0a0a0a',
         },
 
-        // Premium color palette for luxury aesthetics
-        platinum: {
-          50: '#fdfdf9',
-          100: '#fafaf2',
-          200: '#f4f4e5',
-          300: '#eeecd1',
-          400: '#e3dfb4',
-          500: '#d6d08f',
-          600: '#c5bd70',
-          700: '#aca159',
-          800: '#8e8348',
-          900: '#746b3b',
-          950: '#3e3a1f',
-        },
-        champagne: {
-          50: '#fefdfb',
-          100: '#fdf9f4',
-          200: '#f9f1e3',
-          300: '#f3e5c8',
-          400: '#ebd4a0',
-          500: '#ddbf73',
-          600: '#cca652',
-          700: '#b08c42',
-          800: '#8f7038',
-          900: '#745b30',
-          950: '#3f2f17',
-        },
-        obsidian: {
-          50: '#f6f7f9',
-          100: '#ebeef2',
-          200: '#d2dae3',
-          300: '#aabccc',
-          400: '#7b97b0',
-          500: '#5a7a96',
-          600: '#46607d',
-          700: '#394e66',
-          800: '#314255',
-          900: '#2c3a48',
-          950: '#1a232e',
-        },
-        pearl: {
-          50: '#fdfdf9',
-          100: '#fbfbf6',
-          200: '#f5f5eb',
-          300: '#eeecd9',
-          400: '#e1ddb6',
-          500: '#d0c98f',
-          600: '#bfb170',
-          700: '#a8954d',
-          800: '#8a7940',
-          900: '#706235',
-          950: '#3d331b',
-        },
-        
         // Custom coaching platform color schemes
         coach: {
           50: '#f0f9ff',
@@ -203,11 +197,12 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       
-      // Font family configuration
+      // Font family configuration - Hebrew (Assistant) first, English (Inter) secondary
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-assistant)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
+        hebrew: ['var(--font-assistant)', 'system-ui', 'sans-serif'],
+        english: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
-        thin: ['Inter', 'system-ui', 'sans-serif'],
       },
       
       // Font weights - emphasizing thin fonts
