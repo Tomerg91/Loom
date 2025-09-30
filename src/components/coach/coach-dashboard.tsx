@@ -9,11 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Calendar, 
-  Users, 
-  Clock, 
-  TrendingUp, 
+import {
+  Calendar,
+  Users,
+  Clock,
+  TrendingUp,
   CheckCircle,
   MessageSquare,
   Star,
@@ -25,6 +25,9 @@ import { SessionList } from '@/components/sessions/session-list';
 import { SessionCalendar } from '@/components/sessions/session-calendar';
 import { CoachClientsPage } from '@/components/coach/clients-page';
 import { ReflectionSpaceWidget } from '@/components/coach/reflection-space-widget';
+import { EmptyState } from '@/components/coach/empty-state';
+import { AddClientModal } from '@/components/coach/add-client-modal';
+import { AddSessionModal } from '@/components/coach/add-session-modal';
 import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { Session } from '@/types';
 
@@ -80,8 +83,10 @@ export function CoachDashboard() {
   const user = useUser();
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   const [activeTab, setActiveTab] = useState('overview');
+  const [showAddClientModal, setShowAddClientModal] = useState(false);
+  const [showAddSessionModal, setShowAddSessionModal] = useState(false);
 
   // Refresh data every 5 minutes
   const refreshInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -178,11 +183,30 @@ export function CoachDashboard() {
       </div>
       
       {/* Header - Satya Method */}
-      <div>
-        <h1 className="text-3xl font-semibold text-sand-900">{t('coachTitle')}</h1>
-        <p className="text-sand-500 mt-1">
-          {t('welcome', { name: user?.firstName || '' })}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-sand-900">{t('coachTitle')}</h1>
+          <p className="text-sand-500 mt-1">
+            {t('welcome', { name: user?.firstName || '' })}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => setShowAddClientModal(true)}
+            className="gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            {t('recentClients.emptyAction')}
+          </Button>
+          <Button
+            onClick={() => setShowAddSessionModal(true)}
+            className="gap-2"
+          >
+            <Calendar className="h-4 w-4" />
+            {t('upcomingSessions.emptyAction')}
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -262,10 +286,13 @@ export function CoachDashboard() {
               </CardHeader>
               <CardContent>
                 {!upcomingSessions || upcomingSessions.length === 0 ? (
-                  <div className="text-center py-6 text-sand-400">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>{t('upcomingSessions.empty')}</p>
-                  </div>
+                  <EmptyState
+                    icon={Calendar}
+                    title={t('upcomingSessions.emptyTitle')}
+                    description={t('upcomingSessions.emptyDescription')}
+                    actionLabel={t('upcomingSessions.emptyAction')}
+                    onAction={() => setShowAddSessionModal(true)}
+                  />
                 ) : (
                   <div className="space-y-4">
                     {upcomingSessions.slice(0, 3).map((session) => (
@@ -359,10 +386,13 @@ export function CoachDashboard() {
             </CardHeader>
             <CardContent>
               {!recentClients || recentClients.length === 0 ? (
-                <div className="text-center py-6 text-sand-400">
-                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>{t('recentClients.empty')}</p>
-                </div>
+                <EmptyState
+                  icon={Users}
+                  title={t('recentClients.emptyTitle')}
+                  description={t('recentClients.emptyDescription')}
+                  actionLabel={t('recentClients.emptyAction')}
+                  onAction={() => setShowAddClientModal(true)}
+                />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {recentClients.map((client) => (
@@ -433,6 +463,17 @@ export function CoachDashboard() {
           <CoachClientsPage />
         </TabsContent>
       </Tabs>
+
+      {/* Modals */}
+      <AddClientModal
+        open={showAddClientModal}
+        onOpenChange={setShowAddClientModal}
+      />
+      <AddSessionModal
+        open={showAddSessionModal}
+        onOpenChange={setShowAddSessionModal}
+        coachId={user?.id}
+      />
     </div>
   );
 }

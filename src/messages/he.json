@@ -146,6 +146,43 @@
       ]
     }
   },
+  "coach": {
+    "addClient": {
+      "title": "הוסף מתאמן חדש",
+      "description": "צור פרופיל למתאמן חדש במרחב התרגול",
+      "firstName": "שם פרטי",
+      "firstNamePlaceholder": "למשל: שרה",
+      "lastName": "שם משפחה",
+      "lastNamePlaceholder": "למשל: כהן",
+      "email": "דוא\"ל",
+      "emailPlaceholder": "sara@example.com",
+      "phone": "טלפון",
+      "phonePlaceholder": "050-1234567",
+      "cancel": "בטל",
+      "submit": "הוסף מתאמן",
+      "success": "{name} נוסף/ה בהצלחה",
+      "error": "שגיאה בהוספת מתאמן"
+    },
+    "addSession": {
+      "title": "צור מפגש חדש",
+      "description": "קבע מפגש עם מתאמן",
+      "client": "מתאמן",
+      "selectClient": "בחר מתאמן",
+      "noClients": "אין מתאמנים זמינים. הוסף מתאמן תחילה.",
+      "sessionTitle": "נושא המפגש",
+      "titlePlaceholder": "למשל: מודעות סומטית - חיבור לגוף",
+      "date": "תאריך",
+      "time": "שעה",
+      "duration": "משך",
+      "minutes": "דקות",
+      "meetingUrl": "קישור למפגש",
+      "meetingUrlPlaceholder": "https://zoom.us/...",
+      "cancel": "בטל",
+      "submit": "צור מפגש",
+      "success": "מפגש עם {client} נוצר בהצלחה",
+      "error": "שגיאה ביצירת המפגש"
+    }
+  },
   "dashboard": {
     "title": "מרחב התרגול",
     "coachTitle": "מרחב התרגול",
@@ -189,6 +226,9 @@
       "description": "הפגישות הקרובות שלך",
       "with": "עם",
       "empty": "אין פגישות קרובות",
+      "emptyTitle": "אין פגישות קרובות",
+      "emptyDescription": "התחל לבנות את מרחב התרגול שלך על ידי קביעת המפגש הראשון",
+      "emptyAction": "צור מפגש חדש",
       "viewAll": "צפה בכל הפגישות",
       "duration": "משך"
     },
@@ -223,6 +263,9 @@
       "title": "מתאמנים אחרונים",
       "description": "מתאמנים שעבדת איתם לאחרונה",
       "empty": "אין מתאמנים אחרונים",
+      "emptyTitle": "אין מתאמנים עדיין",
+      "emptyDescription": "הוסף את המתאמן הראשון שלך וצור את מרחב התרגול המשותף",
+      "emptyAction": "הוסף מתאמן",
       "sessions": "פגישות",
       "lastSession": "פגישה אחרונה",
       "status": {

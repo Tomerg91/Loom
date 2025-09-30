@@ -10,6 +10,7 @@ import { SkipLink } from '@/components/ui/skip-link';
 import { EnvironmentCheck } from '@/components/environment-check';
 import { AppFooter } from '@/components/layout/app-footer';
 import { PwaBootstrap } from '@/components/pwa/pwa-bootstrap';
+import { Toaster } from 'sonner';
 import '../globals.css';
 
 // Optimize for faster initial loads - reduce server work
@@ -104,9 +105,9 @@ export default async function LocaleLayout({
           {locale === 'he' ? 'עבור לניווט' : 'Skip to navigation'}
         </SkipLink>
         <EnvironmentCheck />
-        <Providers 
-          locale={locale} 
-          messages={resolvedMessages} 
+        <Providers
+          locale={locale}
+          messages={resolvedMessages}
           initialUser={resolvedUser}
         >
           <main id="main-content" tabIndex={-1} className="flex-1">
@@ -114,6 +115,11 @@ export default async function LocaleLayout({
           </main>
           <AppFooter />
           <PerformanceMonitorComponent />
+          <Toaster
+            position={locale === 'he' ? 'top-left' : 'top-right'}
+            dir={locale === 'he' ? 'rtl' : 'ltr'}
+            richColors
+          />
         </Providers>
       </body>
     </html>
