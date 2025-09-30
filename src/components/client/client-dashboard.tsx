@@ -21,6 +21,7 @@ import {
 import { SessionList } from '@/components/sessions/session-list';
 import { SessionCalendar } from '@/components/sessions/session-calendar';
 import { ReflectionsManagement } from '@/components/client/reflections-management';
+import { PracticeJournal } from '@/components/client/practice-journal';
 import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { Session } from '@/types';
 
@@ -138,8 +139,9 @@ export function ClientDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 max-w-md" role="tablist" aria-label="Dashboard navigation">
+        <TabsList className="grid w-full grid-cols-4 max-w-2xl" role="tablist" aria-label="Dashboard navigation">
           <TabsTrigger value="overview" aria-label="Overview dashboard">Overview</TabsTrigger>
+          <TabsTrigger value="journal" aria-label="Practice journal">יומן תרגול</TabsTrigger>
           <TabsTrigger value="sessions" aria-label="Sessions management">Sessions</TabsTrigger>
           <TabsTrigger value="reflections" aria-label="Reflections journal">Reflections</TabsTrigger>
         </TabsList>
@@ -400,6 +402,10 @@ export function ClientDashboard() {
               />
             </TabsContent>
           </Tabs>
+        </TabsContent>
+
+        <TabsContent value="journal" className="space-y-6">
+          <PracticeJournal />
         </TabsContent>
 
         <TabsContent value="reflections" className="space-y-6">
