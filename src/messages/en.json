@@ -383,7 +383,9 @@
       "title": "Sign In",
       "description": "Enter your credentials to access your account",
       "button": "Sign In",
-      "link": "Sign in here"
+      "link": "Sign in here",
+      "loading": "Signing in...",
+      "error": "An error occurred during sign in. Please try again."
     },
     "signup": {
       "title": "Sign Up",

@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
@@ -7,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/components/auth/auth-provider';
+import { Loader2 } from 'lucide-react';
 
 interface SigninFormProps {
   redirectTo?: string;
@@ -15,6 +19,41 @@ interface SigninFormProps {
 export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   const t = useTranslations('auth');
   const locale = useLocale();
+  const router = useRouter();
+  const { signIn } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    try {
+      const result = await signIn(email, password);
+
+      if (result.error) {
+        setError(result.error);
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if MFA is required
+      if (result.user?.mfaEnabled) {
+        router.push(`/${locale}/auth/mfa-verify?redirectTo=${encodeURIComponent(redirectTo)}`);
+      } else {
+        // Auth state is now updated, safe to redirect
+        router.push(`/${locale}${redirectTo}`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('signin.error'));
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
@@ -24,10 +63,17 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
           {t('signin.description')}
         </CardDescription>
       </CardHeader>
-      <form method="POST" action="/api/auth/signin/browser">
+      <form onSubmit={handleSubmit}>
         <CardContent className="space-y-6 px-8">
-          <input type="hidden" name="redirectTo" value={redirectTo} />
-          <input type="hidden" name="locale" value={locale} />
+          {error && (
+            <div
+              className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded"
+              role="alert"
+              data-testid="error-message"
+            >
+              {error}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium text-neutral-900">{t('email')}</Label>
             <Input
@@ -57,14 +103,22 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-6 px-8 pb-8">
-          <Button 
-            type="submit" 
-            variant="default" 
-            size="lg" 
-            className="w-full" 
+          <Button
+            type="submit"
+            variant="default"
+            size="lg"
+            className="w-full"
+            disabled={isLoading}
             data-testid="signin-button"
           >
-            {t('signin.button')}
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t('signin.loading')}
+              </span>
+            ) : (
+              t('signin.button')
+            )}
           </Button>
           
           <div className="text-center space-y-3">
