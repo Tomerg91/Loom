@@ -290,7 +290,146 @@
     "tabs": {
       "overview": "סקירה",
       "sessions": "פגישות",
-      "clients": "מתאמנים"
+      "clients": "מתאמנים",
+      "practiceJournal": "יומן תרגול",
+      "resources": "תרגולים ומקורות",
+      "messages": "הודעות"
+    }
+  },
+  "practiceJournal": {
+    "title": "יומן תרגול",
+    "description": "מרחב אישי לתיעוד החוויה הסומטית שלך",
+    "emptyTitle": "טרם נרשמו תרגולים",
+    "emptyDescription": "התחל לתעד את המסע הסומטי שלך על ידי רישום התרגול הראשון",
+    "emptyAction": "רשום תרגול חדש",
+    "newEntry": "רשום תרגול חדש",
+    "editEntry": "ערוך תרגול",
+    "deleteEntry": "מחק תרגול",
+    "shareWithCoach": "שתף עם המאמן",
+    "unshareWithCoach": "הסר שיתוף",
+    "shared": "משותף",
+    "private": "פרטי",
+    "form": {
+      "title": "כותרת (אופציונלי)",
+      "titlePlaceholder": "למשל: תרגול בוקר - מודעות לנשימה",
+      "content": "מה עלה בגוף?",
+      "contentPlaceholder": "תאר/י את החוויה הסומטית שלך...\n\nדוגמאות:\n• אילו תחושות עלו בגוף?\n• היכן הרגשת שחרור או מתח?\n• מה למדת על עצמך?",
+      "insights": "גילויים ותובנות",
+      "insightsPlaceholder": "מה התגלה לך במהלך התרגול?",
+      "sensations": "תחושות",
+      "sensationsPlaceholder": "הוסף תחושות (לחץ Enter)",
+      "emotions": "רגשות",
+      "emotionsPlaceholder": "הוסף רגשות (לחץ Enter)",
+      "bodyAreas": "אזורי גוף",
+      "bodyAreasPlaceholder": "הוסף אזורי גוף (לחץ Enter)",
+      "practicesDone": "תרגולים שבוצעו",
+      "practicesDonePlaceholder": "הוסף תרגולים (לחץ Enter)",
+      "moodRating": "דירוג מצב רוח (1-10)",
+      "energyLevel": "רמת אנרגיה (1-10)",
+      "linkToSession": "קשר למפגש (אופציונלי)",
+      "selectSession": "בחר מפגש",
+      "shareWithCoach": "שתף עם המאמן שלי",
+      "cancel": "בטל",
+      "save": "שמור",
+      "saving": "שומר..."
+    },
+    "prompts": {
+      "title": "שאלות מנחות",
+      "sensations": "אילו תחושות עלו בגוף היום?",
+      "location": "היכן הרגשת שחרור או מתח?",
+      "learning": "מה למדת על עצמך?",
+      "awareness": "מה קיבל תשומת לב?",
+      "breath": "איך נושם הגוף שלך?"
+    },
+    "tags": {
+      "sensations": {
+        "tension": "מתיחות",
+        "release": "שחרור",
+        "warmth": "חום",
+        "tingling": "עקצוץ",
+        "heaviness": "כובד",
+        "lightness": "קלילות",
+        "pain": "כאב",
+        "comfort": "נוחות",
+        "stiffness": "נוקשות",
+        "flow": "זרימה"
+      },
+      "emotions": {
+        "calm": "רוגע",
+        "anxious": "חרדה",
+        "joyful": "שמחה",
+        "peaceful": "שלווה",
+        "frustrated": "תסכול",
+        "content": "שביעות רצון",
+        "sad": "עצב",
+        "grateful": "הכרת תודה",
+        "curious": "סקרנות",
+        "present": "נוכחות"
+      },
+      "bodyAreas": {
+        "shoulders": "כתפיים",
+        "neck": "צוואר",
+        "chest": "חזה",
+        "stomach": "בטן",
+        "back": "גב",
+        "jaw": "לסת",
+        "hands": "ידיים",
+        "feet": "כפות רגליים",
+        "hips": "ירכיים",
+        "throat": "גרון"
+      },
+      "practices": {
+        "breathing": "נשימה",
+        "bodyScan": "סריקת גוף",
+        "movement": "תנועה",
+        "grounding": "הארקה",
+        "meditation": "מדיטציה",
+        "stretching": "מתיחות",
+        "walking": "הליכה",
+        "yoga": "יוגה",
+        "dance": "ריקוד",
+        "rest": "מנוחה"
+      }
+    },
+    "stats": {
+      "title": "סטטיסטיקות",
+      "totalEntries": "סך תרגולים",
+      "thisWeek": "השבוע",
+      "thisMonth": "החודש",
+      "shared": "משותפים",
+      "averageMood": "מצב רוח ממוצע",
+      "averageEnergy": "אנרגיה ממוצעת",
+      "streak": "רצף ימים",
+      "commonSensations": "תחושות נפוצות",
+      "commonEmotions": "רגשות נפוצים"
+    },
+    "filters": {
+      "all": "הכל",
+      "shared": "משותפים",
+      "private": "פרטיים",
+      "thisWeek": "השבוע",
+      "thisMonth": "החודש",
+      "search": "חפש בתרגולים..."
+    },
+    "confirmDelete": {
+      "title": "מחק תרגול",
+      "description": "האם אתה בטוח שברצונך למחוק תרגול זה? פעולה זו אינה ניתנת לביטול.",
+      "cancel": "בטל",
+      "confirm": "מחק"
+    },
+    "success": {
+      "created": "התרגול נשמר בהצלחה",
+      "updated": "התרגול עודכן בהצלחה",
+      "deleted": "התרגול נמחק בהצלחה",
+      "shared": "התרגול שותף עם המאמן",
+      "unshared": "השיתוף הוסר"
+    },
+    "error": {
+      "loadFailed": "שגיאה בטעינת התרגולים",
+      "createFailed": "שגיאה ביצירת התרגול",
+      "updateFailed": "שגיאה בעדכון התרגול",
+      "deleteFailed": "שגיאה במחיקת התרגול",
+      "shareFailed": "שגיאה בשיתוף התרגול"
     }
   },
   "mfa": {
