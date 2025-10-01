@@ -201,8 +201,8 @@ CREATE POLICY "Admins can view backup code status" ON mfa_backup_codes
 CREATE POLICY "Users can view their own verification attempts" ON mfa_verification_attempts
     FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "System can insert verification attempts" ON mfa_verification_attempts
-    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Authenticated users can insert their own verification attempts" ON mfa_verification_attempts
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Admins can view all verification attempts" ON mfa_verification_attempts
     FOR ALL USING (
@@ -235,6 +235,9 @@ CREATE INDEX idx_mfa_verification_attempts_user_id ON mfa_verification_attempts(
 CREATE INDEX idx_mfa_verification_attempts_created_at ON mfa_verification_attempts(created_at);
 CREATE INDEX idx_mfa_verification_attempts_status ON mfa_verification_attempts(status);
 CREATE INDEX idx_mfa_verification_attempts_ip_address ON mfa_verification_attempts(ip_address);
+CREATE INDEX idx_mfa_verification_attempts_method_id ON mfa_verification_attempts(method_id);
+
+CREATE INDEX idx_mfa_system_config_updated_by ON mfa_system_config(updated_by);
 
 -- Trigger functions for updated_at timestamps
 CREATE TRIGGER update_user_mfa_settings_updated_at BEFORE UPDATE ON user_mfa_settings
@@ -254,17 +257,17 @@ DECLARE
     encryption_key BYTEA;
 BEGIN
     -- Generate a random salt
-    secret_salt := gen_random_bytes(32);
-    
+    secret_salt := extensions.gen_random_bytes(32);
+
     -- Create encryption key from user ID and salt
-    encryption_key := digest(user_id::TEXT || encode(secret_salt, 'hex'), 'sha256');
-    
+    encryption_key := extensions.digest(user_id::TEXT || extensions.encode(secret_salt, 'hex'), 'sha256');
+
     -- Return encrypted secret and salt
-    RETURN QUERY SELECT 
-        pgp_sym_encrypt(secret, encode(encryption_key, 'hex'))::BYTEA,
+    RETURN QUERY SELECT
+        extensions.pgp_sym_encrypt(secret, extensions.encode(encryption_key, 'hex'))::BYTEA,
         secret_salt;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Security function: Decrypt TOTP secret
 CREATE OR REPLACE FUNCTION decrypt_totp_secret(
@@ -278,22 +281,22 @@ DECLARE
     decrypted_secret TEXT;
 BEGIN
     -- Recreate encryption key
-    encryption_key := digest(user_id::TEXT || encode(secret_salt, 'hex'), 'sha256');
-    
+    encryption_key := extensions.digest(user_id::TEXT || extensions.encode(secret_salt, 'hex'), 'sha256');
+
     -- Decrypt and return secret
-    SELECT pgp_sym_decrypt(encrypted_secret, encode(encryption_key, 'hex')) INTO decrypted_secret;
-    
+    SELECT extensions.pgp_sym_decrypt(encrypted_secret, extensions.encode(encryption_key, 'hex')) INTO decrypted_secret;
+
     RETURN decrypted_secret;
 EXCEPTION
     WHEN OTHERS THEN
         -- Log decryption failure
-        INSERT INTO security_audit_log (user_id, event_type, event_details, severity)
-        VALUES (user_id, 'mfa_secret_decryption_failed', 
+        INSERT INTO public.security_audit_log (user_id, event_type, event_details, severity)
+        VALUES (user_id, 'mfa_secret_decryption_failed',
                 jsonb_build_object('error', SQLERRM),
                 'error');
         RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Security function: Generate secure backup codes
 CREATE OR REPLACE FUNCTION generate_backup_codes(
@@ -313,51 +316,51 @@ BEGIN
     IF codes_count <= 0 OR codes_count > 20 THEN
         RAISE EXCEPTION 'Invalid codes count. Must be between 1 and 20.';
     END IF;
-    
+
     IF code_length < 6 OR code_length > 12 THEN
         RAISE EXCEPTION 'Invalid code length. Must be between 6 and 12.';
     END IF;
-    
+
     -- Deactivate existing backup codes
-    UPDATE mfa_backup_codes 
-    SET status = 'expired' 
+    UPDATE public.mfa_backup_codes
+    SET status = 'expired'
     WHERE user_id = target_user_id AND status = 'active';
-    
+
     -- Generate new backup codes
     backup_codes := ARRAY[]::TEXT[];
-    
+
     FOR i IN 1..codes_count LOOP
         -- Generate cryptographically secure random code
-        code := upper(encode(gen_random_bytes(code_length/2), 'hex'));
-        
+        code := upper(extensions.encode(extensions.gen_random_bytes(code_length/2), 'hex'));
+
         -- Add to return array
         backup_codes := array_append(backup_codes, code);
-        
+
         -- Generate salt and hash for storage
-        code_salt := gen_random_bytes(32);
-        code_hash := encode(digest(code || encode(code_salt, 'hex'), 'sha256'), 'hex');
-        
+        code_salt := extensions.gen_random_bytes(32);
+        code_hash := extensions.encode(extensions.digest(code || extensions.encode(code_salt, 'hex'), 'sha256'), 'hex');
+
         -- Store hashed version
-        INSERT INTO mfa_backup_codes (user_id, code_hash, code_salt)
+        INSERT INTO public.mfa_backup_codes (user_id, code_hash, code_salt)
         VALUES (target_user_id, code_hash, code_salt);
     END LOOP;
-    
+
     -- Update MFA settings
-    UPDATE user_mfa_settings 
+    UPDATE public.user_mfa_settings
     SET backup_codes_generated = true,
         last_backup_codes_generated_at = NOW(),
         updated_at = NOW()
     WHERE user_id = target_user_id;
-    
+
     -- Log security event
-    INSERT INTO security_audit_log (user_id, event_type, event_details, severity)
-    VALUES (target_user_id, 'mfa_backup_codes_generated', 
+    INSERT INTO public.security_audit_log (user_id, event_type, event_details, severity)
+    VALUES (target_user_id, 'mfa_backup_codes_generated',
             jsonb_build_object('codes_count', codes_count),
             'info');
-    
+
     RETURN backup_codes;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Security function: Verify backup code
 CREATE OR REPLACE FUNCTION verify_backup_code(
@@ -373,59 +376,59 @@ DECLARE
     verification_success BOOLEAN := false;
 BEGIN
     -- Check rate limiting
-    IF NOT check_mfa_rate_limit(target_user_id, 'backup_code') THEN
-        INSERT INTO mfa_verification_attempts 
+    IF NOT public.check_mfa_rate_limit(target_user_id, 'backup_code') THEN
+        INSERT INTO public.mfa_verification_attempts
         (user_id, method_type, status, is_backup_code, ip_address, user_agent, failure_reason)
         VALUES (target_user_id, 'totp', 'rate_limited', true, client_ip, client_user_agent, 'Rate limit exceeded');
-        
+
         RETURN false;
     END IF;
-    
+
     -- Find matching backup code
-    FOR stored_code IN 
-        SELECT id, code_hash, code_salt 
-        FROM mfa_backup_codes 
+    FOR stored_code IN
+        SELECT id, code_hash, code_salt
+        FROM public.mfa_backup_codes
         WHERE user_id = target_user_id AND status = 'active'
     LOOP
         -- Compute hash of provided code with stored salt
-        computed_hash := encode(digest(upper(provided_code) || encode(stored_code.code_salt, 'hex'), 'sha256'), 'hex');
-        
+        computed_hash := extensions.encode(extensions.digest(upper(provided_code) || extensions.encode(stored_code.code_salt, 'hex'), 'sha256'), 'hex');
+
         IF computed_hash = stored_code.code_hash THEN
             -- Mark code as used
-            UPDATE mfa_backup_codes 
+            UPDATE public.mfa_backup_codes
             SET status = 'used',
                 used_at = NOW(),
                 used_ip = client_ip,
                 used_user_agent = client_user_agent
             WHERE id = stored_code.id;
-            
+
             verification_success := true;
-            
+
             -- Log successful verification
-            INSERT INTO mfa_verification_attempts 
+            INSERT INTO public.mfa_verification_attempts
             (user_id, method_type, status, is_backup_code, ip_address, user_agent)
             VALUES (target_user_id, 'totp', 'success', true, client_ip, client_user_agent);
-            
+
             -- Log security event
-            INSERT INTO security_audit_log (user_id, event_type, event_details, severity)
-            VALUES (target_user_id, 'mfa_backup_code_used', 
+            INSERT INTO public.security_audit_log (user_id, event_type, event_details, severity)
+            VALUES (target_user_id, 'mfa_backup_code_used',
                     jsonb_build_object('code_id', stored_code.id, 'ip_address', client_ip),
                     'info');
-            
+
             EXIT;
         END IF;
     END LOOP;
-    
+
     -- Log failed attempt if no match found
     IF NOT verification_success THEN
-        INSERT INTO mfa_verification_attempts 
+        INSERT INTO public.mfa_verification_attempts
         (user_id, method_type, status, is_backup_code, ip_address, user_agent, failure_reason)
         VALUES (target_user_id, 'totp', 'failed', true, client_ip, client_user_agent, 'Invalid backup code');
     END IF;
-    
+
     RETURN verification_success;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Security function: Check MFA rate limiting
 CREATE OR REPLACE FUNCTION check_mfa_rate_limit(
@@ -437,28 +440,28 @@ DECLARE
     rate_limit_window INTEGER;
     rate_limit_max_attempts INTEGER;
     recent_attempts INTEGER;
-    method_type_enum mfa_method_type;
+    method_type_enum public.mfa_method_type;
 BEGIN
     -- Get rate limiting configuration
     SELECT (setting_value::TEXT)::INTEGER INTO rate_limit_window
-    FROM mfa_system_config WHERE setting_key = 'rate_limit_window_minutes';
-    
+    FROM public.mfa_system_config WHERE setting_key = 'rate_limit_window_minutes';
+
     SELECT (setting_value::TEXT)::INTEGER INTO rate_limit_max_attempts
-    FROM mfa_system_config WHERE setting_key = 'rate_limit_max_attempts';
-    
+    FROM public.mfa_system_config WHERE setting_key = 'rate_limit_max_attempts';
+
     -- Convert string to enum
-    method_type_enum := method_type_param::mfa_method_type;
-    
+    method_type_enum := method_type_param::public.mfa_method_type;
+
     -- Count recent verification attempts
     SELECT COUNT(*) INTO recent_attempts
-    FROM mfa_verification_attempts
+    FROM public.mfa_verification_attempts
     WHERE user_id = target_user_id
     AND method_type = method_type_enum
     AND created_at > NOW() - (rate_limit_window || ' minutes')::INTERVAL;
-    
+
     RETURN recent_attempts < rate_limit_max_attempts;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Security function: Get MFA status for user
 CREATE OR REPLACE FUNCTION get_user_mfa_status(target_user_id UUID)
@@ -472,26 +475,26 @@ DECLARE
 BEGIN
     -- Get MFA settings
     SELECT * INTO mfa_settings
-    FROM user_mfa_settings
+    FROM public.user_mfa_settings
     WHERE user_id = target_user_id;
-    
+
     -- Count active methods
     SELECT COUNT(*) INTO active_methods
-    FROM user_mfa_methods
+    FROM public.user_mfa_methods
     WHERE user_id = target_user_id AND status = 'active';
-    
+
     -- Count available backup codes
     SELECT COUNT(*) INTO backup_codes_count
-    FROM mfa_backup_codes
+    FROM public.mfa_backup_codes
     WHERE user_id = target_user_id AND status = 'active' AND expires_at > NOW();
-    
+
     -- Count recent failures
     SELECT COUNT(*) INTO recent_failures
-    FROM mfa_verification_attempts
-    WHERE user_id = target_user_id 
-    AND status = 'failed' 
+    FROM public.mfa_verification_attempts
+    WHERE user_id = target_user_id
+    AND status = 'failed'
     AND created_at > NOW() - INTERVAL '24 hours';
-    
+
     -- Build result
     result := jsonb_build_object(
         'is_enabled', COALESCE(mfa_settings.is_enabled, false),
@@ -503,10 +506,10 @@ BEGIN
         'last_backup_codes_generated', mfa_settings.last_backup_codes_generated_at,
         'recovery_email', mfa_settings.recovery_email
     );
-    
+
     RETURN result;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- View for MFA dashboard (admin only)
 CREATE OR REPLACE VIEW mfa_admin_dashboard AS
@@ -568,54 +571,54 @@ RETURNS TRIGGER AS $$
 DECLARE
     enforce_for_admins BOOLEAN;
     enforce_for_coaches BOOLEAN;
-    user_role user_role;
+    user_role public.user_role;
     mfa_enabled BOOLEAN;
 BEGIN
     -- Get user role
-    SELECT role INTO user_role FROM users WHERE id = NEW.id;
-    
+    SELECT role INTO user_role FROM public.users WHERE id = NEW.id;
+
     -- Get enforcement settings
     SELECT (setting_value::TEXT)::BOOLEAN INTO enforce_for_admins
-    FROM mfa_system_config WHERE setting_key = 'enforce_mfa_for_admins';
-    
+    FROM public.mfa_system_config WHERE setting_key = 'enforce_mfa_for_admins';
+
     SELECT (setting_value::TEXT)::BOOLEAN INTO enforce_for_coaches
-    FROM mfa_system_config WHERE setting_key = 'enforce_mfa_for_coaches';
-    
+    FROM public.mfa_system_config WHERE setting_key = 'enforce_mfa_for_coaches';
+
     -- Check if user has MFA enabled
     SELECT COALESCE(is_enabled, false) INTO mfa_enabled
-    FROM user_mfa_settings WHERE user_id = NEW.id;
-    
+    FROM public.user_mfa_settings WHERE user_id = NEW.id;
+
     -- Enforce MFA for admins if required
     IF user_role = 'admin' AND enforce_for_admins AND NOT mfa_enabled THEN
         -- Create or update MFA settings to enforce
-        INSERT INTO user_mfa_settings (user_id, is_enforced)
+        INSERT INTO public.user_mfa_settings (user_id, is_enforced)
         VALUES (NEW.id, true)
-        ON CONFLICT (user_id) 
+        ON CONFLICT (user_id)
         DO UPDATE SET is_enforced = true, updated_at = NOW();
-        
+
         -- Log enforcement
-        INSERT INTO security_audit_log (user_id, event_type, event_details, severity)
-        VALUES (NEW.id, 'mfa_enforcement_applied', 
+        INSERT INTO public.security_audit_log (user_id, event_type, event_details, severity)
+        VALUES (NEW.id, 'mfa_enforcement_applied',
                 jsonb_build_object('role', user_role, 'reason', 'admin_policy'),
                 'info');
     END IF;
-    
+
     -- Enforce MFA for coaches if required
     IF user_role = 'coach' AND enforce_for_coaches AND NOT mfa_enabled THEN
-        INSERT INTO user_mfa_settings (user_id, is_enforced)
+        INSERT INTO public.user_mfa_settings (user_id, is_enforced)
         VALUES (NEW.id, true)
-        ON CONFLICT (user_id) 
+        ON CONFLICT (user_id)
         DO UPDATE SET is_enforced = true, updated_at = NOW();
-        
-        INSERT INTO security_audit_log (user_id, event_type, event_details, severity)
-        VALUES (NEW.id, 'mfa_enforcement_applied', 
+
+        INSERT INTO public.security_audit_log (user_id, event_type, event_details, severity)
+        VALUES (NEW.id, 'mfa_enforcement_applied',
                 jsonb_build_object('role', user_role, 'reason', 'coach_policy'),
                 'info');
     END IF;
-    
+
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Trigger to check MFA enforcement on user updates
 CREATE TRIGGER check_mfa_enforcement_trigger
@@ -629,21 +632,21 @@ DECLARE
     cleanup_count INTEGER := 0;
 BEGIN
     -- Clean up expired backup codes
-    DELETE FROM mfa_backup_codes 
+    DELETE FROM public.mfa_backup_codes
     WHERE status = 'active' AND expires_at < NOW();
     GET DIAGNOSTICS cleanup_count = ROW_COUNT;
-    
+
     -- Clean up old verification attempts (keep 90 days)
     WITH deleted_attempts AS (
-        DELETE FROM mfa_verification_attempts 
+        DELETE FROM public.mfa_verification_attempts
         WHERE created_at < NOW() - INTERVAL '90 days'
         RETURNING 1
     )
     SELECT cleanup_count + COUNT(*) INTO cleanup_count FROM deleted_attempts;
-    
+
     -- Clean up expired QR codes and verification codes
     WITH updated_methods AS (
-        UPDATE user_mfa_methods 
+        UPDATE public.user_mfa_methods
         SET qr_code_url = NULL,
             verification_code = NULL,
             verification_expires_at = NULL
@@ -651,16 +654,16 @@ BEGIN
         RETURNING 1
     )
     SELECT cleanup_count + COUNT(*) INTO cleanup_count FROM updated_methods;
-    
+
     -- Log cleanup activity
-    INSERT INTO security_audit_log (event_type, event_details, severity)
-    VALUES ('mfa_data_cleanup', 
+    INSERT INTO public.security_audit_log (event_type, event_details, severity)
+    VALUES ('mfa_data_cleanup',
             jsonb_build_object('records_cleaned', cleanup_count),
             'info');
-    
+
     RETURN cleanup_count;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Grant cleanup function to authenticated users (will be called by scheduled job)
 GRANT EXECUTE ON FUNCTION cleanup_mfa_data() TO authenticated;

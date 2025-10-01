@@ -32,16 +32,7 @@ CREATE TABLE IF NOT EXISTS practice_journal_entries (
 
   -- Timestamps
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-
-  -- Ensure client is actually a client
-  CONSTRAINT practice_journal_client_role CHECK (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE id = client_id
-      AND role IN ('client', 'admin')
-    )
-  )
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create indexes for better query performance
@@ -54,6 +45,7 @@ CREATE INDEX idx_practice_journal_session_id ON practice_journal_entries(session
 CREATE INDEX idx_practice_journal_sensations ON practice_journal_entries USING GIN(sensations);
 CREATE INDEX idx_practice_journal_emotions ON practice_journal_entries USING GIN(emotions);
 CREATE INDEX idx_practice_journal_body_areas ON practice_journal_entries USING GIN(body_areas);
+CREATE INDEX idx_practice_journal_practices_done ON practice_journal_entries USING GIN(practices_done);
 
 -- Create updated_at trigger
 CREATE TRIGGER update_practice_journal_updated_at
@@ -68,18 +60,19 @@ ALTER TABLE practice_journal_entries ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clients can view own practice journal entries"
   ON practice_journal_entries
   FOR SELECT
-  USING (
-    auth.uid() = client_id
-    OR auth.jwt() ->> 'role' = 'admin'
-  );
+  USING (auth.uid() = client_id);
 
--- Coaches can view shared entries from their clients
-CREATE POLICY "Coaches can view shared practice journal entries"
+-- Coaches can view shared entries from their assigned clients only
+CREATE POLICY "Coaches can view assigned client shared entries"
   ON practice_journal_entries
   FOR SELECT
   USING (
-    (shared_with_coach = TRUE AND auth.jwt() ->> 'role' = 'coach')
-    OR auth.jwt() ->> 'role' = 'admin'
+    shared_with_coach = TRUE
+    AND EXISTS (
+      SELECT 1 FROM sessions
+      WHERE sessions.coach_id = auth.uid()
+      AND sessions.client_id = practice_journal_entries.client_id
+    )
   );
 
 -- Clients can create their own journal entries
@@ -88,9 +81,7 @@ CREATE POLICY "Clients can create own practice journal entries"
   FOR INSERT
   WITH CHECK (
     auth.uid() = client_id
-    AND (
-      SELECT role FROM users WHERE id = auth.uid()
-    ) IN ('client', 'admin')
+    AND auth.jwt() ->> 'role' IN ('client', 'admin')
   );
 
 -- Clients can update their own journal entries
@@ -135,7 +126,7 @@ BEGIN
       COUNT(*) FILTER (WHERE shared_with_coach = TRUE) as shared,
       AVG(mood_rating) FILTER (WHERE mood_rating IS NOT NULL) as avg_mood,
       AVG(energy_level) FILTER (WHERE energy_level IS NOT NULL) as avg_energy
-    FROM practice_journal_entries
+    FROM public.practice_journal_entries
     WHERE client_id = user_id
   ),
   sensation_counts AS (
@@ -146,7 +137,7 @@ BEGIN
         UNNEST(sensations) as sensation,
         COUNT(*) as count,
         ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) as row_num
-      FROM practice_journal_entries
+      FROM public.practice_journal_entries
       WHERE client_id = user_id AND sensations IS NOT NULL
       GROUP BY sensation
     ) s
@@ -159,34 +150,23 @@ BEGIN
         UNNEST(emotions) as emotion,
         COUNT(*) as count,
         ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) as row_num
-      FROM practice_journal_entries
+      FROM public.practice_journal_entries
       WHERE client_id = user_id AND emotions IS NOT NULL
       GROUP BY emotion
     ) e
   ),
   streak AS (
     SELECT
-      COALESCE(MAX(consecutive_days), 0) as streak_days
+      COALESCE(COUNT(*), 0) as streak_days
     FROM (
       SELECT
-        date,
-        ROW_NUMBER() OVER (ORDER BY date) -
-        ROW_NUMBER() OVER (PARTITION BY has_entry ORDER BY date) as grp
-      FROM (
-        SELECT
-          date::DATE as date,
-          CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END as has_entry
-        FROM generate_series(
-          (SELECT MIN(created_at::DATE) FROM practice_journal_entries WHERE client_id = user_id),
-          CURRENT_DATE,
-          '1 day'::INTERVAL
-        ) date
-        LEFT JOIN practice_journal_entries pje ON pje.created_at::DATE = date::DATE AND pje.client_id = user_id
-        GROUP BY date
-      ) daily
-      WHERE has_entry = 1
-    ) groups
-    GROUP BY grp
+        created_at::DATE as entry_date,
+        LAG(created_at::DATE) OVER (ORDER BY created_at::DATE) as prev_date
+      FROM public.practice_journal_entries
+      WHERE client_id = user_id
+      ORDER BY created_at::DATE DESC
+    ) dates
+    WHERE entry_date = CURRENT_DATE - (ROW_NUMBER() OVER (ORDER BY entry_date DESC) - 1) * INTERVAL '1 day'
   )
   SELECT
     s.total,
@@ -203,18 +183,18 @@ BEGIN
   CROSS JOIN emotion_counts ec
   CROSS JOIN streak st;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Grant execute permission
 GRANT EXECUTE ON FUNCTION get_practice_journal_stats(UUID) TO authenticated;
 
 -- Create a function to share an entry with coach
 CREATE OR REPLACE FUNCTION share_journal_entry_with_coach(entry_id UUID)
-RETURNS practice_journal_entries AS $$
+RETURNS public.practice_journal_entries AS $$
 DECLARE
-  updated_entry practice_journal_entries;
+  updated_entry public.practice_journal_entries;
 BEGIN
-  UPDATE practice_journal_entries
+  UPDATE public.practice_journal_entries
   SET
     shared_with_coach = TRUE,
     shared_at = NOW(),
@@ -226,17 +206,17 @@ BEGIN
 
   RETURN updated_entry;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 GRANT EXECUTE ON FUNCTION share_journal_entry_with_coach(UUID) TO authenticated;
 
 -- Create a function to unshare an entry
 CREATE OR REPLACE FUNCTION unshare_journal_entry(entry_id UUID)
-RETURNS practice_journal_entries AS $$
+RETURNS public.practice_journal_entries AS $$
 DECLARE
-  updated_entry practice_journal_entries;
+  updated_entry public.practice_journal_entries;
 BEGIN
-  UPDATE practice_journal_entries
+  UPDATE public.practice_journal_entries
   SET
     shared_with_coach = FALSE,
     shared_at = NULL,
@@ -248,7 +228,7 @@ BEGIN
 
   RETURN updated_entry;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 GRANT EXECUTE ON FUNCTION unshare_journal_entry(UUID) TO authenticated;
 

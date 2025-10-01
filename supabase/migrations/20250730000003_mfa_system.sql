@@ -75,19 +75,19 @@ BEGIN
     -- Count failed attempts in the time window
     SELECT COUNT(*)
     INTO attempt_count
-    FROM mfa_attempts
+    FROM public.mfa_attempts
     WHERE (user_id = user_uuid OR ip_address = ip_addr)
     AND success = false
     AND created_at > NOW() - time_window;
-    
+
     RETURN attempt_count < max_attempts;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Function to log MFA events
 CREATE OR REPLACE FUNCTION log_mfa_event(
     user_uuid UUID,
-    event_type_val mfa_event_type,
+    event_type_val public.mfa_event_type,
     ip_addr INET DEFAULT NULL,
     user_agent_val TEXT DEFAULT NULL,
     metadata_val JSONB DEFAULT NULL
@@ -95,13 +95,13 @@ CREATE OR REPLACE FUNCTION log_mfa_event(
 DECLARE
     event_id UUID;
 BEGIN
-    INSERT INTO mfa_events (user_id, event_type, ip_address, user_agent, metadata)
+    INSERT INTO public.mfa_events (user_id, event_type, ip_address, user_agent, metadata)
     VALUES (user_uuid, event_type_val, ip_addr, user_agent_val, metadata_val)
     RETURNING id INTO event_id;
-    
+
     RETURN event_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Function to clean up old MFA attempts and events (for maintenance)
 CREATE OR REPLACE FUNCTION cleanup_old_mfa_data(
@@ -113,23 +113,23 @@ DECLARE
     temp_count INTEGER;
 BEGIN
     -- Clean up old attempts
-    DELETE FROM mfa_attempts
+    DELETE FROM public.mfa_attempts
     WHERE created_at < NOW() - attempts_retention;
-    
+
     GET DIAGNOSTICS temp_count = ROW_COUNT;
     deleted_count := deleted_count + temp_count;
-    
+
     -- Clean up old events (keep important events longer)
-    DELETE FROM mfa_events
+    DELETE FROM public.mfa_events
     WHERE created_at < NOW() - events_retention
     AND event_type NOT IN ('setup', 'enable', 'disable');
-    
+
     GET DIAGNOSTICS temp_count = ROW_COUNT;
     deleted_count := deleted_count + temp_count;
-    
+
     RETURN deleted_count;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Add RLS policies for MFA tables
 ALTER TABLE user_mfa ENABLE ROW LEVEL SECURITY;
