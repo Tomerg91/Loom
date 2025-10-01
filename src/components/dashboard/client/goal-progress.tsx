@@ -1,69 +1,43 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, Flag, TrendingUp } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from '@/i18n/routing';
+import { createClient } from '@/lib/supabase/client';
 
 import type { DashboardTranslations } from '../dashboard-types';
 
-interface Goal {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  priority: 'high' | 'medium' | 'low';
-  status: 'not_started' | 'in_progress' | 'completed' | 'paused';
-  progress: number;
-  targetDate: string;
-  createdDate: string;
-}
-
-interface ProgressResponse {
-  goals: Goal[];
-  totalGoals: number;
-  completedGoals: number;
-  inProgressGoals: number;
-}
-
 interface GoalProgressProps {
+  userId: string;
   locale: string;
   translations: DashboardTranslations;
 }
 
-async function fetchGoalProgress(): Promise<ProgressResponse> {
-  const response = await fetch('/api/widgets/progress?limit=4', {
-    cache: 'no-store',
-    credentials: 'same-origin',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch goal progress');
-  }
-
-  const payload = await response.json();
-  return payload.data ?? { goals: [], totalGoals: 0, completedGoals: 0, inProgressGoals: 0 };
+interface GoalRecord {
+  id: string;
+  description: string | null;
+  progress: number | null;
+  created_at: string;
+  client_id: string;
 }
 
-function resolvePriorityLabel(priority: Goal['priority'], t: DashboardTranslations['dashboard']) {
-  switch (priority) {
-    case 'high':
-      return t('clientSections.goalProgress.highPriority');
-    case 'medium':
-      return t('clientSections.goalProgress.mediumPriority');
-    case 'low':
-    default:
-      return t('clientSections.goalProgress.lowPriority');
-  }
+interface GoalStats {
+  total: number;
+  completed: number;
+  inProgress: number;
 }
 
-export function ClientGoalProgress({ locale, translations }: GoalProgressProps) {
+export function ClientGoalProgress({ userId, locale, translations }: GoalProgressProps) {
   const { dashboard: t, common: commonT } = translations;
+
+  const [goals, setGoals] = useState<GoalRecord[]>([]);
+  const [stats, setStats] = useState<GoalStats>({ total: 0, completed: 0, inProgress: 0 });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const dateFormatter = useMemo(
     () =>
@@ -74,13 +48,80 @@ export function ClientGoalProgress({ locale, translations }: GoalProgressProps) 
     [locale]
   );
 
-  const { data, isLoading, isError, refetch } = useQuery<ProgressResponse>({
-    queryKey: ['client-goal-progress', locale],
-    queryFn: fetchGoalProgress,
-    staleTime: 60_000,
-  });
+  useEffect(() => {
+    let isMounted = true;
 
-  const goals = data?.goals ?? [];
+    async function loadGoals() {
+      if (!userId) {
+        if (isMounted) {
+          setGoals([]);
+          setStats({ total: 0, completed: 0, inProgress: 0 });
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      try {
+        const supabase = createClient() as any;
+        const { data, error } = await supabase
+          .from('goals')
+          .select('id, description, progress, created_at, client_id')
+          .eq('client_id', userId)
+          .order('created_at', { ascending: false });
+
+        console.log('[ClientGoalProgress] Supabase response', { data, error });
+
+        if (error) {
+          throw error;
+        }
+
+        const goalRowsRaw = Array.isArray(data) ? data : [];
+        const goalRows: GoalRecord[] = goalRowsRaw.map((goal: any) => ({
+          id: String(goal.id ?? ''),
+          description: typeof goal.description === 'string' ? goal.description : null,
+          progress:
+            typeof goal.progress === 'number'
+              ? goal.progress
+              : goal.progress != null && !Number.isNaN(Number(goal.progress))
+                ? Number(goal.progress)
+                : null,
+          created_at: typeof goal.created_at === 'string' ? goal.created_at : new Date().toISOString(),
+          client_id: typeof goal.client_id === 'string' ? goal.client_id : userId,
+        }));
+
+        if (isMounted) {
+          setGoals(goalRows);
+
+          const completed = goalRows.filter((goal) => (goal.progress ?? 0) >= 100).length;
+          const inProgress = goalRows.filter((goal) => (goal.progress ?? 0) > 0 && (goal.progress ?? 0) < 100).length;
+
+          setStats({
+            total: goalRows.length,
+            completed,
+            inProgress,
+          });
+        }
+      } catch (error) {
+        console.error('[ClientGoalProgress] Failed to load goals', error);
+        if (isMounted) {
+          setErrorMessage(error instanceof Error ? error.message : String(error));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadGoals();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
 
   return (
     <Card>
@@ -93,27 +134,19 @@ export function ClientGoalProgress({ locale, translations }: GoalProgressProps) 
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading && (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={`goal-skeleton-${index}`} className="space-y-3 rounded-lg border p-4">
-                <Skeleton className="h-4 w-48" />
-                <Skeleton className="h-3 w-32" />
-                <Skeleton className="h-2 w-full" />
-              </div>
-            ))}
+          <div className="rounded-lg border border-dashed border-muted-foreground/40 bg-muted/10 p-6 text-center text-sm text-muted-foreground">
+            {commonT('loading')}
           </div>
         )}
 
-        {isError && !isLoading && (
+        {errorMessage && !isLoading && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
             <p>{t('clientSections.goalProgress.error')}</p>
-            <Button onClick={() => refetch()} size="sm" variant="outline" className="mt-3">
-              {commonT('retry')}
-            </Button>
+            <p className="mt-2 text-xs text-destructive/80">{errorMessage}</p>
           </div>
         )}
 
-        {!isLoading && !isError && goals.length === 0 && (
+        {!isLoading && !errorMessage && goals.length === 0 && (
           <div className="rounded-lg border border-dashed border-muted-foreground/40 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
             <Flag className="mx-auto mb-3 h-10 w-10 opacity-40" />
             <p>{t('clientSections.goalProgress.empty')}</p>
@@ -125,47 +158,50 @@ export function ClientGoalProgress({ locale, translations }: GoalProgressProps) 
           </div>
         )}
 
-        {!isLoading && !isError && goals.length > 0 && (
+        {!isLoading && !errorMessage && goals.length > 0 && (
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-lg border border-border/60 bg-muted/10 p-4 text-center">
                 <p className="text-sm text-muted-foreground">{t('clientSections.goalProgress.total')}</p>
-                <p className="text-2xl font-semibold text-foreground">{data?.totalGoals ?? 0}</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.total}</p>
               </div>
               <div className="rounded-lg border border-border/60 bg-muted/10 p-4 text-center">
                 <p className="text-sm text-muted-foreground">{t('clientSections.goalProgress.completed')}</p>
-                <p className="text-2xl font-semibold text-foreground">{data?.completedGoals ?? 0}</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.completed}</p>
               </div>
               <div className="rounded-lg border border-border/60 bg-muted/10 p-4 text-center">
                 <p className="text-sm text-muted-foreground">{t('clientSections.goalProgress.inProgress')}</p>
-                <p className="text-2xl font-semibold text-foreground">{data?.inProgressGoals ?? 0}</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.inProgress}</p>
               </div>
             </div>
 
             <div className="space-y-4">
-              {goals.map((goal) => (
-                <div key={goal.id} className="rounded-lg border border-border/60 bg-background p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-sm text-foreground">{goal.title}</p>
-                      <p className="text-xs text-muted-foreground">{goal.description}</p>
+              {goals.map((goal) => {
+                const progressValue = Math.max(0, Math.min(100, goal.progress ?? 0));
+                const isCompleted = progressValue >= 100;
+
+                return (
+                  <div key={goal.id} className="rounded-lg border border-border/60 bg-background p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-sm text-foreground">
+                          {goal.description ?? 'Untitled goal'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {dateFormatter.format(new Date(goal.created_at))}
+                        </p>
+                      </div>
+                      {isCompleted && (
+                        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-600">
+                          <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+                          {t('clientSections.goalProgress.completedLabel')}
+                        </span>
+                      )}
                     </div>
-                    {goal.status === 'completed' && (
-                      <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-600">
-                        <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
-                        {t('clientSections.goalProgress.completedLabel')}
-                      </span>
-                    )}
+                    <Progress value={progressValue} className="mt-3 h-2" />
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{resolvePriorityLabel(goal.priority, t)}</span>
-                    <span>
-                      {t('clientSections.goalProgress.target', { date: dateFormatter.format(new Date(goal.targetDate)) })}
-                    </span>
-                  </div>
-                  <Progress value={Math.round(goal.progress)} className="mt-3 h-2" />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
