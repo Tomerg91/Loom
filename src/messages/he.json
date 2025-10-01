@@ -287,6 +287,91 @@
       "reviewAnalytics": "צפה באנליטיקה",
       "systemHealth": "בריאות המערכת"
     },
+    "adminPlaceholder": {
+      "title": "לוח ניהול",
+      "body": "אנחנו בונים חוויית אדמין ייעודית. בינתיים ניתן להמשיך לנהל את המערכת דרך תפריט הניווט."
+    },
+    "clientSections": {
+      "upcomingSessions": {
+        "title": "פגישות קרובות",
+        "subtitle": "התכונן למה שמגיע עם המאמן שלך",
+        "error": "לא הצלחנו לטעון את הפגישות הקרובות. נסה שוב.",
+        "empty": "אין לך פגישות קרובות כרגע.",
+        "cta": "קבע פגישה",
+        "with": "עם",
+        "join": "הצטרף לפגישה"
+      },
+      "recentMessages": {
+        "title": "הודעות אחרונות",
+        "subtitle": "הישאר מעודכן בשיחות עם המאמן",
+        "error": "לא הצלחנו לטעון הודעות. נסה שוב.",
+        "empty": "אין הודעות חדשות כרגע.",
+        "cta": "פתח הודעות",
+        "unread": "{count} שלא נקראו"
+      },
+      "goalProgress": {
+        "title": "התקדמות במטרות",
+        "subtitle": "עקוב אחר ההתקדמות שלך",
+        "error": "לא הצלחנו לטעון את המטרות שלך.",
+        "empty": "עוד לא הגדרת מטרות אישיות. התחיל מטרה כדי לראות את ההתקדמות כאן.",
+        "cta": "צפה במטרות שלי",
+        "total": "סה\"כ מטרות",
+        "completed": "הושלמו",
+        "inProgress": "בתהליך",
+        "completedLabel": "הושלמה",
+        "target": "יעד: {date}",
+        "highPriority": "עדיפות גבוהה",
+        "mediumPriority": "עדיפות בינונית",
+        "lowPriority": "עדיפות נמוכה"
+      },
+      "quickActions": {
+        "title": "קיצורי דרך",
+        "subtitle": "גש לפעולות שתבצע הכי הרבה",
+        "schedule": "קבע פגישה",
+        "files": "צפה בקבצים משותפים",
+        "contact": "שלח הודעה למאמן"
+      }
+    },
+    "coachSections": {
+      "todaysAgenda": {
+        "title": "הלו\"ז של היום",
+        "subtitle": "לוח הזמנים שלך ל- {date}",
+        "error": "לא הצלחנו לטעון את לוח הזמנים. נסה שוב.",
+        "empty": "אין פגישות מתוכננות היום.",
+        "cta": "קבע פגישה חדשה",
+        "viewDetails": "צפה בפרטים",
+        "startSession": "התחל פגישה"
+      },
+      "clientSnapshot": {
+        "title": "תמונת מצב לקוחות",
+        "subtitle": "מדדים מרכזיים על רשימת הלקוחות",
+        "error": "לא הצלחנו לטעון את סיכום הלקוחות.",
+        "activeClients": "לקוחות פעילים",
+        "totalClients": "סה\"כ לקוחות",
+        "pendingRequests": "מעקבים ממתינים",
+        "completedSessions": "פגישות שהושלמו",
+        "nextSessions": "הפגישות הקרובות",
+        "viewAll": "צפה בכל הלקוחות",
+        "noUpcoming": "אין פגישות קרובות מתוכננות.",
+        "sessionScheduled": "פגישה מתוכננת • {date}",
+        "openProfile": "פתח פרופיל"
+      },
+      "activityFeed": {
+        "title": "פעילות אחרונה",
+        "subtitle": "עדכונים מהעבודה שלך",
+        "error": "לא הצלחנו לטעון פעילות אחרונה.",
+        "empty": "אין עדכונים חדשים כרגע.",
+        "with": "עם {name}",
+        "viewClient": "צפה בלקוח"
+      },
+      "quickActions": {
+        "title": "פעולות מהירות עבור {name}",
+        "subtitle": "השאר בשליטה על תהליך האימון",
+        "addClient": "הוסף או הזמן לקוח",
+        "viewCalendar": "פתח יומן",
+        "manageAvailability": "נהל זמינות"
+      }
+    },
     "tabs": {
       "overview": "סקירה",
       "sessions": "פגישות",

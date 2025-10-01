@@ -196,6 +196,91 @@
       "manageUsers": "Manage Users",
       "reviewAnalytics": "Review Analytics",
       "systemHealth": "System Health"
+    },
+    "adminPlaceholder": {
+      "title": "Administrator dashboard",
+      "body": "We're working on a dedicated experience for administrators. In the meantime you can continue managing the platform from the navigation menu."
+    },
+    "clientSections": {
+      "upcomingSessions": {
+        "title": "Upcoming Sessions",
+        "subtitle": "Stay ready for what's next with your coach",
+        "error": "We couldn't load your upcoming sessions. Please try again.",
+        "empty": "You don't have any upcoming sessions yet.",
+        "cta": "Schedule a session",
+        "with": "with",
+        "join": "Join session"
+      },
+      "recentMessages": {
+        "title": "Recent Messages",
+        "subtitle": "Catch up on conversations with your coach",
+        "error": "We couldn't load your messages. Please try again.",
+        "empty": "No new messages at the moment.",
+        "cta": "Open messages",
+        "unread": "{count} unread"
+      },
+      "goalProgress": {
+        "title": "Goal Progress",
+        "subtitle": "Track how you're progressing toward your goals",
+        "error": "We couldn't load your goals right now.",
+        "empty": "No personal goals just yet. Start a goal to see your progress here.",
+        "cta": "Review my goals",
+        "total": "Total goals",
+        "completed": "Completed",
+        "inProgress": "In progress",
+        "completedLabel": "Completed",
+        "target": "Target: {date}",
+        "highPriority": "High priority",
+        "mediumPriority": "Medium priority",
+        "lowPriority": "Low priority"
+      },
+      "quickActions": {
+        "title": "Shortcuts",
+        "subtitle": "Jump into the tasks you do most often",
+        "schedule": "Schedule a session",
+        "files": "View shared files",
+        "contact": "Message my coach"
+      }
+    },
+    "coachSections": {
+      "todaysAgenda": {
+        "title": "Today's Agenda",
+        "subtitle": "Your schedule for {date}",
+        "error": "We couldn't load today's agenda. Please try again.",
+        "empty": "You have no sessions scheduled today.",
+        "cta": "Schedule a new session",
+        "viewDetails": "View details",
+        "startSession": "Start session"
+      },
+      "clientSnapshot": {
+        "title": "Client Snapshot",
+        "subtitle": "Key metrics about your client roster",
+        "error": "We couldn't load your client overview.",
+        "activeClients": "Active clients",
+        "totalClients": "Total clients",
+        "pendingRequests": "Pending follow-ups",
+        "completedSessions": "Sessions completed",
+        "nextSessions": "Next sessions",
+        "viewAll": "View all clients",
+        "noUpcoming": "No upcoming sessions scheduled.",
+        "sessionScheduled": "Session scheduled • {date}",
+        "openProfile": "Open profile"
+      },
+      "activityFeed": {
+        "title": "Recent Activity",
+        "subtitle": "Updates from your coaching work",
+        "error": "We couldn't load recent activity.",
+        "empty": "No recent updates to show just yet.",
+        "with": "with {name}",
+        "viewClient": "View client"
+      },
+      "quickActions": {
+        "title": "Quick actions for {name}",
+        "subtitle": "Stay on top of your coaching workflow",
+        "addClient": "Add or invite a client",
+        "viewCalendar": "Open calendar",
+        "manageAvailability": "Manage availability"
+      }
     }
   },
   "mfa": {
