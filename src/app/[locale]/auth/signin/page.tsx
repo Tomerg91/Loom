@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 
 interface SigninPageProps {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ redirectTo?: string }>;
+  searchParams: Promise<{ redirectTo?: string; expired?: string }>;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -32,7 +32,7 @@ function SigninFormSkeleton() {
 
 export default async function SigninPage({ params, searchParams }: SigninPageProps) {
   const { locale } = await params;
-  const { redirectTo } = await searchParams;
+  const { redirectTo, expired } = await searchParams;
   const t = await getTranslations({ locale, namespace: 'auth' });
 
   return (
@@ -41,11 +41,11 @@ export default async function SigninPage({ params, searchParams }: SigninPagePro
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(0,0,0)_1px,transparent_0)] bg-[length:20px_20px]" />
       </div>
-      
+
       {/* Decorative elements */}
       <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-200 rounded-full opacity-20 blur-3xl" />
       <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-200 rounded-full opacity-20 blur-3xl" />
-      
+
       <div className="relative flex items-center justify-center min-h-screen px-4">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center space-y-3">
@@ -56,7 +56,16 @@ export default async function SigninPage({ params, searchParams }: SigninPagePro
               {t('welcomeDescription')}
             </p>
           </div>
-          
+
+          {expired && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <p className="font-medium">Session Expired</p>
+              <p className="mt-1 text-amber-700">
+                Your session has expired. Please sign in again to continue.
+              </p>
+            </div>
+          )}
+
           <Suspense fallback={<SigninFormSkeleton />}>
             <SigninForm redirectTo={redirectTo} />
           </Suspense>

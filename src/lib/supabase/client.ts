@@ -97,17 +97,95 @@ function validateClientEnv() {
   }
 }
 
+// Enhanced error handling and retry logic for token refresh
+let tokenRefreshRetries = 0;
+const MAX_REFRESH_RETRIES = 3;
+const REFRESH_RETRY_DELAY = 1000; // 1 second
+
+// Track if we're currently handling a sign-out to prevent multiple attempts
+let isHandlingSignOut = false;
+
+// Graceful sign-out with cleanup
+async function handleInvalidToken(client: SBClient) {
+  if (isHandlingSignOut) {
+    return; // Prevent concurrent sign-out attempts
+  }
+
+  isHandlingSignOut = true;
+
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Invalid or expired token detected. Signing out...');
+    }
+
+    // Clear the session
+    await client.auth.signOut({ scope: 'local' });
+
+    // Clear all auth-related storage
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('loom-auth');
+        localStorage.removeItem('loom-auth-token');
+        sessionStorage.removeItem('loom-auth');
+      } catch (e) {
+        // Storage might be unavailable
+      }
+    }
+
+    // Redirect to sign-in page
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('/signin')) {
+      window.location.href = '/signin?expired=true';
+    }
+  } catch (error) {
+    console.error('Error during automatic sign-out:', error);
+  } finally {
+    isHandlingSignOut = false;
+  }
+}
+
+// Retry token refresh with exponential backoff
+async function retryTokenRefresh(client: SBClient): Promise<boolean> {
+  for (let attempt = 0; attempt < MAX_REFRESH_RETRIES; attempt++) {
+    try {
+      const { data, error } = await client.auth.refreshSession();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.session) {
+        tokenRefreshRetries = 0; // Reset on success
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Token refresh successful on attempt', attempt + 1);
+        }
+        return true;
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`Token refresh attempt ${attempt + 1} failed:`, error);
+      }
+
+      // Wait before retrying (exponential backoff)
+      if (attempt < MAX_REFRESH_RETRIES - 1) {
+        await new Promise(resolve => setTimeout(resolve, REFRESH_RETRY_DELAY * Math.pow(2, attempt)));
+      }
+    }
+  }
+
+  return false; // All retries failed
+}
+
 // Client-side Supabase client for use in React components
 export const createClient = () => {
   // Only validate on the client side to avoid build-time errors
   if (typeof window !== 'undefined') {
     validateClientEnv();
   }
-  
+
   if (clientInstance) {
     return clientInstance;
   }
-  
+
   try {
     clientInstance = createBrowserClient<Database>(
       NEXT_PUBLIC_SUPABASE_URL,
@@ -119,17 +197,104 @@ export const createClient = () => {
           autoRefreshToken: true,
           persistSession: true,
           detectSessionInUrl: true,
+          // Add retry options for better resilience
+          flowType: 'pkce', // Use PKCE flow for better security
         },
       }
     );
+
+    // Set up auth state change listeners for better error handling
+    if (typeof window !== 'undefined') {
+      clientInstance.auth.onAuthStateChange(async (event, session) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Auth state changed:', event);
+        }
+
+        // Handle different auth events
+        switch (event) {
+          case 'TOKEN_REFRESHED':
+            tokenRefreshRetries = 0;
+            break;
+
+          case 'SIGNED_OUT':
+            // Clear local state on sign out
+            tokenRefreshRetries = 0;
+            break;
+
+          case 'USER_UPDATED':
+            // Session was updated successfully
+            break;
+
+          default:
+            // Check if session is still valid
+            if (!session && event !== 'SIGNED_OUT' && event !== 'INITIAL_SESSION') {
+              // Session is invalid, try to refresh
+              if (tokenRefreshRetries < MAX_REFRESH_RETRIES) {
+                tokenRefreshRetries++;
+                const refreshed = await retryTokenRefresh(clientInstance!);
+
+                if (!refreshed) {
+                  // All refresh attempts failed
+                  await handleInvalidToken(clientInstance!);
+                }
+              } else {
+                // Max retries exceeded
+                await handleInvalidToken(clientInstance!);
+              }
+            }
+        }
+      });
+
+      // Global error handler for auth errors
+      const originalFetch = window.fetch;
+      window.fetch = async (...args) => {
+        try {
+          const response = await originalFetch(...args);
+
+          // Check for auth errors in responses
+          if (response.status === 401 && args[0]?.toString().includes('supabase')) {
+            const clonedResponse = response.clone();
+            try {
+              const data = await clonedResponse.json();
+
+              // Check for specific auth errors
+              if (data.message?.includes('Invalid Refresh Token') ||
+                  data.message?.includes('Refresh Token Not Found') ||
+                  data.message?.includes('JWT expired')) {
+
+                // Try to refresh the token
+                if (tokenRefreshRetries < MAX_REFRESH_RETRIES) {
+                  tokenRefreshRetries++;
+                  const refreshed = await retryTokenRefresh(clientInstance!);
+
+                  if (!refreshed) {
+                    await handleInvalidToken(clientInstance!);
+                  }
+                } else {
+                  await handleInvalidToken(clientInstance!);
+                }
+              }
+            } catch (e) {
+              // Response might not be JSON
+            }
+          }
+
+          return response;
+        } catch (error) {
+          throw error;
+        }
+      };
+    }
+
     // Persist across HMR in development
     if (process.env.NODE_ENV !== 'production') {
       globalForSupabase.__sbClient = clientInstance;
     }
+
     return clientInstance;
   } catch (error) {
     console.error('Failed to create Supabase client:', error);
-    
+
     // Re-throw with more context
     throw new Error(
       `Failed to initialize Supabase client. This typically indicates missing or invalid environment variables. ` +
