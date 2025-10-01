@@ -1,7 +1,13 @@
 import { NextRequest } from 'next/server';
-import { authService } from '@/lib/services/auth-service';
-import { ApiResponseHelper } from '@/lib/api/types';
+
 import { ApiError } from '@/lib/api/errors';
+import {
+  mapPracticeJournalEntry,
+  type PracticeJournalEntry,
+  type PracticeJournalEntryRow,
+} from '@/lib/api/practice-journal/transformers';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { authService } from '@/lib/services/auth-service';
 import { createServerClient } from '@/lib/supabase/server';
 
 interface RouteContext {
@@ -20,9 +26,11 @@ export async function GET(
     }
 
     const { id } = await context.params;
-    const supabase = createServerClient();
+    // Casting is required until the Supabase generated types include practice_journal_entries
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const practiceJournalClient = createServerClient() as any;
 
-    const { data, error } = await supabase
+    const { data, error } = await practiceJournalClient
       .from('practice_journal_entries')
       .select('*')
       .eq('id', id)
@@ -50,7 +58,9 @@ export async function GET(
       return ApiResponseHelper.forbidden('This entry has not been shared with you');
     }
 
-    return ApiResponseHelper.success(data);
+    const entry = mapPracticeJournalEntry(data as PracticeJournalEntryRow);
+
+    return ApiResponseHelper.success<PracticeJournalEntry>(entry);
   } catch (error) {
     console.error('Error fetching practice journal entry:', error);
     if (error instanceof ApiError) {
@@ -104,10 +114,12 @@ export async function PUT(
       return ApiResponseHelper.badRequest('Energy level must be between 1 and 10');
     }
 
-    const supabase = createServerClient();
+    // Casting is required until the Supabase generated types include practice_journal_entries
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const practiceJournalClient = createServerClient() as any;
 
     // First check if entry exists and belongs to user
-    const { data: existing, error: fetchError } = await supabase
+    const { data: existingData, error: fetchError } = await practiceJournalClient
       .from('practice_journal_entries')
       .select('*')
       .eq('id', id)
@@ -120,11 +132,13 @@ export async function PUT(
       throw new ApiError(500, 'Failed to fetch practice journal entry', { supabaseError: fetchError });
     }
 
+    const existing = existingData as PracticeJournalEntryRow;
+
     if (existing.client_id !== session.user.id && session.user.role !== 'admin') {
       return ApiResponseHelper.forbidden('You can only update your own journal entries');
     }
 
-    const updates: Record<string, any> = {};
+    const updates: Partial<PracticeJournalEntryRow> = {};
 
     if (content !== undefined) updates.content = content.trim();
     if (title !== undefined) updates.title = title?.trim() || null;
@@ -147,7 +161,7 @@ export async function PUT(
       }
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await practiceJournalClient
       .from('practice_journal_entries')
       .update(updates)
       .eq('id', id)
@@ -158,7 +172,12 @@ export async function PUT(
       throw new ApiError(500, 'Failed to update practice journal entry', { supabaseError: error });
     }
 
-    return ApiResponseHelper.success(data, 'Practice journal entry updated successfully');
+    const entry = mapPracticeJournalEntry(data as PracticeJournalEntryRow);
+
+    return ApiResponseHelper.success<PracticeJournalEntry>(
+      entry,
+      'Practice journal entry updated successfully'
+    );
   } catch (error) {
     console.error('Error updating practice journal entry:', error);
     if (error instanceof ApiError) {
@@ -184,10 +203,12 @@ export async function DELETE(
     }
 
     const { id } = await context.params;
-    const supabase = createServerClient();
+    // Casting is required until the Supabase generated types include practice_journal_entries
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const practiceJournalClient = createServerClient() as any;
 
     // First check if entry exists and belongs to user
-    const { data: existing, error: fetchError } = await supabase
+    const { data: existingData, error: fetchError } = await practiceJournalClient
       .from('practice_journal_entries')
       .select('client_id')
       .eq('id', id)
@@ -200,11 +221,13 @@ export async function DELETE(
       throw new ApiError(500, 'Failed to fetch practice journal entry', { supabaseError: fetchError });
     }
 
+    const existing = existingData as Pick<PracticeJournalEntryRow, 'client_id'>;
+
     if (existing.client_id !== session.user.id && session.user.role !== 'admin') {
       return ApiResponseHelper.forbidden('You can only delete your own journal entries');
     }
 
-    const { error } = await supabase
+    const { error } = await practiceJournalClient
       .from('practice_journal_entries')
       .delete()
       .eq('id', id);
