@@ -10,10 +10,9 @@ interface ClientDashboardProps {
   userId: string;
   locale: string;
   translations: DashboardTranslations;
-  userName: string;
 }
 
-export function ClientDashboard({ userId, locale, translations, userName }: ClientDashboardProps) {
+export function ClientDashboard({ userId, locale, translations }: ClientDashboardProps) {
   return (
     <div className="space-y-6 lg:space-y-8">
       <div className="grid gap-6 lg:grid-cols-3">
@@ -23,15 +22,15 @@ export function ClientDashboard({ userId, locale, translations, userName }: Clie
             locale={locale}
             translations={translations}
           />
-          <ClientGoalProgress locale={locale} translations={translations} />
+          <ClientGoalProgress
+            userId={userId}
+            locale={locale}
+            translations={translations}
+          />
         </div>
         <div className="space-y-6">
           <ClientQuickActions translations={translations} />
-          <ClientRecentMessages
-            locale={locale}
-            translations={translations}
-            userName={userName}
-          />
+          <ClientRecentMessages userId={userId} locale={locale} translations={translations} />
         </div>
       </div>
     </div>

@@ -1,74 +1,38 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, MessageSquare, UserCircle } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from '@/i18n/routing';
-import type { Conversation, Message, User } from '@/types';
+import { createClient } from '@/lib/supabase/client';
 
 import type { DashboardTranslations } from '../dashboard-types';
 
 interface ClientRecentMessagesProps {
+  userId: string;
   locale: string;
   translations: DashboardTranslations;
-  userName: string;
 }
 
-interface MessagesResponse {
-  data?: Conversation[];
+interface MessageItem {
+  id: string;
+  content: string | null;
+  createdAt: string;
+  senderId: string;
+  receiverId: string;
+  read: boolean | null;
 }
 
 const MESSAGE_LIMIT = 4;
 
-function buildParticipantName(participants: User[]): string {
-  if (!participants || participants.length === 0) {
-    return '—';
-  }
-  const [firstParticipant] = participants;
-  const segments = [firstParticipant.firstName, firstParticipant.lastName].filter(Boolean);
-  return segments.length > 0 ? segments.join(' ') : firstParticipant.email;
-}
-
-function buildAvatarFallback(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .map((segment) => segment.charAt(0))
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-function buildPreview(lastMessage?: Message): string {
-  if (!lastMessage) {
-    return '';
-  }
-  const preview = lastMessage.content || '';
-  return preview.length > 120 ? `${preview.slice(0, 117)}…` : preview;
-}
-
-async function fetchRecentMessages(): Promise<Conversation[]> {
-  const params = new URLSearchParams({ limit: String(MESSAGE_LIMIT) });
-  const response = await fetch(`/api/messages?${params.toString()}`, {
-    cache: 'no-store',
-    credentials: 'same-origin',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch messages');
-  }
-
-  const payload: MessagesResponse = await response.json();
-  return payload.data ?? [];
-}
-
-export function ClientRecentMessages({ locale, translations, userName }: ClientRecentMessagesProps) {
+export function ClientRecentMessages({ userId, locale, translations }: ClientRecentMessagesProps) {
   const { dashboard: t, common: commonT } = translations;
+
+  const [messages, setMessages] = useState<MessageItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const dateFormatter = useMemo(
     () =>
@@ -81,13 +45,69 @@ export function ClientRecentMessages({ locale, translations, userName }: ClientR
     [locale]
   );
 
-  const { data, isLoading, isError, refetch } = useQuery<Conversation[]>({
-    queryKey: ['client-recent-messages', userName],
-    queryFn: fetchRecentMessages,
-    staleTime: 30_000,
-  });
+  useEffect(() => {
+    let isMounted = true;
 
-  const messages = data ?? [];
+    async function loadMessages() {
+      if (!userId) {
+        if (isMounted) {
+          setMessages([]);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      try {
+        const supabase = createClient() as any;
+
+        const { data, error } = await supabase
+          .from('messages')
+          .select('id, content, created_at, sender_id, receiver_id, read')
+          .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+          .order('created_at', { ascending: false })
+          .limit(MESSAGE_LIMIT);
+
+        console.log('[ClientRecentMessages] Supabase response', { data, error });
+
+        if (error) {
+          throw error;
+        }
+
+        const rawMessages = Array.isArray(data) ? data : [];
+        const normalizedMessages: MessageItem[] = rawMessages.map((message: any) => ({
+          id: String(message.id ?? ''),
+          content: typeof message.content === 'string' ? message.content : null,
+          createdAt:
+            typeof message.created_at === 'string' ? message.created_at : new Date().toISOString(),
+          senderId: typeof message.sender_id === 'string' ? message.sender_id : userId,
+          receiverId: typeof message.receiver_id === 'string' ? message.receiver_id : userId,
+          read: typeof message.read === 'boolean' ? message.read : Boolean(message.read ?? false),
+        }));
+
+        if (isMounted) {
+          setMessages(normalizedMessages);
+        }
+      } catch (error) {
+        console.error('[ClientRecentMessages] Failed to load messages', error);
+        if (isMounted) {
+          setErrorMessage(error instanceof Error ? error.message : String(error));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadMessages();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
 
   return (
     <Card>
@@ -100,30 +120,19 @@ export function ClientRecentMessages({ locale, translations, userName }: ClientR
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading && (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={`message-skeleton-${index}`} className="flex items-start gap-3">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-              </div>
-            ))}
+          <div className="rounded-lg border border-dashed border-muted-foreground/40 bg-muted/10 p-6 text-center text-sm text-muted-foreground">
+            {commonT('loading')}
           </div>
         )}
 
-        {isError && !isLoading && (
+        {errorMessage && !isLoading && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
             <p>{t('clientSections.recentMessages.error')}</p>
-            <Button onClick={() => refetch()} size="sm" variant="outline" className="mt-3">
-              {commonT('retry')}
-            </Button>
+            <p className="mt-2 text-xs text-destructive/80">{errorMessage}</p>
           </div>
         )}
 
-        {!isLoading && !isError && messages.length === 0 && (
+        {!isLoading && !errorMessage && messages.length === 0 && (
           <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
             <UserCircle className="mx-auto mb-3 h-10 w-10 opacity-50" />
             <p>{t('clientSections.recentMessages.empty')}</p>
@@ -136,49 +145,38 @@ export function ClientRecentMessages({ locale, translations, userName }: ClientR
           </div>
         )}
 
-        {!isLoading && !isError && messages.length > 0 && (
-          <div className="space-y-4">
-            {messages.map((conversation) => {
-              const participantName = buildParticipantName(conversation.participants || []);
-              const lastMessageTime = conversation.lastMessage?.createdAt
-                ? dateFormatter.format(new Date(conversation.lastMessage.createdAt))
-                : '';
-              const unreadCount = conversation.unreadCount ?? 0;
+        {!isLoading && !errorMessage && messages.length > 0 && (
+          <ul className="space-y-3">
+            {messages.map((message) => {
+              const messageDate = dateFormatter.format(new Date(message.createdAt));
+              const directionLabel = message.senderId === userId ? 'Sent' : 'Received';
 
               return (
-                <div key={conversation.id} className="flex items-start gap-3 rounded-lg border border-border/60 bg-background p-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={conversation.participants?.[0]?.avatarUrl || undefined} alt={participantName} />
-                    <AvatarFallback>{buildAvatarFallback(participantName)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium text-sm text-foreground">{participantName}</p>
-                      {lastMessageTime && (
-                        <span className="text-xs text-muted-foreground">{lastMessageTime}</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {buildPreview(conversation.lastMessage)}
-                    </p>
-                    <div className="flex items-center justify-between pt-2">
-                      <Button asChild size="sm" variant="ghost" className="px-0 text-primary">
-                        <Link href={`/messages/${conversation.id}`}>
-                          {commonT('view')}
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                      </Button>
-                      {unreadCount > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                          {t('clientSections.recentMessages.unread', { count: unreadCount })}
-                        </span>
-                      )}
-                    </div>
+                <li
+                  key={message.id}
+                  className="rounded-lg border border-border/60 bg-background p-4 text-sm text-foreground"
+                >
+                  <p className="font-medium">{message.content ?? '—'}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {directionLabel} • {messageDate}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <Button asChild size="sm" variant="ghost" className="px-0 text-primary">
+                      <Link href="/messages">
+                        {commonT('view')}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                    {!message.read && (
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                        {t('clientSections.recentMessages.unread', { count: 1 })}
+                      </span>
+                    )}
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
       </CardContent>
     </Card>
