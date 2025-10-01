@@ -1,27 +1,14 @@
 import { NextRequest } from 'next/server';
-import { authService } from '@/lib/services/auth-service';
-import { ApiResponseHelper } from '@/lib/api/types';
-import { ApiError } from '@/lib/api/errors';
-import { createServerClient } from '@/lib/supabase/server';
 
-export interface PracticeJournalEntry {
-  id: string;
-  clientId: string;
-  content: string;
-  title?: string;
-  sensations?: string[];
-  emotions?: string[];
-  bodyAreas?: string[];
-  insights?: string;
-  practicesDone?: string[];
-  moodRating?: number;
-  energyLevel?: number;
-  sharedWithCoach: boolean;
-  sharedAt?: string;
-  sessionId?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { ApiError } from '@/lib/api/errors';
+import {
+  mapPracticeJournalEntries,
+  mapPracticeJournalEntry,
+  type PracticeJournalEntry,
+} from '@/lib/api/practice-journal/transformers';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { authService } from '@/lib/services/auth-service';
+import { createServerClient } from '@/lib/supabase/server';
 
 // GET: Fetch practice journal entries
 export async function GET(request: NextRequest): Promise<Response> {
@@ -39,9 +26,11 @@ export async function GET(request: NextRequest): Promise<Response> {
     const search = searchParams.get('search') || '';
     const sessionId = searchParams.get('sessionId');
 
-    const supabase = createServerClient();
+    // Casting is required until the Supabase generated types include practice_journal_entries
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const practiceJournalClient = createServerClient() as any;
 
-    let query = supabase
+    let query = practiceJournalClient
       .from('practice_journal_entries')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -76,8 +65,10 @@ export async function GET(request: NextRequest): Promise<Response> {
       throw new ApiError(500, 'Failed to fetch practice journal entries', { supabaseError: error });
     }
 
+    const entries: PracticeJournalEntry[] = mapPracticeJournalEntries(data);
+
     return ApiResponseHelper.success({
-      entries: data,
+      entries,
       pagination: {
         total: count || 0,
         limit,
@@ -138,7 +129,8 @@ export async function POST(request: NextRequest): Promise<Response> {
       return ApiResponseHelper.badRequest('Energy level must be between 1 and 10');
     }
 
-    const supabase = createServerClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const practiceJournalClient = createServerClient() as any;
 
     const newEntry = {
       client_id: session.user.id,
@@ -156,7 +148,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       session_id: sessionId || null,
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await practiceJournalClient
       .from('practice_journal_entries')
       .insert(newEntry)
       .select()
@@ -166,7 +158,9 @@ export async function POST(request: NextRequest): Promise<Response> {
       throw new ApiError(500, 'Failed to create practice journal entry', { supabaseError: error });
     }
 
-    return ApiResponseHelper.created(data, 'Practice journal entry created successfully');
+    const entry = mapPracticeJournalEntry(data);
+
+    return ApiResponseHelper.created(entry, 'Practice journal entry created successfully');
   } catch (error) {
     console.error('Error creating practice journal entry:', error);
     if (error instanceof ApiError) {
