@@ -19,6 +19,7 @@ interface GoalProgressProps {
 
 interface GoalRecord {
   id: string;
+  title: string | null;
   description: string | null;
   progress: number | null;
   created_at: string;
@@ -67,8 +68,8 @@ export function ClientGoalProgress({ userId, locale, translations }: GoalProgres
       try {
         const supabase = createClient() as any;
         const { data, error } = await supabase
-          .from('goals')
-          .select('id, description, progress, created_at, client_id')
+          .from('client_goals')
+          .select('id, title, description, progress_percentage, created_at, client_id')
           .eq('client_id', userId)
           .order('created_at', { ascending: false });
 
@@ -81,12 +82,13 @@ export function ClientGoalProgress({ userId, locale, translations }: GoalProgres
         const goalRowsRaw = Array.isArray(data) ? data : [];
         const goalRows: GoalRecord[] = goalRowsRaw.map((goal: any) => ({
           id: String(goal.id ?? ''),
+          title: typeof goal.title === 'string' ? goal.title : null,
           description: typeof goal.description === 'string' ? goal.description : null,
           progress:
-            typeof goal.progress === 'number'
-              ? goal.progress
-              : goal.progress != null && !Number.isNaN(Number(goal.progress))
-                ? Number(goal.progress)
+            typeof goal.progress_percentage === 'number'
+              ? goal.progress_percentage
+              : goal.progress_percentage != null && !Number.isNaN(Number(goal.progress_percentage))
+                ? Number(goal.progress_percentage)
                 : null,
           created_at: typeof goal.created_at === 'string' ? goal.created_at : new Date().toISOString(),
           client_id: typeof goal.client_id === 'string' ? goal.client_id : userId,
@@ -185,7 +187,7 @@ export function ClientGoalProgress({ userId, locale, translations }: GoalProgres
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-medium text-sm text-foreground">
-                          {goal.description ?? 'Untitled goal'}
+                          {goal.title ?? goal.description ?? 'Untitled goal'}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {dateFormatter.format(new Date(goal.created_at))}
