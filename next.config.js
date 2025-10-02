@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const createNextIntlPlugin = require('next-intl/plugin');
+const path = require('path');
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -26,7 +28,7 @@ const nextConfig = {
     // ppr: 'incremental',
     // reactCompiler: true,
   },
-  
+
   // Turbopack configuration (stable in Next.js 15)
   turbopack: {
     rules: {
@@ -36,18 +38,21 @@ const nextConfig = {
       },
     },
   },
-  
+
   // Performance optimizations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
     // Remove test IDs in production
-    reactRemoveProperties: process.env.NODE_ENV === 'production' ? {
-      properties: ['^data-testid$']
-    } : false,
+    reactRemoveProperties:
+      process.env.NODE_ENV === 'production'
+        ? {
+            properties: ['^data-testid$'],
+          }
+        : false,
     // Styled-components support
     styledComponents: true,
   },
-  
+
   // Security headers
   async headers() {
     return [
@@ -56,10 +61,12 @@ const nextConfig = {
         headers: [
           // Enforce HTTPS in production (HSTS)
           ...(process.env.NODE_ENV === 'production'
-            ? [{
-                key: 'Strict-Transport-Security',
-                value: 'max-age=63072000; includeSubDomains; preload',
-              }]
+            ? [
+                {
+                  key: 'Strict-Transport-Security',
+                  value: 'max-age=63072000; includeSubDomains; preload',
+                },
+              ]
             : []),
           {
             key: 'X-Frame-Options',
@@ -83,7 +90,8 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://www.googletagmanager.com https://www.google-analytics.com https://js.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline' https://*.vercel.app; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://www.google-analytics.com https://sentry.io https://*.sentry.io; frame-src 'self' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io; object-src 'none'; base-uri 'self'; form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com;",
+            value:
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://www.googletagmanager.com https://www.google-analytics.com https://js.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline' https://*.vercel.app; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://www.google-analytics.com https://sentry.io https://*.sentry.io; frame-src 'self' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io; object-src 'none'; base-uri 'self'; form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com;",
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
@@ -189,8 +197,16 @@ const nextConfig = {
       (() => {
         const host = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_HOST; // e.g., 'abc123.supabase.co'
         return host
-          ? { protocol: 'https', hostname: host, pathname: '/storage/v1/object/public/**' }
-          : { protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' };
+          ? {
+              protocol: 'https',
+              hostname: host,
+              pathname: '/storage/v1/object/public/**',
+            }
+          : {
+              protocol: 'https',
+              hostname: '*.supabase.co',
+              pathname: '/storage/v1/object/public/**',
+            };
       })(),
     ],
     formats: ['image/avif', 'image/webp'],
@@ -202,13 +218,33 @@ const nextConfig = {
   },
 
   // Webpack configuration
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+  webpack: (
+    config,
+    {
+      buildId: _buildId,
+      dev,
+      isServer,
+      defaultLoaders: _defaultLoaders,
+      webpack: _webpack,
+    }
+  ) => {
+    // Ensure alias map exists before mutation
+    config.resolve = config.resolve || {};
+    config.resolve.alias = config.resolve.alias || {};
+
+    if (!isServer) {
+      config.resolve.alias['@/lib/supabase/server'] = path.join(
+        __dirname,
+        'src/lib/supabase/server.browser.ts'
+      );
+    }
+
     // Suppress critical dependency warnings for instrumentation libraries
     config.module.exprContextCritical = false;
-    
+
     // CRITICAL FIX: Ensure CSS files are never treated as JavaScript modules
     // This prevents CSS files from being included in JavaScript chunks
-    config.module.rules.forEach((rule) => {
+    config.module.rules.forEach(rule => {
       if (rule.test && rule.test.toString().includes('css')) {
         // Ensure CSS files are only processed by CSS loaders, not JavaScript loaders
         rule.exclude = rule.exclude || [];
@@ -220,7 +256,7 @@ const nextConfig = {
         rule.sideEffects = false;
       }
     });
-    
+
     // More specific suppression for OpenTelemetry/Sentry
     config.ignoreWarnings = [
       {
@@ -230,7 +266,8 @@ const nextConfig = {
         module: /node_modules\/@sentry\/nextjs/,
       },
       {
-        message: /Critical dependency: the request of a dependency is an expression/,
+        message:
+          /Critical dependency: the request of a dependency is an expression/,
       },
     ];
 
@@ -240,10 +277,10 @@ const nextConfig = {
         ...config.optimization,
         splitChunks: {
           chunks: 'all',
-          minSize: 20000,        // 20KB minimum chunk size
-          maxSize: 244000,       // 244KB maximum chunk size (for better caching)
+          minSize: 20000, // 20KB minimum chunk size
+          maxSize: 244000, // 244KB maximum chunk size (for better caching)
           minChunks: 1,
-          maxAsyncRequests: 30,  // Allow more async chunks for better splitting
+          maxAsyncRequests: 30, // Allow more async chunks for better splitting
           maxInitialRequests: 25, // Allow more initial chunks
           automaticNameDelimiter: '~',
           cacheGroups: {
@@ -258,7 +295,7 @@ const nextConfig = {
               type: 'css/mini-extract',
               reuseExistingChunk: true,
             },
-            
+
             // Simplified framework chunk
             framework: {
               chunks: 'all',
@@ -267,7 +304,7 @@ const nextConfig = {
               priority: 50,
               reuseExistingChunk: true,
             },
-            
+
             // Heavy libraries chunk
             vendor: {
               test: /[\\/]node_modules[\\/]/,
@@ -280,38 +317,44 @@ const nextConfig = {
             },
           },
         },
-        
+
         // Tree shaking improvements
         usedExports: true,
         sideEffects: false,
-        
+
         // Module concatenation for better minification
         concatenateModules: true,
       };
-      
+
       // Add performance budgets for bundle size monitoring
       config.performance = {
         hints: process.env.NODE_ENV === 'production' ? 'warning' : false,
-        maxAssetSize: 250000,     // 250KB per asset
+        maxAssetSize: 250000, // 250KB per asset
         maxEntrypointSize: 250000, // 250KB per entry point
-        assetFilter: function(assetFilename) {
+        assetFilter: function (assetFilename) {
           // Only apply budgets to JS and CSS files
-          return assetFilename.endsWith('.js') || assetFilename.endsWith('.css');
+          return (
+            assetFilename.endsWith('.js') || assetFilename.endsWith('.css')
+          );
         },
       };
     }
-    
+
     // Security headers are now handled through the headers() function above
     // devServer configuration is deprecated in Next.js 15
 
     // Bundle analyzer
     if (process.env.ANALYZE === 'true') {
-      const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+      // eslint-disable-next-line import/no-extraneous-dependencies
+      const BundleAnalyzerPlugin =
+        require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
       config.plugins.push(
         new BundleAnalyzerPlugin({
           analyzerMode: 'static',
           openAnalyzer: false,
-          reportFilename: isServer ? 'server-bundle-report.html' : 'client-bundle-report.html',
+          reportFilename: isServer
+            ? 'server-bundle-report.html'
+            : 'client-bundle-report.html',
         })
       );
     }
@@ -321,12 +364,12 @@ const nextConfig = {
 
   // Compression and optimization
   compress: true,
-  
+
   // PoweredBy header removal for security
   poweredByHeader: false,
 
   // Strict Transport Security (handled in middleware for flexibility)
-  
+
   // Environment variables validation
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
@@ -344,20 +387,22 @@ const nextConfig = {
         permanent: true,
       },
       // Redirect HTTP to HTTPS in production
-      ...(process.env.NODE_ENV === 'production' ? [
-        {
-          source: '/(.*)',
-          has: [
+      ...(process.env.NODE_ENV === 'production'
+        ? [
             {
-              type: 'header',
-              key: 'x-forwarded-proto',
-              value: 'http',
+              source: '/(.*)',
+              has: [
+                {
+                  type: 'header',
+                  key: 'x-forwarded-proto',
+                  value: 'http',
+                },
+              ],
+              destination: `https://${process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, '') || 'localhost:3000'}/:path*`,
+              permanent: true,
             },
-          ],
-          destination: `https://${process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, '') || 'localhost:3000'}/:path*`,
-          permanent: true,
-        },
-      ] : []),
+          ]
+        : []),
     ];
   },
 
@@ -384,31 +429,31 @@ const nextConfig = {
       fullUrl: true,
     },
   },
-  
+
   // Performance monitoring
   // onDemandEntries is deprecated in Next.js 15 - automatic optimization is now built-in
-  
+
   // Dev indicators - simplified in Next.js 15
   devIndicators: {
     position: 'bottom-right',
   },
-  
+
   // Generate ETags
   generateEtags: true,
-  
+
   // Trailing slash
   trailingSlash: false,
-  
+
   // Skip middleware invocation for static files
   skipMiddlewareUrlNormalize: true,
-  
+
   // Skip trailing slash redirect
   skipTrailingSlashRedirect: true,
-  
+
   // Next.js 15 caching improvements
   cacheHandler: undefined, // Use default caching
   cacheMaxMemorySize: 50 * 1024 * 1024, // 50MB
-  
+
   // New Next.js 15 performance features
   httpAgentOptions: {
     keepAlive: true,
