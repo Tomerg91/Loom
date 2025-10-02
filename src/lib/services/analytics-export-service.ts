@@ -1,9 +1,10 @@
-import { adminAnalyticsService } from '@/lib/database/admin-analytics';
-import type { 
+// Type-only imports from admin-analytics
+// Note: We don't import the service itself since this is client-side
+import type {
   AdminAnalyticsOverview,
-  UserGrowthData, 
-  SessionMetricsData, 
-  CoachPerformanceData 
+  UserGrowthData,
+  SessionMetricsData,
+  CoachPerformanceData
 } from '@/lib/database/admin-analytics';
 
 export type ExportFormat = 'json' | 'csv' | 'excel' | 'pdf';
@@ -23,14 +24,12 @@ export interface ExportData {
 class AnalyticsExportService {
   /**
    * Export analytics data in specified format
+   * Note: Data should be fetched by the server/component and passed to this method
    */
   async exportData(
-    startDate: Date, 
-    endDate: Date, 
+    data: ExportData,
     format: ExportFormat = 'json'
   ): Promise<{ blob: Blob; filename: string }> {
-    const data = await this.getExportData(startDate, endDate);
-    
     switch (format) {
       case 'json':
         return this.exportAsJson(data);
@@ -42,63 +41,6 @@ class AnalyticsExportService {
         return this.exportAsPdf(data);
       default:
         throw new Error(`Unsupported export format: ${format}`);
-    }
-  }
-
-  /**
-   * Get structured export data with error handling
-   */
-  private async getExportData(startDate: Date, endDate: Date): Promise<ExportData> {
-    try {
-      // Validate date range
-      if (startDate > endDate) {
-        throw new Error('Start date cannot be after end date');
-      }
-      
-      if (startDate > new Date()) {
-        throw new Error('Start date cannot be in the future');
-      }
-
-      const results = await Promise.allSettled([
-        adminAnalyticsService.getOverview(startDate, endDate),
-        adminAnalyticsService.getUserGrowth(startDate, endDate),
-        adminAnalyticsService.getSessionMetrics(startDate, endDate),
-        adminAnalyticsService.getCoachPerformance(startDate, endDate),
-      ]);
-
-      // Handle individual failures gracefully
-      const overview = results[0].status === 'fulfilled' ? results[0].value : {
-        totalUsers: 0, activeUsers: 0, totalSessions: 0, completedSessions: 0,
-        revenue: 0, averageRating: 0, newUsersThisMonth: 0, completionRate: 0,
-        totalCoaches: 0, totalClients: 0, activeCoaches: 0, averageSessionsPerUser: 0
-      };
-
-      const userGrowth = results[1].status === 'fulfilled' ? results[1].value : [];
-      const sessionMetrics = results[2].status === 'fulfilled' ? results[2].value : [];
-      const coachPerformance = results[3].status === 'fulfilled' ? results[3].value : [];
-
-      // Log any failed operations
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          const operation = ['overview', 'userGrowth', 'sessionMetrics', 'coachPerformance'][index];
-          console.error(`Failed to fetch ${operation} data:`, result.reason);
-        }
-      });
-
-      return {
-        overview,
-        userGrowth,
-        sessionMetrics,
-        coachPerformance,
-        generatedAt: new Date().toISOString(),
-        dateRange: {
-          start: startDate.toISOString(),
-          end: endDate.toISOString(),
-        },
-      };
-    } catch (error) {
-      console.error('Error getting export data:', error);
-      throw new Error(`Failed to gather analytics data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
