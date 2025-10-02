@@ -6,7 +6,7 @@ import { StoreProvider } from './store-provider';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { ErrorBoundary } from '@/components/error-boundary';
 import dynamic from 'next/dynamic';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { webVitalsMonitor } from '@/lib/performance';
 import type { AuthUser } from '@/lib/auth/auth';
 
@@ -43,7 +43,7 @@ const LayoutStabilizer = () => (
 );
 
 interface ProvidersProps {
-  children: React.ReactNode;
+  children: ReactNode;
   locale: string;
   messages: Record<string, unknown>;
   initialUser?: AuthUser | null;
@@ -108,18 +108,18 @@ export function Providers({ children, locale, messages, initialUser }: Providers
                 <ErrorBoundary>
                   <AuthProvider initialUser={initialUser}>
                     {/* Load realtime and analytics after critical path */}
-                    {/* <Suspense fallback={mounted ? null : <LayoutStabilizer />}> */}
-                      {/* <RealtimeProvider> */}
-                        {/* {mounted && loadAnalytics && (
+                    <Suspense fallback={mounted ? null : <LayoutStabilizer />}>
+                      <RealtimeProvider>
+                        {mounted && loadAnalytics && (
                           <AnalyticsProvider>
                             <Suspense fallback={null}>
                               <PerformanceMonitor />
                             </Suspense>
                           </AnalyticsProvider>
-                        )} */}
+                        )}
                         {children}
-                      {/* </RealtimeProvider> */}
-                    {/* </Suspense> */}
+                      </RealtimeProvider>
+                    </Suspense>
                   </AuthProvider>
                 </ErrorBoundary>
               </StoreProvider>

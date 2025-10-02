@@ -3,14 +3,13 @@
 
 import { AsyncLocalStorage } from 'async_hooks';
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
 import { type NextRequest, type NextResponse } from 'next/server';
 import { type Database } from '@/types/supabase';
 import { env } from '@/env';
 
-// Singleton instances to prevent multiple GoTrueClient creation
-let serverClientInstance: ReturnType<typeof createSupabaseServerClient<Database>> | null = null;
-let adminClientInstance: ReturnType<typeof createSupabaseClient<Database>> | null = null;
+// Singleton instance for the admin client to prevent multiple GoTrueClient creation
+let adminClientInstance: SupabaseClient<Database> | null = null;
 
 type SupabaseCookie = {
   name: string;
@@ -33,9 +32,13 @@ type CookieAdapter = {
   setAll: (cookies: SupabaseCookie[]) => void;
 };
 
+type CookieStoreSetMethod =
+  | ((cookie: SupabaseCookie) => void)
+  | ((name: string, value: string, options?: SupabaseCookie['options']) => void);
+
 type CookieStoreLike = {
   getAll: () => SupabaseCookie[];
-  set: (...args: any[]) => void;
+  set?: CookieStoreSetMethod;
 };
 
 const cookieContext = new AsyncLocalStorage<CookieAdapter>();
@@ -132,15 +135,11 @@ function validateSupabaseEnv() {
 // Server-side Supabase client for middleware (without cookie access)
 export const createServerClient = () => {
   validateSupabaseEnv();
-  
-  if (serverClientInstance) {
-    return serverClientInstance;
-  }
-  
+
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  
-  serverClientInstance = createSupabaseServerClient<Database>(
+
+  return createSupabaseServerClient<Database>(
     supabaseUrl,
     supabaseKey,
     {
@@ -151,8 +150,6 @@ export const createServerClient = () => {
       },
     }
   );
-  
-  return serverClientInstance;
 };
 
 // Server-side Supabase client for middleware with request context
