@@ -1,13 +1,16 @@
+import { headers, cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
-import { headers } from 'next/headers';
 
 // GET /api/share/[token] - Access shared file (API endpoint for programmatic access)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
+  const { token } = await params;
   try {
     const { searchParams } = new URL(request.url);
     const password = searchParams.get('password');
@@ -154,6 +157,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
+  const { token } = await params;
   try {
     const body = await request.json();
     const { password, download } = body;

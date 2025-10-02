@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { 
   createSuccessResponse, 
@@ -9,6 +10,7 @@ import {
 import { uuidSchema, updateUserSchema } from '@/lib/api/validation';
 import { UserService } from '@/lib/database/users';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { setSupabaseCookieStore } from '@/lib/supabase/server';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -17,6 +19,8 @@ interface RouteParams {
 // GET /api/users/[id] - Get user by ID
 export const GET = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   
   // Authenticate user
   const authHeader = request.headers.get('authorization');
@@ -88,6 +92,8 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
 // PUT /api/users/[id] - Update user
 export const PUT = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   
   // Authenticate user
   const authHeader = request.headers.get('authorization');
@@ -174,6 +180,8 @@ export const PUT = withErrorHandling(async (request: NextRequest, { params }: Ro
 // DELETE /api/users/[id] - Delete user (Admin only)
 export const DELETE = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   
   // Authenticate user
   const authHeader = request.headers.get('authorization');
@@ -251,5 +259,7 @@ export const DELETE = withErrorHandling(async (request: NextRequest, { params }:
 
 // OPTIONS /api/users/[id] - Handle CORS preflight
 export async function OPTIONS(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   return createCorsResponse(request);
 }

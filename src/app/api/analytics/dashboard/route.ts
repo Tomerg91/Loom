@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
 import { fileDatabase } from '@/lib/database/files';
 import { z } from 'zod';
@@ -13,6 +14,8 @@ const dashboardQuerySchema = z.object({
 
 // GET /api/analytics/dashboard - Get user's download analytics dashboard
 export async function GET(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Get authenticated user
     const supabase = await createClient();

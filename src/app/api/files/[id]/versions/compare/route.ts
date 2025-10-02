@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { fileVersionsDatabase } from '@/lib/database/file-versions';
 import { fileDatabase } from '@/lib/database/files';
 import { z } from 'zod';
@@ -15,6 +16,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
+  const { id } = await params;
   try {
     // Get authenticated user
     const supabase = await createClient();
@@ -127,6 +131,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     const { searchParams } = new URL(request.url);
     const versionA = parseInt(searchParams.get('version_a') || '');

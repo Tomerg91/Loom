@@ -1,6 +1,7 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerUser } from '@/lib/auth/auth';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { ApiResponse } from '@/lib/api/types';
 
 export interface GoalData {
@@ -23,6 +24,8 @@ export interface GoalsResponse {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<GoalsResponse>>> {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     const user = await getServerUser();
     if (!user) {

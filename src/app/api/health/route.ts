@@ -1,10 +1,13 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { compose, withRateLimit } from '@/lib/api';
 import { createPublicCorsResponse } from '@/lib/security/cors';
 
 async function baseHealthHandler(request: NextRequest) {
   const start = Date.now();
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   
   try {
     // Perform comprehensive health checks
@@ -106,6 +109,8 @@ export const HEAD = compose(baseHeadHandler, withRateLimit());
 
 // OPTIONS /api/health - Handle CORS preflight
 export async function OPTIONS(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   return createPublicCorsResponse();
 }
 

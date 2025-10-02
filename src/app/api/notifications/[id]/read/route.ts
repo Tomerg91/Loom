@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { 
   createSuccessResponse, 
@@ -7,6 +8,7 @@ import {
 } from '@/lib/api/utils';
 import { NotificationService } from '@/lib/database/notifications';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { setSupabaseCookieStore } from '@/lib/supabase/server';
 
 interface RouteParams {
   params: Promise<{
@@ -17,6 +19,8 @@ interface RouteParams {
 // POST /api/notifications/[id]/read - Mark notification as read
 export const POST = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   
   // Authenticate user
   const authHeader = request.headers.get('authorization');
@@ -73,5 +77,7 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
 
 // OPTIONS /api/notifications/[id]/read - Handle CORS preflight
 export async function OPTIONS(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   return createCorsResponse(request);
 }

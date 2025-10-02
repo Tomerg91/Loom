@@ -1,4 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { setSupabaseCookieStore } from '@/lib/supabase/server';
 
 /**
  * Environment Debug API Endpoint
@@ -69,6 +71,8 @@ function validateEnvironmentVariable(name: string, value: string | undefined): E
 }
 
 export async function GET(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   const { searchParams } = new URL(request.url);
   const forceShow = searchParams.get('force') === 'true';
   
@@ -141,6 +145,8 @@ export async function GET(request: NextRequest) {
 
 // Only allow GET requests
 export async function POST() {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   return NextResponse.json(
     { error: 'Method not allowed' },
     { status: 405 }

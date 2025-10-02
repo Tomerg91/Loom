@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { fileService } from '@/lib/services/file-service';
 import { ApiError } from '@/lib/api/errors';
 import { fileUploadRateLimit } from '@/lib/security/file-rate-limit';
@@ -55,6 +56,8 @@ const FILE_TYPE_CONFIGS = {
 };
 
 export async function POST(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Apply rate limiting
     const rateLimitResult = await fileUploadRateLimit(request);

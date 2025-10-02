@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { fileDatabase } from '@/lib/database/files';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
@@ -26,6 +27,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
+  const { id } = await params;
   try {
     // Apply rate limiting
     const rateLimitResult = await fileModificationRateLimit(request);
@@ -137,6 +141,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
+  const { id } = await params;
   try {
     // Get authenticated user
     const supabase = await createClient();

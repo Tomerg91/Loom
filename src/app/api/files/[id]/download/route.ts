@@ -1,10 +1,10 @@
+import { headers, cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { fileManagementService } from '@/lib/services/file-management-service';
 import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
 import { fileDownloadRateLimit } from '@/lib/security/file-rate-limit';
 import { getCorsHeadersForPublicEndpoint } from '@/lib/security/cors';
-import { headers } from 'next/headers';
 import { z } from 'zod';
 
 // Validation schema for download options
@@ -19,6 +19,8 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   const startTime = Date.now();
   let downloadId: string | null = null;
 
@@ -283,6 +285,8 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     const params = await context.params;
     const body = await request.json();

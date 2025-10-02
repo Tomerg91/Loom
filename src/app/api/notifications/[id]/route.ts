@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { compose, withAuth, withRateLimit } from '@/lib/api';
 import { 
@@ -8,6 +9,7 @@ import {
 } from '@/lib/api/utils';
 import { NotificationService } from '@/lib/database/notifications';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { setSupabaseCookieStore } from '@/lib/supabase/server';
 
 interface RouteParams {
   params: Promise<{
@@ -18,6 +20,8 @@ interface RouteParams {
 // GET /api/notifications/[id] - Get specific notification
 export const GET = compose(withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   
   // Authenticate user
   const authHeader = request.headers.get('authorization');
@@ -75,6 +79,8 @@ export const GET = compose(withErrorHandling(async (request: NextRequest, { para
 // DELETE /api/notifications/[id] - Delete notification
 export const DELETE = compose(withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   
   // Authenticate user
   const authHeader = request.headers.get('authorization');
@@ -131,5 +137,7 @@ export const DELETE = compose(withErrorHandling(async (request: NextRequest, { p
 
 // OPTIONS /api/notifications/[id] - Handle CORS preflight
 export async function OPTIONS(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   return createCorsResponse(request);
 }

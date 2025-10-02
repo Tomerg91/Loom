@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { fileService } from '@/lib/services/file-service';
 import { fileUploadRateLimit } from '@/lib/security/file-rate-limit';
 import { z } from 'zod';
@@ -61,6 +62,8 @@ setInterval(() => {
  * POST /api/files/upload/chunked - Initialize chunked upload or upload chunk
  */
 export async function POST(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Apply rate limiting
     const rateLimitResult = await fileUploadRateLimit(request);
@@ -477,6 +480,8 @@ async function handleChunkedUploadAbort(request: NextRequest, userId: string) {
  * GET /api/files/upload/chunked - Get upload status
  */
 export async function GET(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Get authenticated user
     const supabase = await createClient();

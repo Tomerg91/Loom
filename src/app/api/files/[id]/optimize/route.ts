@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { fileDatabase } from '@/lib/database/files';
 import { fileOptimizationService } from '@/lib/services/file-optimization';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
@@ -21,6 +22,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     const { id } = await params;
     
@@ -225,6 +228,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     const { id } = await params;
     

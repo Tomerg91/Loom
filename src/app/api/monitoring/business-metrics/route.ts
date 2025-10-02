@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { trackBusinessMetric } from '@/lib/monitoring/sentry';
 
@@ -51,11 +52,15 @@ const rateLimitedMetrics = rateLimit(100, 60000)( // 100 requests per minute
 
 // GET /api/monitoring/business-metrics - Retrieve business metrics
 export async function GET(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   return rateLimitedMetrics(request);
 }
 
 // POST /api/monitoring/business-metrics - Submit metrics data
 export async function POST(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   return rateLimitedMetrics(request);
 }
 

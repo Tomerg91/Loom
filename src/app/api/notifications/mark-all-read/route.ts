@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { 
   createSuccessResponse, 
@@ -7,9 +8,12 @@ import {
 } from '@/lib/api/utils';
 import { NotificationService } from '@/lib/database/notifications';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { setSupabaseCookieStore } from '@/lib/supabase/server';
 
 // POST /api/notifications/mark-all-read - Mark all notifications as read
 export const POST = withErrorHandling(async (request: NextRequest) => {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   // Authenticate user
   const authHeader = request.headers.get('authorization');
   if (!authHeader) {
@@ -64,5 +68,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
 // OPTIONS /api/notifications/mark-all-read - Handle CORS preflight
 export async function OPTIONS(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   return createCorsResponse(request);
 }

@@ -1,7 +1,8 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { fileManagementService } from '@/lib/services/file-management-service';
 import { authMiddleware } from '@/lib/auth/middleware';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 
 interface RouteParams {
   params: Promise<{
@@ -13,6 +14,8 @@ interface RouteParams {
  * POST /api/files/[id]/share - Share a file with another user
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     const paramsData = await params;
     
@@ -91,6 +94,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
  * GET /api/files/[id]/share - Get file sharing information
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Authenticate user
     const authResult = await authMiddleware(request);
@@ -152,6 +157,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * DELETE /api/files/[id]/share - Remove file sharing (revoke access)
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Authenticate user
     const authResult = await authMiddleware(request);

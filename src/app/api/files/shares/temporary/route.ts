@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { fileManagementService } from '@/lib/services/file-management-service';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
@@ -41,6 +42,8 @@ const listTemporarySharesSchema = z.object({
  * POST /api/files/shares/temporary - Create a new temporary share
  */
 export async function POST(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Apply rate limiting
     const rateLimitResult = await fileModificationRateLimit(request);
@@ -202,6 +205,8 @@ export async function POST(request: NextRequest) {
  * GET /api/files/shares/temporary - List user's temporary shares
  */
 export async function GET(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Get authenticated user
     const supabase = await createClient();
@@ -365,6 +370,8 @@ export async function GET(request: NextRequest) {
  * DELETE /api/files/shares/temporary - Bulk delete temporary shares
  */
 export async function DELETE(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Apply rate limiting
     const rateLimitResult = await fileModificationRateLimit(request);

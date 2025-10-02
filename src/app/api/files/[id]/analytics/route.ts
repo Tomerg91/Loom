@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { fileDatabase } from '@/lib/database/files';
 import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
 import { z } from 'zod';
@@ -17,6 +18,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     const { id } = await params;
     

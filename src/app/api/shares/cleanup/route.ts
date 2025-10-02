@@ -1,11 +1,13 @@
+import { headers, cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
-import { headers } from 'next/headers';
 
 // POST /api/shares/cleanup - Cleanup expired temporary shares
 // This endpoint should be called by a cron job or scheduled task
 export async function POST(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Verify the request is authorized (cron job or admin)
     const headersList = await headers();
@@ -83,6 +85,8 @@ export async function POST(request: NextRequest) {
 
 // GET /api/shares/cleanup - Get cleanup statistics (admin only)
 export async function GET(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Authenticate user
     const supabase = await createClient();

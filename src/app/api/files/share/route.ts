@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, setSupabaseCookieStore } from '@/lib/supabase/server';
 import { fileManagementService } from '@/lib/services/file-management-service';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { z } from 'zod';
@@ -67,6 +68,8 @@ async function checkCoachClientRelationship(
 
 // POST /api/files/share - Share files with other users
 export async function POST(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Apply rate limiting
     const rateLimitResult = await fileModificationRateLimit(request);
@@ -231,6 +234,8 @@ export async function POST(request: NextRequest) {
 
 // GET /api/files/share - Get file shares (shared by user or shared with user)
 export async function GET(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Get authenticated user
     const supabase = await createClient();
@@ -377,6 +382,8 @@ export async function GET(request: NextRequest) {
 
 // DELETE /api/files/share - Revoke file sharing access
 export async function DELETE(request: NextRequest) {
+  const cookieStore = cookies();
+  setSupabaseCookieStore(cookieStore);
   try {
     // Apply rate limiting
     const rateLimitResult = await fileModificationRateLimit(request);
