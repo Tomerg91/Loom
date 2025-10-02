@@ -196,8 +196,8 @@ export class AuthService {
           lastName: authData.user.user_metadata?.last_name,
           language: (authData.user.user_metadata?.language as any) || 'he',
           status: 'active',
-          createdAt: authData.user.created_at,
-          updatedAt: authData.user.updated_at,
+          createdAt: authData.user.created_at ?? new Date().toISOString(),
+          updatedAt: authData.user.updated_at ?? authData.user.created_at ?? new Date().toISOString(),
         },
         error: null,
       };

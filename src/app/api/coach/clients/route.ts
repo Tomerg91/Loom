@@ -24,8 +24,26 @@ export async function GET(request: NextRequest): Promise<Response> {
   try {
     // Verify authentication and get user
     const session = await authService.getSession();
-    if (!session?.user || session.user.role !== 'coach') {
-      return ApiResponseHelper.forbidden('Coach access required');
+
+    console.log('[/api/coach/clients] Auth check:', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userId: session?.user?.id,
+      userRole: session?.user?.role,
+      timestamp: new Date().toISOString()
+    });
+
+    if (!session?.user) {
+      console.error('[/api/coach/clients] No session or user found');
+      return ApiResponseHelper.unauthorized('Authentication required');
+    }
+
+    if (session.user.role !== 'coach') {
+      console.error('[/api/coach/clients] User is not a coach:', {
+        userId: session.user.id,
+        role: session.user.role
+      });
+      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${session.user.role}`);
     }
 
     const coachId = session.user.id;
@@ -36,6 +54,8 @@ export async function GET(request: NextRequest): Promise<Response> {
     const sortBy = searchParams.get('sortBy') || 'name';
 
     const supabase = createServerClient();
+
+    console.log('[/api/coach/clients] Fetching clients for coach:', coachId);
 
     // Get recent clients with session statistics
     const { data: sessionsWithClients, error } = await supabase
@@ -58,8 +78,14 @@ export async function GET(request: NextRequest): Promise<Response> {
       .order('scheduled_at', { ascending: false });
 
     if (error) {
+      console.error('[/api/coach/clients] Error fetching sessions:', error);
       throw new ApiError('FETCH_CLIENTS_FAILED', 'Failed to fetch clients', 500);
     }
+
+    console.log('[/api/coach/clients] Sessions query result:', {
+      count: sessionsWithClients?.length || 0,
+      hasData: !!sessionsWithClients
+    });
 
     // Process the data to get unique clients with statistics
     const clientMap = new Map<string, Client>();
@@ -67,7 +93,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     for (const session of sessionsWithClients || []) {
-      const client = session.users;
+      const client = Array.isArray(session.users) ? session.users[0] : session.users;
       if (!client) continue;
 
       const clientId = client.id;
@@ -178,6 +204,11 @@ export async function GET(request: NextRequest): Promise<Response> {
     
     // Apply limit
     clients = clients.slice(0, limit);
+
+    console.log('[/api/coach/clients] Returning clients:', {
+      count: clients.length,
+      clientIds: clients.map(c => c.id)
+    });
 
     return ApiResponseHelper.success(clients);
 

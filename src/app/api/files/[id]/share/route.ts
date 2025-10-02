@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fileManagementService } from '@/lib/services/file-management-service';
-import { authMiddleware } from '@/lib/auth/middleware';
+import { createAuthService } from '@/lib/auth/auth';
 import { createClient } from '@/lib/supabase/server';
 
 interface RouteParams {
@@ -17,15 +17,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const paramsData = await params;
     
     // Authenticate user
-    const authResult = await authMiddleware(request);
-    if (!authResult.success) {
+    const authService = await createAuthService(true);
+    const user = await authService.getCurrentUser();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { userId } = authResult.data;
+    const userId = user.id;
     const { id: fileId } = paramsData;
     
     const shareData = await request.json();
@@ -93,15 +94,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     // Authenticate user
-    const authResult = await authMiddleware(request);
-    if (!authResult.success) {
+    const authService = await createAuthService(true);
+    const user = await authService.getCurrentUser();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { userId } = authResult.data;
+    const userId = user.id;
     const { id: fileId } = await params;
 
     // Get file details including shares
@@ -154,15 +156,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     // Authenticate user
-    const authResult = await authMiddleware(request);
-    if (!authResult.success) {
+    const authService = await createAuthService(true);
+    const user = await authService.getCurrentUser();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { userId } = authResult.data;
+    const userId = user.id;
     const { id: fileId } = await params;
     
     const url = new URL(request.url);

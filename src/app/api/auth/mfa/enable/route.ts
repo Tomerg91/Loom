@@ -21,7 +21,7 @@ const enableRequestSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     // Get authenticated user
-    const authService = createAuthService(true);
+    const authService = await createAuthService(true);
     const user = await authService.getCurrentUser();
 
     if (!user) {

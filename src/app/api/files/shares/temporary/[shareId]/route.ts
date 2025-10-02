@@ -28,6 +28,8 @@ export async function GET(
   { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
+    const { shareId } = await params;
+
     // Get authenticated user
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -111,6 +113,8 @@ export async function PUT(
   { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
+    const { shareId } = await params;
+
     // Apply rate limiting
     const rateLimitResult = await fileModificationRateLimit(request);
     if (rateLimitResult) {
@@ -227,6 +231,8 @@ export async function DELETE(
   { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
+    const { shareId } = await params;
+
     // Apply rate limiting
     const rateLimitResult = await fileModificationRateLimit(request);
     if (rateLimitResult) {

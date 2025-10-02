@@ -16,13 +16,33 @@ export async function GET(request: NextRequest): Promise<Response> {
   try {
     // Verify authentication and get user
     const session = await authService.getSession();
-    if (!session?.user || session.user.role !== 'coach') {
-      return ApiResponseHelper.forbidden('Coach access required');
+
+    console.log('[/api/coach/activity] Auth check:', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userId: session?.user?.id,
+      userRole: session?.user?.role,
+      timestamp: new Date().toISOString()
+    });
+
+    if (!session?.user) {
+      console.error('[/api/coach/activity] No session or user found');
+      return ApiResponseHelper.unauthorized('Authentication required');
+    }
+
+    if (session.user.role !== 'coach') {
+      console.error('[/api/coach/activity] User is not a coach:', {
+        userId: session.user.id,
+        role: session.user.role
+      });
+      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${session.user.role}`);
     }
 
     const coachId = session.user.id;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
+
+    console.log('[/api/coach/activity] Fetching activity for coach:', coachId);
 
     const supabase = createServerClient();
 
@@ -47,7 +67,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       .limit(5);
 
     completedSessions?.forEach(session => {
-      const client = session.users;
+      const client = Array.isArray(session.users) ? session.users[0] : session.users;
       if (client) {
         activities.push({
           id: `session_completed_${session.id}`,
@@ -77,7 +97,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       .limit(5);
 
     scheduledSessions?.forEach(session => {
-      const client = session.users;
+      const client = Array.isArray(session.users) ? session.users[0] : session.users;
       if (client) {
         activities.push({
           id: `session_scheduled_${session.id}`,
@@ -89,8 +109,8 @@ export async function GET(request: NextRequest): Promise<Response> {
       }
     });
 
-    // Get recent notes
-    const { data: recentNotes } = await supabase
+    // Get recent notes (gracefully handle if table doesn't exist)
+    const { data: recentNotes, error: notesError } = await supabase
       .from('coach_notes')
       .select(`
         id,
@@ -105,23 +125,32 @@ export async function GET(request: NextRequest): Promise<Response> {
       .order('created_at', { ascending: false })
       .limit(5);
 
-    recentNotes?.forEach(note => {
-      const client = note.users;
-      if (client) {
-        activities.push({
-          id: `note_added_${note.id}`,
-          type: 'note_added',
-          description: `Added progress note for ${client.first_name} ${client.last_name}`,
-          timestamp: note.created_at,
-          clientName: `${client.first_name} ${client.last_name}`,
-        });
-      }
-    });
+    if (notesError) {
+      console.warn('[/api/coach/activity] Error fetching notes (may not exist):', notesError.message);
+    } else {
+      recentNotes?.forEach(note => {
+        const client = Array.isArray(note.users) ? note.users[0] : note.users;
+        if (client) {
+          activities.push({
+            id: `note_added_${note.id}`,
+            type: 'note_added',
+            description: `Added progress note for ${client.first_name} ${client.last_name}`,
+            timestamp: note.created_at,
+            clientName: `${client.first_name} ${client.last_name}`,
+          });
+        }
+      });
+    }
 
     // Sort all activities by timestamp and limit
     const sortedActivities = activities
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, limit);
+
+    console.log('[/api/coach/activity] Returning activities:', {
+      count: sortedActivities.length,
+      types: sortedActivities.map(a => a.type)
+    });
 
     return ApiResponseHelper.success(sortedActivities);
 

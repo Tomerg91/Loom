@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { fileManagementService } from '@/lib/services/file-management-service';
-import { ApiError } from '@/lib/api/errors';
-import { authMiddleware } from '@/lib/auth/middleware';
+import { createAuthService } from '@/lib/auth/auth';
 
 /**
  * GET /api/files - Get files with filtering and pagination
@@ -10,15 +8,16 @@ import { authMiddleware } from '@/lib/auth/middleware';
 export async function GET(request: NextRequest) {
   try {
     // Authenticate user
-    const authResult = await authMiddleware(request);
-    if (!authResult.success) {
+    const authService = await createAuthService(true);
+    const user = await authService.getCurrentUser();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { userId } = authResult.data;
+    const userId = user.id;
     const url = new URL(request.url);
     
     // Parse query parameters
@@ -66,15 +65,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Authenticate user
-    const authResult = await authMiddleware(request);
-    if (!authResult.success) {
+    const authService = await createAuthService(true);
+    const user = await authService.getCurrentUser();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { userId } = authResult.data;
+    const userId = user.id;
     
     // Parse form data
     const formData = await request.formData();

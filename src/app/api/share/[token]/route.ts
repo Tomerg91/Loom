@@ -9,6 +9,8 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    const { token } = await params;
+
     const { searchParams } = new URL(request.url);
     const password = searchParams.get('password');
     const download = searchParams.get('download') === 'true';

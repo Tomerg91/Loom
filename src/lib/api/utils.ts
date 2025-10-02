@@ -4,7 +4,7 @@ import type { ApiResponse, ApiError } from './types';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/supabase';
 import { config } from '@/lib/config';
-import { hasPermission, requirePermission as requirePermissionCheck, canAccessResource, type Permission, type Role } from '@/lib/auth/permissions';
+import { requirePermission as requirePermissionCheck, canAccessResource, type Permission, type Role } from '@/lib/auth/permissions';
 
 type UserRole = Database['public']['Tables']['users']['Row']['role'];
 export type AuthenticatedUser = {
@@ -484,7 +484,7 @@ export function requireAuth<T extends unknown[]>(
 }
 
 // Role hierarchy for permission checking
-const ROLE_HIERARCHY: Record<UserRole, number> = {
+const ROLE_HIERARCHY: Record<'admin' | 'coach' | 'client', number> = {
   admin: 3,
   coach: 2,
   client: 1,
@@ -500,9 +500,9 @@ function createSecurityMiddleware<T extends unknown[]>(
   logContext: (user: AuthenticatedUser, ...args: T) => Record<string, any>
 ) {
   return function(
-    handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
+    handler: (user: AuthenticatedUser, ...args: T) => Promise<Response | NextResponse>
   ) {
-    return async (user: AuthenticatedUser, ...args: T): Promise<NextResponse> => {
+    return async (user: AuthenticatedUser, ...args: T): Promise<Response | NextResponse> => {
       try {
         const hasAccess = await checkFunction(user, ...args);
         
@@ -574,8 +574,8 @@ export function requireResourceAccess(resource: string, action: string) {
 export function requireRole(requiredRole: UserRole) {
   return createSecurityMiddleware(
     (user: AuthenticatedUser) => {
-      const userLevel = ROLE_HIERARCHY[user.role];
-      const requiredLevel = ROLE_HIERARCHY[requiredRole];
+      const userLevel = ROLE_HIERARCHY[user.role as 'admin' | 'coach' | 'client'] ?? 0;
+      const requiredLevel = ROLE_HIERARCHY[requiredRole as 'admin' | 'coach' | 'client'] ?? Infinity;
       return userLevel >= requiredLevel;
     },
     () => `Access denied. Required role: ${requiredRole}`,

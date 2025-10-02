@@ -98,9 +98,9 @@ async function checkDatabaseHealth(supabase: any) {
     // Get connection info (simplified - would need actual pool stats in production)
     const connections = Math.floor(Math.random() * 20) + 5; // Placeholder for real connection count
     const maxConnections = 100;
-    
-    const status = responseTime > 1000 ? 'warning' : 'healthy';
-    
+
+    const status = (responseTime > 1000 ? 'warning' : 'healthy') as const;
+
     return {
       status,
       connections,
@@ -131,9 +131,9 @@ async function checkServerHealth() {
   // CPU usage is harder to measure in Node.js without external libraries
   // Using a simplified approximation based on event loop delay
   const cpuUsage = await measureCpuUsage();
-  
-  const status = memoryUsagePercent > 80 || cpuUsage > 90 ? 'warning' : 'healthy' as const;
-  
+
+  const status = (memoryUsagePercent > 80 || cpuUsage > 90 ? 'warning' : 'healthy') as const;
+
   return {
     status,
     uptime,
@@ -170,9 +170,9 @@ async function checkCacheHealth() {
     // Simulate cache operation
     const cacheResult = await simulateCacheCheck();
     const responseTime = Date.now() - startTime;
-    
+
     return {
-      status: responseTime > 50 ? 'warning' : 'healthy' as const,
+      status: (responseTime > 50 ? 'warning' : 'healthy') as const,
       hitRate: cacheResult.hitRate,
       memoryUsed: cacheResult.memoryUsed,
     };

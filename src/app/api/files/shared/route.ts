@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fileManagementService } from '@/lib/services/file-management-service';
-import { authMiddleware } from '@/lib/auth/middleware';
+import { createAuthService } from '@/lib/auth/auth';
 
 /**
  * GET /api/files/shared - Get files shared with the current user
@@ -8,15 +8,16 @@ import { authMiddleware } from '@/lib/auth/middleware';
 export async function GET(request: NextRequest) {
   try {
     // Authenticate user
-    const authResult = await authMiddleware(request);
-    if (!authResult.success) {
+    const authService = await createAuthService(true);
+    const user = await authService.getCurrentUser();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { userId } = authResult.data;
+    const userId = user.id;
 
     const result = await fileManagementService.getSharedFiles(userId);
 

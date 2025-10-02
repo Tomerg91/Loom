@@ -4,7 +4,7 @@ import { handlePreflight } from '@/lib/api/utils';
 
 export async function POST(_request: NextRequest) {
   try {
-    const authService = createAuthService(true);
+    const authService = await createAuthService(true);
     const { error } = await authService.signOut();
 
     if (error) {

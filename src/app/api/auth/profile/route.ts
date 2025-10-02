@@ -17,7 +17,7 @@ const updateProfileSchema = z.object({
 
 export async function GET() {
   try {
-    const authService = createAuthService(true);
+    const authService = await createAuthService(true);
     const user = await authService.getCurrentUser();
 
     if (!user) {
@@ -65,7 +65,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const authService = createAuthService(true);
+    const authService = await createAuthService(true);
     
     // Check if user is authenticated
     const currentUser = await authService.getCurrentUser();

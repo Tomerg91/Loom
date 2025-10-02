@@ -29,8 +29,8 @@ export const GET = withErrorHandling(
   withApiOptimization(
     rateLimitedHandler(async (request: NextRequest) => {
       try {
-        const authService = createAuthService(true);
-        
+        const authService = await createAuthService(true);
+
         // Optimize user retrieval with caching
         const user = await optimizeQuery(
           () => authService.getCurrentUser(),

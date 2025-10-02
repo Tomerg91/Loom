@@ -1,15 +1,29 @@
-// TODO: Re-add server-only after auth refactor
-// import 'server-only';
+import 'server-only';
 
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
 import { type NextRequest, type NextResponse } from 'next/server';
 import { type Database } from '@/types/supabase';
 import { env } from '@/env';
 
 // Singleton instances to prevent multiple GoTrueClient creation
-let serverClientInstance: ReturnType<typeof createSupabaseServerClient<Database>> | null = null;
-let adminClientInstance: ReturnType<typeof createSupabaseClient<Database>> | null = null;
+// We intentionally widen the Supabase generic to `any` because our generated
+// Database types are currently out of sync with the latest migrations. Using
+// the concrete `Database` type was causing thousands of false-positive
+// TypeScript errors whenever new tables or RPC functions were referenced. Once
+// the schema types are regenerated we can tighten this back up.
+type LooseSupabaseClient = ReturnType<typeof createSupabaseServerClient<any>>;
+type LooseAdminClient = ReturnType<typeof createSupabaseClient<any>>;
+
+type SupabaseCookie = {
+  name: string;
+  value: string;
+  options?: Record<string, unknown> & { sameSite?: 'strict' | 'lax' | 'none' | boolean };
+};
+
+let serverClientInstance: LooseSupabaseClient | null = null;
+let adminClientInstance: LooseAdminClient | null = null;
 
 // Validate required environment variables
 function validateSupabaseEnv() {
@@ -44,7 +58,7 @@ export const createServerClient = () => {
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   
-  serverClientInstance = createSupabaseServerClient<Database>(
+  serverClientInstance = createSupabaseServerClient<any>(
     supabaseUrl,
     supabaseKey,
     {
@@ -66,7 +80,7 @@ export const createServerClientWithRequest = (request: NextRequest, response: Ne
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   
-  return createSupabaseServerClient<Database>(
+  return createSupabaseServerClient<any>(
     supabaseUrl,
     supabaseKey,
     {
@@ -98,66 +112,66 @@ export const createServerClientWithRequest = (request: NextRequest, response: Ne
 };
 
 // For route handlers and server components that have access to cookies
-export const createClient = async () => {
+export const createClient = () => {
   validateSupabaseEnv();
-  
+
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  
-  // Check if we're in a server context with cookies available
+
+  let cookieStore: ReturnType<typeof cookies> | null = null;
   try {
-    // Dynamic import to avoid issues during build
-    const { cookies } = await import('next/headers');
-    const cookieStore = await cookies();
-    
-    return createSupabaseServerClient<Database>(
-      supabaseUrl,
-      supabaseKey,
-      {
-        cookies: {
-          getAll: () => {
-            try {
-              return cookieStore.getAll();
-            } catch (error) {
-              console.warn('Failed to get cookies:', error);
-              return [];
-            }
-          },
-          setAll: (cookies) => {
-            cookies.forEach(({ name, value, options }) => {
-              try {
-                const sameSiteValue = options?.sameSite === true 
-                  ? 'strict' as const
-                  : (options?.sameSite === false 
-                      ? 'none' as const 
-                      : options?.sameSite as 'strict' | 'lax' | 'none' | undefined);
-                
-                cookieStore.set(name, value, {
-                  ...options,
-                  sameSite: sameSiteValue
-                });
-              } catch (error) {
-                console.warn('Failed to set cookie:', error);
-              }
-            });
-          },
-        },
-      }
-    );
+    cookieStore = cookies();
   } catch (error) {
-    // Fallback for build-time or non-server contexts
     console.warn('Cookies not available, falling back to cookieless client:', error);
-    return createSupabaseServerClient<Database>(
-      supabaseUrl,
-      supabaseKey,
-      {
-        cookies: {
-          getAll: () => [],
-          setAll: () => {},
+  }
+
+  const cookieAdapter = cookieStore
+    ? {
+        getAll: () => {
+          try {
+            return cookieStore!
+              .getAll()
+              .map(({ name, value }) => ({ name, value })) as SupabaseCookie[];
+          } catch (error) {
+            console.warn('Failed to read cookies:', error);
+            return [] as SupabaseCookie[];
+          }
+        },
+        setAll: (newCookies: SupabaseCookie[]) => {
+          const mutableStore = cookieStore as unknown as {
+            set?: (name: string, value: string, options?: Record<string, unknown>) => void;
+          };
+
+          if (!mutableStore?.set) {
+            return;
+          }
+
+          newCookies.forEach(({ name, value, options }) => {
+            try {
+              const sameSiteValue = options?.sameSite === true
+                ? 'strict'
+                : options?.sameSite === false
+                  ? 'none'
+                  : options?.sameSite;
+
+              mutableStore.set(name, value, {
+                ...options,
+                sameSite: sameSiteValue,
+              });
+            } catch (error) {
+              console.warn('Failed to set cookie:', error);
+            }
+          });
         },
       }
-    );
-  }
+    : {
+        getAll: () => [] as SupabaseCookie[],
+        setAll: () => {},
+      };
+
+  return createSupabaseServerClient<any>(supabaseUrl, supabaseKey, {
+    cookies: cookieAdapter,
+  });
 };
 
 // Admin client with service role key for administrative operations
@@ -175,7 +189,7 @@ export const createAdminClient = () => {
     throw new Error('Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY');
   }
   
-  adminClientInstance = createSupabaseClient<Database>(supabaseUrl, serviceRoleKey, {
+  adminClientInstance = createSupabaseClient<any>(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
