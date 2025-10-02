@@ -1,20 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, Smartphone, Key, Shield, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createMfaService } from '@/lib/services/mfa-service';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Smartphone, Key, Shield, ArrowLeft } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { MfaMethod } from '@/types';
 
 const mfaVerificationSchema = z.object({
@@ -83,45 +83,63 @@ export function MfaVerificationForm({
     setError(null);
 
     try {
-      const mfaService = createMfaService(false);
-      
-      const { success, error: mfaError } = await mfaService.verifyMfa(userId, {
-        method: activeMethod,
-        code: data.code.toUpperCase(),
-        rememberDevice: data.rememberDevice,
+      const response = await fetch('/api/auth/mfa/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          code: data.code.toUpperCase(),
+          method: activeMethod,
+        }),
       });
 
-      if (mfaError) {
-        setError(mfaError);
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result?.success) {
+        setError(result?.error || t('verificationFailed'));
         setAttempts(prev => prev + 1);
-        
+
         // Lock after 5 failed attempts
         if (attempts + 1 >= 5) {
           setIsLocked(true);
           setError(t('accountLocked'));
         }
-        
+
         reset({ rememberDevice: data.rememberDevice });
         return;
       }
 
-      if (success) {
-        // Complete MFA session if we have a session token
-        if (mfaSessionToken) {
-          await mfaService.completeMfaSession(mfaSessionToken);
-        }
+      if (mfaSessionToken) {
+        const sessionResponse = await fetch('/api/auth/mfa/session/complete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sessionToken: mfaSessionToken }),
+        });
 
-        // Mark MFA complete for this browser session
-        document.cookie = `mfa_verified=true; path=/; secure; samesite=strict; max-age=3600`;
-        // Clear pending flag set during password sign-in
-        document.cookie = `mfa_pending=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`;
-        
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          router.push(finalRedirectTo);
-          router.refresh();
+        const sessionResult = await sessionResponse.json().catch(() => ({}));
+
+        if (!sessionResponse.ok || !sessionResult?.success) {
+          setError(sessionResult?.error || t('verificationFailed'));
+          setAttempts(prev => prev + 1);
+          reset({ rememberDevice: data.rememberDevice });
+          return;
         }
+      }
+
+      // Mark MFA complete for this browser session
+      document.cookie = `mfa_verified=true; path=/; secure; samesite=strict; max-age=3600`;
+      // Clear pending flag set during password sign-in
+      document.cookie = `mfa_pending=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`;
+
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(finalRedirectTo);
+        router.refresh();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('verificationFailed'));

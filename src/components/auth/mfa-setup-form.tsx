@@ -1,20 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, Shield, Smartphone, Copy, Check, Download, Eye, EyeOff } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { OptimizedQRImage } from '@/components/ui/optimized-image';
-import { createMfaService } from '@/lib/services/mfa-service';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Shield, Smartphone, Copy, Check, Download, Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { OptimizedQRImage } from '@/components/ui/optimized-image';
 import type { MfaSetupData } from '@/types';
 
 const mfaSetupSchema = z.object({
@@ -71,58 +71,68 @@ export function MfaSetupForm({
     resolver: zodResolver(mfaSetupSchema),
   });
 
-  useEffect(() => {
-    generateMfaSetup();
-  }, []);
+  const generateMfaSetup = useCallback(async () => {
+    if (!userId) {
+      setError(t('setup.error'));
+      return;
+    }
 
-  const generateMfaSetup = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const mfaService = createMfaService(false);
-      const { data, error: setupError } = await mfaService.generateMfaSetup(userId, userEmail);
+      const response = await fetch('/api/auth/mfa/setup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: '{}',
+      });
 
-      if (setupError) {
-        setError(setupError);
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result?.success || !result?.data) {
+        setError(result?.error || t('setup.error'));
         return;
       }
 
-      if (data) {
-        setSetupData(data);
-        setCurrentStep('setup');
-      }
+      setSetupData(result.data as MfaSetupData);
+      setCurrentStep('setup');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('setup.error'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [t, userId]);
+
+  useEffect(() => {
+    void generateMfaSetup();
+  }, [generateMfaSetup]);
 
   const onSubmit = async (data: MfaSetupFormData) => {
-    if (!setupData) return;
+    if (!setupData || !userId) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const mfaService = createMfaService(false);
-      const { success, error: enableError } = await mfaService.enableMfa(
-        userId,
-        setupData.secret,
-        data.verificationCode,
-        setupData.backupCodes
-      );
+      const response = await fetch('/api/auth/mfa/enable', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ totpCode: data.verificationCode }),
+      });
 
-      if (enableError) {
-        setError(enableError);
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result?.success) {
+        setError(result?.error || t('setup.verificationFailed'));
         reset();
         return;
       }
 
-      if (success) {
-        setCurrentStep('backup');
-      }
+      setCurrentStep('backup');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('setup.verificationFailed'));
       reset();
