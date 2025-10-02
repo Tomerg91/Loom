@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { OptimizedQRImage } from '@/components/ui/optimized-image';
-import { createMfaService } from '@/lib/services/mfa-service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -80,16 +79,23 @@ export function MfaSetupForm({
     setError(null);
 
     try {
-      const mfaService = createMfaService(false);
-      const { data, error: setupError } = await mfaService.generateMfaSetup(userId, userEmail);
+      const response = await fetch('/api/auth/mfa/setup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
 
-      if (setupError) {
-        setError(setupError);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setError(result.error || t('setup.error'));
         return;
       }
 
-      if (data) {
-        setSetupData(data);
+      if (result.data) {
+        setSetupData(result.data);
         setCurrentStep('setup');
       }
     } catch (err) {
@@ -106,23 +112,27 @@ export function MfaSetupForm({
     setError(null);
 
     try {
-      const mfaService = createMfaService(false);
-      const { success, error: enableError } = await mfaService.enableMfa(
-        userId,
-        setupData.secret,
-        data.verificationCode,
-        setupData.backupCodes
-      );
+      const response = await fetch('/api/auth/mfa/enable', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          totpCode: data.verificationCode,
+          secret: setupData.secret,
+          backupCodes: setupData.backupCodes,
+        }),
+      });
 
-      if (enableError) {
-        setError(enableError);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setError(result.error || t('setup.verificationFailed'));
         reset();
         return;
       }
 
-      if (success) {
-        setCurrentStep('backup');
-      }
+      setCurrentStep('backup');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('setup.verificationFailed'));
       reset();
