@@ -7,7 +7,7 @@ import { AuthProvider } from '@/components/auth/auth-provider';
 import { ErrorBoundary } from '@/components/error-boundary';
 import dynamic from 'next/dynamic';
 import { Suspense, useEffect, useState, type ReactNode } from 'react';
-import { webVitalsMonitor } from '@/lib/performance';
+import { webVitalsMonitor } from '@/lib/performance/web-vitals-monitor';
 import type { AuthUser } from '@/lib/auth/auth';
 
 // Lazy load non-critical providers with increased delay for better LCP
