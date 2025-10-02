@@ -21,8 +21,8 @@ interface MessageItem {
   content: string | null;
   createdAt: string;
   senderId: string;
-  receiverId: string;
-  read: boolean | null;
+  receiverId: string | null;
+  read: boolean;
 }
 
 const MESSAGE_LIMIT = 4;
@@ -65,8 +65,26 @@ export function ClientRecentMessages({ userId, locale, translations }: ClientRec
 
         const { data, error } = await supabase
           .from('messages')
-          .select('id, content, created_at, sender_id, receiver_id, read')
-          .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+          .select(
+            `
+              id,
+              content,
+              created_at,
+              sender_id,
+              conversation_id,
+              conversations!inner (
+                conversation_participants!inner (
+                  user_id,
+                  last_read_at
+                )
+              ),
+              message_read_receipts (
+                user_id,
+                read_at
+              )
+            `
+          )
+          .eq('conversations.conversation_participants.user_id', userId)
           .order('created_at', { ascending: false })
           .limit(MESSAGE_LIMIT);
 
@@ -77,15 +95,60 @@ export function ClientRecentMessages({ userId, locale, translations }: ClientRec
         }
 
         const rawMessages = Array.isArray(data) ? data : [];
-        const normalizedMessages: MessageItem[] = rawMessages.map((message: any) => ({
-          id: String(message.id ?? ''),
-          content: typeof message.content === 'string' ? message.content : null,
-          createdAt:
-            typeof message.created_at === 'string' ? message.created_at : new Date().toISOString(),
-          senderId: typeof message.sender_id === 'string' ? message.sender_id : userId,
-          receiverId: typeof message.receiver_id === 'string' ? message.receiver_id : userId,
-          read: typeof message.read === 'boolean' ? message.read : Boolean(message.read ?? false),
-        }));
+        const uniqueMessages = new Map<string, MessageItem>();
+
+        rawMessages.forEach((message: any) => {
+          const messageId = typeof message.id === 'string' ? message.id : String(message.id ?? '');
+          if (!messageId || uniqueMessages.has(messageId)) {
+            return;
+          }
+
+          const participants = Array.isArray(message?.conversations?.conversation_participants)
+            ? message.conversations.conversation_participants
+            : [];
+
+          const currentParticipant = participants.find(
+            (participant: any) => typeof participant?.user_id === 'string' && participant.user_id === userId
+          );
+          const otherParticipant = participants.find(
+            (participant: any) => typeof participant?.user_id === 'string' && participant.user_id !== userId
+          );
+
+          const messageReceipts = Array.isArray(message?.message_read_receipts)
+            ? message.message_read_receipts
+            : [];
+
+          const createdAt =
+            typeof message.created_at === 'string'
+              ? message.created_at
+              : new Date().toISOString();
+          const senderId = typeof message.sender_id === 'string' ? message.sender_id : userId;
+
+          const hasReadReceipt = messageReceipts.some(
+            (receipt: any) => typeof receipt?.user_id === 'string' && receipt.user_id === userId
+          );
+
+          const lastReadAt =
+            typeof currentParticipant?.last_read_at === 'string'
+              ? currentParticipant.last_read_at
+              : null;
+
+          const read =
+            senderId === userId ||
+            hasReadReceipt ||
+            (lastReadAt ? new Date(lastReadAt).getTime() >= new Date(createdAt).getTime() : false);
+
+          uniqueMessages.set(messageId, {
+            id: messageId,
+            content: typeof message.content === 'string' ? message.content : null,
+            createdAt,
+            senderId,
+            receiverId: typeof otherParticipant?.user_id === 'string' ? otherParticipant.user_id : null,
+            read,
+          });
+        });
+
+        const normalizedMessages = Array.from(uniqueMessages.values());
 
         if (isMounted) {
           setMessages(normalizedMessages);
