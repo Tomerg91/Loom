@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual('@tanstack/react-query');
   return actual;
@@ -5,7 +6,6 @@ vi.mock('@tanstack/react-query', async () => {
 
 import { screen, waitFor } from '@testing-library/react';
 import React from 'react';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { useFilteredSessions } from '@/lib/queries/sessions';
 import {
