@@ -1,40 +1,54 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import { Link } from '@/i18n/routing';
-import { useTranslations } from 'next-intl';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { createAuthService } from '@/lib/auth/auth';
-import { strongPasswordSchema } from '@/lib/security/password';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Link } from '@/i18n/routing';
+import { strongPasswordSchema } from '@/lib/security/password';
 import type { Language } from '@/types';
 
-const signupSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: strongPasswordSchema,
-  confirmPassword: z.string(),
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  role: z.enum(['client', 'coach'] as const),
-  phone: z.string().optional(),
-  language: z.enum(['en', 'he'] as const),
-  acceptedTerms: z.boolean().refine(val => val === true, { 
-    message: 'You must accept the terms and conditions' 
-  }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const signupSchema = z
+  .object({
+    email: z.string().email('Invalid email address'),
+    password: strongPasswordSchema,
+    confirmPassword: z.string(),
+    firstName: z.string().min(2, 'First name must be at least 2 characters'),
+    lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+    role: z.enum(['client', 'coach'] as const),
+    phone: z.string().optional(),
+    language: z.enum(['en', 'he'] as const),
+    acceptedTerms: z.boolean().refine(val => val === true, {
+      message: 'You must accept the terms and conditions',
+    }),
+  })
+  .refine(data => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
 
 type SignupFormData = z.infer<typeof signupSchema>;
 
@@ -100,14 +114,17 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
       }
 
       // Success - redirect to dashboard (locale-aware and safe)
-      const safeRedirectTo = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+      const safeRedirectTo =
+        redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
       const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
         ? safeRedirectTo
         : `/${locale}${safeRedirectTo}`;
       router.push(finalRedirectTo);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      setError(
+        err instanceof Error ? err.message : 'An unexpected error occurred'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +133,9 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
   return (
     <Card className="w-full max-w-lg mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
       <CardHeader className="space-y-4 text-center px-8 pt-8 pb-6">
-        <CardTitle className="text-3xl font-light text-neutral-900">{t('signup.title')}</CardTitle>
+        <CardTitle className="text-3xl font-light text-neutral-900">
+          {t('signup.title')}
+        </CardTitle>
         <CardDescription className="text-base font-light text-neutral-600">
           {t('signup.description')}
         </CardDescription>
@@ -124,14 +143,24 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-5 px-8">
           {error && (
-            <Alert variant="destructive" className="border-red-500 bg-red-50 text-red-800">
-              <AlertDescription className="font-light">{error}</AlertDescription>
+            <Alert
+              variant="destructive"
+              className="border-red-500 bg-red-50 text-red-800"
+            >
+              <AlertDescription className="font-light">
+                {error}
+              </AlertDescription>
             </Alert>
           )}
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-sm font-medium text-neutral-900">{t('firstName')}</Label>
+              <Label
+                htmlFor="firstName"
+                className="text-sm font-medium text-neutral-900"
+              >
+                {t('firstName')}
+              </Label>
               <Input
                 id="firstName"
                 placeholder={t('firstNamePlaceholder')}
@@ -143,9 +172,14 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 inputSize="md"
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-sm font-medium text-neutral-900">{t('lastName')}</Label>
+              <Label
+                htmlFor="lastName"
+                className="text-sm font-medium text-neutral-900"
+              >
+                {t('lastName')}
+              </Label>
               <Input
                 id="lastName"
                 placeholder={t('lastNamePlaceholder')}
@@ -160,7 +194,12 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-neutral-900">{t('email')}</Label>
+            <Label
+              htmlFor="email"
+              className="text-sm font-medium text-neutral-900"
+            >
+              {t('email')}
+            </Label>
             <Input
               id="email"
               type="email"
@@ -175,7 +214,12 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone" className="text-sm font-medium text-neutral-900">{t('phone')} ({t('optional')})</Label>
+            <Label
+              htmlFor="phone"
+              className="text-sm font-medium text-neutral-900"
+            >
+              {t('phone')} ({t('optional')})
+            </Label>
             <Input
               id="phone"
               type="tel"
@@ -191,10 +235,14 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-neutral-900">{t('role')}</Label>
+              <Label className="text-sm font-medium text-neutral-900">
+                {t('role')}
+              </Label>
               <Select
                 value={watchRole}
-                onValueChange={(value: 'client' | 'coach') => setValue('role', value)}
+                onValueChange={(value: 'client' | 'coach') =>
+                  setValue('role', value)
+                }
                 disabled={isLoading}
               >
                 <SelectTrigger data-testid="role-select">
@@ -206,12 +254,16 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 </SelectContent>
               </Select>
               {errors.role && (
-                <p className="text-sm font-light text-red-600">{errors.role.message}</p>
+                <p className="text-sm font-light text-red-600">
+                  {errors.role.message}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-neutral-900">{t('language')}</Label>
+              <Label className="text-sm font-medium text-neutral-900">
+                {t('language')}
+              </Label>
               <Select
                 value={watchLanguage}
                 onValueChange={(value: Language) => setValue('language', value)}
@@ -226,13 +278,20 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
                 </SelectContent>
               </Select>
               {errors.language && (
-                <p className="text-sm font-light text-red-600">{errors.language.message}</p>
+                <p className="text-sm font-light text-red-600">
+                  {errors.language.message}
+                </p>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium text-neutral-900">{t('password')}</Label>
+            <Label
+              htmlFor="password"
+              className="text-sm font-medium text-neutral-900"
+            >
+              {t('password')}
+            </Label>
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
@@ -249,7 +308,12 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="text-sm font-medium text-neutral-900">{t('confirmPassword')}</Label>
+            <Label
+              htmlFor="confirmPassword"
+              className="text-sm font-medium text-neutral-900"
+            >
+              {t('confirmPassword')}
+            </Label>
             <Input
               id="confirmPassword"
               type={showConfirmPassword ? 'text' : 'password'}
@@ -261,7 +325,9 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
               variant="default"
               inputSize="md"
               rightIcon={showConfirmPassword ? EyeOff : Eye}
-              onRightIconClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              onRightIconClick={() =>
+                setShowConfirmPassword(!showConfirmPassword)
+              }
             />
           </div>
 
@@ -274,7 +340,10 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
               className="mt-1 h-4 w-4 text-orange-600 bg-white border-neutral-300 rounded focus:ring-orange-500 focus:ring-2"
               data-testid="terms-checkbox"
             />
-            <Label htmlFor="acceptedTerms" className="text-sm font-light text-neutral-700 leading-relaxed">
+            <Label
+              htmlFor="acceptedTerms"
+              className="text-sm font-light text-neutral-700 leading-relaxed"
+            >
               {t('acceptTerms')}{' '}
               <Link
                 href="/terms"
@@ -286,22 +355,24 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
             </Label>
           </div>
           {errors.acceptedTerms && (
-            <p className="text-sm font-light text-red-600">{errors.acceptedTerms.message}</p>
+            <p className="text-sm font-light text-red-600">
+              {errors.acceptedTerms.message}
+            </p>
           )}
         </CardContent>
         <CardFooter className="flex flex-col space-y-6 px-8 pb-8">
-          <Button 
-            type="submit" 
-            variant="default" 
+          <Button
+            type="submit"
+            variant="default"
             size="lg"
-            className="w-full" 
-            disabled={isLoading} 
+            className="w-full"
+            disabled={isLoading}
             data-testid="signup-button"
           >
             {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
             {t('signup.button')}
           </Button>
-          
+
           <div className="text-center text-sm font-light text-neutral-600">
             {t('haveAccount')}{' '}
             <Link
