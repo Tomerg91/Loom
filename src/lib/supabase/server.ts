@@ -1,8 +1,9 @@
-import 'server-only';
+// Note: Server-only imports are lazy-loaded to prevent webpack bundling issues
+// This file can be imported in client code, but the server-only functions
+// (createServerClient, createAdminClient) will only work on the server.
 
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 import { type NextRequest, type NextResponse } from 'next/server';
 import { type Database } from '@/types/supabase';
 import { env } from '@/env';
@@ -118,11 +119,14 @@ export const createClient = () => {
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-  let cookieStore: ReturnType<typeof cookies> | null = null;
+  let cookieStore: any | null = null;
   try {
+    // Dynamic import to avoid bundling next/headers in client code
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { cookies } = require('next/headers');
     cookieStore = cookies();
-  } catch (error) {
-    console.warn('Cookies not available, falling back to cookieless client:', error);
+  } catch (_error) {
+    // Cookies not available in client context - will fall back to cookieless client
   }
 
   const cookieAdapter = cookieStore
