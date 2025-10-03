@@ -9,6 +9,7 @@
     "search": "חפש",
     "filter": "סנן",
     "sort": "מיון",
+    "changeLanguage": "שנה שפה",
     "actions": "פעולות",
     "yes": "כן",
     "no": "לא",
@@ -1199,6 +1200,10 @@
       "storage": "אחסון",
       "serviceStatus": "סטטוס שירותים"
     }
+  },
+  "share": {
+    "passwordLabel": "סיסמה",
+    "passwordPlaceholder": "הקלד סיסמה"
   },
   "notFound": {
     "title": "הדף לא נמצא",

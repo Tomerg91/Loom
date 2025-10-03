@@ -1,6 +1,6 @@
 'use client';
 
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -8,13 +8,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Globe, Languages, Check } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useLanguageSwitcher } from '@/hooks/use-language-switcher';
 
 interface LanguageSwitcherProps {
@@ -25,7 +26,7 @@ interface LanguageSwitcherProps {
   className?: string;
 }
 
-export function LanguageSwitcher({ 
+export function LanguageSwitcher({
   variant = 'dropdown',
   showFlag = true,
   showNativeName = false,
@@ -33,6 +34,7 @@ export function LanguageSwitcher({
   className = ''
 }: LanguageSwitcherProps) {
   const { currentLocale, currentLanguage, availableLanguages, switchLanguage } = useLanguageSwitcher();
+  const t = useTranslations('common');
 
   if (variant === 'select') {
     return (
@@ -88,8 +90,10 @@ export function LanguageSwitcher({
           variant="ghost"
           size={size}
           className={`flex items-center rtl:space-x-reverse space-x-2 ${className}`}
+          aria-label={t('changeLanguage')}
         >
-          <Languages className="h-4 w-4" />
+          <Languages aria-hidden="true" className="h-4 w-4" />
+          <span className="sr-only">{t('changeLanguage')}</span>
           {showFlag && <span>{currentLanguage?.flag}</span>}
           <span className="hidden sm:inline">
             {showNativeName ? currentLanguage?.nativeName : currentLanguage?.name}
@@ -125,6 +129,7 @@ export function LanguageSwitcher({
 // Compact version for mobile or space-constrained areas
 export function CompactLanguageSwitcher({ className = '' }: { className?: string }) {
   const { currentLocale, availableLanguages, switchLanguage } = useLanguageSwitcher();
+  const t = useTranslations('common');
 
   return (
     <DropdownMenu>
@@ -133,8 +138,11 @@ export function CompactLanguageSwitcher({ className = '' }: { className?: string
           variant="ghost"
           size="sm"
           className={`w-10 h-10 p-0 ${className}`}
+          aria-label={t('changeLanguage')}
+          iconOnly
         >
-          <Globe className="h-4 w-4" />
+          <Globe aria-hidden="true" className="h-4 w-4" />
+          <span className="sr-only">{t('changeLanguage')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-32">

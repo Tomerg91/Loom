@@ -9,11 +9,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // Primary - Soft Teal (Satya Method primary action)
-        default: 'bg-teal-400 text-white hover:bg-teal-500 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
+        default: 'bg-teal-700 text-white hover:bg-teal-800 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
         // Secondary - Warm neutrals
         secondary: 'bg-sand-200 text-sand-700 hover:bg-sand-300 shadow-sm hover:shadow-md hover:-translate-y-0.5',
         // Destructive - Warm Terracotta
-        destructive: 'bg-terracotta-500 text-white hover:bg-terracotta-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
+        destructive: 'bg-terracotta-700 text-white hover:bg-terracotta-800 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
         // Success - Moss Green
         success: 'bg-moss-500 text-white hover:bg-moss-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal',
         // Outline - Grounded border
