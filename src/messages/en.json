@@ -9,6 +9,7 @@
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
+    "changeLanguage": "Change language",
     "actions": "Actions",
     "yes": "Yes",
     "no": "No",
@@ -965,6 +966,10 @@
       "storage": "Storage",
       "serviceStatus": "Service Status"
     }
+  },
+  "share": {
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter password"
   },
   "notFound": {
     "title": "Page Not Found",

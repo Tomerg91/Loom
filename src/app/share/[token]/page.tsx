@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
 import { 
   Download, 
   Eye, 
@@ -50,6 +52,7 @@ interface ShareAccessValidation {
 export default function SharePage() {
   const params = useParams();
   const token = params.token as string;
+  const t = useTranslations('share');
   
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -280,13 +283,17 @@ export default function SharePage() {
                 <p className="text-gray-600 mb-4">
                   This shared file is password protected. Please enter the password to access it.
                 </p>
-                <Input
-                  type="password"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="share-password">{t('passwordLabel')}</Label>
+                  <Input
+                    id="share-password"
+                    type="password"
+                    placeholder={t('passwordPlaceholder')}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
                 <Button type="submit" className="w-full" disabled={!password.trim()}>
                   Access File
                 </Button>

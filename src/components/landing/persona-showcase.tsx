@@ -110,7 +110,7 @@ export function PersonaShowcase() {
                     </ul>
 
                     <div className="mt-8 flex flex-wrap gap-3">
-                      <Link href={personaRouteMap[persona.id]} locale={locale} className="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-light tracking-wide bg-orange-600 text-white hover:bg-orange-700 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal h-13 px-8 py-3 text-base gap-2">
+                      <Link href={personaRouteMap[persona.id]} locale={locale} className="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-light tracking-wide bg-terracotta-700 text-white hover:bg-terracotta-800 shadow-md hover:shadow-lg hover:-translate-y-0.5 font-normal h-13 px-8 py-3 text-base gap-2">
                         {persona.ctaLabel}
                         <ArrowRight className="h-4 w-4" aria-hidden="true" />
                       </Link>
