@@ -248,3 +248,6 @@ export function AdminUsersPage() {
     </div>
   );
 }
+
+// Export as default for dynamic imports
+export default AdminUsersPage;

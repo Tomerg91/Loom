@@ -31,8 +31,8 @@ export function EnhancedSessionBooking(props: Omit<UnifiedSessionBookingProps, '
 
 // Realtime booking form (replacement for realtime-session-booking.tsx)
 export function RealtimeSessionBooking(props: Omit<UnifiedSessionBookingProps, 'variant'>) {
-  return UnifiedSessionBooking({ 
-    ...props, 
+  return UnifiedSessionBooking({
+    ...props,
     variant: 'realtime',
     showCoachInfo: true,
     showAvailabilityStatus: true,
@@ -40,3 +40,6 @@ export function RealtimeSessionBooking(props: Omit<UnifiedSessionBookingProps, '
     enableRealtimeUpdates: true
   });
 }
+
+// Export default for dynamic imports
+export default UnifiedSessionBooking;

@@ -99,7 +99,7 @@ async function checkDatabaseHealth(supabase: any) {
     const connections = Math.floor(Math.random() * 20) + 5; // Placeholder for real connection count
     const maxConnections = 100;
 
-    const status = (responseTime > 1000 ? 'warning' : 'healthy') as const;
+    const status: 'warning' | 'healthy' = responseTime > 1000 ? 'warning' : 'healthy';
 
     return {
       status,
@@ -132,7 +132,7 @@ async function checkServerHealth() {
   // Using a simplified approximation based on event loop delay
   const cpuUsage = await measureCpuUsage();
 
-  const status = (memoryUsagePercent > 80 || cpuUsage > 90 ? 'warning' : 'healthy') as const;
+  const status: 'warning' | 'healthy' = (memoryUsagePercent > 80 || cpuUsage > 90) ? 'warning' : 'healthy';
 
   return {
     status,
@@ -170,9 +170,10 @@ async function checkCacheHealth() {
     // Simulate cache operation
     const cacheResult = await simulateCacheCheck();
     const responseTime = Date.now() - startTime;
+    const status: 'warning' | 'healthy' = responseTime > 50 ? 'warning' : 'healthy';
 
     return {
-      status: (responseTime > 50 ? 'warning' : 'healthy') as const,
+      status,
       hitRate: cacheResult.hitRate,
       memoryUsed: cacheResult.memoryUsed,
     };

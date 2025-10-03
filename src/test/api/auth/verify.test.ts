@@ -615,7 +615,7 @@ describe('/api/auth/verify', () => {
         const originalURL = URL;
         global.URL = vi.fn().mockImplementation(() => {
           throw new Error('URL parsing failed');
-        });
+        }) as any;
 
         const request = new NextRequest(
           'http://localhost:3000/api/auth/verify?token_hash=test_token'

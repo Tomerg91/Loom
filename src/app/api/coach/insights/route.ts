@@ -195,12 +195,12 @@ export async function GET(request: NextRequest) {
 
     sessions?.forEach(session => {
       const clientId = session.client_id;
-      const client = session.users;
-      
+      const client = Array.isArray(session.users) ? session.users[0] : session.users;
+
       if (!clientMap.has(clientId)) {
         clientMap.set(clientId, {
           id: clientId,
-          name: `${client.first_name} ${client.last_name}`,
+          name: `${client?.first_name || ''} ${client?.last_name || ''}`,
           sessionsCompleted: 0,
           totalSessions: 0,
           averageMood: 0,

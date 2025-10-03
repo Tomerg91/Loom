@@ -26,6 +26,8 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
+
     // Users can only view their own download history
     if (id !== user.id) {
       return NextResponse.json(

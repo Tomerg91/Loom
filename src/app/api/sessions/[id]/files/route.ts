@@ -89,6 +89,8 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
+
     // Check session access
     const { hasAccess, session } = await checkSessionAccess(
       supabase,
@@ -180,6 +182,8 @@ export async function POST(
         { status: 401 }
       );
     }
+
+    const { id } = await params;
 
     // Check session access
     const { hasAccess, session, userRole } = await checkSessionAccess(
@@ -314,6 +318,8 @@ export async function PUT(
       );
     }
 
+    const { id } = await params;
+
     // Check session access
     const { hasAccess, userRole } = await checkSessionAccess(
       supabase,
@@ -437,6 +443,8 @@ export async function DELETE(
         { status: 401 }
       );
     }
+
+    const { id } = await params;
 
     // Check session access
     const { hasAccess, session, userRole } = await checkSessionAccess(

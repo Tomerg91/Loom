@@ -27,6 +27,8 @@ export async function POST(
       );
     }
 
+    const { id } = await params;
+
     // Verify user has access to the file
     const file = await fileDatabase.getFileUpload(id);
     

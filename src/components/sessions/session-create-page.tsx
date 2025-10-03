@@ -40,13 +40,17 @@ export function SessionCreatePage() {
     queryKey: ['available-users'],
     queryFn: async () => {
       // Mock API call - filter based on current user role
-      const allUsers = [
+      const allUsers: User[] = [
         {
           id: '1',
           firstName: 'Sarah',
           lastName: 'Johnson',
           email: 'sarah@loom.com',
           role: 'coach' as const,
+          language: 'en',
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
         {
           id: '2',
@@ -54,6 +58,10 @@ export function SessionCreatePage() {
           lastName: 'Chen',
           email: 'michael@loom.com',
           role: 'coach' as const,
+          language: 'en',
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
         {
           id: '3',
@@ -61,6 +69,10 @@ export function SessionCreatePage() {
           lastName: 'Doe',
           email: 'john@example.com',
           role: 'client' as const,
+          language: 'en',
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
         {
           id: '4',
@@ -68,6 +80,10 @@ export function SessionCreatePage() {
           lastName: 'Smith',
           email: 'jane@example.com',
           role: 'client' as const,
+          language: 'en',
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
       ];
 

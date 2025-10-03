@@ -12,14 +12,14 @@ const updateTemporaryShareSchema = z.object({
     const expiryDate = new Date(date);
     const now = new Date();
     const maxExpiry = new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year max
-    
+
     return expiryDate > now && expiryDate <= maxExpiry;
   }, {
     message: 'Expiry date must be in the future and within 1 year'
   }).optional(),
   max_downloads: z.number().int().min(1).max(10000).optional(),
   is_active: z.boolean().optional(),
-  password: z.string().min(4).max(100).nullable().optional(),
+  password: z.string().min(4).max(100).optional(),
 });
 
 // GET /api/files/shares/temporary/[shareId] - Get specific temporary share details

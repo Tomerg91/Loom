@@ -34,9 +34,11 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
+
     // Verify user has access to the file
     const file = await fileDatabase.getFileUpload(id);
-    
+
     // Check if user owns the file or it's shared with them
     if (file.user_id !== user.id) {
       const userShares = await fileDatabase.getFileShares(id, user.id);
@@ -121,6 +123,8 @@ export async function POST(
         { status: 401 }
       );
     }
+
+    const { id } = await params;
 
     // Verify user owns the file
     const file = await fileDatabase.getFileUpload(id);

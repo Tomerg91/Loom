@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { Database } from '@/lib/database/database.types';
+import { Database } from '@/types/supabase';
 
 type FileDownloadLog = Database['public']['Tables']['file_download_logs']['Row'];
 type FileAnalyticsSummary = Database['public']['Tables']['file_analytics_summary']['Row'];
@@ -399,12 +399,19 @@ class DownloadTrackingDatabase {
       throw new Error(`Failed to get user top files: ${error.message}`);
     }
 
-    return files?.map(f => ({
-      file_id: f.file_id,
-      filename: f.file?.filename || 'Unknown',
-      download_count: f.total_downloads,
-      last_download: f.last_download_at || '',
-    })) || [];
+    return files?.map(f => {
+      const fileData: any = f.file;
+      const filename = Array.isArray(fileData)
+        ? (fileData.length > 0 ? fileData[0]?.filename : 'Unknown')
+        : (fileData?.filename || 'Unknown');
+
+      return {
+        file_id: f.file_id,
+        filename,
+        download_count: f.total_downloads,
+        last_download: f.last_download_at || '',
+      };
+    }) || [];
   }
 
   /**
@@ -562,6 +569,63 @@ class DownloadTrackingDatabase {
         client_info: clientInfo,
       });
     };
+  }
+
+  /**
+   * Start tracking a download (creates initial log entry)
+   */
+  async startDownload(data: {
+    fileId: string;
+    userId: string | null;
+    ipAddress: string;
+    userAgent: string;
+    downloadType: string;
+    shareId?: string;
+    temporaryShareId?: string;
+    referer: string | null;
+  }): Promise<string> {
+    const clientInfo = this.parseClientInfo(data.userAgent);
+    const location = await this.getLocationFromIP(data.ipAddress);
+
+    return this.logDownload({
+      file_id: data.fileId,
+      downloaded_by: data.userId || undefined,
+      download_type: data.downloadType as any,
+      share_id: data.shareId || data.temporaryShareId,
+      ip_address: data.ipAddress,
+      user_agent: data.userAgent,
+      country_code: location.country_code,
+      city: location.city,
+      success: false, // Will be updated on completion
+      client_info: clientInfo,
+    });
+  }
+
+  /**
+   * Complete a download (updates the log entry)
+   */
+  async completeDownload(downloadId: string, data: {
+    success: boolean;
+    fileSizeBytes?: number;
+    durationMs?: number;
+    failureReason?: string;
+  }): Promise<void> {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('file_download_logs')
+      .update({
+        success: data.success,
+        file_size_at_download: data.fileSizeBytes || null,
+        download_duration_ms: data.durationMs || null,
+        failure_reason: data.failureReason || null,
+        bandwidth_used: data.success ? data.fileSizeBytes : null,
+      })
+      .eq('id', downloadId);
+
+    if (error) {
+      console.error('Failed to update download log:', error);
+    }
   }
 }
 

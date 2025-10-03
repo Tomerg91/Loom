@@ -221,6 +221,16 @@ export class ApiResponseHelper {
     });
   }
 
+  static created<T>(data: T, message?: string): NextResponse {
+    return NextResponse.json({
+      success: true,
+      data,
+      message,
+    }, {
+      status: 201,
+    });
+  }
+
   static error(code: string, message: string, statusCode: number = 400): NextResponse {
     return NextResponse.json({
       success: false,

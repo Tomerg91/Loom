@@ -40,8 +40,8 @@ async function checkCoachClientRelationship(
     return { hasRelationship: false, userRole: null };
   }
 
-  const user1 = users.find(u => u.id === userId1);
-  const user2 = users.find(u => u.id === userId2);
+  const user1 = users.find((u: { id: string; role: string }) => u.id === userId1);
+  const user2 = users.find((u: { id: string; role: string }) => u.id === userId2);
 
   if (!user1 || !user2) {
     return { hasRelationship: false, userRole: null };

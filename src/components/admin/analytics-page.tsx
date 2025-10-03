@@ -576,3 +576,6 @@ export function AdminAnalyticsPage() {
     </AnalyticsErrorBoundary>
   );
 }
+
+// Export as default for dynamic imports
+export default AdminAnalyticsPage;

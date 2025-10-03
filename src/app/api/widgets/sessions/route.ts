@@ -113,14 +113,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         const transformedSessions: SessionWidget[] = (sessions || []).map(session => {
       const coach = session.coach as any;
       const client = session.client as any;
-      const sessionNotes = notes?.filter((n: any) => (n.sessionId || n.session_id) === session.id) || [];
-      const sessionReflections = reflections?.filter((r: any) => (r.sessionId || r.session_id) === session.id) || [];
+      const sessionNotes = notes?.data?.filter((n: any) => (n.sessionId || n.session_id) === session.id) || [];
+      const sessionReflections = reflections?.data?.filter((r: any) => (r.sessionId || r.session_id) === session.id) || [];
 
       // Extract insights from notes
       const keyInsights: string[] = [];
       const actionItems: string[] = [];
 
-      sessionNotes.forEach(note => {
+      sessionNotes.forEach((note: any) => {
         if (note.title?.toLowerCase().includes('insight') || note.content?.toLowerCase().includes('insight')) {
           // Extract insights from note content
           const insights = extractInsights(note.content);
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       });
 
       // Add insights from reflections
-      sessionReflections.forEach(reflection => {
+      sessionReflections.forEach((reflection: any) => {
         if (reflection.insights) {
           keyInsights.push(reflection.insights);
         }

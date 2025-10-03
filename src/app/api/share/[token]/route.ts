@@ -28,7 +28,7 @@ export async function GET(
         const userAgent = headersList.get('user-agent') || 'Unknown';
         const forwardedFor = headersList.get('x-forwarded-for');
         const realIp = headersList.get('x-real-ip');
-        const ipAddress = forwardedFor?.split(',')[0] || realIp || request.ip || 'Unknown';
+        const ipAddress = forwardedFor?.split(',')[0] || realIp || 'Unknown';
 
         await temporarySharesDatabase.logShareAccess({
           share_id: validation.share_id,
@@ -55,7 +55,7 @@ export async function GET(
     const userAgent = headersList.get('user-agent') || 'Unknown';
     const forwardedFor = headersList.get('x-forwarded-for');
     const realIp = headersList.get('x-real-ip');
-    const ipAddress = forwardedFor?.split(',')[0] || realIp || request.ip || 'Unknown';
+    const ipAddress = forwardedFor?.split(',')[0] || realIp || 'Unknown';
 
     if (download) {
       // Handle file download

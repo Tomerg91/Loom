@@ -508,6 +508,7 @@ const GoalCategoryChart: React.FC<GoalCategoryChartProps> = ({
   );
 };
 
+// Named exports
 export {
   CoachPerformanceChart,
   SessionTimeDistributionChart,
@@ -515,3 +516,14 @@ export {
   RetentionRateChart,
   GoalCategoryChart
 };
+
+// Default export for dynamic imports
+const DashboardCharts = {
+  CoachPerformanceChart,
+  SessionTimeDistributionChart,
+  ClientProgressCorrelationChart,
+  RetentionRateChart,
+  GoalCategoryChart
+};
+
+export default DashboardCharts;

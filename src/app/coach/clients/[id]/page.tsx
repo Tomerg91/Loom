@@ -7,7 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/routing';
-import type { Client } from '@/types';
+import type { User } from '@/types';
+
+type Client = User;
 
 async function fetchClient(id: string): Promise<Client> {
   const response = await fetch(`/api/coach/clients/${id}`);
@@ -54,7 +56,7 @@ export default function ClientDetailPage() {
         <CardHeader className="flex flex-row items-center space-x-4">
           <Avatar className="h-16 w-16">
             <AvatarImage src={client.avatarUrl} />
-            <AvatarFallback>{client.firstName[0]}{client.lastName[0]}</AvatarFallback>
+            <AvatarFallback>{client.firstName?.[0] || ''}{client.lastName?.[0] || ''}</AvatarFallback>
           </Avatar>
           <div>
             <CardTitle>{client.firstName} {client.lastName}</CardTitle>

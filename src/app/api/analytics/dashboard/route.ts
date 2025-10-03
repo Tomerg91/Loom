@@ -45,7 +45,8 @@ export async function GET(request: NextRequest) {
     const toDateStr = toDate.toISOString().split('T')[0];
 
     // Get user's files
-    const userFiles = await fileDatabase.getFileUploads({ uploaded_by: user.id });
+    const userFilesResult = await fileDatabase.getFileUploads({ userId: user.id });
+    const userFiles = userFilesResult.files || [];
     const fileIds = userFiles.map((f: any) => f.id);
 
     if (fileIds.length === 0) {
@@ -109,13 +110,13 @@ export async function GET(request: NextRequest) {
     const recentDownloadsResults = await Promise.all(recentDownloadsPromises);
     const allRecentDownloads = recentDownloadsResults
       .flat()
-      .sort((a, b) => new Date(b.downloaded_at).getTime() - new Date(a.downloaded_at).getTime())
+      .sort((a, b) => new Date(b.downloaded_at || '').getTime() - new Date(a.downloaded_at || '').getTime())
       .slice(0, 20);
 
     // Calculate summary statistics
     const summary = {
-      total_files: userFiles.length,
-      total_downloads: Object.values(multipleFileStats).reduce((sum, stat) => sum + stat.total_downloads, 0),
+      total_files: userFilesResult.count || userFiles.length,
+      total_downloads: Object.values(multipleFileStats).reduce((sum: number, stat: any) => sum + (stat.total_downloads || 0), 0),
       total_bandwidth: Object.values(detailedAnalytics)
         .filter(analytics => analytics !== null)
         .reduce((sum, analytics) => sum + (analytics?.file_stats?.total_bandwidth_used || 0), 0),

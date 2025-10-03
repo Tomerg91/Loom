@@ -51,7 +51,7 @@ function buildTranzilaUrl(params: {
   return `${base}?${usp.toString()}`;
 }
 
-async function handler(req: NextRequest): Promise<Response> {
+async function handler(req: NextRequest): Promise<NextResponse> {
   try {
     const json = await req.json();
     const parsed = bodySchema.safeParse(json);
@@ -68,7 +68,7 @@ async function handler(req: NextRequest): Promise<Response> {
     const { amount, description, currency, successUrl, cancelUrl, locale, idempotencyKey } = parsed.data;
 
     // Create pending payment record
-    const auth = createAuthService(true);
+    const auth = await createAuthService(true);
     const user = await auth.getCurrentUser();
     const paymentSvc = createPaymentService();
     await paymentSvc.createPending({
@@ -94,10 +94,12 @@ async function handler(req: NextRequest): Promise<Response> {
   }
 }
 
+// Wrap handler with middleware
+const wrappedHandler = (h: (req: NextRequest) => Promise<NextResponse>) =>
+  rateLimit(10, 60_000)(h);
+
 export const POST = compose(
-  handler,
-  // Tighter rate limit for payment session creation
-  (h) => rateLimit(10, 60_000)(h),
+  wrappedHandler(handler),
   withRateLimit(),
-  withAuth,
+  withAuth
 );

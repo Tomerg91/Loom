@@ -1,15 +1,30 @@
 import { createAuthService } from '@/lib/auth/auth';
+import type { User } from '@/types';
+
+export interface SessionUser {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role: User['role'];
+  avatarUrl?: string;
+  createdAt: string;
+}
+
+export interface Session {
+  user: SessionUser;
+}
 
 // This service wraps the auth library for consistent API access
 class AuthService {
   private authLibPromise = createAuthService(true);
 
-  async getSession() {
+  async getSession(): Promise<Session | null> {
     try {
       const authLib = await this.authLibPromise;
       const user = await authLib.getCurrentUser();
       if (!user) return null;
-      
+
       return {
         user: {
           id: user.id,

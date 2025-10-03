@@ -1414,3 +1414,6 @@ function NotificationCenterComponent() {
 
 // Memoize the main component
 export const NotificationCenter = memo(NotificationCenterComponent);
+
+// Export as default for dynamic imports
+export default NotificationCenter;

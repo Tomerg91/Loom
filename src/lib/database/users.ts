@@ -23,7 +23,7 @@ interface GetUsersCountOptions {
 }
 
 export class UserService {
-  private supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
+  private supabase: any;
 
   constructor(isServer = true) {
     this.supabase = isServer ? createServerClient() : createClient();

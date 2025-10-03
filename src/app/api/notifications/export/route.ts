@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { 
   createErrorResponse, 
   withErrorHandling,
@@ -12,7 +12,7 @@ import { rateLimit } from '@/lib/security/rate-limit';
 // GET /api/notifications/export - Export notifications
 export const GET = withErrorHandling(
   rateLimit(5, 60000)( // 5 exports per minute
-    requireAuth(async (user, request: NextRequest) => {
+    requireAuth(async (user, request: NextRequest): Promise<NextResponse> => {
       const { searchParams } = request.nextUrl;
       const format = searchParams.get('format') || 'json';
       const limit = parseInt(searchParams.get('limit') || '1000');
@@ -70,7 +70,7 @@ export const GET = withErrorHandling(
 
         const csv = [csvHeaders.join(','), ...csvRows.map(row => row.join(','))].join('\n');
 
-        return new Response(csv, {
+        return new NextResponse(csv, {
           status: 200,
           headers: {
             'Content-Type': 'text/csv',
@@ -107,7 +107,7 @@ export const GET = withErrorHandling(
           })),
         };
 
-        return new Response(JSON.stringify(exportData, null, 2), {
+        return new NextResponse(JSON.stringify(exportData, null, 2), {
           status: 200,
           headers: {
             'Content-Type': 'application/json',

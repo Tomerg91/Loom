@@ -62,7 +62,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const { data, error, count } = await query;
 
     if (error) {
-      throw new ApiError(500, 'Failed to fetch practice journal entries', { supabaseError: error });
+      throw new ApiError('FETCH_ERROR', 'Failed to fetch practice journal entries', 500);
     }
 
     const entries: PracticeJournalEntry[] = mapPracticeJournalEntries(data);
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   } catch (error) {
     console.error('Error fetching practice journal entries:', error);
     if (error instanceof ApiError) {
-      return ApiResponseHelper.error(error);
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
     return ApiResponseHelper.internalError('An unexpected error occurred');
   }
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       .single();
 
     if (error) {
-      throw new ApiError(500, 'Failed to create practice journal entry', { supabaseError: error });
+      throw new ApiError('CREATE_ERROR', 'Failed to create practice journal entry', 500);
     }
 
     const entry = mapPracticeJournalEntry(data);
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   } catch (error) {
     console.error('Error creating practice journal entry:', error);
     if (error instanceof ApiError) {
-      return ApiResponseHelper.error(error);
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
     return ApiResponseHelper.internalError('An unexpected error occurred');
   }

@@ -584,16 +584,26 @@ class FileManagementService {
 
   private async updateFileAccess(fileId: string, userId: string): Promise<void> {
     const supabase = await createClient();
-    
-    // Update share access count if applicable  
-    await supabase
+
+    // Get current access count
+    const { data: share } = await supabase
       .from('file_shares')
-      .update({ 
-        last_accessed_at: new Date().toISOString(),
-        access_count: supabase.raw('access_count + 1')
-      })
+      .select('access_count')
       .eq('file_id', fileId)
-      .eq('shared_with', userId);
+      .eq('shared_with', userId)
+      .single();
+
+    if (share) {
+      // Update share access count if applicable
+      await supabase
+        .from('file_shares')
+        .update({
+          last_accessed_at: new Date().toISOString(),
+          access_count: share.access_count + 1
+        })
+        .eq('file_id', fileId)
+        .eq('shared_with', userId);
+    }
   }
 
   /**
@@ -619,10 +629,18 @@ class FileManagementService {
       }
 
       // Track download
-      await supabase
+      const { data: currentFile } = await supabase
         .from('file_uploads')
-        .update({ download_count: supabase.raw('download_count + 1') })
-        .eq('id', fileId);
+        .select('download_count')
+        .eq('id', fileId)
+        .single();
+
+      if (currentFile) {
+        await supabase
+          .from('file_uploads')
+          .update({ download_count: currentFile.download_count + 1 })
+          .eq('id', fileId);
+      }
 
       return Result.success(data.signedUrl);
     } catch (error) {
@@ -648,12 +666,12 @@ class FileManagementService {
       fileSize: row.file_size,
       fileCategory: row.file_category,
       bucketName: row.bucket_name,
-      description: row.description,
-      tags: row.tags,
+      description: row.description || null,
+      tags: row.tags || [],
       isShared: row.is_shared,
       downloadCount: row.download_count,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
+      createdAt: row.created_at || new Date().toISOString(),
+      updatedAt: row.updated_at || new Date().toISOString(),
       storageUrl: publicUrl.data.publicUrl
     };
   }

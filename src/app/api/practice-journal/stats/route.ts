@@ -37,27 +37,39 @@ export async function GET(request: NextRequest): Promise<Response> {
       .single();
 
     if (error) {
-      throw new ApiError(500, 'Failed to fetch practice journal statistics', { supabaseError: error });
+      throw new ApiError('FETCH_STATS_ERROR', 'Failed to fetch practice journal statistics', 500);
     }
 
     // Transform the response to match our interface
+    const rawData = data as {
+      total_entries?: number;
+      entries_this_week?: number;
+      entries_this_month?: number;
+      shared_entries?: number;
+      average_mood?: number;
+      average_energy?: number;
+      most_common_sensations?: string[];
+      most_common_emotions?: string[];
+      practice_streak_days?: number;
+    };
+
     const stats: PracticeJournalStats = {
-      totalEntries: data.total_entries || 0,
-      entriesThisWeek: data.entries_this_week || 0,
-      entriesThisMonth: data.entries_this_month || 0,
-      sharedEntries: data.shared_entries || 0,
-      averageMood: data.average_mood ? parseFloat(data.average_mood.toFixed(1)) : null,
-      averageEnergy: data.average_energy ? parseFloat(data.average_energy.toFixed(1)) : null,
-      mostCommonSensations: data.most_common_sensations || [],
-      mostCommonEmotions: data.most_common_emotions || [],
-      practiceStreakDays: data.practice_streak_days || 0,
+      totalEntries: rawData.total_entries || 0,
+      entriesThisWeek: rawData.entries_this_week || 0,
+      entriesThisMonth: rawData.entries_this_month || 0,
+      sharedEntries: rawData.shared_entries || 0,
+      averageMood: rawData.average_mood ? parseFloat(rawData.average_mood.toFixed(1)) : null,
+      averageEnergy: rawData.average_energy ? parseFloat(rawData.average_energy.toFixed(1)) : null,
+      mostCommonSensations: rawData.most_common_sensations || [],
+      mostCommonEmotions: rawData.most_common_emotions || [],
+      practiceStreakDays: rawData.practice_streak_days || 0,
     };
 
     return ApiResponseHelper.success(stats);
   } catch (error) {
     console.error('Error fetching practice journal statistics:', error);
     if (error instanceof ApiError) {
-      return ApiResponseHelper.error(error);
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
     return ApiResponseHelper.internalError('An unexpected error occurred');
   }
