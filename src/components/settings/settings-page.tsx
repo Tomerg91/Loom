@@ -225,3 +225,6 @@ export function SettingsPage() {
     </div>
   );
 }
+
+// Export as default for dynamic imports
+export default SettingsPage;

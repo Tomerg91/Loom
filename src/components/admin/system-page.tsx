@@ -862,3 +862,6 @@ export function AdminSystemPage() {
     </div>
   );
 }
+
+// Export as default for dynamic imports
+export default AdminSystemPage;

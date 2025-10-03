@@ -16,12 +16,14 @@ const enableRequestSchema = z.object({
   totpCode: z.string()
     .length(6, 'TOTP code must be exactly 6 digits')
     .regex(/^\d{6}$/, 'TOTP code must contain only digits'),
+  secret: z.string().min(1, 'Secret is required'),
+  backupCodes: z.array(z.string()).min(1, 'Backup codes are required'),
 });
 
 export async function POST(request: NextRequest) {
   try {
     // Get authenticated user
-    const authService = createAuthService(true);
+    const authService = await createAuthService(true);
     const user = await authService.getCurrentUser();
 
     if (!user) {
@@ -57,29 +59,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if MFA was set up (has secret)
-    if (!currentStatus.isSetup && !currentStatus.verifiedAt) {
-      return NextResponse.json(
-        { error: 'MFA setup not found. Please complete setup first.' },
-        { status: 400 }
-      );
-    }
-
     // Extract client information for audit logging
     const ipAddress = getClientIP(request);
     const userAgent = getUserAgent(request);
 
-    // Verify TOTP code and enable MFA
-    const result = await mfaService.verifyAndEnableMFA(
+    // Enable MFA with the provided secret, verification code, and backup codes
+    const { success: enableSuccess, error: enableError } = await mfaService.enableMfa(
       user.id,
+      requestData.secret,
       requestData.totpCode,
-      ipAddress,
-      userAgent
+      requestData.backupCodes
     );
 
-    if (!result.success) {
+    if (!enableSuccess) {
       return NextResponse.json(
-        { error: result.error || 'Failed to verify TOTP code' },
+        { error: enableError || 'Failed to verify TOTP code' },
         { status: 400 }
       );
     }

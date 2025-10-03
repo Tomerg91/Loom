@@ -40,7 +40,7 @@ export async function GET(
       if (error.code === 'PGRST116') {
         return ApiResponseHelper.notFound('Practice journal entry not found');
       }
-      throw new ApiError(500, 'Failed to fetch practice journal entry', { supabaseError: error });
+      throw new ApiError('FETCH_ERROR', 'Failed to fetch practice journal entry', 500);
     }
 
     // Check permissions
@@ -64,7 +64,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching practice journal entry:', error);
     if (error instanceof ApiError) {
-      return ApiResponseHelper.error(error);
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
     return ApiResponseHelper.internalError('An unexpected error occurred');
   }
@@ -129,7 +129,7 @@ export async function PUT(
       if (fetchError.code === 'PGRST116') {
         return ApiResponseHelper.notFound('Practice journal entry not found');
       }
-      throw new ApiError(500, 'Failed to fetch practice journal entry', { supabaseError: fetchError });
+      throw new ApiError('FETCH_ERROR', 'Failed to fetch practice journal entry', 500);
     }
 
     const existing = existingData as PracticeJournalEntryRow;
@@ -169,7 +169,7 @@ export async function PUT(
       .single();
 
     if (error) {
-      throw new ApiError(500, 'Failed to update practice journal entry', { supabaseError: error });
+      throw new ApiError('UPDATE_ERROR', 'Failed to update practice journal entry', 500);
     }
 
     const entry = mapPracticeJournalEntry(data as PracticeJournalEntryRow);
@@ -181,7 +181,7 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating practice journal entry:', error);
     if (error instanceof ApiError) {
-      return ApiResponseHelper.error(error);
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
     return ApiResponseHelper.internalError('An unexpected error occurred');
   }
@@ -218,7 +218,7 @@ export async function DELETE(
       if (fetchError.code === 'PGRST116') {
         return ApiResponseHelper.notFound('Practice journal entry not found');
       }
-      throw new ApiError(500, 'Failed to fetch practice journal entry', { supabaseError: fetchError });
+      throw new ApiError('FETCH_ERROR', 'Failed to fetch practice journal entry', 500);
     }
 
     const existing = existingData as Pick<PracticeJournalEntryRow, 'client_id'>;
@@ -233,14 +233,14 @@ export async function DELETE(
       .eq('id', id);
 
     if (error) {
-      throw new ApiError(500, 'Failed to delete practice journal entry', { supabaseError: error });
+      throw new ApiError('DELETE_ERROR', 'Failed to delete practice journal entry', 500);
     }
 
     return ApiResponseHelper.success(null, 'Practice journal entry deleted successfully');
   } catch (error) {
     console.error('Error deleting practice journal entry:', error);
     if (error instanceof ApiError) {
-      return ApiResponseHelper.error(error);
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
     return ApiResponseHelper.internalError('An unexpected error occurred');
   }

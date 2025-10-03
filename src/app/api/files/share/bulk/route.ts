@@ -45,8 +45,8 @@ async function checkCoachClientRelationship(
     return false;
   }
 
-  const user1 = users.find(u => u.id === userId1);
-  const user2 = users.find(u => u.id === userId2);
+  const user1 = users.find((u: { id: string; role: string }) => u.id === userId1);
+  const user2 = users.find((u: { id: string; role: string }) => u.id === userId2);
 
   // Admin can share with anyone
   if (user1?.role === 'admin' || user2?.role === 'admin') {
@@ -488,7 +488,7 @@ export async function PUT(request: NextRequest) {
 
     // Create notifications for affected users if enabled
     if (validatedData.notifyUsers) {
-      const changes = [];
+      const changes: string[] = [];
       if (validatedData.updates.permissionType) {
         changes.push(`permission updated to ${validatedData.updates.permissionType}`);
       }

@@ -1,12 +1,19 @@
 import { routing } from '@/i18n/routing';
 import { notFound } from 'next/navigation';
 
-export default function PaymentReturnPage({ params, searchParams }: { params: { locale: string }, searchParams: { [key: string]: string | string[] | undefined } }) {
-  const { locale } = params;
+export default async function PaymentReturnPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ locale: string }>,
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const { locale } = await params;
   if (!routing.locales.includes(locale as any)) {
     notFound();
   }
-  const status = (searchParams.status as string) || 'unknown';
+  const resolvedSearchParams = await searchParams;
+  const status = (resolvedSearchParams.status as string) || 'unknown';
 
   const isHe = locale === 'he';
 

@@ -30,10 +30,10 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   return (
     <RouteGuard requireAuth={true}>
       <AppLayout>
-        <DashboardContent 
+        <DashboardContent
           translations={{
-            dashboard: translationsResult.status === 'fulfilled' ? translationsResult.value : (() => (key: string) => key)(),
-            common: commonTranslationsResult.status === 'fulfilled' ? commonTranslationsResult.value : (() => (key: string) => key)(),
+            dashboard: translationsResult.status === 'fulfilled' ? translationsResult.value : ((key: string) => key) as any,
+            common: commonTranslationsResult.status === 'fulfilled' ? commonTranslationsResult.value : ((key: string) => key) as any,
           }}
           locale={locale}
         />

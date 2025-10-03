@@ -47,6 +47,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { format, addDays, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { Session, SessionStatus, SessionType, User } from '@/types';
+import type { DateRange } from 'react-day-picker';
 
 // Types
 interface CoachClient {
@@ -205,7 +206,7 @@ export default function CoachSessionsPage() {
   const [statusFilter, setStatusFilter] = useState<SessionStatus | 'all'>('all');
   const [clientFilter, setClientFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<SessionType | 'all'>('all');
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   
   // Session management
   const [sessionTimers, setSessionTimers] = useState<Map<string, SessionTimer>>(new Map());
@@ -236,7 +237,7 @@ export default function CoachSessionsPage() {
       if (typeFilter !== 'all' && session.sessionType !== typeFilter) {
         return false;
       }
-      if (dateRange) {
+      if (dateRange?.from && dateRange?.to) {
         const sessionDate = new Date(session.scheduledAt);
         if (sessionDate < dateRange.from || sessionDate > dateRange.to) {
           return false;
@@ -630,7 +631,7 @@ export default function CoachSessionsPage() {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange ? `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d')}` : 'Date Range'}
+                      {dateRange?.from && dateRange?.to ? `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d')}` : 'Date Range'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">

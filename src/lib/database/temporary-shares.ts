@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { Database } from '@/lib/database/database.types';
+import type { Database } from '@/types/supabase';
 import bcrypt from 'bcryptjs';
 
 type TemporaryFileShare = Database['public']['Tables']['temporary_file_shares']['Row'];

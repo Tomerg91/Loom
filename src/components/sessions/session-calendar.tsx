@@ -284,3 +284,6 @@ export function SessionCalendar({ coachId, clientId, onSessionClick }: SessionCa
     </Card>
   );
 }
+
+// Export as default for dynamic imports
+export default SessionCalendar;

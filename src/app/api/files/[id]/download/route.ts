@@ -43,7 +43,7 @@ export async function GET(
     const token = searchParams.get('token'); // For temporary shares
 
     // Get file information
-    const fileResult = await fileManagementService.getFile(id, user?.id);
+    const fileResult = await fileManagementService.getFile(params.id, user?.id);
     
     if (!fileResult.success) {
       return NextResponse.json(
@@ -66,7 +66,7 @@ export async function GET(
         .from('temporary_shares')
         .select('*')
         .eq('share_token', token)
-        .eq('file_id', id)
+        .eq('file_id', params.id)
         .eq('is_active', true)
         .gt('expires_at', new Date().toISOString())
         .single();
@@ -79,8 +79,8 @@ export async function GET(
         // Increment download count for temporary share
         await supabase
           .from('temporary_shares')
-          .update({ 
-            current_downloads: supabase.raw('current_downloads + 1'),
+          .update({
+            current_downloads: temporaryShare.current_downloads + 1,
             updated_at: new Date().toISOString()
           })
           .eq('id', temporaryShare.id);
@@ -96,8 +96,8 @@ export async function GET(
     // Check permanent share access
     if (!hasAccess && user) {
       const sharedFilesResult = await fileManagementService.getSharedFiles(user.id);
-      const validShare = sharedFilesResult.success && sharedFilesResult.data.find(sharedFile => 
-        sharedFile.id === id
+      const validShare = sharedFilesResult.success && sharedFilesResult.data.find(sharedFile =>
+        sharedFile.id === params.id
       );
       
       if (validShare && validShare.sharedWith?.[0]) {
@@ -127,13 +127,13 @@ export async function GET(
     const userAgent = headersList.get('user-agent') || 'Unknown';
     const forwardedFor = headersList.get('x-forwarded-for');
     const realIp = headersList.get('x-real-ip');
-    const ipAddress = forwardedFor?.split(',')[0] || realIp || request.ip || 'Unknown';
+    const ipAddress = forwardedFor?.split(',')[0] || realIp || 'Unknown';
     const referer = headersList.get('referer');
 
     // Start download tracking if enabled
     if (trackAnalytics) {
       downloadId = await downloadTrackingDatabase.startDownload({
-        fileId: id,
+        fileId: params.id,
         userId: user?.id || null,
         ipAddress,
         userAgent,
@@ -172,10 +172,18 @@ export async function GET(
       }
 
       // Update download count
-      await supabase
+      const { data: currentFile } = await supabase
         .from('file_uploads')
-        .update({ download_count: supabase.raw('download_count + 1') })
-        .eq('id', id);
+        .select('download_count')
+        .eq('id', params.id)
+        .single();
+
+      if (currentFile) {
+        await supabase
+          .from('file_uploads')
+          .update({ download_count: currentFile.download_count + 1 })
+          .eq('id', params.id);
+      }
 
       // Complete download tracking
       if (downloadId) {
@@ -306,8 +314,8 @@ export async function POST(
     });
 
     // Call the GET method with the modified request
-    const getResponse = await GET(newRequest, { params });
-    
+    const getResponse = await GET(newRequest, { params: Promise.resolve(params) });
+
     return getResponse;
 
   } catch (error) {

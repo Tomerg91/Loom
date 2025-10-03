@@ -459,3 +459,6 @@ export function AvailabilityManager() {
     </div>
   );
 }
+
+// Export as default for dynamic imports
+export default AvailabilityManager;

@@ -34,6 +34,8 @@ export async function POST(
       );
     }
 
+    const { id } = await params;
+
     // Verify user owns the file
     const file = await fileDatabase.getFileUpload(id);
     

@@ -436,3 +436,6 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
     </div>
   );
 }
+
+// Export as default for dynamic imports
+export default CoachClientDetailPage;

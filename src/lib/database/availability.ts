@@ -19,7 +19,7 @@ interface AvailabilitySlot {
 }
 
 export class AvailabilityService {
-  private supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
+  private supabase: any;
 
   constructor(isServer = true) {
     this.supabase = isServer ? createServerClient() : createClient();

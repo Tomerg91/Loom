@@ -415,3 +415,9 @@ export function ClientDashboard() {
     </div>
   );
 }
+
+// Export as default for dynamic imports
+export default ClientDashboard;
+
+// Also export with the expected name for compatibility
+export { ClientDashboard as ClientDashboardComponent };

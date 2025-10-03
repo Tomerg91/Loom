@@ -41,3 +41,6 @@ export function NotificationSettingsPage() {
     </div>
   );
 }
+
+// Export as default for dynamic imports
+export default NotificationSettingsPage;

@@ -95,7 +95,7 @@ class SimpleRateLimiter {
 const rateLimiter = new SimpleRateLimiter();
 
 // Rate limit configurations
-export const RATE_LIMITS = {
+export const SIMPLE_RATE_LIMITS = {
   auth: {
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // 5 attempts per window
@@ -128,15 +128,15 @@ function getRateLimitKey(request: NextRequest, identifier?: string): string {
 
 export async function rateLimitAuth(request: NextRequest): Promise<RateLimitResult> {
   const key = getRateLimitKey(request);
-  return rateLimiter.checkLimit(key, RATE_LIMITS.auth);
+  return rateLimiter.checkLimit(key, SIMPLE_RATE_LIMITS.auth);
 }
 
 export async function rateLimitAPI(request: NextRequest, userId?: string): Promise<RateLimitResult> {
   const key = getRateLimitKey(request, userId);
-  return rateLimiter.checkLimit(key, RATE_LIMITS.api);
+  return rateLimiter.checkLimit(key, SIMPLE_RATE_LIMITS.api);
 }
 
 export async function rateLimitBooking(request: NextRequest, userId: string): Promise<RateLimitResult> {
   const key = getRateLimitKey(request, userId);
-  return rateLimiter.checkLimit(key, RATE_LIMITS.booking);
+  return rateLimiter.checkLimit(key, SIMPLE_RATE_LIMITS.booking);
 }

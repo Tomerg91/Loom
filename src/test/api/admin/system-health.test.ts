@@ -45,7 +45,7 @@ vi.mock('@/lib/api/types', () => ({
 }));
 
 vi.mock('@/lib/security/rate-limit', () => ({
-  rateLimit: vi.fn((limit, window, options) => (handler) => handler),
+  rateLimit: vi.fn((limit, window, options) => (handler: any) => handler),
 }));
 
 // Mock Node.js process methods
@@ -180,9 +180,7 @@ describe('/api/admin/system-health', () => {
       });
 
       it('should reject requests with null user', async () => {
-        mockAuthService.getSession.mockResolvedValue({
-          user: null,
-        });
+        mockAuthService.getSession.mockResolvedValue(null);
 
         const request = new NextRequest('http://localhost:3000/api/admin/system-health');
 
@@ -426,7 +424,7 @@ describe('/api/admin/system-health', () => {
 
       it('should report healthy services when all are working', async () => {
         // Setup all services as healthy
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: any) => {
           return {
             select: vi.fn().mockResolvedValue({ data: [], error: null }),
             limit: vi.fn().mockReturnThis(),
@@ -450,7 +448,7 @@ describe('/api/admin/system-health', () => {
       });
 
       it('should report analytics service error when sessions table fails', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: any) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockResolvedValue({ 
@@ -483,7 +481,7 @@ describe('/api/admin/system-health', () => {
       });
 
       it('should report notifications service error when notifications table fails', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: any) => {
           if (table === 'notifications') {
             return {
               select: vi.fn().mockResolvedValue({ 
@@ -539,7 +537,7 @@ describe('/api/admin/system-health', () => {
       });
 
       it('should handle service check exceptions gracefully', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: any) => {
           if (table === 'sessions') {
             throw new Error('Database connection lost');
           }
@@ -578,32 +576,32 @@ describe('/api/admin/system-health', () => {
 
       it('should use IP-based rate limiting key', async () => {
         const rateLimitCall = mockRateLimit.mock.calls[0];
-        const options = rateLimitCall[2];
-        
-        expect(options.keyExtractor).toBeDefined();
-        
+        const options = rateLimitCall?.[2];
+
+        expect(options?.keyExtractor).toBeDefined();
+
         // Test the keyExtractor function
         const mockRequest = {
-          headers: { 
-            get: vi.fn().mockReturnValue('192.168.1.100') 
+          headers: {
+            get: vi.fn().mockReturnValue('192.168.1.100')
           },
         } as any;
-        
-        const key = options.keyExtractor(mockRequest);
+
+        const key = options?.keyExtractor?.(mockRequest);
         expect(key).toBe('admin-health:192.168.1.100');
       });
 
       it('should handle missing IP in rate limiting', async () => {
         const rateLimitCall = mockRateLimit.mock.calls[0];
-        const options = rateLimitCall[2];
-        
+        const options = rateLimitCall?.[2];
+
         const mockRequest = {
-          headers: { 
-            get: vi.fn().mockReturnValue(null) 
+          headers: {
+            get: vi.fn().mockReturnValue(null)
           },
         } as any;
-        
-        const key = options.keyExtractor(mockRequest);
+
+        const key = options?.keyExtractor?.(mockRequest);
         expect(key).toBe('admin-health:unknown');
       });
     });
@@ -862,7 +860,7 @@ describe('/api/admin/system-health', () => {
       });
 
       // Setup realistic system state
-      mockSupabaseClient.from.mockImplementation((table) => {
+      mockSupabaseClient.from.mockImplementation((table: any) => {
         if (table === 'sessions') {
           return {
             select: vi.fn().mockResolvedValue({ data: [{ id: 'session1' }], error: null }),

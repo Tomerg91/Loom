@@ -48,14 +48,17 @@ export async function GET(request: NextRequest): Promise<Response> {
       throw new ApiError('FETCH_REFLECTIONS_FAILED', 'Failed to fetch reflections', 500);
     }
 
-    const formattedReflections: RecentReflection[] = (reflections || []).map(reflection => ({
-      id: reflection.id,
-      sessionId: reflection.session_id || undefined,
-      content: reflection.content,
-      moodRating: reflection.mood_rating || undefined,
-      createdAt: reflection.created_at,
-      sessionTitle: reflection.sessions?.title || undefined,
-    }));
+    const formattedReflections: RecentReflection[] = (reflections || []).map(reflection => {
+      const sessions = Array.isArray(reflection.sessions) ? reflection.sessions[0] : reflection.sessions;
+      return {
+        id: reflection.id,
+        sessionId: reflection.session_id || undefined,
+        content: reflection.content,
+        moodRating: reflection.mood_rating || undefined,
+        createdAt: reflection.created_at,
+        sessionTitle: sessions?.title || undefined,
+      };
+    });
 
     return ApiResponseHelper.success(formattedReflections);
 

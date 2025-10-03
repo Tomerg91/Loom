@@ -233,6 +233,8 @@ export interface Reflection {
 
 // Notification types
 export type NotificationType = 'session_reminder' | 'new_message' | 'session_confirmation' | 'system_update';
+export type NotificationChannel = 'email' | 'push' | 'inapp';
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent';
 
 export interface Notification {
   id: string;
@@ -240,6 +242,11 @@ export interface Notification {
   type: NotificationType;
   title: string;
   message: string;
+  channel?: NotificationChannel;
+  priority?: NotificationPriority;
+  actionUrl?: string;
+  actionLabel?: string;
+  expiresAt?: string;
   data?: Record<string, unknown>;
   readAt?: string;
   scheduledFor?: string;

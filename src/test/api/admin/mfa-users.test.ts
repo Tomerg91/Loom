@@ -71,7 +71,7 @@ vi.mock('@/lib/api/errors', () => ({
 }));
 
 vi.mock('@/lib/security/rate-limit', () => ({
-  rateLimit: vi.fn((limit, window) => (handler) => handler),
+  rateLimit: vi.fn((limit, window) => (handler: any) => handler),
 }));
 
 // Import mocked functions
@@ -91,43 +91,47 @@ describe('/api/admin/mfa/users', () => {
   const mockMfaUsers = [
     {
       id: '1',
+      name: 'John Doe',
       email: 'user1@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      role: 'client',
+      role: 'client' as const,
       mfaEnabled: true,
+      lastLogin: '2024-01-01T00:00:00Z',
+      backupCodesUsed: 3,
       backupCodesRemaining: 5,
-      lastMfaUsed: '2024-01-01T00:00:00Z',
+      trustedDevices: 2,
+      mfaVerifiedAt: '2024-01-01T00:00:00Z',
+      mfaSetupCompleted: true,
       createdAt: '2023-01-01T00:00:00Z',
     },
     {
       id: '2',
+      name: 'Jane Smith',
       email: 'user2@example.com',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      role: 'coach',
+      role: 'coach' as const,
       mfaEnabled: false,
+      lastLogin: '2024-01-02T00:00:00Z',
+      backupCodesUsed: 0,
       backupCodesRemaining: 0,
-      lastMfaUsed: null,
+      trustedDevices: 0,
+      mfaSetupCompleted: false,
       createdAt: '2023-02-01T00:00:00Z',
     },
   ];
 
   const mockMfaStatistics = {
     totalUsers: 100,
-    mfaEnabledUsers: 75,
-    mfaDisabledUsers: 25,
+    mfaEnabled: 75,
     mfaEnabledPercentage: 75,
-    usersByRole: {
-      admin: { total: 5, mfaEnabled: 5, mfaDisabled: 0 },
-      coach: { total: 20, mfaEnabled: 18, mfaDisabled: 2 },
-      client: { total: 75, mfaEnabled: 52, mfaDisabled: 23 },
-    },
-    backupCodesStats: {
-      usersWithBackupCodes: 60,
-      usersWithoutBackupCodes: 15,
-      averageBackupCodesRemaining: 4.2,
-    },
+    adminMfaEnabled: 5,
+    adminMfaEnabledPercentage: 100,
+    coachMfaEnabled: 18,
+    coachMfaEnabledPercentage: 90,
+    clientMfaEnabled: 52,
+    clientMfaEnabledPercentage: 69.3,
+    mfaFailures30Days: 12,
+    accountLockouts30Days: 3,
+    averageBackupCodesUsed: 1.8,
+    avgTrustedDevicesPerUser: 2.5,
   };
 
   beforeEach(() => {
@@ -152,13 +156,11 @@ describe('/api/admin/mfa/users', () => {
           success: true,
           data: {
             users: mockMfaUsers,
-            pagination: {
-              page: 1,
-              limit: 20,
-              total: 2,
-              totalPages: 1,
-            },
+            total: 2,
+            page: 1,
+            limit: 20,
           },
+          error: null,
         });
 
         const request = new NextRequest('http://localhost:3000/api/admin/mfa/users');
@@ -219,9 +221,7 @@ describe('/api/admin/mfa/users', () => {
       });
 
       it('should reject requests with invalid session', async () => {
-        mockAuthService.getSession.mockResolvedValue({
-          user: null,
-        });
+        mockAuthService.getSession.mockResolvedValue(null);
 
         const request = new NextRequest('http://localhost:3000/api/admin/mfa/users');
 
@@ -243,8 +243,11 @@ describe('/api/admin/mfa/users', () => {
           success: true,
           data: {
             users: mockMfaUsers,
-            pagination: { page: 1, limit: 20, total: 2, totalPages: 1 },
+            total: 2,
+            page: 1,
+            limit: 20,
           },
+          error: null,
         });
       });
 
@@ -402,8 +405,11 @@ describe('/api/admin/mfa/users', () => {
           success: true,
           data: {
             users: mockMfaUsers,
-            pagination: { page: 1, limit: 20, total: 2, totalPages: 1 },
+            total: 2,
+            page: 1,
+            limit: 20,
           },
+          error: null,
         });
       });
 
@@ -411,6 +417,7 @@ describe('/api/admin/mfa/users', () => {
         mockGetMfaStatistics.mockResolvedValue({
           success: true,
           data: mockMfaStatistics,
+          error: null,
         });
 
         const request = new NextRequest(
@@ -441,6 +448,7 @@ describe('/api/admin/mfa/users', () => {
 
         mockGetMfaStatistics.mockResolvedValue({
           success: false,
+          data: null,
           error: 'Statistics service unavailable',
         });
 
@@ -481,8 +489,11 @@ describe('/api/admin/mfa/users', () => {
           success: true,
           data: {
             users: [],
-            pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+            total: 0,
+            page: 1,
+            limit: 20,
           },
+          error: null,
         });
 
         const request = new NextRequest(
@@ -509,8 +520,11 @@ describe('/api/admin/mfa/users', () => {
           success: true,
           data: {
             users: [],
-            pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+            total: 0,
+            page: 1,
+            limit: 20,
           },
+          error: null,
         });
 
         const request = new NextRequest(
@@ -544,8 +558,11 @@ describe('/api/admin/mfa/users', () => {
           success: true,
           data: {
             users: sensitiveUserData,
-            pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+            total: 1,
+            page: 1,
+            limit: 20,
           },
+          error: null,
         });
 
         const request = new NextRequest('http://localhost:3000/api/admin/mfa/users');
@@ -572,8 +589,11 @@ describe('/api/admin/mfa/users', () => {
           success: true,
           data: {
             users: mockMfaUsers,
-            pagination: { page: 1, limit: 20, total: 2, totalPages: 1 },
+            total: 2,
+            page: 1,
+            limit: 20,
           },
+          error: null,
         });
 
         const request = new NextRequest('http://localhost:3000/api/admin/mfa/users');
@@ -589,6 +609,7 @@ describe('/api/admin/mfa/users', () => {
       it('should handle database operation failures', async () => {
         mockGetMfaUserStatuses.mockResolvedValue({
           success: false,
+          data: null,
           error: 'Database connection failed',
         });
 
@@ -608,7 +629,8 @@ describe('/api/admin/mfa/users', () => {
       it('should handle database operations with missing error message', async () => {
         mockGetMfaUserStatuses.mockResolvedValue({
           success: false,
-          error: undefined,
+          data: null,
+          error: 'Unknown error',
         });
 
         const request = new NextRequest('http://localhost:3000/api/admin/mfa/users');
@@ -692,7 +714,7 @@ describe('/api/admin/mfa/users', () => {
         const originalURL = global.URL;
         global.URL = vi.fn().mockImplementation(() => {
           throw new Error('Invalid URL');
-        });
+        }) as any;
 
         const request = new NextRequest('http://localhost:3000/api/admin/mfa/users');
 
@@ -716,8 +738,11 @@ describe('/api/admin/mfa/users', () => {
           success: true,
           data: {
             users: mockMfaUsers,
-            pagination: { page: 1, limit: 20, total: 2, totalPages: 1 },
+            total: 2,
+            page: 1,
+            limit: 20,
           },
+          error: null,
         });
       });
 
@@ -739,6 +764,7 @@ describe('/api/admin/mfa/users', () => {
         mockGetMfaStatistics.mockResolvedValue({
           success: true,
           data: mockMfaStatistics,
+          error: null,
         });
 
         const request = new NextRequest(
@@ -777,13 +803,17 @@ describe('/api/admin/mfa/users', () => {
           success: true,
           data: {
             users: mockMfaUsers.filter(u => u.role === 'coach'),
-            pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+            total: 1,
+            page: 1,
+            limit: 10,
           },
+          error: null,
         });
 
         mockGetMfaStatistics.mockResolvedValue({
           success: true,
           data: mockMfaStatistics,
+          error: null,
         });
 
         const request = new NextRequest(

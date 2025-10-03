@@ -38,14 +38,14 @@ import {
 } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
+import {
   Star,
   Clock,
   MapPin,
   MessageCircle,
   Calendar,
   CheckCircle2,
-  User,
+  User as UserIcon,
   Globe,
   Award,
   BookOpen,
@@ -235,7 +235,7 @@ function BookSessionDialog({
             Schedule a coaching session to continue your growth journey.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
             <Avatar className="w-12 h-12">
@@ -256,7 +256,7 @@ function BookSessionDialog({
               You'll be redirected to the booking page where you can:
             </p>
             <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• View {coach.firstName}'s real-time availability</li>
+              <li>• View {coach.firstName || 'coach'}'s real-time availability</li>
               <li>• Select your preferred time slot</li>
               <li>• Add session details and goals</li>
             </ul>
@@ -425,7 +425,7 @@ export default function ClientCoachDetailPage() {
     return (
       <Card>
         <CardContent className="pt-6 text-center">
-          <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <UserIcon className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-lg font-medium mb-2">Coach Not Found</h3>
           <p className="text-muted-foreground mb-4">
             The coach profile you're looking for doesn't exist or has been removed.
@@ -462,7 +462,7 @@ export default function ClientCoachDetailPage() {
                   </div>
                 )}
               </div>
-              
+
               <div className="mt-4 text-center md:text-left">
                 <h1 className="text-2xl font-bold">{getDisplayName(coach)}</h1>
                 <p className="text-muted-foreground font-medium">
@@ -1055,7 +1055,7 @@ export default function ClientCoachDetailPage() {
                 className="w-full"
                 onClick={() => window.location.href = '/client/coaches'}
               >
-                <User className="w-4 h-4 mr-2" />
+                <UserIcon className="w-4 h-4 mr-2" />
                 Browse Other Coaches
               </Button>
             </CardContent>

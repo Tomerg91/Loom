@@ -604,3 +604,6 @@ export function ClientBookPage() {
     </div>
   );
 }
+
+// Export as default for dynamic imports
+export default ClientBookPage;

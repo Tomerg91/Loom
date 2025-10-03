@@ -17,7 +17,7 @@ function formDataToObject(fd: FormData) {
 
 const verifySignature = (payload: Record<string, string>): boolean => verifyTranzilaSignature(payload);
 
-async function handler(req: NextRequest): Promise<Response> {
+async function handler(req: NextRequest): Promise<NextResponse> {
   try {
     const contentType = req.headers.get('content-type') || '';
     let data: Record<string, string> = {};

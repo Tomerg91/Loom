@@ -372,3 +372,6 @@ export function ClientProgressPage() {
     </div>
   );
 }
+
+// Export as default for dynamic imports
+export default ClientProgressPage;

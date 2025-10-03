@@ -44,7 +44,7 @@ export function ParticipantSelector({
         <Avatar className="h-8 w-8">
           <AvatarImage src={user.avatarUrl} />
           <AvatarFallback>
-            {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+            {user.firstName?.charAt(0) ?? ''}{user.lastName?.charAt(0) ?? ''}
           </AvatarFallback>
         </Avatar>
         <div>
@@ -92,7 +92,7 @@ export function ParticipantSelector({
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={user.avatarUrl} />
                   <AvatarFallback>
-                    {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                    {user.firstName?.charAt(0) ?? ''}{user.lastName?.charAt(0) ?? ''}
                   </AvatarFallback>
                 </Avatar>
                 <div>

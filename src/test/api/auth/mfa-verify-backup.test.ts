@@ -22,7 +22,7 @@ vi.mock('@/lib/services/mfa-service', () => ({
 }));
 
 vi.mock('@/lib/security/rate-limit', () => ({
-  rateLimit: vi.fn((limit, window, options) => (handler) => handler),
+  rateLimit: vi.fn((limit, window, options) => (handler: any) => handler),
 }));
 
 // Import mocked functions
@@ -357,18 +357,18 @@ describe('/api/auth/mfa/verify-backup', () => {
       it('should use IP-based rate limiting key', async () => {
         // The rate limit keyExtractor should use IP address
         const rateLimitCall = mockRateLimit.mock.calls[0];
-        const options = rateLimitCall[2];
-        
-        expect(options.keyExtractor).toBeDefined();
-        
+        const options = rateLimitCall?.[2];
+
+        expect(options?.keyExtractor).toBeDefined();
+
         // Test the keyExtractor function
         const mockRequest = {
           headers: { get: vi.fn() },
         } as any;
-        
+
         mockGetClientIP.mockReturnValue('192.168.1.100');
-        
-        const key = options.keyExtractor(mockRequest);
+
+        const key = options?.keyExtractor?.(mockRequest);
         expect(key).toBe('backup-code-verify:192.168.1.100');
       });
     });
@@ -582,7 +582,11 @@ describe('/api/auth/mfa/verify-backup', () => {
 
       it('should not expose sensitive error details in production', async () => {
         const originalEnv = process.env.NODE_ENV;
-        process.env.NODE_ENV = 'production';
+        Object.defineProperty(process.env, 'NODE_ENV', {
+          value: 'production',
+          writable: true,
+          configurable: true,
+        });
 
         mockMfaServiceInstance.requiresMFA.mockRejectedValue(new Error('Sensitive database error'));
 
@@ -597,7 +601,11 @@ describe('/api/auth/mfa/verify-backup', () => {
 
         expect(data.details).toBeUndefined();
 
-        process.env.NODE_ENV = originalEnv;
+        Object.defineProperty(process.env, 'NODE_ENV', {
+          value: originalEnv,
+          writable: true,
+          configurable: true,
+        });
       });
     });
   });

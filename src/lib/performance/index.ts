@@ -1,8 +1,9 @@
 // Performance optimization exports
 export * from './optimization';
-export * from './lazy-loading'; 
+export * from './lazy-loading';
 export * from './web-vitals-monitor';
-export * from './database-optimization';
+// Note: database-optimization exports are server-only and should be imported directly
+// export * from './database-optimization';
 
 // Re-export commonly used optimizations
 export { 

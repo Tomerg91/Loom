@@ -477,3 +477,9 @@ export function CoachDashboard() {
     </div>
   );
 }
+
+// Export as default for dynamic imports
+export default CoachDashboard;
+
+// Also export with the expected name for compatibility
+export { CoachDashboard as CoachDashboardComponent };

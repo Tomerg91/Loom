@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fileManagementService } from '@/lib/services/file-management-service';
-import { authMiddleware } from '@/lib/auth/middleware';
+import { createAuthService } from '@/lib/auth/auth';
 
 interface RouteParams {
   params: Promise<{
@@ -16,15 +16,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id: fileId } = await params;
     
     // Authenticate user
-    const authResult = await authMiddleware(request);
-    if (!authResult.success) {
+    const authService = await createAuthService(true);
+    const user = await authService.getCurrentUser();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { userId } = authResult.data;
+    const userId = user.id;
 
     const result = await fileManagementService.getFile(fileId, userId);
 
@@ -53,15 +54,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { id: fileId } = await params;
     
     // Authenticate user
-    const authResult = await authMiddleware(request);
-    if (!authResult.success) {
+    const authService = await createAuthService(true);
+    const user = await authService.getCurrentUser();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { userId } = authResult.data;
+    const userId = user.id;
     
     const updateData = await request.json();
 
@@ -108,15 +110,16 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { id: fileId } = await params;
     
     // Authenticate user
-    const authResult = await authMiddleware(request);
-    if (!authResult.success) {
+    const authService = await createAuthService(true);
+    const user = await authService.getCurrentUser();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { userId } = authResult.data;
+    const userId = user.id;
 
     const result = await fileManagementService.deleteFile(fileId, userId);
 

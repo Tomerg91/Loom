@@ -203,6 +203,14 @@ const nextConfig = {
 
   // Webpack configuration
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Prevent server-only modules from being bundled in client code
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@/lib/supabase/server': false,
+      };
+    }
+
     // Suppress critical dependency warnings for instrumentation libraries
     config.module.exprContextCritical = false;
     
@@ -370,7 +378,7 @@ const nextConfig = {
   // ESLint configuration
   eslint: {
     // Only run ESLint on these directories during production builds
-    dirs: ['src', 'pages', 'components', 'lib', 'utils'],
+    dirs: ['src', 'components', 'lib', 'utils'],
     // Don't run ESLint during production builds
     ignoreDuringBuilds: true,
   },

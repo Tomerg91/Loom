@@ -55,26 +55,25 @@ export async function GET(request: NextRequest) {
     const tableName = profile.role === 'coach' ? 'coach_notes' : 'client_notes';
     const ownerField = profile.role === 'coach' ? 'coach_id' : 'client_id';
 
-    // Build query
-    let query = supabase
-      .from(tableName)
-      .select(`
-        id,
-        ${profile.role === 'coach' ? 'client_id,' : ''}
-        session_id,
-        title,
-        content,
-        privacy_level,
-        tags,
-        category,
-        is_favorite,
-        is_archived,
-        created_at,
-        updated_at
-      `)
-      .eq(ownerField, user.id)
-      .order(sortBy, { ascending: sortOrder === 'asc' })
-      .range(offset, offset + limit - 1);
+    // Build initial query - use any type to avoid complex union type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query: any;
+
+    if (profile.role === 'coach') {
+      query = supabase
+        .from(tableName)
+        .select('id, client_id, session_id, title, content, privacy_level, tags, category, is_favorite, is_archived, created_at, updated_at')
+        .eq(ownerField, user.id)
+        .order(sortBy, { ascending: sortOrder === 'asc' })
+        .range(offset, offset + limit - 1);
+    } else {
+      query = supabase
+        .from(tableName)
+        .select('id, session_id, title, content, privacy_level, tags, category, is_favorite, is_archived, created_at, updated_at')
+        .eq(ownerField, user.id)
+        .order(sortBy, { ascending: sortOrder === 'asc' })
+        .range(offset, offset + limit - 1);
+    }
 
     // Apply filters
     if (clientId && profile.role === 'coach') {
@@ -113,8 +112,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 });
     }
 
-    // Get total count for pagination
-    let countQuery = supabase
+    // Get total count for pagination - use type assertion to avoid complex union type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let countQuery: any = supabase
       .from(tableName)
       .select('id', { count: 'exact', head: true })
       .eq(ownerField, user.id);
@@ -152,7 +152,8 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil((totalCount || 0) / limit);
 
     // Transform data to match frontend interface
-    const transformedNotes = notes?.map(note => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const transformedNotes = notes?.map((note: any) => ({
       id: note.id,
       ...(profile.role === 'coach' && note.client_id && { clientId: note.client_id }),
       sessionId: note.session_id,

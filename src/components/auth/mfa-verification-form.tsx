@@ -6,7 +6,6 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createMfaService } from '@/lib/services/mfa-service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -83,39 +82,40 @@ export function MfaVerificationForm({
     setError(null);
 
     try {
-      const mfaService = createMfaService(false);
-      
-      const { success, error: mfaError } = await mfaService.verifyMfa(userId, {
-        method: activeMethod,
-        code: data.code.toUpperCase(),
-        rememberDevice: data.rememberDevice,
+      const response = await fetch('/api/auth/mfa/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          code: data.code.toUpperCase(),
+          method: activeMethod,
+        }),
       });
 
-      if (mfaError) {
-        setError(mfaError);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setError(result.error || t('verificationFailed'));
         setAttempts(prev => prev + 1);
-        
+
         // Lock after 5 failed attempts
         if (attempts + 1 >= 5) {
           setIsLocked(true);
           setError(t('accountLocked'));
         }
-        
+
         reset({ rememberDevice: data.rememberDevice });
         return;
       }
 
-      if (success) {
-        // Complete MFA session if we have a session token
-        if (mfaSessionToken) {
-          await mfaService.completeMfaSession(mfaSessionToken);
-        }
-
+      if (result.success) {
         // Mark MFA complete for this browser session
         document.cookie = `mfa_verified=true; path=/; secure; samesite=strict; max-age=3600`;
         // Clear pending flag set during password sign-in
         document.cookie = `mfa_pending=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`;
-        
+
         if (onSuccess) {
           onSuccess();
         } else {

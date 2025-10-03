@@ -180,7 +180,7 @@ export const POST = withErrorHandling(
       clearFailedMFAAttempts(userId);
 
       // Get user data to complete signin
-      const authService = createAuthService(true);
+      const authService = await createAuthService(true);
       const user = await authService.getCurrentUser();
 
       if (!user || user.id !== userId) {

@@ -46,9 +46,9 @@ vi.mock('@/lib/api/utils', () => ({
       headers: { 'Content-Type': 'application/json' }
     })
   ),
-  withErrorHandling: vi.fn((handler) => handler),
+  withErrorHandling: vi.fn((handler: any) => handler),
   validateRequestBody: vi.fn(),
-  rateLimit: vi.fn((limit, window, options) => (handler) => handler),
+  rateLimit: vi.fn((limit, window, options) => (handler: any) => handler),
   HTTP_STATUS: {
     OK: 200,
     CREATED: 201,
@@ -76,6 +76,7 @@ const mockGetUserAgent = vi.mocked(getUserAgent);
 const mockValidateRequestBody = vi.mocked(validateRequestBody);
 const mockCreateSuccessResponse = vi.mocked(createSuccessResponse);
 const mockCreateErrorResponse = vi.mocked(createErrorResponse);
+const mockCreateCorsResponse = vi.mocked(createCorsResponse);
 
 describe('/api/auth/signin-mfa', () => {
   const validMfaRequest = {
@@ -287,7 +288,8 @@ describe('/api/auth/signin-mfa', () => {
           success: false,
           error: {
             message: 'Invalid user ID format',
-            details: [{ path: ['userId'], message: 'Invalid user ID format' }],
+            code: 'INVALID_INPUT',
+            details: { userId: 'Invalid user ID format' },
           },
         });
 
@@ -313,7 +315,8 @@ describe('/api/auth/signin-mfa', () => {
           success: false,
           error: {
             message: 'Code must be at least 6 characters',
-            details: [{ path: ['code'], message: 'Code must be at least 6 characters' }],
+            code: 'INVALID_INPUT',
+            details: { code: 'Code must be at least 6 characters' },
           },
         });
 
@@ -337,7 +340,8 @@ describe('/api/auth/signin-mfa', () => {
           success: false,
           error: {
             message: 'Code must be at most 8 characters',
-            details: [{ path: ['code'], message: 'Code must be at most 8 characters' }],
+            code: 'INVALID_INPUT',
+            details: { code: 'Code must be at most 8 characters' },
           },
         });
 
@@ -361,7 +365,8 @@ describe('/api/auth/signin-mfa', () => {
           success: false,
           error: {
             message: 'Code must contain only uppercase letters and numbers',
-            details: [{ path: ['code'], message: 'Code must contain only uppercase letters and numbers' }],
+            code: 'INVALID_INPUT',
+            details: { code: 'Code must contain only uppercase letters and numbers' },
           },
         });
 
@@ -385,7 +390,8 @@ describe('/api/auth/signin-mfa', () => {
           success: false,
           error: {
             message: 'Invalid method value',
-            details: [{ path: ['method'], message: 'Invalid enum value' }],
+            code: 'INVALID_INPUT',
+            details: { method: 'Invalid enum value' },
           },
         });
 
@@ -430,6 +436,7 @@ describe('/api/auth/signin-mfa', () => {
           success: false,
           error: {
             message: 'Request body too large',
+            code: 'PAYLOAD_TOO_LARGE',
           },
         });
 
@@ -552,6 +559,7 @@ describe('/api/auth/signin-mfa', () => {
           success: false,
           error: {
             message: 'Invalid user ID format',
+            code: 'INVALID_INPUT',
           },
         });
 
@@ -578,6 +586,7 @@ describe('/api/auth/signin-mfa', () => {
           success: false,
           error: {
             message: 'Code must contain only uppercase letters and numbers',
+            code: 'INVALID_INPUT',
           },
         });
 
@@ -600,7 +609,8 @@ describe('/api/auth/signin-mfa', () => {
           success: false,
           error: {
             message: 'Invalid user ID format',
-            details: [{ path: ['userId'], message: 'Invalid user ID format' }],
+            code: 'INVALID_INPUT',
+            details: { userId: 'Invalid user ID format' },
           },
         });
 

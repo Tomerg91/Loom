@@ -172,10 +172,10 @@ export default function MessagesClientPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex-1 flex flex-col min-h-0">
-            <MessageThread conversationId={selectedConversationId} className="flex-1" />
-            <MessageComposer conversationId={selectedConversationId} />
+            <MessageThread conversationId={selectedConversationId!} className="flex-1" />
+            <MessageComposer conversationId={selectedConversationId!} />
           </div>
         </div>
       );
@@ -314,8 +314,8 @@ export default function MessagesClientPage() {
             </div>
 
             <div className="flex-1 flex flex-col min-h-0">
-              <MessageThread conversationId={selectedConversationId} className="flex-1" />
-              <MessageComposer conversationId={selectedConversationId} />
+              <MessageThread conversationId={selectedConversationId!} className="flex-1" />
+              <MessageComposer conversationId={selectedConversationId!} />
             </div>
           </>
         ) : (

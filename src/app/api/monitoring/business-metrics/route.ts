@@ -161,13 +161,13 @@ async function getSessionMetrics(supabase: any, last24h: Date, last7d: Date, las
       .gte('created_at', last30d.toISOString());
     
     // Completed sessions
-    const completedSessions24h = sessions24h?.filter(s => s.status === 'completed')?.length || 0;
-    const completedSessions7d = sessions7d?.filter(s => s.status === 'completed')?.length || 0;
-    const completedSessions30d = sessions30d?.filter(s => s.status === 'completed')?.length || 0;
-    
+    const completedSessions24h = sessions24h?.filter((s: { status: string }) => s.status === 'completed')?.length || 0;
+    const completedSessions7d = sessions7d?.filter((s: { status: string }) => s.status === 'completed')?.length || 0;
+    const completedSessions30d = sessions30d?.filter((s: { status: string }) => s.status === 'completed')?.length || 0;
+
     // Cancelled sessions
-    const cancelledSessions24h = sessions24h?.filter(s => s.status === 'cancelled')?.length || 0;
-    const cancelledSessions7d = sessions7d?.filter(s => s.status === 'cancelled')?.length || 0;
+    const cancelledSessions24h = sessions24h?.filter((s: { status: string }) => s.status === 'cancelled')?.length || 0;
+    const cancelledSessions7d = sessions7d?.filter((s: { status: string }) => s.status === 'cancelled')?.length || 0;
     
     // Session ratings
     const { data: ratings7d } = await supabase

@@ -20,12 +20,32 @@ export async function GET(request: NextRequest): Promise<Response> {
   try {
     // Verify authentication and get user
     const session = await authService.getSession();
-    if (!session?.user || session.user.role !== 'coach') {
-      return ApiResponseHelper.forbidden('Coach access required');
+
+    console.log('[/api/coach/stats] Auth check:', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userId: session?.user?.id,
+      userRole: session?.user?.role,
+      timestamp: new Date().toISOString()
+    });
+
+    if (!session?.user) {
+      console.error('[/api/coach/stats] No session or user found');
+      return ApiResponseHelper.unauthorized('Authentication required');
+    }
+
+    if (session.user.role !== 'coach') {
+      console.error('[/api/coach/stats] User is not a coach:', {
+        userId: session.user.id,
+        role: session.user.role
+      });
+      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${session.user.role}`);
     }
 
     const coachId = session.user.id;
     const supabase = createServerClient();
+
+    console.log('[/api/coach/stats] Fetching stats for coach:', coachId);
 
     // Calculate date ranges
     const now = new Date();
@@ -34,10 +54,20 @@ export async function GET(request: NextRequest): Promise<Response> {
     startOfWeek.setHours(0, 0, 0, 0);
 
     // Fetch session statistics
-    const { data: sessionStats } = await supabase
+    const { data: sessionStats, error: sessionError } = await supabase
       .from('sessions')
       .select('id, status, scheduled_at, client_id')
       .eq('coach_id', coachId);
+
+    if (sessionError) {
+      console.error('[/api/coach/stats] Error fetching sessions:', sessionError);
+    }
+
+    console.log('[/api/coach/stats] Sessions query result:', {
+      count: sessionStats?.length || 0,
+      hasError: !!sessionError,
+      error: sessionError?.message
+    });
 
     const totalSessions = sessionStats?.length || 0;
     const completedSessions = sessionStats?.filter(s => s.status === 'completed').length || 0;
@@ -109,6 +139,8 @@ export async function GET(request: NextRequest): Promise<Response> {
       averageRating,
       totalRevenue,
     };
+
+    console.log('[/api/coach/stats] Returning stats:', stats);
 
     return ApiResponseHelper.success(stats);
 

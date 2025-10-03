@@ -52,7 +52,7 @@ export const mockAuthStore = {
 };
 
 // Mock Supabase client
-export const mockSupabaseClient = {
+export const mockSupabaseClient: any = {
   auth: {
     getUser: vi.fn().mockResolvedValue({
       data: { user: mockUser },
@@ -74,8 +74,18 @@ export const mockSupabaseClient = {
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     range: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    not: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue({ data: null, error: null }),
   })),
+  storage: {
+    from: vi.fn().mockReturnValue({
+      list: vi.fn().mockResolvedValue({ data: [], error: null }),
+      upload: vi.fn().mockResolvedValue({ data: null, error: null }),
+      download: vi.fn().mockResolvedValue({ data: null, error: null }),
+      remove: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+  },
 };
 
 // Custom render function with providers
