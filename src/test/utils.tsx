@@ -6,11 +6,9 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import { render, type RenderOptions } from '@testing-library/react';
-import { NextIntlClientProvider } from 'next-intl';
+import { QueryClient, QueryClientProvider, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
 import { ReactElement, ReactNode } from 'react';
 import { vi } from 'vitest';
-
-import en from '@/messages/en.json';
 import { User } from '@/types';
 
 import {
@@ -112,16 +110,14 @@ export function renderWithProviders(
   ui: ReactElement,
   {
     queryClient = createTestQueryClient(),
-    locale = 'en',
+    locale: _locale = 'en',
     ...renderOptions
   }: CustomRenderOptions = {}
 ) {
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <NextIntlClientProvider locale={locale} messages={en}>
-          {children}
-        </NextIntlClientProvider>
+        {children}
       </QueryClientProvider>
     );
   }
