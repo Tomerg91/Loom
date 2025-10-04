@@ -1,11 +1,7 @@
-// Note: Server-only imports are lazy-loaded to prevent webpack bundling issues
-// This file can be imported in client code, but the server-only functions
-// (createServerClient, createAdminClient) will only work on the server.
-
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { type NextRequest, type NextResponse } from 'next/server';
-import { type Database } from '@/types/supabase';
+
 import { env } from '@/env';
 
 // Singleton instances to prevent multiple GoTrueClient creation
@@ -26,42 +22,43 @@ type SupabaseCookie = {
 let serverClientInstance: LooseSupabaseClient | null = null;
 let adminClientInstance: LooseAdminClient | null = null;
 
-// Validate required environment variables
 function validateSupabaseEnv() {
-  if (!env.NEXT_PUBLIC_SUPABASE_URL) {
+  const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY } = env.server;
+
+  if (!NEXT_PUBLIC_SUPABASE_URL) {
     throw new Error('Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL');
   }
-  if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+
+  if (!NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error('Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY');
   }
-  
-  // Validate URL format
-  if (env.NEXT_PUBLIC_SUPABASE_URL.startsWith('MISSING_') || env.NEXT_PUBLIC_SUPABASE_URL.startsWith('INVALID_')) {
-    throw new Error(`Invalid Supabase URL configuration: ${env.NEXT_PUBLIC_SUPABASE_URL}`);
+
+  if (
+    NEXT_PUBLIC_SUPABASE_URL.startsWith('MISSING_') ||
+    NEXT_PUBLIC_SUPABASE_URL.startsWith('INVALID_')
+  ) {
+    throw new Error(`Invalid Supabase URL configuration: ${NEXT_PUBLIC_SUPABASE_URL}`);
   }
-  
-  // Validate URL is actually a valid URL
+
   try {
-    new URL(env.NEXT_PUBLIC_SUPABASE_URL);
+    new URL(NEXT_PUBLIC_SUPABASE_URL);
   } catch (error) {
-    throw new Error(`Invalid Supabase URL format: ${env.NEXT_PUBLIC_SUPABASE_URL}`);
+    throw new Error(`Invalid Supabase URL format: ${NEXT_PUBLIC_SUPABASE_URL}`);
   }
 }
 
-// Server-side Supabase client for middleware (without cookie access)
 export const createServerClient = () => {
   validateSupabaseEnv();
-  
+
   if (serverClientInstance) {
     return serverClientInstance;
   }
-  
-  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  
+
+  const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY } = env.server;
+
   serverClientInstance = createSupabaseServerClient<any>(
-    supabaseUrl,
-    supabaseKey,
+    NEXT_PUBLIC_SUPABASE_URL!,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get: () => undefined,
@@ -70,37 +67,35 @@ export const createServerClient = () => {
       },
     }
   );
-  
+
   return serverClientInstance;
 };
 
-// Server-side Supabase client for middleware with request context
 export const createServerClientWithRequest = (request: NextRequest, response: NextResponse) => {
   validateSupabaseEnv();
-  
-  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  
+
+  const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY } = env.server;
+
   return createSupabaseServerClient<any>(
-    supabaseUrl,
-    supabaseKey,
+    NEXT_PUBLIC_SUPABASE_URL!,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (cookies) => {
           cookies.forEach(({ name, value, options }) => {
             try {
-              const sameSiteValue = options?.sameSite === true 
+              const sameSiteValue = options?.sameSite === true
                 ? 'strict' as const
-                : (options?.sameSite === false 
-                    ? 'none' as const 
+                : (options?.sameSite === false
+                    ? 'none' as const
                     : options?.sameSite as 'strict' | 'lax' | 'none' | undefined);
-              
+
               response.cookies.set({
                 name,
                 value,
                 ...options,
-                sameSite: sameSiteValue
+                sameSite: sameSiteValue,
               });
             } catch (error) {
               console.warn('Failed to set cookie in middleware:', error);
@@ -112,17 +107,13 @@ export const createServerClientWithRequest = (request: NextRequest, response: Ne
   );
 };
 
-// For route handlers and server components that have access to cookies
 export const createClient = () => {
   validateSupabaseEnv();
 
-  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY } = env.server;
 
   let cookieStore: any | null = null;
   try {
-    // Dynamic import to avoid bundling next/headers in client code
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { cookies } = require('next/headers');
     cookieStore = cookies();
   } catch (_error) {
@@ -135,7 +126,7 @@ export const createClient = () => {
           try {
             return cookieStore!
               .getAll()
-              .map(({ name, value }) => ({ name, value })) as SupabaseCookie[];
+              .map(({ name, value }: { name: string; value: string }) => ({ name, value })) as SupabaseCookie[];
           } catch (error) {
             console.warn('Failed to read cookies:', error);
             return [] as SupabaseCookie[];
@@ -173,32 +164,31 @@ export const createClient = () => {
         setAll: () => {},
       };
 
-  return createSupabaseServerClient<any>(supabaseUrl, supabaseKey, {
+  return createSupabaseServerClient<any>(NEXT_PUBLIC_SUPABASE_URL!, NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: cookieAdapter,
   });
 };
 
-// Admin client with service role key for administrative operations
 export const createAdminClient = () => {
   validateSupabaseEnv();
-  
+
   if (adminClientInstance) {
     return adminClientInstance;
   }
-  
-  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
-  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
-  
+
+  const { NEXT_PUBLIC_SUPABASE_URL } = env.server;
+  const serviceRoleKey = env.server.SUPABASE_SERVICE_ROLE_KEY;
+
   if (!serviceRoleKey) {
     throw new Error('Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY');
   }
-  
-  adminClientInstance = createSupabaseClient<any>(supabaseUrl, serviceRoleKey, {
+
+  adminClientInstance = createSupabaseClient<any>(NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
   });
-  
+
   return adminClientInstance;
 };
