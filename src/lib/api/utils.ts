@@ -344,7 +344,7 @@ export function withRequestLogging<T extends [NextRequest, ...any[]]>(
 
 // Authentication helpers
 export function requireAuth<T extends unknown[]>(
-  handler: (user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
+  handler: (user: AuthenticatedUser, request: NextRequest, ...args: T) => Promise<NextResponse>
 ) {
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
@@ -466,7 +466,7 @@ export function requireAuth<T extends unknown[]>(
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', userProfile.id);
       
-      return await handler(user, ...args);
+      return await handler(user, request, ...args);
     } catch (error) {
       // Log security event
       console.error('Authentication error:', {

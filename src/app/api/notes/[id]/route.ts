@@ -12,15 +12,15 @@ const updateNoteSchema = z.object({
   isArchived: z.boolean().optional(),
 });
 
-interface RouteParams {
-  params: Promise<{
+interface RouteContext {
+  params: {
     id: string;
-  }>;
+  };
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const supabase = createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -90,9 +90,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(request: NextRequest, { params }: RouteContext) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const supabase = createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -131,7 +131,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       ...validatedData,
       updated_at: new Date().toISOString(),
     };
@@ -207,9 +207,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const supabase = createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
