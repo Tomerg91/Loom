@@ -134,14 +134,16 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
     setLoading(true);
     try {
       const result = await authService.signUp(data);
-      if (result.user) {
+      if (result.user && result.sessionActive) {
         setUser(result.user);
+      } else if (!result.sessionActive) {
+        clearAuth();
       }
       return result;
     } finally {
       setLoading(false);
     }
-  }, [authService, setUser, setLoading]);
+  }, [authService, setUser, setLoading, clearAuth]);
 
   const signOut = useCallback(async () => {
     setLoading(true);

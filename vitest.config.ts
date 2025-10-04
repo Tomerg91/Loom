@@ -30,8 +30,12 @@ export default defineConfig({
     ],
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: [
+      { find: 'next-intl/routing', replacement: path.resolve(__dirname, './src/test/mocks/next-intl-routing.ts') },
+      { find: 'next-intl/navigation', replacement: path.resolve(__dirname, './src/test/mocks/next-intl-navigation.ts') },
+      { find: 'next-intl', replacement: path.resolve(__dirname, './src/test/mocks/next-intl.ts') },
+      { find: 'next/navigation', replacement: path.resolve(__dirname, './src/test/mocks/next-navigation.ts') },
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+    ],
   },
 });

@@ -27,7 +27,7 @@ export class ClientAuthService {
   /**
    * Sign up a new user
    */
-  async signUp(data: SignUpData): Promise<{ user: AuthUser | null; error: string | null }> {
+  async signUp(data: SignUpData): Promise<{ user: AuthUser | null; error: string | null; sessionActive: boolean }> {
     try {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const emailRedirectTo = `${siteUrl}/api/auth/verify`;
@@ -47,23 +47,25 @@ export class ClientAuthService {
       });
 
       if (authError) {
-        return { user: null, error: authError.message };
+        return { user: null, error: authError.message, sessionActive: false };
       }
 
       if (!authData.user) {
-        return { user: null, error: 'Failed to create user' };
+        return { user: null, error: 'Failed to create user', sessionActive: false };
       }
 
       // Fetch user profile via API instead of using UserService
       const userProfile = await this.fetchUserProfileFromAPI(authData.user.id);
-      
+
+      const sessionActive = Boolean(authData.session);
+
       if (userProfile) {
-        return { user: userProfile, error: null };
+        return { user: userProfile, error: null, sessionActive };
       }
 
-      return { user: null, error: 'Failed to fetch user profile after signup' };
+      return { user: null, error: 'Failed to fetch user profile after signup', sessionActive };
     } catch (error) {
-      return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
+      return { user: null, error: error instanceof Error ? error.message : 'Unknown error', sessionActive: false };
     }
   }
 

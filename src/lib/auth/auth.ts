@@ -146,7 +146,7 @@ export class AuthService {
   /**
    * Sign up a new user
    */
-  async signUp(data: SignUpData): Promise<{ user: AuthUser | null; error: string | null }> {
+  async signUp(data: SignUpData): Promise<{ user: AuthUser | null; error: string | null; sessionActive: boolean }> {
     try {
       // Determine email verification redirect URL
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
@@ -168,12 +168,14 @@ export class AuthService {
       });
 
       if (authError) {
-        return { user: null, error: authError.message };
+        return { user: null, error: authError.message, sessionActive: false };
       }
 
       if (!authData.user) {
-        return { user: null, error: 'Failed to create user' };
+        return { user: null, error: 'Failed to create user', sessionActive: false };
       }
+
+      const sessionActive = Boolean(authData.session);
 
       // Try to fetch the newly created user profile using admin client to avoid RLS issues
       try {
@@ -222,6 +224,7 @@ export class AuthService {
               onboardingData: (profile.onboarding_data as Record<string, unknown>) || {},
             },
             error: null,
+            sessionActive,
           };
         }
       } catch (adminError) {
@@ -247,9 +250,10 @@ export class AuthService {
           onboardingData: {},
         },
         error: null,
+        sessionActive,
       };
     } catch (error) {
-      return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
+      return { user: null, error: error instanceof Error ? error.message : 'Unknown error', sessionActive: false };
     }
   }
 
