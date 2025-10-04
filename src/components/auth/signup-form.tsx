@@ -126,17 +126,17 @@ export function SignupForm({}: SignupFormProps) {
         return;
       }
 
-      // Success - redirect to email verification page
+      // Success - redirect based on role
       // Note: User needs to verify email before accessing the dashboard
-      const verifyEmailPath = `/${locale}/auth/verify-email?email=${encodeURIComponent(data.email)}`;
-      router.push(verifyEmailPath);
-      // Success - redirect to dashboard (locale-aware and safe)
-      const safeRedirectTo =
-        redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
-      const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
-        ? safeRedirectTo
-        : `/${locale}${safeRedirectTo}`;
-      router.push(finalRedirectTo);
+      if (data.role === 'coach') {
+        // Coaches go to onboarding wizard
+        const onboardingPath = `/${locale}/onboarding/coach`;
+        router.push(onboardingPath);
+      } else {
+        // Clients go to email verification
+        const verifyEmailPath = `/${locale}/auth/verify-email?email=${encodeURIComponent(data.email)}`;
+        router.push(verifyEmailPath);
+      }
       router.refresh();
     } catch (err) {
       setError(

@@ -1395,5 +1395,115 @@
     "title": "הדף לא נמצא",
     "description": "מצטערים, לא הצלחנו למצוא את הדף שאתה מחפש.",
     "backHome": "חזור לדף הבית"
+  },
+  "onboarding": {
+    "coach": {
+      "wizard": {
+        "title": "הכשרת מאמן",
+        "subtitle": "השלם את הפרופיל שלך כדי להתחיל לאמן ב-Loom",
+        "step": "שלב",
+        "of": "מתוך",
+        "helpText": "צריך עזרה?",
+        "contactSupport": "צור קשר עם התמיכה"
+      },
+      "profile": {
+        "title": "פרטי פרופיל",
+        "description": "ספר לנו על עצמך ועל מומחיות האימון שלך",
+        "bio": "אודות",
+        "bioPlaceholder": "שתף את פילוסופיית האימון שלך, הגישה שלך, ומה שייחודי בך...",
+        "bioHelper": "תאר את הרקע, הניסיון והגישה שלך לאימון. זה עוזר ללקוחות להבין את הסגנון שלך.",
+        "yearsOfExperience": "שנות ניסיון",
+        "yearsOfExperienceHelper": "כמה שנים אתה מאמן באופן מקצועי?",
+        "specializations": "התמחויות",
+        "specializationsHelper": "בחר את כל התחומים שיש לך בהם מומחיות באימון (בחר לפחות אחד)",
+        "profilePicture": "תמונת פרופיל",
+        "profilePictureHelper": "העלה תמונה מקצועית כדי לעזור ללקוחות להתחבר אליך",
+        "specializationOptions": {
+          "lifecoaching": "אימון חיים",
+          "careercoaching": "אימון קריירה",
+          "healthwellness": "בריאות ואיכות חיים",
+          "businesscoaching": "אימון עסקי",
+          "relationshipcoaching": "אימון יחסים",
+          "executivecoaching": "אימון מנהלים",
+          "spiritualcoaching": "אימון רוחני",
+          "performancecoaching": "אימון ביצועים",
+          "mindfulnesscoaching": "אימון מיינדפולנס",
+          "other": "אחר"
+        }
+      },
+      "pricing": {
+        "title": "מחירים ושפות",
+        "description": "הגדר את התעריפים והעדפות השפה שלך",
+        "sessionRate": "תעריף פגישה",
+        "sessionRateHelper": "התעריף הסטנדרטי שלך לשעת אימון",
+        "currency": "מטבע",
+        "currencyHelper": "המטבע שאתה מעדיף לתשלומים",
+        "selectCurrency": "בחר מטבע",
+        "currencyOptions": {
+          "usd": "דולר אמריקאי",
+          "eur": "יורו",
+          "ils": "שקל ישראלי",
+          "gbp": "לירה בריטית"
+        },
+        "languages": "שפות מדוברות",
+        "languagesHelper": "בחר את כל השפות שבהן אתה יכול לערוך פגישות אימון",
+        "languageOptions": {
+          "english": "אנגלית",
+          "hebrew": "עברית",
+          "spanish": "ספרדית",
+          "french": "צרפתית",
+          "german": "גרמנית",
+          "arabic": "ערבית",
+          "russian": "רוסית",
+          "portuguese": "פורטוגזית"
+        },
+        "timezone": "אזור זמן",
+        "timezoneHelper": "אזור הזמן העיקרי שלך לתיאום פגישות",
+        "selectTimezone": "בחר את אזור הזמן שלך"
+      },
+      "availability": {
+        "title": "לוח זמינות",
+        "description": "הגדר את הזמינות השבועית שלך לפגישות אימון",
+        "weeklySchedule": "לוח זמנים שבועי",
+        "weeklyScheduleHelper": "בחר את הימים והשעות שבהם אתה זמין לפגישות אימון",
+        "addTimeSlot": "הוסף משבצת זמן",
+        "noTimeSlotsAdded": "לא נוספו משבצות זמן",
+        "defaultSessionDuration": "משך פגישה ברירת מחדל",
+        "defaultSessionDurationHelper": "משך סטנדרטי לפגישות האימון שלך",
+        "bookingBuffer": "זמן חיץ בין פגישות",
+        "bookingBufferHelper": "זמן חיץ בין פגישות להכנה והפסקות",
+        "minutes": "דקות",
+        "noBuffer": "ללא חיץ",
+        "days": {
+          "monday": "יום שני",
+          "tuesday": "יום שלישי",
+          "wednesday": "יום רביעי",
+          "thursday": "יום חמישי",
+          "friday": "יום שישי",
+          "saturday": "יום שבת",
+          "sunday": "יום ראשון"
+        }
+      },
+      "review": {
+        "title": "סקירה ושליחה",
+        "description": "סקור את המידע שלך לפני השליחה",
+        "years": "שנים",
+        "perSession": "לפגישה",
+        "noAvailabilitySet": "לא הוגדרה זמינות",
+        "noTimeSlotsAdded": "לא נוספו משבצות זמן",
+        "termsAcceptance": "אני מקבל את",
+        "termsLink": "התנאים וההגבלות",
+        "and": "ו",
+        "privacyLink": "מדיניות הפרטיות",
+        "readyToSubmit": "אתה מוכן לשלוח! לחץ על הכפתור למטה להשלמת ההכשרה.",
+        "submit": "השלם הכשרה",
+        "submitting": "שולח..."
+      },
+      "success": {
+        "title": "ההכשרה הושלמה!",
+        "message": "פרופיל המאמן שלך נוצר בהצלחה. ברוך הבא ל-Loom!",
+        "redirecting": "מעביר ללוח הבקרה שלך..."
+      }
+    }
   }
 }
