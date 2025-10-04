@@ -607,6 +607,30 @@
     "updating": "Updating...",
     "updatePassword": "Update Password",
     "sending": "Sending...",
+    "verifyEmail": {
+      "title": "Verify Your Email",
+      "description": "We've sent a verification email to your inbox. Please check your email to complete registration.",
+      "descriptionWithEmail": "We've sent a verification email to {email}. Please check your inbox to complete registration.",
+      "step1": {
+        "title": "Check your inbox",
+        "description": "Look for an email from Loom with the subject 'Verify your email address'"
+      },
+      "step2": {
+        "title": "Click the verification link",
+        "description": "Open the email and click the verification link to activate your account"
+      },
+      "step3": {
+        "title": "Start your journey",
+        "description": "Once verified, you'll be automatically signed in and ready to explore"
+      },
+      "didntReceive": "Didn't receive the email?",
+      "resendButton": "Resend Verification Email",
+      "backToSignIn": "Back to Sign In",
+      "note": {
+        "title": "Note",
+        "description": "The verification link will expire in 24 hours. Check your spam folder if you don't see the email."
+      }
+    },
     "sendResetLink": "Send Reset Link",
     "backToSignIn": "Back to Sign In",
     "back": "Back",

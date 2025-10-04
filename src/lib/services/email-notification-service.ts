@@ -7,6 +7,7 @@ export interface EmailNotificationPayload {
   htmlContent: string;
   textContent?: string;
   templateId?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   templateVariables?: Record<string, any>;
   priority?: 'high' | 'normal' | 'low';
   category?: string;
@@ -20,6 +21,7 @@ export interface EmailTemplate {
   subject: string;
   htmlBody: string;
   textBody?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   variables: Record<string, any>;
 }
 
@@ -38,14 +40,17 @@ interface EmailProviderConfig {
 }
 
 export class EmailNotificationService {
-  private supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private supabase: any;
   private config: EmailProviderConfig | null = null;
 
   constructor(isServer = true) {
     if (isServer) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { createServerClient } = require('@/lib/supabase/server');
       this.supabase = createServerClient();
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { createClient } = require('@/lib/supabase/client');
       this.supabase = createClient();
     }

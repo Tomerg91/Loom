@@ -1,4 +1,3 @@
-
 export interface PushSubscription {
   id: string;
   userId: string;
@@ -38,7 +37,9 @@ interface WebPushConfig {
 }
 
 export class PushNotificationService {
-  private supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
+  private supabase:
+    | ReturnType<typeof createServerClient>
+    | ReturnType<typeof createClient>;
   private config: WebPushConfig | null = null;
 
   constructor(isServer = true) {
@@ -56,7 +57,8 @@ export class PushNotificationService {
     this.config = {
       vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '',
       vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
-      vapidSubject: process.env.VAPID_SUBJECT || 'mailto:support@loom-coaching.com',
+      vapidSubject:
+        process.env.VAPID_SUBJECT || 'mailto:support@loom-coaching.com',
     };
   }
 
@@ -70,7 +72,10 @@ export class PushNotificationService {
   /**
    * Subscribe user to push notifications
    */
-  async subscribeUser(userId: string, subscription: any): Promise<PushSubscription | null> {
+  async subscribeUser(
+    userId: string,
+    subscription: any
+  ): Promise<PushSubscription | null> {
     try {
       const subscriptionData = {
         user_id: userId,
@@ -183,10 +188,10 @@ export class PushNotificationService {
    * Send push notification to user
    */
   async sendPushNotification(
-    userId: string, 
+    userId: string,
     payload: PushNotificationPayload,
-    options?: { 
-      ttl?: number; 
+    options?: {
+      ttl?: number;
       urgency?: 'very-low' | 'low' | 'normal' | 'high';
       topic?: string;
     }
@@ -194,7 +199,7 @@ export class PushNotificationService {
     try {
       // Get user's push subscriptions
       const subscriptions = await this.getUserSubscriptions(userId);
-      
+
       if (subscriptions.length === 0) {
         console.log('No push subscriptions found for user:', userId);
         return { success: true, results: [] };
@@ -222,13 +227,13 @@ export class PushNotificationService {
 
       // Send to each subscription (in a real app, you'd use a service like Firebase or a web-push library)
       const results = await Promise.allSettled(
-        subscriptions.map(async (subscription) => {
+        subscriptions.map(async subscription => {
           try {
             // In a production environment, you would use web-push library here
             // For now, we'll simulate the push notification sending
             console.log('Sending push notification to:', subscription.endpoint);
             console.log('Payload:', notificationPayload);
-            
+
             // Log the delivery attempt
             await this.logPushDelivery(
               payload.data?.notificationId,
@@ -240,7 +245,7 @@ export class PushNotificationService {
             return { success: true, subscriptionId: subscription.id };
           } catch (error) {
             console.error('Failed to send push notification:', error);
-            
+
             // Log the delivery failure
             await this.logPushDelivery(
               payload.data?.notificationId,
@@ -249,21 +254,28 @@ export class PushNotificationService {
               error instanceof Error ? error.message : 'Unknown error'
             );
 
-            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+            return {
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            };
           }
         })
       );
 
-      const successCount = results.filter(result => 
-        result.status === 'fulfilled' && result.value.success
+      const successCount = results.filter(
+        result => result.status === 'fulfilled' && result.value.success
       ).length;
 
-      console.log(`Push notification sent to ${successCount}/${subscriptions.length} subscriptions`);
+      console.log(
+        `Push notification sent to ${successCount}/${subscriptions.length} subscriptions`
+      );
 
       return {
         success: successCount > 0,
-        results: results.map(result => 
-          result.status === 'fulfilled' ? result.value : { success: false, error: result.reason }
+        results: results.map(result =>
+          result.status === 'fulfilled'
+            ? result.value
+            : { success: false, error: result.reason }
         ),
       };
     } catch (error) {
@@ -278,15 +290,17 @@ export class PushNotificationService {
   async sendBulkPushNotifications(
     userIds: string[],
     payload: PushNotificationPayload,
-    options?: { 
-      ttl?: number; 
+    options?: {
+      ttl?: number;
       urgency?: 'very-low' | 'low' | 'normal' | 'high';
       topic?: string;
     }
   ): Promise<{ totalSent: number; totalFailed: number; results: any[] }> {
     try {
       const results = await Promise.allSettled(
-        userIds.map(userId => this.sendPushNotification(userId, payload, options))
+        userIds.map(userId =>
+          this.sendPushNotification(userId, payload, options)
+        )
       );
 
       let totalSent = 0;
@@ -297,17 +311,17 @@ export class PushNotificationService {
         if (result.status === 'fulfilled') {
           const userResult = result.value;
           allResults.push({ userId: userIds[index], ...userResult });
-          
+
           userResult.results.forEach(r => {
             if (r.success) totalSent++;
             else totalFailed++;
           });
         } else {
           totalFailed++;
-          allResults.push({ 
-            userId: userIds[index], 
-            success: false, 
-            error: result.reason 
+          allResults.push({
+            userId: userIds[index],
+            success: false,
+            error: result.reason,
           });
         }
       });
@@ -328,7 +342,10 @@ export class PushNotificationService {
       const { data, error } = await this.supabase
         .from('push_subscriptions')
         .delete()
-        .lt('updated_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
+        .lt(
+          'updated_at',
+          new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+        )
         .select('id');
 
       if (error) {
@@ -382,9 +399,7 @@ export class PushNotificationService {
           break;
       }
 
-      await this.supabase
-        .from('notification_delivery_logs')
-        .insert([logData]);
+      await this.supabase.from('notification_delivery_logs').insert([logData]);
     } catch (error) {
       console.error('Error logging push delivery:', error);
     }
@@ -413,7 +428,7 @@ export class PushNotificationService {
    */
   static isPushSupported(): boolean {
     if (typeof window === 'undefined') return false;
-    
+
     return (
       'serviceWorker' in navigator &&
       'PushManager' in window &&
@@ -434,7 +449,7 @@ export class PushNotificationService {
    */
   static async requestNotificationPermission(): Promise<NotificationPermission> {
     if (typeof window === 'undefined') return 'denied';
-    
+
     if (!this.isPushSupported()) {
       return 'denied';
     }

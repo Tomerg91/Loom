@@ -351,13 +351,36 @@ export class AuthService {
     try {
       // Use centralized configuration for redirect URLs
       const redirectUrl = config.getPasswordResetUrl();
-      
+
       const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
       });
       return { error: error?.message || null };
     } catch (error) {
       return { error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Resend email confirmation
+   */
+  async resendConfirmationEmail(email: string, redirectTo?: string): Promise<{ data: any; error: string | null }> {
+    try {
+      const { data, error } = await this.supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: redirectTo,
+        }
+      });
+
+      if (error) {
+        return { data: null, error: error.message };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
