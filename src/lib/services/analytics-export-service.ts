@@ -4,6 +4,7 @@ import type {
   AdminAnalyticsOverview,
   UserGrowthData,
   SessionMetricsData,
+  CoachPerformanceData,
   CoachPerformanceData
 } from '@/lib/database/admin-analytics';
 
@@ -51,7 +52,7 @@ class AnalyticsExportService {
     const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const filename = `analytics-export-${this.getDateString()}.json`;
-    
+
     return { blob, filename };
   }
 
@@ -65,7 +66,7 @@ class AnalyticsExportService {
     csvContent += 'ANALYTICS OVERVIEW\n';
     csvContent += `Generated At,${data.generatedAt}\n`;
     csvContent += `Date Range,${data.dateRange.start} to ${data.dateRange.end}\n\n`;
-    
+
     csvContent += 'Metric,Value\n';
     csvContent += `Total Users,${data.overview.totalUsers}\n`;
     csvContent += `Active Users,${data.overview.activeUsers}\n`;
@@ -86,7 +87,8 @@ class AnalyticsExportService {
 
     // Session Metrics section
     csvContent += 'SESSION METRICS\n';
-    csvContent += 'Date,Total Sessions,Completed Sessions,Cancelled Sessions,Scheduled Sessions,Completion Rate\n';
+    csvContent +=
+      'Date,Total Sessions,Completed Sessions,Cancelled Sessions,Scheduled Sessions,Completion Rate\n';
     data.sessionMetrics.forEach(row => {
       csvContent += `${row.date},${row.totalSessions},${row.completedSessions},${row.cancelledSessions},${row.scheduledSessions},${row.completionRate || 0}%\n`;
     });
@@ -94,14 +96,15 @@ class AnalyticsExportService {
 
     // Coach Performance section
     csvContent += 'COACH PERFORMANCE\n';
-    csvContent += 'Coach Name,Total Sessions,Completed Sessions,Average Rating,Revenue,Active Clients,Completion Rate\n';
+    csvContent +=
+      'Coach Name,Total Sessions,Completed Sessions,Average Rating,Revenue,Active Clients,Completion Rate\n';
     data.coachPerformance.forEach(row => {
       csvContent += `${row.coachName},${row.totalSessions},${row.completedSessions},${row.averageRating},${row.revenue},${row.activeClients},${row.completionRate}%\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const filename = `analytics-export-${this.getDateString()}.csv`;
-    
+
     return { blob, filename };
   }
 
@@ -111,15 +114,15 @@ class AnalyticsExportService {
   private exportAsExcel(data: ExportData): { blob: Blob; filename: string } {
     // For now, create a tab-separated format that Excel can open
     // In production, you'd want to use a library like 'xlsx' or 'exceljs'
-    
+
     let content = '';
-    
+
     // Overview sheet
     content += 'Analytics Overview\t\t\t\n';
     content += `Generated At\t${data.generatedAt}\t\t\n`;
     content += `Date Range\t${data.dateRange.start} to ${data.dateRange.end}\t\t\n`;
     content += '\n';
-    
+
     content += 'Metric\tValue\t\t\n';
     content += `Total Users\t${data.overview.totalUsers}\t\t\n`;
     content += `Active Users\t${data.overview.activeUsers}\t\t\n`;
@@ -137,9 +140,10 @@ class AnalyticsExportService {
     });
     content += '\n';
 
-    // Session Metrics data  
+    // Session Metrics data
     content += 'Session Metrics\t\t\t\t\t\n';
-    content += 'Date\tTotal Sessions\tCompleted\tCancelled\tScheduled\tCompletion Rate\n';
+    content +=
+      'Date\tTotal Sessions\tCompleted\tCancelled\tScheduled\tCompletion Rate\n';
     data.sessionMetrics.forEach(row => {
       content += `${row.date}\t${row.totalSessions}\t${row.completedSessions}\t${row.cancelledSessions}\t${row.scheduledSessions}\t${row.completionRate || 0}%\n`;
     });
@@ -147,14 +151,17 @@ class AnalyticsExportService {
 
     // Coach Performance data
     content += 'Coach Performance\t\t\t\t\t\t\n';
-    content += 'Coach Name\tTotal Sessions\tCompleted\tRating\tRevenue\tActive Clients\tCompletion Rate\n';
+    content +=
+      'Coach Name\tTotal Sessions\tCompleted\tRating\tRevenue\tActive Clients\tCompletion Rate\n';
     data.coachPerformance.forEach(row => {
       content += `${row.coachName}\t${row.totalSessions}\t${row.completedSessions}\t${row.averageRating}\t${row.revenue}\t${row.activeClients}\t${row.completionRate}%\n`;
     });
 
-    const blob = new Blob([content], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const blob = new Blob([content], {
+      type: 'application/vnd.ms-excel;charset=utf-8;',
+    });
     const filename = `analytics-export-${this.getDateString()}.xls`;
-    
+
     return { blob, filename };
   }
 
@@ -266,14 +273,19 @@ class AnalyticsExportService {
             </tr>
           </thead>
           <tbody>
-            ${data.userGrowth.slice(0, 10).map(row => `
+            ${data.userGrowth
+              .slice(0, 10)
+              .map(
+                row => `
               <tr>
                 <td>${formatDate(row.date)}</td>
                 <td class="text-right">${row.newUsers.toLocaleString()}</td>
                 <td class="text-right">${row.activeUsers.toLocaleString()}</td>
                 <td class="text-right">${row.totalUsers.toLocaleString()}</td>
               </tr>
-            `).join('')}
+            `
+              )
+              .join('')}
             ${data.userGrowth.length > 10 ? `<tr><td colspan="4" style="text-align: center; color: #666;">... and ${data.userGrowth.length - 10} more rows</td></tr>` : ''}
           </tbody>
         </table>
@@ -296,7 +308,10 @@ class AnalyticsExportService {
             </tr>
           </thead>
           <tbody>
-            ${data.sessionMetrics.slice(0, 10).map(row => `
+            ${data.sessionMetrics
+              .slice(0, 10)
+              .map(
+                row => `
               <tr>
                 <td>${formatDate(row.date)}</td>
                 <td class="text-right">${row.totalSessions.toLocaleString()}</td>
@@ -305,7 +320,9 @@ class AnalyticsExportService {
                 <td class="text-right">${row.scheduledSessions.toLocaleString()}</td>
                 <td class="text-right">${row.completionRate || 0}%</td>
               </tr>
-            `).join('')}
+            `
+              )
+              .join('')}
             ${data.sessionMetrics.length > 10 ? `<tr><td colspan="6" style="text-align: center; color: #666;">... and ${data.sessionMetrics.length - 10} more rows</td></tr>` : ''}
           </tbody>
         </table>
@@ -326,7 +343,9 @@ class AnalyticsExportService {
             </tr>
           </thead>
           <tbody>
-            ${data.coachPerformance.map(row => `
+            ${data.coachPerformance
+              .map(
+                row => `
               <tr>
                 <td>${row.coachName}</td>
                 <td class="text-right">${row.totalSessions.toLocaleString()}</td>
@@ -336,7 +355,9 @@ class AnalyticsExportService {
                 <td class="text-right">${row.activeClients.toLocaleString()}</td>
                 <td class="text-right">${row.completionRate}%</td>
               </tr>
-            `).join('')}
+            `
+              )
+              .join('')}
           </tbody>
         </table>
       </div>
@@ -346,7 +367,7 @@ class AnalyticsExportService {
 
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
     const filename = `analytics-report-${this.getDateString()}.html`;
-    
+
     return { blob, filename };
   }
 
@@ -359,11 +380,11 @@ class AnalyticsExportService {
     link.href = url;
     link.download = filename;
     link.style.display = 'none';
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     // Clean up the object URL
     window.URL.revokeObjectURL(url);
   }
@@ -378,7 +399,7 @@ class AnalyticsExportService {
     const day = String(now.getDate()).padStart(2, '0');
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    
+
     return `${year}${month}${day}-${hours}${minutes}`;
   }
 }

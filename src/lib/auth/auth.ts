@@ -195,6 +195,19 @@ export class AuthService {
         
         await admin.from('users').upsert(upsertPayload, { onConflict: 'id' });
 
+        // If role is coach, create coach_profiles record with default values
+        if (data.role === 'coach') {
+          await admin.from('coach_profiles').upsert({
+            coach_id: authData.user.id,
+            session_rate: 75.00,
+            currency: 'USD',
+            languages: [data.language],
+            timezone: 'UTC',
+            is_active: true,
+            onboarding_completed_at: null, // Will be set after onboarding wizard
+          }, { onConflict: 'coach_id' });
+        }
+
         const { data: profile, error: profileError } = await admin
           .from('users')
           .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data')
@@ -386,13 +399,36 @@ export class AuthService {
     try {
       // Use centralized configuration for redirect URLs
       const redirectUrl = config.getPasswordResetUrl();
-      
+
       const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
       });
       return { error: error?.message || null };
     } catch (error) {
       return { error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Resend email confirmation
+   */
+  async resendConfirmationEmail(email: string, redirectTo?: string): Promise<{ data: any; error: string | null }> {
+    try {
+      const { data, error } = await this.supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: redirectTo,
+        }
+      });
+
+      if (error) {
+        return { data: null, error: error.message };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 

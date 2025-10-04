@@ -33,6 +33,7 @@
     "test:infrastructure": "vitest --run src/test/infrastructure.test.ts",
     "test:production-readiness": "vitest --run src/test/production-readiness.test.ts",
     "test:production-suite": "./scripts/production-readiness-test.sh",
+    "security:check-http": "node scripts/check-http-functions.js",
     "type-check": "tsc --noEmit",
     "analyze": "node scripts/analyze-bundle.js",
     "analyze:quick": "node scripts/bundle-monitor.js --quick",
