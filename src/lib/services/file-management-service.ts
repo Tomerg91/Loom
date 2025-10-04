@@ -708,6 +708,7 @@ class FileManagementService {
         .update({
           last_accessed_at: new Date().toISOString(),
           access_count: share.access_count + 1,
+          access_count: share.access_count + 1
         })
         .eq('file_id', fileId)
         .eq('shared_with', userId);
@@ -785,6 +786,7 @@ class FileManagementService {
       createdAt: row.created_at || new Date().toISOString(),
       updatedAt: row.updated_at || new Date().toISOString(),
       storageUrl: publicUrl.data.publicUrl,
+      storageUrl: publicUrl.data.publicUrl
     };
   };
 

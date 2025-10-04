@@ -18,6 +18,10 @@ export interface AuthUser {
   createdAt: string;
   updatedAt: string;
   lastSeenAt?: string;
+  onboardingStatus?: 'pending' | 'in_progress' | 'completed';
+  onboardingStep?: number;
+  onboardingCompletedAt?: string;
+  onboardingData?: Record<string, unknown>;
   // MFA fields
   mfaEnabled?: boolean;
   mfaSetupCompleted?: boolean;
@@ -69,6 +73,10 @@ export class AuthService {
   private userService: ReturnType<typeof createUserService>;
   private userProfileCache = new Map<string, { data: AuthUser; expires: number }>();
 
+  private getUserProfileCacheKey(userId: string): string {
+    return `user_profile_${userId}`;
+  }
+
   private constructor(isServer = true, supabase?: Awaited<ReturnType<typeof createClient>>) {
     // Use singleton clients to prevent multiple GoTrueClient instances
     this.supabase = isServer && supabase ? supabase : clientSupabase;
@@ -90,7 +98,7 @@ export class AuthService {
     }
   }
 
-  private getCachedUserProfile(cacheKey: string, userId: string): AuthUser | null {
+  private getCachedUserProfile(cacheKey: string): AuthUser | null {
     const cached = this.userProfileCache.get(cacheKey);
     if (cached && Date.now() < cached.expires) {
       return cached.data;
@@ -103,6 +111,36 @@ export class AuthService {
       data: user,
       expires: Date.now() + ttlMs
     });
+  }
+
+  public invalidateUserCache(userId: string): void {
+    this.userProfileCache.delete(this.getUserProfileCacheKey(userId));
+  }
+
+  private mapUserProfileToAuthUser(userProfile: User): AuthUser {
+    return {
+      id: userProfile.id,
+      email: userProfile.email,
+      role: userProfile.role,
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      phone: userProfile.phone,
+      avatarUrl: userProfile.avatarUrl,
+      timezone: userProfile.timezone,
+      language: userProfile.language,
+      status: userProfile.status,
+      createdAt: userProfile.createdAt,
+      updatedAt: userProfile.updatedAt,
+      lastSeenAt: userProfile.lastSeenAt,
+      onboardingStatus: userProfile.onboardingStatus,
+      onboardingStep: userProfile.onboardingStep,
+      onboardingCompletedAt: userProfile.onboardingCompletedAt,
+      onboardingData: userProfile.onboardingData,
+      mfaEnabled: userProfile.mfaEnabled,
+      mfaSetupCompleted: userProfile.mfaSetupCompleted,
+      mfaVerifiedAt: userProfile.mfaVerifiedAt,
+      rememberDeviceEnabled: userProfile.rememberDeviceEnabled,
+    };
   }
 
   /**
@@ -157,7 +195,7 @@ export class AuthService {
 
         const { data: profile, error: profileError } = await admin
           .from('users')
-          .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at')
+          .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data')
           .eq('id', authData.user.id)
           .single();
 
@@ -177,6 +215,11 @@ export class AuthService {
               createdAt: profile.created_at,
               updatedAt: profile.updated_at,
               lastSeenAt: profile.last_seen_at || undefined,
+              onboardingStatus:
+                (profile.onboarding_status as 'pending' | 'in_progress' | 'completed') || 'pending',
+              onboardingStep: profile.onboarding_step ?? 0,
+              onboardingCompletedAt: profile.onboarding_completed_at || undefined,
+              onboardingData: (profile.onboarding_data as Record<string, unknown>) || {},
             },
             error: null,
           };
@@ -198,6 +241,10 @@ export class AuthService {
           status: 'active',
           createdAt: authData.user.created_at ?? new Date().toISOString(),
           updatedAt: authData.user.updated_at ?? authData.user.created_at ?? new Date().toISOString(),
+          onboardingStatus: 'pending',
+          onboardingStep: 0,
+          onboardingCompletedAt: undefined,
+          onboardingData: {},
         },
         error: null,
       };
@@ -278,47 +325,31 @@ export class AuthService {
   /**
    * Get the current user with caching for TTFB optimization
    */
-  async getCurrentUser(): Promise<AuthUser | null> {
+  async getCurrentUser(options?: { forceRefresh?: boolean }): Promise<AuthUser | null> {
     try {
       const { data: { user } } = await this.supabase.auth.getUser();
-      
+
       if (!user) {
         return null;
       }
 
       // Use memory cache to prevent redundant database queries during SSR
-      const cacheKey = `user_profile_${user.id}`;
-      const cached = await this.getCachedUserProfile(cacheKey, user.id);
-      
-      if (cached) {
-        return cached;
+      const cacheKey = this.getUserProfileCacheKey(user.id);
+      if (options?.forceRefresh) {
+        this.userProfileCache.delete(cacheKey);
+      } else {
+        const cached = this.getCachedUserProfile(cacheKey);
+        if (cached) {
+          return cached;
+        }
       }
 
       const userProfileResult = await this.userService.getUserProfile(user.id);
 
       if (userProfileResult.success) {
         const userProfile = userProfileResult.data;
-        const authUser = {
-          id: userProfile.id,
-          email: userProfile.email,
-          role: userProfile.role,
-          firstName: userProfile.firstName,
-          lastName: userProfile.lastName,
-          phone: userProfile.phone,
-          avatarUrl: userProfile.avatarUrl,
-          timezone: userProfile.timezone,
-          language: userProfile.language,
-          status: userProfile.status,
-          createdAt: userProfile.createdAt,
-          updatedAt: userProfile.updatedAt,
-          lastSeenAt: userProfile.lastSeenAt,
-          // MFA fields
-          mfaEnabled: userProfile.mfaEnabled,
-          mfaSetupCompleted: userProfile.mfaSetupCompleted,
-          mfaVerifiedAt: userProfile.mfaVerifiedAt,
-          rememberDeviceEnabled: userProfile.rememberDeviceEnabled,
-        };
-        
+        const authUser = this.mapUserProfileToAuthUser(userProfile);
+
         // Cache for 2 minutes to reduce database load
         this.cacheUserProfile(cacheKey, authUser, 120000);
         return authUser;
@@ -442,6 +473,10 @@ export class AuthService {
           createdAt: updatedProfile.createdAt,
           updatedAt: updatedProfile.updatedAt,
           lastSeenAt: updatedProfile.lastSeenAt,
+          onboardingStatus: updatedProfile.onboardingStatus,
+          onboardingStep: updatedProfile.onboardingStep,
+          onboardingCompletedAt: updatedProfile.onboardingCompletedAt,
+          onboardingData: updatedProfile.onboardingData,
           // MFA fields
           mfaEnabled: updatedProfile.mfaEnabled,
           mfaSetupCompleted: updatedProfile.mfaSetupCompleted,
@@ -505,6 +540,10 @@ export class AuthService {
             createdAt: updatedProfile.createdAt,
             updatedAt: updatedProfile.updatedAt,
             lastSeenAt: updatedProfile.lastSeenAt,
+            onboardingStatus: updatedProfile.onboardingStatus,
+            onboardingStep: updatedProfile.onboardingStep,
+            onboardingCompletedAt: updatedProfile.onboardingCompletedAt,
+            onboardingData: updatedProfile.onboardingData,
             // MFA fields
             mfaEnabled: updatedProfile.mfaEnabled,
             mfaSetupCompleted: updatedProfile.mfaSetupCompleted,

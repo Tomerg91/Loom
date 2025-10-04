@@ -1,15 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 import { strongPasswordSchema } from '@/lib/security/password';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -30,6 +41,7 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { strongPasswordSchema } from '@/lib/security/password';
 import type { Language } from '@/types';
 
 const signupSchema = z
@@ -118,6 +130,13 @@ export function SignupForm({}: SignupFormProps) {
       // Note: User needs to verify email before accessing the dashboard
       const verifyEmailPath = `/${locale}/auth/verify-email?email=${encodeURIComponent(data.email)}`;
       router.push(verifyEmailPath);
+      // Success - redirect to dashboard (locale-aware and safe)
+      const safeRedirectTo =
+        redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+      const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
+        ? safeRedirectTo
+        : `/${locale}${safeRedirectTo}`;
+      router.push(finalRedirectTo);
       router.refresh();
     } catch (err) {
       setError(

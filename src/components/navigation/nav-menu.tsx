@@ -20,7 +20,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StableImage } from '@/components/layout/layout-stabilizer';
 import { 
-  Home, 
+  ClipboardList,
+  Home,
   Calendar, 
   Users, 
   MessageSquare, 
@@ -65,7 +66,13 @@ export function NavMenu() {
   };
 
   // Common navigation items
+  const shouldShowOnboarding = user.role === 'coach' || user.role === 'client';
+  const onboardingIncomplete = shouldShowOnboarding && user.onboardingStatus !== 'completed';
+
   const commonItems: NavItem[] = [
+    ...(shouldShowOnboarding
+      ? [{ label: t('onboarding'), href: '/onboarding', icon: ClipboardList, exact: true }]
+      : []),
     { label: t('dashboard'), href: '/dashboard', icon: Home, exact: true },
     { label: t('sessions'), href: '/sessions', icon: Calendar },
   ];
@@ -130,19 +137,24 @@ export function NavMenu() {
             {/* Navigation Items - Desktop */}
             <div className="hidden lg:flex items-center rtl:space-x-reverse space-x-1">
               {/* Common items */}
-              {commonItems.map((item) => (
-                <Link key={item.href} href={item.href as '/dashboard'}>
-                  <Button
-                    variant={isActive(item.href, item.exact) ? "default" : "ghost"}
-                    size="sm"
-                    className="flex items-center rtl:space-x-reverse space-x-2"
-                    aria-current={isActive(item.href, item.exact) ? "page" : undefined}
-                  >
-                    <item.icon className="h-4 w-4" aria-hidden="true" />
-                    <span>{item.label}</span>
-                  </Button>
-                </Link>
-              ))}
+              {commonItems.map((item) => {
+                const active = isActive(item.href, item.exact);
+                const highlight = item.href === '/onboarding' && onboardingIncomplete;
+
+                return (
+                  <Link key={item.href} href={item.href as '/dashboard'}>
+                    <Button
+                      variant={active ? 'default' : highlight ? 'success' : 'ghost'}
+                      size="sm"
+                      className="flex items-center rtl:space-x-reverse space-x-2"
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      <item.icon className="h-4 w-4" aria-hidden="true" />
+                      <span>{item.label}</span>
+                    </Button>
+                  </Link>
+                );
+              })}
 
               {/* Role-specific items */}
               <AdminOnly>
@@ -323,19 +335,24 @@ export function NavMenu() {
           </div>
 
           {/* Common items */}
-          {commonItems.map((item) => (
-            <Link key={item.href} href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
-              <Button
-                variant={isActive(item.href, item.exact) ? "default" : "ghost"}
-                size="sm"
-                className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
-                aria-current={isActive(item.href, item.exact) ? "page" : undefined}
-              >
-                <item.icon className="h-5 w-5" aria-hidden="true" />
-                <span>{item.label}</span>
-              </Button>
-            </Link>
-          ))}
+          {commonItems.map((item) => {
+            const active = isActive(item.href, item.exact);
+            const highlight = item.href === '/onboarding' && onboardingIncomplete;
+
+            return (
+              <Link key={item.href} href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
+                <Button
+                  variant={active ? 'default' : highlight ? 'success' : 'ghost'}
+                  size="sm"
+                  className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
+                  aria-current={active ? 'page' : undefined}
+                >
+                  <item.icon className="h-5 w-5" aria-hidden="true" />
+                  <span>{item.label}</span>
+                </Button>
+              </Link>
+            );
+          })}
 
           {/* Role-specific items */}
           <AdminOnly>

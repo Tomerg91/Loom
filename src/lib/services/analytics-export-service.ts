@@ -5,6 +5,7 @@ import type {
   UserGrowthData,
   SessionMetricsData,
   CoachPerformanceData,
+  CoachPerformanceData
 } from '@/lib/database/admin-analytics';
 
 export type ExportFormat = 'json' | 'csv' | 'excel' | 'pdf';

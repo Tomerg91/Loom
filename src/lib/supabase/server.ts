@@ -16,6 +16,7 @@ import { env } from '@/env';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type LooseSupabaseClient = ReturnType<typeof createSupabaseServerClient<any>>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LooseSupabaseClient = ReturnType<typeof createSupabaseServerClient<any>>;
 type LooseAdminClient = ReturnType<typeof createSupabaseClient<any>>;
 
 type SupabaseCookie = {
@@ -61,6 +62,7 @@ export const createServerClient = () => {
   const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
   serverClientInstance = createSupabaseServerClient<any>(
     supabaseUrl,
     supabaseKey,
@@ -84,6 +86,7 @@ export const createServerClientWithRequest = (request: NextRequest, response: Ne
   const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
   return createSupabaseServerClient<any>(
     supabaseUrl,
     supabaseKey,
@@ -200,6 +203,7 @@ export const createAdminClient = () => {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
   adminClientInstance = createSupabaseClient<any>(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,

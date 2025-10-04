@@ -9,6 +9,7 @@
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
+    "changeLanguage": "Change language",
     "actions": "Actions",
     "yes": "Yes",
     "no": "No",
@@ -30,6 +31,7 @@
     "home": "Home",
     "dashboard": "Dashboard",
     "sessions": "Sessions",
+    "onboarding": "Onboarding",
     "clients": "Clients",
     "coaches": "Coaches",
     "calendar": "Calendar",
@@ -51,6 +53,167 @@
       "admin": "Administrator",
       "coach": "Coach",
       "client": "Client"
+    }
+  },
+  "onboarding": {
+    "metaTitle": "Complete your onboarding",
+    "metaDescription": "Share your preferences so we can tailor Loom to you.",
+    "title": "Let's personalize your experience, {name}",
+    "subtitle": "Tell us a little about how you like to work. You can always update this later.",
+    "status": {
+      "pending": "Not started",
+      "in_progress": "In progress",
+      "completed": "Completed"
+    },
+    "loading": "Loading onboarding details...",
+    "success": "Your onboarding preferences were saved.",
+    "error": {
+      "load": "We couldn't load your onboarding preferences. Please try again.",
+      "save": "We couldn't save your onboarding preferences. Please try again."
+    },
+    "actions": {
+      "save": "Save onboarding",
+      "saving": "Saving onboarding..."
+    },
+    "guidance": {
+      "primary": "These details help us and your coach customise your programme.",
+      "secondary": "Need to make changes later? Return to this page from the navigation at any time."
+    },
+    "completedAt": "Last updated on {date}",
+    "loadErrorTitle": "We ran into an issue",
+    "loadErrorDescription": "Your onboarding information could not be retrieved. Please refresh and try again.",
+    "retry": "Try again",
+    "returnToSignIn": "Return to sign in",
+    "notRequired": {
+      "title": "Onboarding not required",
+      "description": "Only coaches and clients need to complete onboarding information.",
+      "helper": "You're already set up. Head back to your dashboard to continue."
+    },
+    "goToDashboard": "Go to dashboard",
+    "client": {
+      "title": "Client onboarding",
+      "description": "Share your goals and preferences so your coach can tailor every session.",
+      "communicationOptions": {
+        "video": "Video",
+        "phone": "Phone",
+        "in_person": "In person",
+        "hybrid": "Hybrid"
+      },
+      "frequencyOptions": {
+        "weekly": "Weekly",
+        "biweekly": "Every two weeks",
+        "monthly": "Monthly",
+        "flexible": "Flexible"
+      },
+      "fields": {
+        "goals": {
+          "label": "Coaching goals",
+          "placeholder": "Add a goal and press Enter",
+          "helper": "List one to three focus areas you want to work on."
+        },
+        "focusAreas": {
+          "label": "Focus areas",
+          "placeholder": "Add a focus area and press Enter",
+          "helper": "Describe themes, skills, or topics you care about."
+        },
+        "supportPreferences": {
+          "label": "Support preferences",
+          "placeholder": "Add a preference and press Enter",
+          "helper": "Examples: weekly check-ins, summaries, accountability notes."
+        },
+        "preferredCommunication": {
+          "label": "Preferred communication",
+          "placeholder": "Select a communication style"
+        },
+        "sessionFrequency": {
+          "label": "Ideal session cadence",
+          "placeholder": "Select how often you'd like to meet"
+        },
+        "timezone": {
+          "label": "Timezone",
+          "placeholder": "e.g. America/New_York"
+        },
+        "notes": {
+          "label": "Anything else we should know?",
+          "placeholder": "Share learning preferences, scheduling details, or other context for your coach."
+        }
+      },
+      "footer": {
+        "helpText": "We'll notify your coach once these preferences are saved."
+      }
+    },
+    "coach": {
+      "title": "Coach onboarding",
+      "description": "Let clients know what to expect by sharing your approach and availability.",
+      "fields": {
+        "title": {
+          "label": "Professional headline",
+          "placeholder": "Executive coach and leadership strategist"
+        },
+        "location": {
+          "label": "Primary location",
+          "placeholder": "City, Country"
+        },
+        "bio": {
+          "label": "About you",
+          "placeholder": "Describe your background, coaching philosophy, and the outcomes you help clients achieve."
+        },
+        "experienceYears": {
+          "label": "Years of experience"
+        },
+        "timezone": {
+          "label": "Timezone",
+          "placeholder": "e.g. Europe/London"
+        },
+        "hourlyRate": {
+          "label": "Standard hourly rate"
+        },
+        "currency": {
+          "label": "Currency (ISO code)"
+        },
+        "specialties": {
+          "label": "Specialties",
+          "placeholder": "Add a specialty and press Enter",
+          "helper": "Examples: leadership development, product strategy, resilience."
+        },
+        "credentials": {
+          "label": "Credentials",
+          "placeholder": "Add a credential and press Enter",
+          "helper": "Include certifications, degrees, or notable training."
+        },
+        "languages": {
+          "label": "Languages you coach in",
+          "placeholder": "Add a language and press Enter",
+          "helper": "Clients will see these on your profile."
+        },
+        "approach": {
+          "label": "Coaching approach",
+          "placeholder": "Share how you run sessions, the frameworks you use, and what clients can expect."
+        }
+      },
+      "availability": {
+        "title": "Availability",
+        "description": "Add the days and times when you typically meet with clients.",
+        "addSlot": "Add time slot",
+        "removeSlot": "Remove",
+        "required": "Add at least one availability slot.",
+        "day": "Day of week",
+        "dayPlaceholder": "Select day",
+        "startTime": "Start time",
+        "endTime": "End time",
+        "days": {
+          "sunday": "Sunday",
+          "monday": "Monday",
+          "tuesday": "Tuesday",
+          "wednesday": "Wednesday",
+          "thursday": "Thursday",
+          "friday": "Friday",
+          "saturday": "Saturday"
+        }
+      },
+      "footer": {
+        "helpText": "Clients will see your profile once onboarding is complete."
+      }
     }
   },
   "landing": {
@@ -989,6 +1152,10 @@
       "storage": "Storage",
       "serviceStatus": "Service Status"
     }
+  },
+  "share": {
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter password"
   },
   "notFound": {
     "title": "Page Not Found",
