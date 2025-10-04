@@ -31,11 +31,17 @@ export interface CoachPerformanceData {
 }
 
 class AnalyticsService {
-  async getOverview(startDate: Date, endDate: Date): Promise<AnalyticsOverview> {
+  async getOverview(
+    startDate: Date,
+    endDate: Date
+  ): Promise<AnalyticsOverview> {
     try {
       // Use real database data through admin analytics service
-      const overview = await adminAnalyticsService.getOverview(startDate, endDate);
-      
+      const overview = await adminAnalyticsService.getOverview(
+        startDate,
+        endDate
+      );
+
       return {
         totalUsers: overview.totalUsers,
         activeUsers: overview.activeUsers,
@@ -57,11 +63,17 @@ class AnalyticsService {
     }
   }
 
-  async getUserGrowth(startDate: Date, endDate: Date): Promise<UserGrowthData[]> {
+  async getUserGrowth(
+    startDate: Date,
+    endDate: Date
+  ): Promise<UserGrowthData[]> {
     try {
       // Use real database data
-      const userGrowthData = await adminAnalyticsService.getUserGrowth(startDate, endDate);
-      
+      const userGrowthData = await adminAnalyticsService.getUserGrowth(
+        startDate,
+        endDate
+      );
+
       return userGrowthData.map(data => ({
         date: data.date,
         newUsers: data.newUsers,
@@ -73,11 +85,17 @@ class AnalyticsService {
     }
   }
 
-  async getSessionMetrics(startDate: Date, endDate: Date): Promise<SessionMetricsData[]> {
+  async getSessionMetrics(
+    startDate: Date,
+    endDate: Date
+  ): Promise<SessionMetricsData[]> {
     try {
       // Use real database data
-      const sessionMetricsData = await adminAnalyticsService.getSessionMetrics(startDate, endDate);
-      
+      const sessionMetricsData = await adminAnalyticsService.getSessionMetrics(
+        startDate,
+        endDate
+      );
+
       return sessionMetricsData.map(data => ({
         date: data.date,
         totalSessions: data.totalSessions,
@@ -90,11 +108,15 @@ class AnalyticsService {
     }
   }
 
-  async getCoachPerformance(startDate: Date, endDate: Date): Promise<CoachPerformanceData[]> {
+  async getCoachPerformance(
+    startDate: Date,
+    endDate: Date
+  ): Promise<CoachPerformanceData[]> {
     try {
       // Use real database data
-      const coachPerformanceData = await adminAnalyticsService.getCoachPerformance(startDate, endDate);
-      
+      const coachPerformanceData =
+        await adminAnalyticsService.getCoachPerformance(startDate, endDate);
+
       return coachPerformanceData.map(data => ({
         coachId: data.coachId,
         coachName: data.coachName,
@@ -110,12 +132,13 @@ class AnalyticsService {
 
   async exportAnalyticsData(startDate: Date, endDate: Date): Promise<Blob> {
     try {
-      const [overview, userGrowth, sessionMetrics, coachPerformance] = await Promise.all([
-        this.getOverview(startDate, endDate),
-        this.getUserGrowth(startDate, endDate),
-        this.getSessionMetrics(startDate, endDate),
-        this.getCoachPerformance(startDate, endDate),
-      ]);
+      const [overview, userGrowth, sessionMetrics, coachPerformance] =
+        await Promise.all([
+          this.getOverview(startDate, endDate),
+          this.getUserGrowth(startDate, endDate),
+          this.getSessionMetrics(startDate, endDate),
+          this.getCoachPerformance(startDate, endDate),
+        ]);
 
       const exportData = {
         overview,
@@ -132,7 +155,6 @@ class AnalyticsService {
       return new Blob([JSON.stringify(exportData, null, 2)], {
         type: 'application/json',
       });
-
     } catch (error) {
       console.error('Error exporting analytics data:', error);
       throw new Error('Failed to export analytics data');

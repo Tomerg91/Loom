@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { strongPasswordSchema } from '@/lib/security/password';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,7 +29,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Link } from '@/i18n/routing';
-import { strongPasswordSchema } from '@/lib/security/password';
 import type { Language } from '@/types';
 
 const signupSchema = z
@@ -56,7 +56,7 @@ interface SignupFormProps {
   redirectTo?: string;
 }
 
-export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
+export function SignupForm({}: SignupFormProps) {
   const t = useTranslations('auth');
   const router = useRouter();
   const locale = useLocale();
@@ -113,13 +113,17 @@ export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
         return;
       }
 
-      // Success - redirect to dashboard (locale-aware and safe)
-      const safeRedirectTo =
-        redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
-      const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
-        ? safeRedirectTo
-        : `/${locale}${safeRedirectTo}`;
-      router.push(finalRedirectTo);
+      // Success - redirect based on role
+      // Note: User needs to verify email before accessing the dashboard
+      if (data.role === 'coach') {
+        // Coaches go to onboarding wizard
+        const onboardingPath = `/${locale}/onboarding/coach`;
+        router.push(onboardingPath);
+      } else {
+        // Clients go to email verification
+        const verifyEmailPath = `/${locale}/auth/verify-email?email=${encodeURIComponent(data.email)}`;
+        router.push(verifyEmailPath);
+      }
       router.refresh();
     } catch (err) {
       setError(

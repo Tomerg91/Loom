@@ -88,7 +88,10 @@ class FileOptimizationService {
 
       // Resize if needed
       if (originalMetadata.width && originalMetadata.height) {
-        if (originalMetadata.width > maxWidth || originalMetadata.height > maxHeight) {
+        if (
+          originalMetadata.width > maxWidth ||
+          originalMetadata.height > maxHeight
+        ) {
           sharpInstance = sharpInstance.resize(maxWidth, maxHeight, {
             fit: 'inside',
             withoutEnlargement: true,
@@ -98,7 +101,7 @@ class FileOptimizationService {
 
       // Apply format-specific optimizations
       let optimizedBuffer: Buffer;
-      
+
       switch (format) {
         case 'jpeg':
           optimizedBuffer = await sharpInstance
@@ -115,7 +118,9 @@ class FileOptimizationService {
             .png({
               compressionLevel,
               adaptiveFiltering: true,
-              palette: originalMetadata.channels === 1 || originalMetadata.channels === 2,
+              palette:
+                originalMetadata.channels === 1 ||
+                originalMetadata.channels === 2,
             })
             .toBuffer();
           break;
@@ -154,9 +159,10 @@ class FileOptimizationService {
           compressionMethod: format.toUpperCase(),
         },
       };
-
     } catch (error) {
-      throw new Error(`Image optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Image optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -170,10 +176,10 @@ class FileOptimizationService {
       }
 
       const originalSize = inputBuffer.length;
-      
+
       // Load the PDF
       const pdfDoc = await PDFDocument.load(inputBuffer);
-      
+
       // Remove metadata to reduce size
       pdfDoc.setTitle('');
       pdfDoc.setAuthor('');
@@ -205,9 +211,10 @@ class FileOptimizationService {
           compressionMethod: 'PDF_OPTIMIZATION',
         },
       };
-
     } catch (error) {
-      throw new Error(`PDF optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `PDF optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -243,19 +250,24 @@ class FileOptimizationService {
         };
       }
     } catch (error) {
-      throw new Error(`File optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `File optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Optimize text files by removing unnecessary whitespace
    */
-  private async optimizeTextFile(inputBuffer: Buffer, mimeType: string): Promise<OptimizationResult> {
+  private async optimizeTextFile(
+    inputBuffer: Buffer,
+    mimeType: string
+  ): Promise<OptimizationResult> {
     const originalSize = inputBuffer.length;
     const text = inputBuffer.toString('utf-8');
-    
+
     let optimizedText: string;
-    
+
     if (mimeType === 'text/plain') {
       // Remove excessive whitespace but preserve line breaks
       optimizedText = text
@@ -280,11 +292,11 @@ class FileOptimizationService {
       // Default text optimization
       optimizedText = text.replace(/\s+/g, ' ').trim();
     }
-    
+
     const optimizedBuffer = Buffer.from(optimizedText, 'utf-8');
     const optimizedSize = optimizedBuffer.length;
     const compressionRatio = (originalSize - optimizedSize) / originalSize;
-    
+
     return {
       optimized: optimizedSize < originalSize,
       originalSize,
@@ -306,7 +318,6 @@ class FileOptimizationService {
     inputMimeType: string,
     options: DocumentConversionOptions
   ): Promise<ConversionResult> {
-
     try {
       // For now, we'll implement basic conversions
       // In a production environment, you might want to use libraries like:
@@ -314,30 +325,41 @@ class FileOptimizationService {
       // - mammoth for DOCX to HTML conversion
       // - pandoc via child_process for various format conversions
 
-      if (inputMimeType === 'application/pdf' && options.outputFormat === 'txt') {
+      if (
+        inputMimeType === 'application/pdf' &&
+        options.outputFormat === 'txt'
+      ) {
         return await this.convertPDFToText(inputBuffer);
-      } else if (inputMimeType === 'text/plain' && options.outputFormat === 'pdf') {
+      } else if (
+        inputMimeType === 'text/plain' &&
+        options.outputFormat === 'pdf'
+      ) {
         return await this.convertTextToPDF(inputBuffer);
       } else {
-        throw new Error(`Conversion from ${inputMimeType} to ${options.outputFormat} is not supported`);
+        throw new Error(
+          `Conversion from ${inputMimeType} to ${options.outputFormat} is not supported`
+        );
       }
-
     } catch (error) {
-      throw new Error(`Document conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Document conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Convert PDF to plain text (simplified implementation)
    */
-  private async convertPDFToText(inputBuffer: Buffer): Promise<ConversionResult> {
+  private async convertPDFToText(
+    inputBuffer: Buffer
+  ): Promise<ConversionResult> {
     // This is a simplified implementation
     // In production, you'd use a library like pdf-parse or pdf2pic
     const originalSize = inputBuffer.length;
-    
+
     // For demo purposes, just return placeholder text
     const textContent = `[PDF Content Extracted]\n\nThis is a placeholder for PDF text extraction.\nIn a production environment, this would contain the actual extracted text from the PDF.`;
-    
+
     const convertedBuffer = Buffer.from(textContent, 'utf-8');
     const convertedSize = convertedBuffer.length;
 
@@ -358,7 +380,9 @@ class FileOptimizationService {
   /**
    * Convert plain text to PDF
    */
-  private async convertTextToPDF(inputBuffer: Buffer): Promise<ConversionResult> {
+  private async convertTextToPDF(
+    inputBuffer: Buffer
+  ): Promise<ConversionResult> {
     const text = inputBuffer.toString('utf-8');
     const originalSize = inputBuffer.length;
 
@@ -435,11 +459,15 @@ class FileOptimizationService {
     let priority: 'low' | 'medium' | 'high' = 'low';
 
     if (mimeType.startsWith('image/')) {
-      if (fileSize > 1024 * 1024) { // > 1MB
-        recommendations.push('Consider compressing this image to reduce file size');
+      if (fileSize > 1024 * 1024) {
+        // > 1MB
+        recommendations.push(
+          'Consider compressing this image to reduce file size'
+        );
         estimatedSavings = 0.3; // Estimate 30% savings
         priority = 'high';
-      } else if (fileSize > 500 * 1024) { // > 500KB
+      } else if (fileSize > 500 * 1024) {
+        // > 500KB
         recommendations.push('This image could benefit from light compression');
         estimatedSavings = 0.15; // Estimate 15% savings
         priority = 'medium';
@@ -451,13 +479,15 @@ class FileOptimizationService {
         priority = 'high';
       }
     } else if (mimeType === 'application/pdf') {
-      if (fileSize > 5 * 1024 * 1024) { // > 5MB
+      if (fileSize > 5 * 1024 * 1024) {
+        // > 5MB
         recommendations.push('This PDF could be optimized to reduce file size');
         estimatedSavings = 0.2; // Estimate 20% savings
         priority = 'high';
       }
     } else if (mimeType.startsWith('text/')) {
-      if (fileSize > 100 * 1024) { // > 100KB
+      if (fileSize > 100 * 1024) {
+        // > 100KB
         recommendations.push('This text file could be minified');
         estimatedSavings = 0.1; // Estimate 10% savings
         priority = 'low';
@@ -479,11 +509,17 @@ class FileOptimizationService {
     files: Array<{ buffer: Buffer; mimeType: string; filename: string }>,
     options: OptimizationOptions = {}
   ): Promise<Array<OptimizationResult & { filename: string; error?: string }>> {
-    const results: Array<OptimizationResult & { filename: string; error?: string }> = [];
+    const results: Array<
+      OptimizationResult & { filename: string; error?: string }
+    > = [];
 
     for (const file of files) {
       try {
-        const result = await this.optimizeFile(file.buffer, file.mimeType, options);
+        const result = await this.optimizeFile(
+          file.buffer,
+          file.mimeType,
+          options
+        );
         results.push({
           ...result,
           filename: file.filename,

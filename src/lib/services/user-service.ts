@@ -26,11 +26,9 @@ class UserService {
   async getUsers(filters: UserFilters = {}) {
     try {
       const supabase = await getSupabaseClient();
-      
+
       // Start with base query
-      let query = supabase
-        .from('users')
-        .select(`
+      let query = supabase.from('users').select(`
           id,
           email,
           first_name,
@@ -47,7 +45,9 @@ class UserService {
       // Apply search filter
       if (filters.search) {
         const searchTerm = `%${filters.search}%`;
-        query = query.or(`email.ilike.${searchTerm},first_name.ilike.${searchTerm},last_name.ilike.${searchTerm}`);
+        query = query.or(
+          `email.ilike.${searchTerm},first_name.ilike.${searchTerm},last_name.ilike.${searchTerm}`
+        );
       }
 
       // Apply role filter
@@ -83,19 +83,20 @@ class UserService {
       }
 
       // Transform data to match frontend expectations
-      const transformedUsers = users?.map(user => ({
-        id: user.id,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        role: user.role,
-        status: user.status,
-        avatarUrl: user.avatar_url,
-        phone: user.phone,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at,
-        lastLoginAt: user.last_seen_at,
-      })) || [];
+      const transformedUsers =
+        users?.map(user => ({
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          role: user.role,
+          status: user.status,
+          avatarUrl: user.avatar_url,
+          phone: user.phone,
+          createdAt: user.created_at,
+          updatedAt: user.updated_at,
+          lastLoginAt: user.last_seen_at,
+        })) || [];
 
       return {
         users: transformedUsers,
@@ -106,7 +107,6 @@ class UserService {
           totalPages: Math.ceil((count || 0) / limit),
         },
       };
-
     } catch (error) {
       console.error('Error fetching users:', error);
       if (error instanceof ApiError) {
@@ -119,10 +119,11 @@ class UserService {
   async getUserById(id: string) {
     try {
       const supabase = await getSupabaseClient();
-      
+
       const { data: user, error } = await supabase
         .from('users')
-        .select(`
+        .select(
+          `
           id,
           email,
           first_name,
@@ -136,7 +137,8 @@ class UserService {
           created_at,
           updated_at,
           last_seen_at
-        `)
+        `
+        )
         .eq('id', id)
         .single();
 
@@ -169,7 +171,6 @@ class UserService {
         updatedAt: user.updated_at,
         lastLoginAt: user.last_seen_at,
       };
-
     } catch (error) {
       console.error('Error fetching user by ID:', error);
       if (error instanceof ApiError) {
@@ -182,13 +183,16 @@ class UserService {
   async updateUser(id: string, data: UserUpdateData) {
     try {
       const supabase = await getSupabaseClient();
-      
+
       // Prepare update data with proper field names
-      const updateData: Partial<Database['public']['Tables']['users']['Update']> = {
+      const updateData: Partial<
+        Database['public']['Tables']['users']['Update']
+      > = {
         updated_at: new Date().toISOString(),
       };
 
-      if (data.first_name !== undefined) updateData.first_name = data.first_name;
+      if (data.first_name !== undefined)
+        updateData.first_name = data.first_name;
       if (data.last_name !== undefined) updateData.last_name = data.last_name;
       if (data.email !== undefined) updateData.email = data.email;
       if (data.phone !== undefined) updateData.phone = data.phone;
@@ -199,7 +203,8 @@ class UserService {
         .from('users')
         .update(updateData)
         .eq('id', id)
-        .select(`
+        .select(
+          `
           id,
           email,
           first_name,
@@ -213,7 +218,8 @@ class UserService {
           created_at,
           updated_at,
           last_seen_at
-        `)
+        `
+        )
         .single();
 
       if (error) {
@@ -245,14 +251,13 @@ class UserService {
         updatedAt: updatedUser.updated_at,
         lastLoginAt: updatedUser.last_seen_at,
       };
-
     } catch (error) {
       console.error('Error updating user:', error);
-      
+
       if (error instanceof ApiError) {
         throw error;
       }
-      
+
       throw new ApiError('DATABASE_ERROR', 'Failed to update user');
     }
   }
@@ -260,11 +265,8 @@ class UserService {
   async deleteUser(id: string) {
     try {
       const supabase = await getSupabaseClient();
-      
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', id);
+
+      const { error } = await supabase.from('users').delete().eq('id', id);
 
       if (error) {
         console.error('Database error deleting user:', error);
@@ -272,7 +274,6 @@ class UserService {
       }
 
       return true;
-
     } catch (error) {
       console.error('Error deleting user:', error);
       if (error instanceof ApiError) {
@@ -285,7 +286,7 @@ class UserService {
   async getUserStats() {
     try {
       const supabase = await getSupabaseClient();
-      
+
       // Get total count
       const { count: total } = await supabase
         .from('users')
@@ -312,7 +313,8 @@ class UserService {
       const byStatus = {
         active: statusStats?.filter(u => u.status === 'active').length || 0,
         inactive: statusStats?.filter(u => u.status === 'inactive').length || 0,
-        suspended: statusStats?.filter(u => u.status === 'suspended').length || 0,
+        suspended:
+          statusStats?.filter(u => u.status === 'suspended').length || 0,
       };
 
       return {

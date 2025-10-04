@@ -34,7 +34,7 @@ class AuthService {
           role: user.role,
           avatarUrl: user.avatarUrl,
           createdAt: user.createdAt,
-        }
+        },
       };
     } catch (error) {
       console.error('Error getting session:', error);

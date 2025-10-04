@@ -1,7 +1,7 @@
-import { createServerClient } from '@/lib/supabase/server';
+import type { NotificationType } from '@/types';
+
 import { EmailNotificationService } from './email-notification-service';
 import { PushNotificationService } from './push-notification-service';
-import type { NotificationType } from '@/types';
 
 export interface ScheduledNotification {
   id: string;
