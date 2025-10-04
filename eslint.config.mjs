@@ -44,6 +44,13 @@ const eslintConfig = [
         'error',
         { devDependencies: ['**/*.test.*', 'tests/**', 'scripts/**'] }
       ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[object.name='env'][property.name!='client'][property.name!='server']",
+          message: 'Access environment variables through env.client or env.server namespaces.',
+        },
+      ],
     },
   }
 ];
