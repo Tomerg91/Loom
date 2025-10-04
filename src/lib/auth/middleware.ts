@@ -2,26 +2,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { UserRole } from '@/types';
-
-// Routes that require authentication
-const protectedRoutes = [
-  '/dashboard',
-  '/sessions',
-  '/profile',
-  '/settings',
-  '/coach',
-  '/client',
-  '/admin',
-];
-
-// Routes that are public (no auth required)
-const publicRoutes = [
-  '/',
-  '/auth/signin',
-  '/auth/signup',
-  '/auth/reset-password',
-  '/auth/callback',
-];
+import { PROTECTED_ROUTES, PUBLIC_ROUTES } from '@/lib/middleware/route-config';
 
 // Admin-only routes
 const adminRoutes = [
@@ -60,11 +41,11 @@ export async function authMiddleware(request: NextRequest) {
     const user = session?.user;
 
     // Check if route is protected
-    const isProtectedRoute = protectedRoutes.some(route => 
+    const isProtectedRoute = PROTECTED_ROUTES.some(route =>
       pathname.startsWith(route)
     );
 
-    const isPublicRoute = publicRoutes.some(route => 
+    const isPublicRoute = PUBLIC_ROUTES.some(route =>
       pathname === route || pathname.startsWith(route)
     );
 
@@ -132,7 +113,7 @@ export async function authMiddleware(request: NextRequest) {
     console.error('Auth middleware error:', error);
     
     // If there's an error and it's a protected route, redirect to signin
-    if (protectedRoutes.some(route => pathname.startsWith(route))) {
+    if (PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
       const response = NextResponse.redirect(new URL('/auth/signin', request.url));
       return response;
     }
