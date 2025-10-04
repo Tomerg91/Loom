@@ -2,7 +2,27 @@
 
 ## 📁 **Directory Structure & File Organization**
 
+### 🎯 **Phase 0 Architectural Targets**
+
+To support the upcoming refactor, the codebase will migrate toward feature-first modules with clear runtime boundaries:
+
+- `src/modules/auth/` – MFA-aware auth flows, Supabase session orchestration, and middleware adapters.
+- `src/modules/dashboard/` – Coach and client dashboard experiences, including data loaders and widgets.
+- `src/modules/sessions/` – Session lifecycle services, caching policies, and shared façades for API routes.
+- `src/modules/i18n/` – Bilingual routing helpers, locale negotiation, and RTL-aware UI primitives.
+- `src/modules/platform/` – Cross-cutting infrastructure such as environment validation, Supabase client factories, and logging.
+
+Supporting layers will be separated by runtime context:
+
+- `src/env/server` and `src/env/client` will expose explicit environment contracts for server-only and browser-safe variables.
+- `src/lib/supabase/` will split client creation, retry policies, and navigation effects into testable units.
+- `src/middleware/` will evolve into composable middleware steps for static bypass, locale validation, session hydration, and MFA gating.
+- `src/services/` will consolidate service façades so that route handlers depend on cohesive domain APIs instead of low-level helpers.
+
+These targets ensure contributors have a shared blueprint before structural changes land.
+
 ### **Root Level Structure**
+
 ```
 loom-app/
 ├── 📁 .github/workflows/     # CI/CD pipeline configurations
@@ -18,6 +38,7 @@ loom-app/
 ```
 
 ### **Source Code Structure (`src/`)**
+
 ```
 src/
 ├── 📁 app/                  # Next.js App Router (main application)
@@ -50,11 +71,12 @@ src/
 ## 🏛️ **Core Architectural Patterns**
 
 ### **1. Data Flow Architecture**
+
 ```
 User Interface (React Components)
        ↓
 React Query (State Management)
-       ↓  
+       ↓
 Service Layer (API calls)
        ↓
 Supabase Client (Database/Auth)
@@ -63,12 +85,14 @@ PostgreSQL Database
 ```
 
 ### **2. State Management Strategy**
+
 - **Server State**: React Query (TanStack Query)
-- **Local State**: React useState/useReducer  
+- **Local State**: React useState/useReducer
 - **Form State**: React Hook Form
 - **Authentication State**: Supabase Auth + React Context
 
 ### **3. Authentication Flow**
+
 ```
 User Login → Supabase Auth → JWT Token → Middleware → Protected Routes
                     ↓
@@ -82,6 +106,7 @@ User Login → Supabase Auth → JWT Token → Middleware → Protected Routes
 ### **`src/app/` - Next.js App Router**
 
 #### **Locale-based Routing (`src/app/[locale]/`)**
+
 ```
 [locale]/
 ├── 📁 (auth)/              # Authentication route group
@@ -104,6 +129,7 @@ User Login → Supabase Auth → JWT Token → Middleware → Protected Routes
 ```
 
 #### **API Routes (`src/app/api/`)**
+
 ```
 api/
 ├── 📁 auth/                # Authentication endpoints
@@ -125,12 +151,14 @@ api/
 ### **`src/components/` - Component Architecture**
 
 #### **UI Components (`src/components/ui/`)**
+
 - **Basic Components**: Button, Input, Modal, Card, etc.
 - **Form Components**: FormField, FormError, FormSubmit
 - **Layout Components**: Header, Sidebar, Footer
 - **Data Display**: Table, List, Badge, Status
 
 #### **Feature Components (`src/components/features/`)**
+
 ```
 features/
 ├── 📁 auth/                # Authentication components
@@ -153,6 +181,7 @@ features/
 ### **`src/lib/` - Business Logic Layer**
 
 #### **Database Abstraction (`src/lib/db/`)**
+
 ```typescript
 // Database service interface
 interface DatabaseService {
@@ -163,13 +192,15 @@ interface DatabaseService {
 }
 
 // Query builder pattern
-const query = db.users()
+const query = db
+  .users()
   .select(['id', 'email', 'role'])
   .where('active', true)
   .orderBy('created_at', 'desc');
 ```
 
 #### **Authentication (`src/lib/auth/`)**
+
 ```typescript
 // Auth service methods
 interface AuthService {
@@ -182,6 +213,7 @@ interface AuthService {
 ```
 
 #### **Utilities (`src/lib/utils/`)**
+
 - **`cn()`**: Class name utility (clsx + tailwind-merge)
 - **`formatDate()`**: Date formatting utilities
 - **`generateId()`**: ID generation utilities
@@ -192,6 +224,7 @@ interface AuthService {
 ## 🗄️ **Database Schema & Models**
 
 ### **Core Tables**
+
 ```sql
 -- Users table (authentication & profiles)
 users {
@@ -239,6 +272,7 @@ notifications {
 ```
 
 ### **Supabase Configuration**
+
 ```
 supabase/
 ├── 📄 config.toml          # Project configuration
@@ -255,12 +289,14 @@ supabase/
 ## 🔐 **Authentication & Authorization Flow**
 
 ### **Authentication Layers**
+
 1. **Supabase Auth**: Handle login/logout, JWT tokens
 2. **Middleware**: Route protection, role checking
 3. **API Guards**: Endpoint-level authorization
 4. **Component Guards**: UI-level access control
 
 ### **Role-based Access Control**
+
 ```typescript
 // Role hierarchy
 type UserRole = 'admin' | 'coach' | 'client';
@@ -269,18 +305,19 @@ type UserRole = 'admin' | 'coach' | 'client';
 const permissions = {
   admin: ['*'], // All permissions
   coach: ['sessions:read', 'sessions:write', 'clients:read', 'notes:write'],
-  client: ['sessions:read', 'notes:read', 'profile:write']
+  client: ['sessions:read', 'notes:read', 'profile:write'],
 };
 
 // Route protection
 const protectedRoutes = {
   '/admin/*': ['admin'],
   '/coach/*': ['admin', 'coach'],
-  '/client/*': ['admin', 'coach', 'client']
+  '/client/*': ['admin', 'coach', 'client'],
 };
 ```
 
 ### **Middleware Flow**
+
 ```typescript
 // src/middleware.ts
 export function middleware(request: NextRequest) {
@@ -296,12 +333,14 @@ export function middleware(request: NextRequest) {
 ## 🎨 **UI/Component Architecture**
 
 ### **Design System Foundation**
+
 - **Styling**: Tailwind CSS v4 with custom design tokens
-- **Components**: Radix UI primitives + custom implementations  
+- **Components**: Radix UI primitives + custom implementations
 - **Icons**: Lucide React icon library
 - **Typography**: System fonts with fallbacks
 
 ### **Component Patterns**
+
 ```typescript
 // Compound component pattern
 <SessionCard>
@@ -329,6 +368,7 @@ function useSession(sessionId: string) {
 ```
 
 ### **Responsive Design Strategy**
+
 ```css
 /* Mobile-first approach */
 .container {
@@ -345,6 +385,7 @@ function useSession(sessionId: string) {
 ## 📝 **Configuration Files & Their Roles**
 
 ### **Next.js Configuration (`next.config.js`)**
+
 ```javascript
 // Key features enabled
 - Internationalization (i18n)
@@ -356,6 +397,7 @@ function useSession(sessionId: string) {
 ```
 
 ### **TypeScript Configuration (`tsconfig.json`)**
+
 ```json
 {
   "compilerOptions": {
@@ -369,6 +411,7 @@ function useSession(sessionId: string) {
 ```
 
 ### **Tailwind Configuration (`tailwind.config.ts`)**
+
 ```typescript
 // Custom theme extensions
 colors: {
@@ -386,16 +429,18 @@ spacing: { /* custom spacing scale */ }
 ## 🔗 **Feature-to-File Mapping**
 
 ### **Authentication Feature**
+
 ```
 Files:
 ├── src/app/[locale]/(auth)/         # Auth routes
-├── src/components/features/auth/    # Auth components  
+├── src/components/features/auth/    # Auth components
 ├── src/lib/auth/                    # Auth utilities
 ├── src/services/auth.ts             # Auth service
 └── src/types/auth.ts                # Auth types
 ```
 
 ### **Session Management Feature**
+
 ```
 Files:
 ├── src/app/[locale]/sessions/       # Session routes
@@ -407,6 +452,7 @@ Files:
 ```
 
 ### **Dashboard Feature**
+
 ```
 Files:
 ├── src/app/[locale]/dashboard/      # Dashboard routes
@@ -421,6 +467,7 @@ Files:
 ## 🧩 **Integration Patterns**
 
 ### **API Integration Pattern**
+
 ```typescript
 // Service layer
 export class SessionService {
@@ -429,7 +476,7 @@ export class SessionService {
       .from('sessions')
       .select('*')
       .order('scheduled_at', { ascending: false });
-    
+
     if (error) throw new Error(error.message);
     return data;
   }
@@ -446,10 +493,10 @@ export function useSessions() {
 // Component usage
 function SessionList() {
   const { data: sessions, isLoading, error } = useSessions();
-  
+
   if (isLoading) return <Loading />;
   if (error) return <Error />;
-  
+
   return (
     <div>
       {sessions?.map(session => (
@@ -461,6 +508,7 @@ function SessionList() {
 ```
 
 ### **Form Handling Pattern**
+
 ```typescript
 // Validation schema
 const sessionSchema = z.object({
@@ -475,7 +523,7 @@ function SessionForm() {
   const form = useForm<SessionFormData>({
     resolver: zodResolver(sessionSchema)
   });
-  
+
   const mutation = useMutation({
     mutationFn: sessionService.create,
     onSuccess: () => {
@@ -483,7 +531,7 @@ function SessionForm() {
       toast.success('Session created successfully');
     }
   });
-  
+
   return (
     <Form {...form}>
       <FormField name="title" control={form.control} />
@@ -500,6 +548,7 @@ function SessionForm() {
 ## 🚀 **Development Workflow**
 
 ### **Local Development Setup**
+
 ```bash
 # Environment setup
 cp .env.example .env.local
@@ -523,6 +572,7 @@ npm run lint
 ```
 
 ### **Build & Deployment**
+
 ```bash
 # Production build
 npm run build
@@ -539,39 +589,46 @@ vercel --prod
 ## 📚 **Key Dependencies**
 
 ### **Core Framework**
+
 - **Next.js 15.3.5**: React framework with App Router
 - **React 19**: UI library with latest features
 - **TypeScript**: Type-safe development
 
 ### **Backend & Database**
+
 - **Supabase**: Backend-as-a-Service (PostgreSQL, Auth, Real-time)
 - **@supabase/supabase-js**: JavaScript client library
 
 ### **State Management**
+
 - **@tanstack/react-query**: Server state management
 - **zustand**: Client state management (if needed)
 
 ### **UI & Styling**
+
 - **Tailwind CSS v4**: Utility-first CSS framework
 - **Radix UI**: Accessible component primitives
 - **Lucide React**: Icon library
 
 ### **Forms & Validation**
+
 - **React Hook Form**: Form state management
 - **Zod**: Schema validation library
 
 ### **Testing**
-- **Vitest**: Unit testing framework  
+
+- **Vitest**: Unit testing framework
 - **Playwright**: End-to-end testing
 - **@testing-library/react**: Component testing utilities
 
 ### **Development Tools**
+
 - **ESLint**: Code linting
 - **Prettier**: Code formatting
 - **TypeScript**: Static type checking
 
 ---
 
-*Last Updated: 2025-07-15*
-*Version: 1.0*
-*Maintainer: Development Team*
+_Last Updated: 2025-07-15_
+_Version: 1.0_
+_Maintainer: Development Team_
