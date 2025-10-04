@@ -18,7 +18,7 @@ interface AuthContextType {
     role: 'client' | 'coach';
     phone?: string;
     language: 'en' | 'he';
-  }) => Promise<{ user: AuthUser | null; error: string | null }>;
+  }) => Promise<{ user: AuthUser | null; error: string | null; sessionActive: boolean }>;
   signOut: () => Promise<{ error: string | null }>;
   updateProfile: (updates: Partial<AuthUser>) => Promise<{ user: AuthUser | null; error: string | null }>;
 }

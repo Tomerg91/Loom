@@ -118,7 +118,7 @@ export const POST = withErrorHandling(
 
       // Create auth service and attempt signup
       const authService = await createAuthService(true);
-      const { user, error } = await authService.signUp(signupData);
+      const { user, error, sessionActive } = await authService.signUp(signupData);
 
       if (error) {
         // Log failed signup for security monitoring
@@ -175,6 +175,7 @@ export const POST = withErrorHandling(
           language: user.language,
           status: user.status
         },
+        sessionActive,
         message: 'Account created successfully. Please check your email for verification.'
       }, 'User account created successfully', HTTP_STATUS.CREATED);
 

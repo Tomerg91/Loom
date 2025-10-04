@@ -42,12 +42,21 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
         return;
       }
 
+      const safeRedirectTo = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+
       // Check if MFA is required
       if (result.user?.mfaEnabled) {
-        router.push(`/${locale}/auth/mfa-verify?redirectTo=${encodeURIComponent(redirectTo)}`);
+        const query = new URLSearchParams({
+          userId: result.user.id,
+          redirectTo: safeRedirectTo,
+        });
+        router.push(`/${locale}/auth/mfa-verify?${query.toString()}`);
       } else {
         // Auth state is now updated, safe to redirect
-        router.push(`/${locale}${redirectTo}`);
+        const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
+          ? safeRedirectTo
+          : `/${locale}${safeRedirectTo}`;
+        router.push(finalRedirectTo);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('signin.error'));
