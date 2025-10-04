@@ -1,4 +1,3 @@
-import { createServerClient } from '@/lib/supabase/server';
 import { supabase as clientSupabase } from '@/lib/supabase/client';
 import { createUserService } from '@/lib/database';
 import { NextRequest } from 'next/server';
@@ -108,19 +107,32 @@ export interface MfaSetupData {
 }
 
 export class MfaService {
-  private supabase: ReturnType<typeof createServerClient> | typeof clientSupabase;
+  private supabase: any;
   private userService: ReturnType<typeof createUserService>;
+  private isServer: boolean;
 
   constructor(isServer = true) {
     // Validate environment only during actual runtime operations
     validateMfaEnvironment();
-    
-    this.supabase = isServer ? createServerClient() : clientSupabase;
+
+    this.isServer = isServer;
+    if (isServer) {
+      // Lazy import to avoid server-only code in client bundles
+      const { createServerClient } = require('@/lib/supabase/server');
+      this.supabase = createServerClient();
+    } else {
+      this.supabase = clientSupabase;
+    }
     this.userService = createUserService(isServer);
   }
 
   // Helper to use the correct Supabase client in both server and client contexts
   private supbaseOrServer() {
+    return this.supabase;
+  }
+
+  // Helper to get Supabase client (supports both server and client contexts)
+  private getSupabaseClient() {
     return this.supabase;
   }
 
@@ -190,7 +202,7 @@ export class MfaService {
       // Get user email from database using the userId
       let userEmail: string;
       try {
-        const supabase = await createServerClient();
+        const supabase = this.getSupabaseClient();
         const { data: userProfile, error: profileError } = await supabase
           .from('users')
           .select('email')
@@ -432,7 +444,7 @@ export class MfaService {
         };
       }
 
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       
       // Fetch user's backup codes from database
       const { data: backupCodes, error: fetchError } = await supabase
@@ -517,7 +529,7 @@ export class MfaService {
         crypto.createHash('sha256').update(code).digest('hex')
       );
       
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       
       // Save hashed backup codes to database and reset used codes
       const { error: updateError } = await supabase
@@ -570,7 +582,7 @@ export class MfaService {
       };
 
       // Save trusted device to database
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       const { error: saveError } = await supabase
         .from('user_trusted_devices')
         .insert({
@@ -615,7 +627,7 @@ export class MfaService {
   async removeTrustedDevice(userId: string, deviceId: string): Promise<{ success: boolean; error: string | null }> {
     try {
       // Remove trusted device from database
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       const { error: deleteError } = await supabase
         .from('user_trusted_devices')
         .delete()
@@ -642,7 +654,7 @@ export class MfaService {
   async isDeviceTrusted(userId: string, deviceFingerprint: string): Promise<boolean> {
     try {
       // Check if device is trusted by querying database
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       const { data: device, error: fetchError } = await supabase
         .from('user_trusted_devices')
         .select('id')
@@ -680,7 +692,7 @@ export class MfaService {
         return { devices: [], error: 'User ID is required' };
       }
 
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       
       // Fetch trusted devices from database
       const { data: devices, error: fetchError } = await supabase
@@ -726,7 +738,7 @@ export class MfaService {
         return { events: [], error: 'User ID is required' };
       }
 
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       
       // Fetch security events from database
       const { data: events, error: fetchError } = await supabase
@@ -773,7 +785,7 @@ export class MfaService {
         return;
       }
 
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       
       // Insert security event into database
       const { error: insertError } = await supabase
@@ -898,7 +910,7 @@ export class MfaService {
         throw new Error('User ID is required');
       }
 
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       
       // Fetch MFA settings from database
       const { data: mfaData, error: fetchError } = await supabase
@@ -1007,7 +1019,7 @@ export class MfaService {
         return { success: false, error: 'User ID and verification code are required' };
       }
 
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       
       // Get user's MFA secret from database
       const { data: mfaData, error: fetchError } = await supabase
@@ -1074,7 +1086,7 @@ export class MfaService {
         return { success: false, error: 'User ID and verification code are required' };
       }
 
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       
       // Get user's MFA secret from database first
       const { data: mfaData, error: fetchError } = await supabase
@@ -1138,7 +1150,7 @@ export class MfaService {
     try {
       if (method === 'totp') {
         // Get user's MFA secret from database
-        const supabase = await createServerClient();
+        const supabase = this.getSupabaseClient();
         const { data: mfaData, error: fetchError } = await supabase
           .from('user_mfa')
           .select('secret, is_enabled')
@@ -1181,7 +1193,7 @@ export class MfaService {
         return { session: null, error: 'Invalid session token format' };
       }
 
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       const { data: session, error } = await supabase
         .from('mfa_sessions')
         .select('user_id, mfa_verified, expires_at')
@@ -1223,7 +1235,7 @@ export class MfaService {
       const expiresAt = new Date(Date.now() + (temporary ? 10 * 60 * 1000 : 60 * 60 * 1000)).toISOString();
       
       // Store session in database
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       const { error: insertError } = await supabase
         .from('mfa_sessions')
         .insert({
@@ -1274,7 +1286,7 @@ export class MfaService {
       }
 
       // Update session in database to mark MFA as verified
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       const { data: session, error: fetchError } = await supabase
         .from('mfa_sessions')
         .select('expires_at')
@@ -1360,7 +1372,7 @@ export class MfaService {
         return { success: false, error: 'User ID and verification code are required' };
       }
 
-      const supabase = await createServerClient();
+      const supabase = this.getSupabaseClient();
       
       // Get user's MFA secret from database first
       const { data: mfaData, error: fetchError } = await supabase

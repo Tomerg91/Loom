@@ -1,5 +1,3 @@
-import { createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@/lib/supabase/client';
 
 export interface PushSubscription {
   id: string;
@@ -44,7 +42,13 @@ export class PushNotificationService {
   private config: WebPushConfig | null = null;
 
   constructor(isServer = true) {
-    this.supabase = isServer ? createServerClient() : createClient();
+    if (isServer) {
+      const { createServerClient } = require('@/lib/supabase/server');
+      this.supabase = createServerClient();
+    } else {
+      const { createClient } = require('@/lib/supabase/client');
+      this.supabase = createClient();
+    }
     this.initializeConfig();
   }
 

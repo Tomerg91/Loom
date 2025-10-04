@@ -1,5 +1,3 @@
-import { createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@/lib/supabase/client';
 import type { NotificationType } from '@/types';
 
 export interface EmailNotificationPayload {
@@ -44,7 +42,13 @@ export class EmailNotificationService {
   private config: EmailProviderConfig | null = null;
 
   constructor(isServer = true) {
-    this.supabase = isServer ? createServerClient() : createClient();
+    if (isServer) {
+      const { createServerClient } = require('@/lib/supabase/server');
+      this.supabase = createServerClient();
+    } else {
+      const { createClient } = require('@/lib/supabase/client');
+      this.supabase = createClient();
+    }
     this.initializeConfig();
   }
 
