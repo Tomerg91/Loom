@@ -639,7 +639,15 @@
       "title": "Sign Up",
       "description": "Create your account to get started",
       "button": "Create Account",
-      "link": "Sign up here"
+      "link": "Sign up here",
+      "success": {
+        "title": "Check your email",
+        "subtitle": "We've sent a verification link to {email}.",
+        "description": "Open the message and click the verification link to activate your account. Once your email is confirmed you can sign in and start using Loom.",
+        "spamHint": "If you don't see the email within a few minutes, check your spam or promotions folders.",
+        "cta": "Return to sign in",
+        "openEmailApp": "Open email app"
+      }
     },
     "mfa": {
       "verify": {

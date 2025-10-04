@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, MailCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -64,12 +64,16 @@ export function SignupForm({}: SignupFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [successEmail, setSuccessEmail] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -108,23 +112,31 @@ export function SignupForm({}: SignupFormProps) {
 
       const result = await response.json();
 
-      if (!response.ok) {
-        setError(result.error || 'An unexpected error occurred');
+      if (!response.ok || !result.success) {
+        setError(result.error || result?.message || 'An unexpected error occurred');
         return;
       }
 
-      // Success - redirect based on role
-      // Note: User needs to verify email before accessing the dashboard
-      if (data.role === 'coach') {
-        // Coaches go to onboarding wizard
-        const onboardingPath = `/${locale}/onboarding/coach`;
-        router.push(onboardingPath);
-      } else {
-        // Clients go to email verification
-        const verifyEmailPath = `/${locale}/auth/verify-email?email=${encodeURIComponent(data.email)}`;
-        router.push(verifyEmailPath);
+      const responseData = result.data ?? {};
+      const sessionActive = Boolean(responseData.sessionActive);
+      const apiMessage = responseData.message ?? result.message;
+      const emailForMessage = (responseData.user?.email as string | undefined) || data.email;
+
+      if (sessionActive) {
+        const safeRedirectTo =
+          redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+        const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
+          ? safeRedirectTo
+          : `/${locale}${safeRedirectTo}`;
+        router.push(finalRedirectTo);
+        router.refresh();
+        return;
       }
-      router.refresh();
+
+      reset();
+      setIsSuccess(true);
+      setSuccessEmail(emailForMessage);
+      setSuccessMessage(apiMessage ?? null);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'An unexpected error occurred'
@@ -133,6 +145,48 @@ export function SignupForm({}: SignupFormProps) {
       setIsLoading(false);
     }
   };
+
+  if (isSuccess) {
+    return (
+      <Card className="w-full max-w-lg mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
+        <CardHeader className="space-y-4 text-center px-8 pt-10 pb-6">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-700">
+            <MailCheck className="h-7 w-7" aria-hidden="true" />
+          </div>
+          <CardTitle className="text-3xl font-light text-neutral-900">
+            {t('signup.success.title')}
+          </CardTitle>
+          <CardDescription className="text-base font-light text-neutral-600">
+            {successMessage
+              ? successMessage
+              : t('signup.success.subtitle', { email: successEmail })}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 px-8 text-left">
+          <p className="text-sm font-light text-neutral-600">
+            {t('signup.success.description', { email: successEmail })}
+          </p>
+          <p className="text-sm font-light text-neutral-600">
+            {t('signup.success.spamHint')}
+          </p>
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-4 px-8 pb-10">
+          <Button asChild variant="default" size="lg" className="w-full">
+            <Link href="/auth/signin">{t('signup.success.cta')}</Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            size="lg"
+            className="w-full"
+            data-testid="open-email-app"
+          >
+            <a href="mailto:">{t('signup.success.openEmailApp')}</a>
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-lg mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">

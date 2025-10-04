@@ -112,7 +112,10 @@ export function RouteGuard({
   // Show loading state with skeleton to reduce LCP
   if (isLoading && showLoading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div
+        className="min-h-screen bg-background flex flex-col"
+        data-testid="route-guard-loading"
+      >
         <div className="h-16 bg-card border-b flex items-center px-4">
           <div className="h-8 w-32 bg-muted rounded animate-pulse" />
           <div className="ml-auto flex items-center space-x-4">
