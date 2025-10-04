@@ -1,11 +1,24 @@
+/* eslint-disable import/no-extraneous-dependencies */
+import {
+  QueryClient,
+  QueryClientProvider,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import { render, type RenderOptions } from '@testing-library/react';
-import { QueryClient, QueryClientProvider, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import { ReactElement, ReactNode } from 'react';
 import { vi } from 'vitest';
+
 import en from '@/messages/en.json';
 import { User } from '@/types';
-import { mockUseQuery, mockUseMutation, mockUseQueryClient, mockQueryClient } from './setup';
+
+import {
+  mockUseQuery,
+  mockUseMutation,
+  mockUseQueryClient,
+  mockQueryClient,
+} from './setup';
 
 // Re-export the mock functions from setup so tests can import them
 export { mockUseQuery, mockUseMutation, mockUseQueryClient, mockQueryClient };
@@ -52,6 +65,7 @@ export const mockAuthStore = {
 };
 
 // Mock Supabase client
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const mockSupabaseClient: any = {
   auth: {
     getUser: vi.fn().mockResolvedValue({
@@ -228,11 +242,11 @@ export const createMockReflection = (overrides = {}) => ({
 
 // Utility functions for creating mock hook return values
 export const createMockQueryResult = <TData = unknown, TError = unknown>(
-  data: TData, 
-  options: Partial<{ 
-    isLoading: boolean; 
-    isError: boolean; 
-    error: TError | null; 
+  data: TData,
+  options: Partial<{
+    isLoading: boolean;
+    isError: boolean;
+    error: TError | null;
     isPending: boolean;
     isSuccess: boolean;
   }> = {}
@@ -240,10 +254,12 @@ export const createMockQueryResult = <TData = unknown, TError = unknown>(
   const isError = options.isError ?? false;
   const isPending = options.isPending ?? options.isLoading ?? false;
   const isSuccess = options.isSuccess ?? (!isError && !isPending);
-  
+
   return {
     data: isSuccess ? data : undefined,
-    error: isError ? (options.error ?? new Error('Mock error') as TError) : null,
+    error: isError
+      ? (options.error ?? (new Error('Mock error') as TError))
+      : null,
     isError,
     isLoading: isPending, // For backward compatibility
     isPending,
@@ -260,25 +276,32 @@ export const createMockQueryResult = <TData = unknown, TError = unknown>(
     isStale: false,
     isPlaceholderData: false,
     failureCount: isError ? 1 : 0,
-    failureReason: isError ? (options.error ?? new Error('Mock error') as TError) : null,
+    failureReason: isError
+      ? (options.error ?? (new Error('Mock error') as TError))
+      : null,
     errorUpdateCount: isError ? 1 : 0,
     dataUpdatedAt: isSuccess ? Date.now() : 0,
     errorUpdatedAt: isError ? Date.now() : 0,
-    refetch: vi.fn().mockResolvedValue({ data, error: null, isError: false, isSuccess: true }),
-    promise: Promise.resolve({ data, error: null, isError: false, isSuccess: true }),
+    refetch: vi.fn().mockResolvedValue({} as UseQueryResult<TData, TError>),
+    promise: Promise.resolve(data as TData),
     isInitialLoading: isPending,
     isEnabled: true,
-  } as UseQueryResult<TData, TError>;
+  } as unknown as UseQueryResult<TData, TError>;
 };
 
-export const createMockMutationResult = <TData = unknown, TError = unknown, TVariables = unknown, TContext = unknown>(
-  data: TData | null = null, 
-  options: Partial<{ 
-    mutate: ReturnType<typeof vi.fn>; 
-    isPending: boolean; 
-    isError: boolean; 
-    error: TError | null; 
-    isSuccess: boolean; 
+export const createMockMutationResult = <
+  TData = unknown,
+  TError = unknown,
+  TVariables = unknown,
+  TContext = unknown,
+>(
+  data: TData | null = null,
+  options: Partial<{
+    mutate: ReturnType<typeof vi.fn>;
+    isPending: boolean;
+    isError: boolean;
+    error: TError | null;
+    isSuccess: boolean;
     onSuccess?: (data: TData) => void;
   }> = {}
 ): UseMutationResult<TData, TError, TVariables, TContext> => {
@@ -286,20 +309,30 @@ export const createMockMutationResult = <TData = unknown, TError = unknown, TVar
   const isPending = options.isPending ?? false;
   const isSuccess = options.isSuccess ?? false;
   const isIdle = !isPending && !isSuccess && !isError;
-  
+
   return {
     mutate: options.mutate ?? vi.fn(),
     mutateAsync: vi.fn().mockResolvedValue(data),
     data: isSuccess ? data : undefined,
-    error: isError ? (options.error ?? new Error('Mock mutation error') as TError) : null,
+    error: isError
+      ? (options.error ?? (new Error('Mock mutation error') as TError))
+      : null,
     isError,
     isPending,
     isSuccess,
     isIdle,
-    status: isError ? 'error' : isPending ? 'pending' : isSuccess ? 'success' : 'idle',
+    status: isError
+      ? 'error'
+      : isPending
+        ? 'pending'
+        : isSuccess
+          ? 'success'
+          : 'idle',
     variables: undefined,
     failureCount: isError ? 1 : 0,
-    failureReason: isError ? (options.error ?? new Error('Mock mutation error') as TError) : null,
+    failureReason: isError
+      ? (options.error ?? (new Error('Mock mutation error') as TError))
+      : null,
     reset: vi.fn(),
     submittedAt: isSuccess || isError ? Date.now() : 0,
     context: undefined as TContext | undefined,
@@ -308,7 +341,8 @@ export const createMockMutationResult = <TData = unknown, TError = unknown, TVar
 };
 
 // Wait for async operations
-export const waitForNextTick = () => new Promise(resolve => setTimeout(resolve, 0));
+export const waitForNextTick = () =>
+  new Promise(resolve => setTimeout(resolve, 0));
 
 // Mock window methods
 export const mockWindowMethods = () => {
