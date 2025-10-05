@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loom-app | פלטפורמת Satya</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui']
+          },
+          colors: {
+            primary: '#6B46C1',
+            secondary: '#E9D8FD'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-slate-900">
+  <!-- Header / Navigation Bar -->
+  <header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
+    <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+      <div class="flex items-center space-x-3 space-x-reverse">
+        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M12 3v18" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <span class="text-xl font-bold tracking-tight text-slate-900">Loom-app</span>
+      </div>
+      <div class="hidden items-center space-x-8 space-x-reverse text-sm font-medium text-slate-700 lg:flex">
+        <a href="#platform" class="transition hover:text-primary">הפלטפורמה</a>
+        <a href="#solutions" class="transition hover:text-primary">פתרונות</a>
+        <a href="#pricing" class="transition hover:text-primary">תמחור</a>
+        <a href="#about" class="transition hover:text-primary">אודות</a>
+      </div>
+      <div class="flex items-center space-x-3 space-x-reverse">
+        <a href="#" class="text-sm font-medium text-slate-600 transition hover:text-primary">English</a>
+        <a href="#contact" class="hidden rounded-full border border-primary/60 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 sm:inline-flex">צרו קשר</a>
+        <a href="#cta" class="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90">התנסות חינם</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden bg-white">
+      <div class="absolute inset-y-0 left-1/2 -z-10 hidden w-full max-w-2xl -translate-x-1/2 rounded-full bg-primary/10 blur-3xl lg:block"></div>
+      <div class="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:py-24 lg:px-8">
+        <div class="order-2 space-y-6 lg:order-1">
+          <span class="inline-flex items-center rounded-full bg-secondary px-4 py-1 text-sm font-semibold text-primary">חדש למטפלי שיטת סאטיה</span>
+          <h1 class="text-4xl font-extrabold leading-tight text-slate-900 lg:text-6xl">פלטפורמת הכל-באחד למטפלי שיטת סאטיה</h1>
+          <p class="text-lg text-slate-600">Loom-app מפשטת את ניהול המטופלים, תזמון הפגישות והמעקב אחר ההתקדמות, כדי שתוכלו להתמקד במה שחשוב באמת - הטיפול.</p>
+          <div class="flex flex-col gap-3 sm:flex-row sm:justify-start">
+            <a href="#cta" class="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-base font-semibold text-white shadow transition hover:bg-primary/90">התנסות חינם</a>
+            <a href="#demo" class="inline-flex items-center justify-center rounded-full border border-primary/40 px-6 py-3 text-base font-semibold text-primary transition hover:border-primary hover:bg-primary/5">צפו בהדגמה</a>
+          </div>
+        </div>
+        <div class="order-1 flex justify-center lg:order-2">
+          <img src="https://placehold.co/640x480?text=Loom-app" alt="תצוגת מסך של Loom-app" class="w-full max-w-xl rounded-3xl border border-slate-200 shadow-xl" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Social Proof / Logo Cloud Section -->
+    <section class="border-y border-slate-200 bg-gray-50" id="platform">
+      <div class="mx-auto flex max-w-6xl flex-col items-center gap-8 px-4 py-12 text-center sm:px-6 lg:px-8">
+        <h2 class="text-base font-semibold text-slate-500">בשימוש על ידי מטפלים ומרכזים מובילים</h2>
+        <div class="flex w-full flex-wrap items-center justify-center gap-x-12 gap-y-8 grayscale">
+          <img src="https://placehold.co/140x40?text=Logo+1" alt="לוגו 1" class="h-10 object-contain opacity-70" />
+          <img src="https://placehold.co/140x40?text=Logo+2" alt="לוגו 2" class="h-10 object-contain opacity-70" />
+          <img src="https://placehold.co/140x40?text=Logo+3" alt="לוגו 3" class="h-10 object-contain opacity-70" />
+          <img src="https://placehold.co/140x40?text=Logo+4" alt="לוגו 4" class="h-10 object-contain opacity-70" />
+          <img src="https://placehold.co/140x40?text=Logo+5" alt="לוגו 5" class="h-10 object-contain opacity-70" />
+          <img src="https://placehold.co/140x40?text=Logo+6" alt="לוגו 6" class="h-10 object-contain opacity-70" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="bg-white" id="solutions">
+      <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-3xl text-center">
+          <h2 class="text-3xl font-bold text-slate-900 sm:text-4xl">פלטפורמה אחת, אינסוף אפשרויות.</h2>
+          <p class="mt-4 text-lg text-slate-600">התאימו את Loom-app לצרכים של הקליניקה שלכם עם כלים מתקדמים וחוויית משתמש ידידותית.</p>
+        </div>
+        <div class="mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+            <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a4.5 4.5 0 014.5 4.5v2.25l1.5 3H6l1.5-3V11.25a4.5 4.5 0 014.5-4.5z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 18.75h6" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-slate-900">ניהול מטופלים מרכזי</h3>
+            <p class="mt-3 text-base text-slate-600">נהלו את כל המידע על המטופלים שלכם במקום אחד מאובטח ונוח.</p>
+          </div>
+          <div class="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+            <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h10.5M8.25 12h10.5m-10.5 5.25h10.5M4.5 6.75h.008v.008H4.5zM4.5 12h.008v.008H4.5zM4.5 17.25h.008v.008H4.5z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-slate-900">תיאום פגישות חכם</h3>
+            <p class="mt-3 text-base text-slate-600">מערכת זימון תורים אינטואיטיבית החוסכת לכם זמן ומונעת טעויות.</p>
+          </div>
+          <div class="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+            <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 15.75L11.25 12l3 3 4.5-4.5" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-slate-900">מעקב התקדמות ויזואלי</h3>
+            <p class="mt-3 text-base text-slate-600">הציגו למטופלים את ההתקדמות שלהם בעזרת כלים וגרפים ויזואליים.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Customer Testimonial Section -->
+    <section class="bg-gray-50" id="about">
+      <div class="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8">
+        <div class="flex justify-center lg:order-2">
+          <img src="https://placehold.co/400x400?text=מטפל/ת" alt="תמונה של מטפל/ת" class="h-64 w-64 rounded-full border-4 border-white object-cover shadow-xl sm:h-72 sm:w-72" />
+        </div>
+        <div class="space-y-6 lg:order-1">
+          <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M7.5 4.5h3l-3 6h3v9h-6v-7.5zm9 0h3l-3 6h3v9h-6v-7.5z" />
+            </svg>
+          </div>
+          <p class="text-2xl font-semibold leading-relaxed text-slate-800">"Loom-app שינה את הדרך בה אני מנהלת את הקליניקה שלי. הכל כל כך מאורגן וקל לשימוש, וזה חוסך לי שעות כל שבוע."</p>
+          <p class="text-lg font-medium text-slate-600">שם המטפל/ת, קליניקה פרטית</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final Call-to-Action Section -->
+    <section class="bg-gradient-to-l from-primary via-primary/90 to-primary/80" id="cta">
+      <div class="mx-auto max-w-4xl px-4 py-20 text-center text-white sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold sm:text-4xl">מוכנים להתחיל?</h2>
+        <p class="mt-4 text-lg text-white/80">הצטרפו למאמנים שכבר עובדים בצורה חכמה ויעילה יותר.</p>
+        <a href="#" class="mt-8 inline-flex items-center justify-center rounded-full bg-white px-8 py-3 text-base font-semibold text-primary shadow-lg transition hover:bg-secondary">התנסות חינם</a>
+      </div>
+    </section>
+    <!-- Pricing Placeholder Section -->
+    <section class="bg-white" id="pricing">
+      <div class="mx-auto max-w-5xl px-4 py-16 text-center sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-slate-900">תמחור פשוט ושקוף</h2>
+        <p class="mt-4 text-lg text-slate-600">בחרו את המסלול המתאים לצרכים שלכם והתחילו לעבוד עם כל הכלים של Loom-app כבר היום.</p>
+        <div class="mt-12 grid gap-8 md:grid-cols-3">
+          <div class="rounded-3xl border border-slate-200 bg-gray-50 p-8 shadow-sm">
+            <h3 class="text-xl font-semibold text-slate-900">מסלול בסיס</h3>
+            <p class="mt-2 text-sm text-slate-500">מתאים למטפלים בתחילת הדרך</p>
+            <p class="mt-6 text-3xl font-bold text-primary">₪99<span class="text-base font-medium text-slate-500">/חודש</span></p>
+            <ul class="mt-6 space-y-3 text-sm text-slate-600">
+              <li>ניהול מטופלים עד 50</li>
+              <li>יומן פגישות חכם</li>
+              <li>תמיכה במייל</li>
+            </ul>
+            <a href="#" class="mt-8 inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">בחרו מסלול</a>
+          </div>
+          <div class="rounded-3xl border-2 border-primary bg-white p-8 shadow-xl">
+            <h3 class="text-xl font-semibold text-slate-900">מסלול מקצועי</h3>
+            <p class="mt-2 text-sm text-slate-500">הבחירה הפופולרית ביותר</p>
+            <p class="mt-6 text-3xl font-bold text-primary">₪189<span class="text-base font-medium text-slate-500">/חודש</span></p>
+            <ul class="mt-6 space-y-3 text-sm text-slate-600">
+              <li>מטופלים ללא הגבלה</li>
+              <li>דוחות ומעקב התקדמות</li>
+              <li>תמיכה בצ'אט</li>
+            </ul>
+            <a href="#" class="mt-8 inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">בחרו מסלול</a>
+          </div>
+          <div class="rounded-3xl border border-slate-200 bg-gray-50 p-8 shadow-sm">
+            <h3 class="text-xl font-semibold text-slate-900">מסלול ארגונים</h3>
+            <p class="mt-2 text-sm text-slate-500">למרכזים וצוותים גדולים</p>
+            <p class="mt-6 text-3xl font-bold text-primary">דברו איתנו</p>
+            <ul class="mt-6 space-y-3 text-sm text-slate-600">
+              <li>הטמעה מותאמת אישית</li>
+              <li>ניהול הרשאות מתקדם</li>
+              <li>מנהל קשרי לקוחות ייעודי</li>
+            </ul>
+            <a href="#" class="mt-8 inline-flex w-full items-center justify-center rounded-full border border-primary px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/5">תיאום שיחה</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-200" id="contact">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+        <div>
+          <h3 class="text-sm font-semibold uppercase tracking-wide text-secondary">הפלטפורמה</h3>
+          <ul class="mt-4 space-y-3 text-sm">
+            <li><a href="#" class="transition hover:text-white">סקירה כללית</a></li>
+            <li><a href="#" class="transition hover:text-white">תכונות</a></li>
+            <li><a href="#" class="transition hover:text-white">הדגמות</a></li>
+            <li><a href="#" class="transition hover:text-white">לוח חידושים</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold uppercase tracking-wide text-secondary">פתרונות</h3>
+          <ul class="mt-4 space-y-3 text-sm">
+            <li><a href="#" class="transition hover:text-white">למרכזים טיפוליים</a></li>
+            <li><a href="#" class="transition hover:text-white">לקבוצות</a></li>
+            <li><a href="#" class="transition hover:text-white">למטפלים עצמאיים</a></li>
+            <li><a href="#" class="transition hover:text-white">לארגונים</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold uppercase tracking-wide text-secondary">חברה</h3>
+          <ul class="mt-4 space-y-3 text-sm">
+            <li><a href="#" class="transition hover:text-white">אודותינו</a></li>
+            <li><a href="#" class="transition hover:text-white">קריירה</a></li>
+            <li><a href="#" class="transition hover:text-white">בלוג</a></li>
+            <li><a href="#" class="transition hover:text-white">חדשות</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold uppercase tracking-wide text-secondary">משאבים</h3>
+          <ul class="mt-4 space-y-3 text-sm">
+            <li><a href="#" class="transition hover:text-white">מרכז עזרה</a></li>
+            <li><a href="#" class="transition hover:text-white">קהילה</a></li>
+            <li><a href="#" class="transition hover:text-white">מדריכים</a></li>
+            <li><a href="#" class="transition hover:text-white">הדרכות</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold uppercase tracking-wide text-secondary">צרו קשר</h3>
+          <ul class="mt-4 space-y-3 text-sm">
+            <li><a href="mailto:info@loom-app.com" class="transition hover:text-white">info@loom-app.com</a></li>
+            <li><a href="tel:+972-3-555-1234" class="transition hover:text-white">+972-3-555-1234</a></li>
+            <li><a href="#" class="transition hover:text-white">צור קשר</a></li>
+            <li><a href="#" class="transition hover:text-white">תמיכה</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-12 flex flex-col items-center justify-between gap-6 border-t border-slate-700 pt-8 text-sm text-slate-400 sm:flex-row">
+        <p>© <span id="year"></span> Loom-app. כל הזכויות שמורות.</p>
+        <div class="flex items-center gap-4">
+          <a href="#" class="transition hover:text-white" aria-label="Facebook">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M13.5 9H15V6h-1.5C11.57 6 10 7.57 10 9.5V11H8v3h2v7h3v-7h2.25l.75-3H13v-1.5c0-.414.336-.75.75-.75z" />
+            </svg>
+          </a>
+          <a href="#" class="transition hover:text-white" aria-label="LinkedIn">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M4.98 3.5a2.5 2.5 0 110 5 2.5 2.5 0 010-5zM3 8.75h3.95V21H3zm7.03 0H14v1.68h.05c.55-1.04 1.9-2.14 3.92-2.14 4.2 0 4.97 2.76 4.97 6.35V21h-3.95v-5.6c0-1.34-.03-3.07-1.87-3.07-1.87 0-2.16 1.46-2.16 2.97V21H10.03z" />
+            </svg>
+          </a>
+          <a href="#" class="transition hover:text-white" aria-label="Instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 7a5 5 0 105 5 5 5 0 00-5-5zm0 8.2A3.2 3.2 0 1115.2 12 3.2 3.2 0 0112 15.2zm6.4-8.7a1.2 1.2 0 11-1.2-1.2 1.2 1.2 0 011.2 1.2z" />
+              <path d="M12 2.2c-2.6 0-2.92.01-3.94.06S6.41 2.43 5.68 2.7a5.2 5.2 0 00-3 3C2.16 6.43 2 7.24 2.06 8.26S2.2 10.6 2.2 13.2s-.01 2.92.06 3.94.3 1.8.56 2.52a5.2 5.2 0 003 3c.72.27 1.53.5 2.55.56s1.34.06 3.93.06 2.92-.01 3.94-.06 1.8-.29 2.52-.56a5.2 5.2 0 003-3c.27-.72.5-1.53.56-2.55s.06-1.34.06-3.93-.01-2.92-.06-3.94-.29-1.8-.56-2.52a5.2 5.2 0 00-3-3c-.72-.27-1.53-.5-2.55-.56S14.6 2.2 12 2.2zm0 1.8c2.56 0 2.87 0 3.88.06s1.54.28 1.9.47a3.39 3.39 0 011.94 1.94c.19.36.39.91.47 1.9s.06 1.32.06 3.88-.01 2.87-.06 3.88-.28 1.54-.47 1.9a3.39 3.39 0 01-1.94 1.94c-.36.19-.91.39-1.9.47s-1.32.06-3.88.06-2.87 0-3.88-.06-1.54-.28-1.9-.47a3.39 3.39 0 01-1.94-1.94c-.19-.36-.39-.91-.47-1.9s-.06-1.32-.06-3.88.01-2.87.06-3.88.28-1.54.47-1.9a3.39 3.39 0 011.94-1.94c.36-.19.91-.39 1.9-.47S9.44 4 12 4z" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

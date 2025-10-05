@@ -113,7 +113,7 @@ export default async function LocaleLayout({
           <main id="main-content" tabIndex={-1} className="flex-1">
             {children}
           </main>
-          <AppFooter />
+          <AppFooter locale={locale} />
           <PerformanceMonitorComponent />
           <Toaster
             position={locale === 'he' ? 'top-left' : 'top-right'}
