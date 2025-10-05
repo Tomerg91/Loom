@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { StableImage } from '@/components/layout/layout-stabilizer';
 import { 
   ClipboardList,
@@ -53,7 +53,8 @@ export function NavMenu() {
   const user = useUser();
   const pathname = usePathname();
   const locale = useLocale();
-  
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   if (!user) {
     return null;
   }
@@ -120,8 +121,6 @@ export function NavMenu() {
     return user.email;
   };
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-md bg-card/95" id="main-navigation" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -142,66 +141,74 @@ export function NavMenu() {
                 const highlight = item.href === '/onboarding' && onboardingIncomplete;
 
                 return (
-                  <Link key={item.href} href={item.href as '/dashboard'}>
-                    <Button
-                      variant={active ? 'default' : highlight ? 'success' : 'ghost'}
-                      size="sm"
-                      className="flex items-center rtl:space-x-reverse space-x-2"
-                      aria-current={active ? 'page' : undefined}
-                    >
+                  <Button
+                    key={item.href}
+                    asChild
+                    variant={active ? 'default' : highlight ? 'success' : 'ghost'}
+                    size="sm"
+                    className="flex items-center rtl:space-x-reverse space-x-2"
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    <Link href={item.href as '/dashboard'}>
                       <item.icon className="h-4 w-4" aria-hidden="true" />
                       <span>{item.label}</span>
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 );
               })}
 
               {/* Role-specific items */}
               <AdminOnly>
                 {adminItems.map((item) => (
-                  <Link key={item.href} href={item.href as '/dashboard'}>
-                    <Button
-                      variant={isActive(item.href) ? "default" : "ghost"}
-                      size="sm"
-                      className="flex items-center rtl:space-x-reverse space-x-2"
-                      aria-current={isActive(item.href) ? "page" : undefined}
-                    >
+                  <Button
+                    key={item.href}
+                    asChild
+                    variant={isActive(item.href) ? "default" : "ghost"}
+                    size="sm"
+                    className="flex items-center rtl:space-x-reverse space-x-2"
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                  >
+                    <Link href={item.href as '/dashboard'}>
                       <item.icon className="h-4 w-4" aria-hidden="true" />
                       <span>{item.label}</span>
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 ))}
               </AdminOnly>
 
               <CoachOnly>
                 {coachItems.map((item) => (
-                  <Link key={item.href} href={item.href as '/dashboard'}>
-                    <Button
-                      variant={isActive(item.href) ? "default" : "ghost"}
-                      size="sm"
-                      className="flex items-center rtl:space-x-reverse space-x-2"
-                      aria-current={isActive(item.href) ? "page" : undefined}
-                    >
+                  <Button
+                    key={item.href}
+                    asChild
+                    variant={isActive(item.href) ? "default" : "ghost"}
+                    size="sm"
+                    className="flex items-center rtl:space-x-reverse space-x-2"
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                  >
+                    <Link href={item.href as '/dashboard'}>
                       <item.icon className="h-4 w-4" aria-hidden="true" />
                       <span>{item.label}</span>
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 ))}
               </CoachOnly>
 
               <ClientOnly>
                 {clientItems.map((item) => (
-                  <Link key={item.href} href={item.href as '/dashboard'}>
-                    <Button
-                      variant={isActive(item.href) ? "default" : "ghost"}
-                      size="sm"
-                      className="flex items-center rtl:space-x-reverse space-x-2"
-                      aria-current={isActive(item.href) ? "page" : undefined}
-                    >
+                  <Button
+                    key={item.href}
+                    asChild
+                    variant={isActive(item.href) ? "default" : "ghost"}
+                    size="sm"
+                    className="flex items-center rtl:space-x-reverse space-x-2"
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                  >
+                    <Link href={item.href as '/dashboard'}>
                       <item.icon className="h-4 w-4" aria-hidden="true" />
                       <span>{item.label}</span>
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 ))}
               </ClientOnly>
             </div>
@@ -340,17 +347,19 @@ export function NavMenu() {
             const highlight = item.href === '/onboarding' && onboardingIncomplete;
 
             return (
-              <Link key={item.href} href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
-                <Button
-                  variant={active ? 'default' : highlight ? 'success' : 'ghost'}
-                  size="sm"
-                  className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
-                  aria-current={active ? 'page' : undefined}
-                >
+              <Button
+                key={item.href}
+                asChild
+                variant={active ? 'default' : highlight ? 'success' : 'ghost'}
+                size="sm"
+                className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
+                aria-current={active ? 'page' : undefined}
+              >
+                <Link href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
                   <item.icon className="h-5 w-5" aria-hidden="true" />
                   <span>{item.label}</span>
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             );
           })}
 
@@ -361,17 +370,19 @@ export function NavMenu() {
                 {t('admin')}
               </p>
               {adminItems.map((item) => (
-                <Link key={item.href} href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button
-                    variant={isActive(item.href) ? "default" : "ghost"}
-                    size="sm"
-                    className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                  >
+                <Button
+                  key={item.href}
+                  asChild
+                  variant={isActive(item.href) ? "default" : "ghost"}
+                  size="sm"
+                  className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                >
+                  <Link href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
                     <item.icon className="h-5 w-5" aria-hidden="true" />
                     <span>{item.label}</span>
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               ))}
             </div>
           </AdminOnly>
@@ -382,17 +393,19 @@ export function NavMenu() {
                 {t('coach')}
               </p>
               {coachItems.map((item) => (
-                <Link key={item.href} href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button
-                    variant={isActive(item.href) ? "default" : "ghost"}
-                    size="sm"
-                    className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                  >
+                <Button
+                  key={item.href}
+                  asChild
+                  variant={isActive(item.href) ? "default" : "ghost"}
+                  size="sm"
+                  className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                >
+                  <Link href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
                     <item.icon className="h-5 w-5" aria-hidden="true" />
                     <span>{item.label}</span>
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               ))}
             </div>
           </CoachOnly>
@@ -403,17 +416,19 @@ export function NavMenu() {
                 {t('client')}
               </p>
               {clientItems.map((item) => (
-                <Link key={item.href} href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button
-                    variant={isActive(item.href) ? "default" : "ghost"}
-                    size="sm"
-                    className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                  >
+                <Button
+                  key={item.href}
+                  asChild
+                  variant={isActive(item.href) ? "default" : "ghost"}
+                  size="sm"
+                  className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                >
+                  <Link href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
                     <item.icon className="h-5 w-5" aria-hidden="true" />
                     <span>{item.label}</span>
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               ))}
             </div>
           </ClientOnly>
