@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { strongPasswordSchema } from '@/lib/security/password';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,7 +29,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Link } from '@/i18n/routing';
-import { strongPasswordSchema } from '@/lib/security/password';
 import type { Language } from '@/types';
 
 const signupSchema = z
@@ -56,7 +56,7 @@ interface SignupFormProps {
   redirectTo?: string;
 }
 
-export function SignupForm({ redirectTo = '/dashboard' }: SignupFormProps) {
+export function SignupForm({}: SignupFormProps) {
   const t = useTranslations('auth');
   const router = useRouter();
   const locale = useLocale();

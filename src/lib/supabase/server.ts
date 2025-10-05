@@ -1,7 +1,6 @@
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { type NextRequest, type NextResponse } from 'next/server';
-
 import { env } from '@/env';
 
 const PLACEHOLDER_PREFIXES = ['MISSING_', 'INVALID_'] as const;
@@ -27,6 +26,9 @@ export function isSupabaseConfigured() {
 // the concrete `Database` type was causing thousands of false-positive
 // TypeScript errors whenever new tables or RPC functions were referenced. Once
 // the schema types are regenerated we can tighten this back up.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LooseSupabaseClient = ReturnType<typeof createSupabaseServerClient<any>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type LooseSupabaseClient = ReturnType<typeof createSupabaseServerClient<any>>;
 type LooseAdminClient = ReturnType<typeof createSupabaseClient<any>>;
 
@@ -60,13 +62,12 @@ function validateSupabaseEnv({ allowPlaceholders = false } = {}) {
   if (!allowPlaceholders && keyIsPlaceholder) {
     throw new Error('Invalid Supabase anon key configuration: value appears to be a placeholder.');
   }
-
-  if (!urlIsPlaceholder) {
-    try {
-      new URL(NEXT_PUBLIC_SUPABASE_URL);
-    } catch (error) {
-      throw new Error(`Invalid Supabase URL format: ${NEXT_PUBLIC_SUPABASE_URL}`);
-    }
+  
+  // Validate URL is actually a valid URL
+  try {
+    new URL(env.NEXT_PUBLIC_SUPABASE_URL);
+  } catch (_error) {
+    throw new Error(`Invalid Supabase URL format: ${env.NEXT_PUBLIC_SUPABASE_URL}`);
   }
 }
 
@@ -76,9 +77,12 @@ export const createServerClient = () => {
   if (serverClientInstance) {
     return serverClientInstance;
   }
+  
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-  const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY } = env.server;
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
   serverClientInstance = createSupabaseServerClient<any>(
     NEXT_PUBLIC_SUPABASE_URL!,
     NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -96,9 +100,12 @@ export const createServerClient = () => {
 
 export const createServerClientWithRequest = (request: NextRequest, response: NextResponse) => {
   validateSupabaseEnv();
+  
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-  const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY } = env.server;
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
   return createSupabaseServerClient<any>(
     NEXT_PUBLIC_SUPABASE_URL!,
     NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -135,6 +142,7 @@ export const createClient = () => {
 
   const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY } = env.server;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let cookieStore: any | null = null;
   try {
     const { cookies } = require('next/headers');
@@ -156,6 +164,7 @@ export const createClient = () => {
           }
         },
         setAll: (newCookies: SupabaseCookie[]) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mutableStore = cookieStore as unknown as {
             set?: (name: string, value: string, options?: Record<string, unknown>) => void;
           };
@@ -188,7 +197,8 @@ export const createClient = () => {
         setAll: () => {},
       };
 
-  return createSupabaseServerClient<any>(NEXT_PUBLIC_SUPABASE_URL!, NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return createSupabaseServerClient<any>(supabaseUrl, supabaseKey, {
     cookies: cookieAdapter,
   });
 };
@@ -207,7 +217,9 @@ export const createAdminClient = () => {
     throw new Error('Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY');
   }
 
-  adminClientInstance = createSupabaseClient<any>(NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
+  adminClientInstance = createSupabaseClient<any>(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
