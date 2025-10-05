@@ -288,15 +288,19 @@ export function NavMenu() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center rtl:space-x-reverse">
-                    <User className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4" />
-                    <span>{t('profile')}</span>
+                  <Link href="/profile">
+                    <span className="flex items-center rtl:space-x-reverse space-x-2">
+                      <User className="h-4 w-4" aria-hidden="true" />
+                      <span>{t('profile')}</span>
+                    </span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/settings" className="flex items-center rtl:space-x-reverse">
-                    <Settings className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4" />
-                    <span>{t('settings')}</span>
+                  <Link href="/settings">
+                    <span className="flex items-center rtl:space-x-reverse space-x-2">
+                      <Settings className="h-4 w-4" aria-hidden="true" />
+                      <span>{t('settings')}</span>
+                    </span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -356,8 +360,10 @@ export function NavMenu() {
                 aria-current={active ? 'page' : undefined}
               >
                 <Link href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
-                  <item.icon className="h-5 w-5" aria-hidden="true" />
-                  <span>{item.label}</span>
+                  <span className="flex items-center rtl:space-x-reverse space-x-3">
+                    <item.icon className="h-5 w-5" aria-hidden="true" />
+                    <span>{item.label}</span>
+                  </span>
                 </Link>
               </Button>
             );
@@ -379,8 +385,10 @@ export function NavMenu() {
                   aria-current={isActive(item.href) ? "page" : undefined}
                 >
                   <Link href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
-                    <item.icon className="h-5 w-5" aria-hidden="true" />
-                    <span>{item.label}</span>
+                    <span className="flex items-center rtl:space-x-reverse space-x-3">
+                      <item.icon className="h-5 w-5" aria-hidden="true" />
+                      <span>{item.label}</span>
+                    </span>
                   </Link>
                 </Button>
               ))}
@@ -402,8 +410,10 @@ export function NavMenu() {
                   aria-current={isActive(item.href) ? "page" : undefined}
                 >
                   <Link href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
-                    <item.icon className="h-5 w-5" aria-hidden="true" />
-                    <span>{item.label}</span>
+                    <span className="flex items-center rtl:space-x-reverse space-x-3">
+                      <item.icon className="h-5 w-5" aria-hidden="true" />
+                      <span>{item.label}</span>
+                    </span>
                   </Link>
                 </Button>
               ))}
@@ -425,8 +435,10 @@ export function NavMenu() {
                   aria-current={isActive(item.href) ? "page" : undefined}
                 >
                   <Link href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
-                    <item.icon className="h-5 w-5" aria-hidden="true" />
-                    <span>{item.label}</span>
+                    <span className="flex items-center rtl:space-x-reverse space-x-3">
+                      <item.icon className="h-5 w-5" aria-hidden="true" />
+                      <span>{item.label}</span>
+                    </span>
                   </Link>
                 </Button>
               ))}

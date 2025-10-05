@@ -56,26 +56,26 @@ const footerDefaults: Record<SupportedLocale, FooterContent> = {
       {
         title: 'חברה',
         links: [
-          { label: 'אודות', href: '/about' },
-          { label: 'קריירה', href: '/careers' },
-          { label: 'שותפים', href: '/partners' },
-          { label: 'חדשות', href: '/news' }
+          { label: 'אודות', href: '#hero' },
+          { label: 'קריירה', href: '#cta' },
+          { label: 'שותפים', href: '#platform' },
+          { label: 'חדשות', href: '#testimonial' }
         ]
       },
       {
         title: 'משאבים',
         links: [
-          { label: 'מרכז הדרכה', href: '/resources' },
-          { label: 'ספריית ידע', href: '/resources/library' },
-          { label: 'וובינרים', href: '/resources/webinars' },
-          { label: 'קהילה', href: '/community' }
+          { label: 'מרכז הדרכה', href: '#features' },
+          { label: 'ספריית ידע', href: '#platform' },
+          { label: 'וובינרים', href: '#testimonial' },
+          { label: 'קהילה', href: '#cta' }
         ]
       },
       {
         title: 'צרו קשר',
         links: [
-          { label: 'תמיכה', href: '/support' },
-          { label: 'שאלות נפוצות', href: '/faq' },
+          { label: 'תמיכה', href: 'mailto:support@loom.app' },
+          { label: 'שאלות נפוצות', href: '#cta' },
           { label: 'דברו איתנו', href: 'mailto:hello@loom.app' },
           { label: 'מדיניות פרטיות', href: '/privacy' }
         ]
@@ -116,26 +116,26 @@ const footerDefaults: Record<SupportedLocale, FooterContent> = {
       {
         title: 'Company',
         links: [
-          { label: 'About', href: '/about' },
-          { label: 'Careers', href: '/careers' },
-          { label: 'Partners', href: '/partners' },
-          { label: 'Press', href: '/news' }
+          { label: 'About', href: '#hero' },
+          { label: 'Careers', href: '#cta' },
+          { label: 'Partners', href: '#platform' },
+          { label: 'Press', href: '#testimonial' }
         ]
       },
       {
         title: 'Resources',
         links: [
-          { label: 'Learning center', href: '/resources' },
-          { label: 'Knowledge base', href: '/resources/library' },
-          { label: 'Webinars', href: '/resources/webinars' },
-          { label: 'Community', href: '/community' }
+          { label: 'Learning center', href: '#features' },
+          { label: 'Knowledge base', href: '#platform' },
+          { label: 'Webinars', href: '#testimonial' },
+          { label: 'Community', href: '#cta' }
         ]
       },
       {
         title: 'Contact',
         links: [
-          { label: 'Support', href: '/support' },
-          { label: 'FAQ', href: '/faq' },
+          { label: 'Support', href: 'mailto:support@loom.app' },
+          { label: 'FAQ', href: '#cta' },
           { label: 'Talk with us', href: 'mailto:hello@loom.app' },
           { label: 'Privacy', href: '/privacy' }
         ]
