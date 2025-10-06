@@ -58,8 +58,9 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('signin.error'));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
