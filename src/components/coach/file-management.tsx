@@ -9,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FileSharingDialog } from '@/components/files/file-sharing-dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/toast-provider';
 import { 
   FileIcon, 
   FolderIcon, 
@@ -58,7 +61,8 @@ interface CoachFileManagementProps {
 
 export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFileManagementProps) {
   const t = useTranslations('files');
-  
+  const { success: showSuccess, error: showError } = useToast();
+
   // State management
   const [files, setFiles] = useState<FileItem[]>([]);
   const [clients, setClients] = useState<User[]>([]);
@@ -70,6 +74,14 @@ export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFil
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [isBulkShareOpen, setIsBulkShareOpen] = useState(false);
+  const [bulkShareSelectedClients, setBulkShareSelectedClients] = useState<string[]>([]);
+  const [bulkSharePermission, setBulkSharePermission] = useState<'view' | 'download' | 'edit'>('view');
+  const [bulkShareExpiresAt, setBulkShareExpiresAt] = useState('');
+  const [bulkShareMessage, setBulkShareMessage] = useState('');
+  const [bulkShareLoading, setBulkShareLoading] = useState(false);
+  const [bulkShareError, setBulkShareError] = useState('');
+  const [bulkShareSearch, setBulkShareSearch] = useState('');
 
   // Load files and clients data
   useEffect(() => {
@@ -77,17 +89,44 @@ export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFil
     loadClients();
   }, [userId, sortBy, sortOrder]);
 
+  const resetBulkShareState = () => {
+    setBulkShareSelectedClients([]);
+    setBulkSharePermission('view');
+    setBulkShareExpiresAt('');
+    setBulkShareMessage('');
+    setBulkShareError('');
+    setBulkShareSearch('');
+    setBulkShareLoading(false);
+  };
+
   const loadFiles = async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/files?userId=${userId}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
-      
+      const data = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        throw new Error('Failed to load files');
+        throw new Error(data?.error || 'Failed to load files');
       }
-      
-      const data = await response.json();
-      setFiles(data.files || []);
+
+      const filesPayload = data?.data?.files ?? data.files ?? [];
+      const normalizedFiles: FileItem[] = filesPayload.map((file: any) => ({
+        id: file.id,
+        filename: file.filename,
+        originalFilename: file.originalFilename || file.original_filename || file.filename,
+        fileType: file.fileType || file.file_type || 'application/octet-stream',
+        fileSize: file.fileSize ?? file.file_size ?? 0,
+        category: (file.category || file.fileCategory || 'document') as FileItem['category'],
+        description: file.description || undefined,
+        tags: Array.isArray(file.tags) ? file.tags : [],
+        isShared: file.isShared ?? file.is_shared ?? false,
+        downloadCount: file.downloadCount ?? file.download_count ?? 0,
+        createdAt: file.createdAt || file.created_at || new Date().toISOString(),
+        updatedAt: file.updatedAt || file.updated_at || new Date().toISOString(),
+        shareCount: file.shareCount ?? file.share_count,
+      }));
+      setFiles(normalizedFiles);
+      setError('');
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to load files');
     } finally {
@@ -99,15 +138,45 @@ export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFil
     try {
       // Load coach's clients based on session relationships
       const response = await fetch('/api/coach/clients');
-      
+      const data = await response.json().catch(() => ({}));
+
       if (response.ok) {
-        const data = await response.json();
-        setClients(data.clients || []);
+        const clientsPayload = data?.data ?? data.clients ?? [];
+        const normalizedClients: User[] = clientsPayload.map((client: any) => {
+          const firstName = client.firstName ?? client.first_name ?? '';
+          const lastName = client.lastName ?? client.last_name ?? '';
+          const fullName = `${firstName} ${lastName}`.trim();
+
+          return {
+            id: client.id,
+            name: fullName || client.email || 'Client',
+            role: (client.role as User['role']) || 'client',
+            email: client.email || undefined,
+          };
+        });
+        setClients(normalizedClients);
+      } else {
+        throw new Error(data?.error || 'Failed to load clients');
       }
     } catch (error) {
       console.error('Failed to load clients:', error);
+      if (error instanceof Error) {
+        showError('Failed to load clients', error.message);
+      }
     }
   };
+
+  const filteredBulkShareClients = useMemo(() => {
+    if (!bulkShareSearch) {
+      return clients;
+    }
+
+    const term = bulkShareSearch.toLowerCase();
+    return clients.filter(client =>
+      client.name.toLowerCase().includes(term) ||
+      client.email?.toLowerCase().includes(term)
+    );
+  }, [clients, bulkShareSearch]);
 
   // Filter and sort files
   const filteredFiles = useMemo(() => {
@@ -205,13 +274,13 @@ export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFil
   const handleFileDownload = async (fileId: string) => {
     try {
       const response = await fetch(`/api/files/${fileId}`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to download file');
       }
 
       const data = await response.json();
-      
+
       // Open download URL in new tab
       window.open(data.downloadUrl, '_blank');
     } catch (error) {
@@ -220,8 +289,64 @@ export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFil
   };
 
   const handleBulkShare = () => {
-    // Implementation for bulk file sharing
-    console.log('Bulk share files:', selectedFiles);
+    if (selectedFiles.length === 0) return;
+    setBulkShareError('');
+    setIsBulkShareOpen(true);
+  };
+
+  const handleBulkShareSubmit = async () => {
+    if (selectedFiles.length === 0) {
+      setBulkShareError('Please select at least one file to share.');
+      return;
+    }
+
+    if (bulkShareSelectedClients.length === 0) {
+      setBulkShareError('Please select at least one client to share with.');
+      return;
+    }
+
+    setBulkShareLoading(true);
+    setBulkShareError('');
+
+    try {
+      const response = await fetch('/api/files/bulk-share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileIds: selectedFiles,
+          sharedWith: bulkShareSelectedClients,
+          permissionType: bulkSharePermission,
+          expiresAt: bulkShareExpiresAt ? new Date(bulkShareExpiresAt).toISOString() : undefined,
+          message: bulkShareMessage || undefined,
+          notifyUsers: true,
+        }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || result?.success === false) {
+        const errorMessage = result?.error || 'Failed to share files';
+        throw new Error(errorMessage);
+      }
+
+      showSuccess(
+        'Files shared successfully',
+        `Shared ${result?.summary?.filesProcessed ?? selectedFiles.length} file(s) with ${result?.summary?.usersSharedWith ?? bulkShareSelectedClients.length} client(s).`
+      );
+
+      setIsBulkShareOpen(false);
+      resetBulkShareState();
+      setSelectedFiles([]);
+      await loadFiles();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to share files';
+      setBulkShareError(message);
+      showError('Failed to share files', message);
+    } finally {
+      setBulkShareLoading(false);
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -559,6 +684,122 @@ export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFil
           </CardContent>
         </Card>
       )}
+
+      <Dialog
+        open={isBulkShareOpen}
+        onOpenChange={(open) => {
+          setIsBulkShareOpen(open);
+          if (!open) {
+            resetBulkShareState();
+          }
+        }}
+      >
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              Share {selectedFiles.length} file{selectedFiles.length === 1 ? '' : 's'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {bulkShareError && (
+              <Alert variant="destructive">
+                <AlertDescription>{bulkShareError}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">Select clients</p>
+              <Input
+                placeholder="Search clients..."
+                value={bulkShareSearch}
+                onChange={(event) => setBulkShareSearch(event.target.value)}
+              />
+              <div className="max-h-48 overflow-y-auto border rounded-md">
+                {filteredBulkShareClients.length === 0 ? (
+                  <div className="p-4 text-sm text-gray-500">
+                    No clients found.
+                  </div>
+                ) : (
+                  filteredBulkShareClients.map((client) => {
+                    const isSelected = bulkShareSelectedClients.includes(client.id);
+                    return (
+                      <label
+                        key={client.id}
+                        className="flex items-center justify-between gap-3 px-4 py-2 border-b last:border-b-0 cursor-pointer hover:bg-gray-50"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{client.name}</p>
+                          {client.email && (
+                            <p className="text-xs text-gray-600">{client.email}</p>
+                          )}
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(event) => {
+                            if (event.target.checked) {
+                              setBulkShareSelectedClients([...bulkShareSelectedClients, client.id]);
+                            } else {
+                              setBulkShareSelectedClients(
+                                bulkShareSelectedClients.filter((id) => id !== client.id)
+                              );
+                            }
+                          }}
+                          className="h-4 w-4"
+                        />
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700">Permission</p>
+                <Select value={bulkSharePermission} onValueChange={(value) => setBulkSharePermission(value as typeof bulkSharePermission)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="view">Can view</SelectItem>
+                    <SelectItem value="download">Can download</SelectItem>
+                    <SelectItem value="edit">Can edit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700">Expiration</p>
+                <Input
+                  type="datetime-local"
+                  value={bulkShareExpiresAt}
+                  onChange={(event) => setBulkShareExpiresAt(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">Message (optional)</p>
+              <Textarea
+                value={bulkShareMessage}
+                onChange={(event) => setBulkShareMessage(event.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="pt-4">
+            <Button variant="outline" onClick={() => setIsBulkShareOpen(false)} disabled={bulkShareLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkShareSubmit} disabled={bulkShareLoading}>
+              {bulkShareLoading ? 'Sharing...' : 'Share files'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
