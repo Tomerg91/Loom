@@ -13,7 +13,6 @@ import {
   withRequestLogging,
   type AuthenticatedUser,
 } from '@/lib/api/utils';
-import { createAuthService } from '@/lib/auth/auth';
 import { createClient } from '@/lib/supabase/server';
 
 // Validation Schemas
@@ -75,7 +74,8 @@ const coachOnboardingFormSchema = z.object({
     .max(50, 'Maximum 50 availability slots allowed'),
 });
 
-type CoachOnboardingFormData = z.infer<typeof coachOnboardingFormSchema>;
+type CoachOnboardingFormInput = z.input<typeof coachOnboardingFormSchema>;
+type CoachOnboardingFormData = z.infer<typeof coachOnboardingFormSchema> & { step: number };
 
 const normalizeTime = (time: string): string => {
   if (!time.includes(':')) {
@@ -85,7 +85,7 @@ const normalizeTime = (time: string): string => {
   return time.length === 5 ? `${time}:00` : time;
 };
 
-const sanitizeCoachFormData = (data: CoachOnboardingFormData): CoachOnboardingFormData => ({
+const sanitizeCoachFormData = (data: CoachOnboardingFormInput): CoachOnboardingFormData => ({
   ...data,
   step: data.step ?? 5,
   title: data.title.trim(),
@@ -123,230 +123,224 @@ const getCoachProfileSelect = `
 
 const rateLimitedCoachHandler = rateLimit(10, 60_000);
 
-async function getAuthenticatedCoach() {
-  const authService = await createAuthService(true);
-  const user = await authService.getCurrentUser();
+const coachProfileHandler = requireCoach(
+  async (user: AuthenticatedUser, _request: NextRequest): Promise<NextResponse> => {
+    const supabase = await createClient();
 
-  if (!user) {
-    return { user: null, error: createErrorResponse('Not authenticated', HTTP_STATUS.UNAUTHORIZED) } as const;
+    const [{ data: profile, error: profileError }, { data: availability, error: availabilityError }, { data: userRecord, error: userError }] = await Promise.all([
+      supabase
+        .from('coach_profiles')
+        .select(getCoachProfileSelect)
+        .eq('coach_id', user.id)
+        .maybeSingle(),
+      supabase
+        .from('coach_availability')
+        .select('day_of_week, start_time, end_time, timezone, is_available')
+        .eq('coach_id', user.id)
+        .order('day_of_week', { ascending: true })
+        .order('start_time', { ascending: true }),
+      supabase
+        .from('users')
+        .select('onboarding_status, onboarding_step, onboarding_completed_at, timezone')
+        .eq('id', user.id)
+        .maybeSingle(),
+    ]);
+
+    if (profileError) {
+      console.error('Failed to load coach profile:', profileError);
+      return createErrorResponse('Failed to load coach profile data', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    }
+
+    if (availabilityError) {
+      console.error('Failed to load coach availability:', availabilityError);
+      return createErrorResponse('Failed to load availability data', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    }
+
+    if (userError) {
+      console.error('Failed to load user onboarding status:', userError);
+      return createErrorResponse('Failed to load onboarding status', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    }
+
+    const fallbackTimezone = userRecord?.timezone || 'UTC';
+    const availabilitySlots = (availability || [])
+      .filter((slot) => slot.is_available !== false)
+      .map((slot) => ({
+        dayOfWeek: slot.day_of_week ?? 0,
+        startTime: typeof slot.start_time === 'string' ? slot.start_time.slice(0, 5) : '09:00',
+        endTime: typeof slot.end_time === 'string' ? slot.end_time.slice(0, 5) : '17:00',
+      }));
+
+    return createSuccessResponse({
+      profile: {
+        title: profile?.title ?? '',
+        bio: profile?.bio ?? '',
+        experienceYears: typeof profile?.experience_years === 'number' ? profile.experience_years : 0,
+        specialties: Array.isArray(profile?.specializations) ? profile?.specializations : [],
+        credentials: Array.isArray(profile?.credentials) ? profile?.credentials : [],
+        languages: Array.isArray(profile?.languages) ? profile?.languages : [],
+        timezone: profile?.timezone ?? fallbackTimezone,
+        hourlyRate: typeof profile?.hourly_rate === 'number'
+          ? profile?.hourly_rate
+          : typeof profile?.session_rate === 'number'
+            ? profile.session_rate
+            : 100,
+        currency: profile?.currency ?? 'USD',
+        approach: profile?.approach ?? '',
+        location: profile?.location ?? '',
+      },
+      availability: availabilitySlots,
+      onboarding: {
+        status: (userRecord?.onboarding_status as 'pending' | 'in_progress' | 'completed' | undefined) ?? 'pending',
+        step: userRecord?.onboarding_step ?? 5,
+        completedAt: userRecord?.onboarding_completed_at ?? null,
+      },
+    });
   }
+);
 
-  if (user.role !== 'coach') {
-    return { user: null, error: createErrorResponse('Coach access required', HTTP_STATUS.FORBIDDEN) } as const;
+const updateCoachProfileHandler = requireCoach(
+  async (user: AuthenticatedUser, request: NextRequest): Promise<NextResponse> => {
+    const payload = await request.json();
+    const validation = validateRequestBody(coachOnboardingFormSchema, payload, {
+      sanitize: true,
+      maxSize: 24 * 1024,
+    });
+
+    if (!validation.success) {
+      return createErrorResponse(validation.error, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const sanitized = sanitizeCoachFormData(validation.data);
+    const supabase = await createClient();
+
+    const { data: existingProfile, error: existingProfileError } = await supabase
+      .from('coach_profiles')
+      .select('default_session_duration, booking_buffer_time')
+      .eq('coach_id', user.id)
+      .maybeSingle();
+
+    if (existingProfileError) {
+      console.error('Failed to load existing coach profile:', existingProfileError);
+      return createErrorResponse('Failed to load existing coach profile', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    }
+
+    const now = new Date().toISOString();
+
+    const { error: profileError } = await supabase
+      .from('coach_profiles')
+      .upsert({
+        coach_id: user.id,
+        title: sanitized.title,
+        bio: sanitized.bio,
+        experience_years: sanitized.experienceYears,
+        specializations: sanitized.specialties,
+        credentials: sanitized.credentials,
+        languages: sanitized.languages,
+        timezone: sanitized.timezone,
+        session_rate: sanitized.hourlyRate,
+        hourly_rate: sanitized.hourlyRate,
+        currency: sanitized.currency,
+        location: sanitized.location,
+        approach: sanitized.approach,
+        onboarding_completed_at: now,
+        updated_at: now,
+        default_session_duration: existingProfile?.default_session_duration ?? 60,
+        booking_buffer_time: existingProfile?.booking_buffer_time ?? 15,
+      }, { onConflict: 'coach_id' });
+
+    if (profileError) {
+      console.error('Failed to update coach profile:', profileError);
+      return createErrorResponse('Failed to save coach profile', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    }
+
+    const { error: deleteAvailabilityError } = await supabase
+      .from('coach_availability')
+      .delete()
+      .eq('coach_id', user.id);
+
+    if (deleteAvailabilityError) {
+      console.error('Failed to reset coach availability:', deleteAvailabilityError);
+      return createErrorResponse('Failed to reset availability', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    }
+
+    const availabilityRecords = sanitized.availability.map((slot) => ({
+      coach_id: user.id,
+      day_of_week: slot.dayOfWeek,
+      start_time: normalizeTime(slot.startTime),
+      end_time: normalizeTime(slot.endTime),
+      timezone: sanitized.timezone,
+      is_available: true,
+      created_at: now,
+      updated_at: now,
+    }));
+
+    if (availabilityRecords.length > 0) {
+      const { error: insertAvailabilityError } = await supabase
+        .from('coach_availability')
+        .insert(availabilityRecords);
+
+      if (insertAvailabilityError) {
+        console.error('Failed to save coach availability:', insertAvailabilityError);
+        return createErrorResponse('Failed to save availability', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      }
+    }
+
+    const onboardingStep = Math.max(sanitized.step ?? 5, 5);
+
+    const { error: userUpdateError } = await supabase
+      .from('users')
+      .update({
+        timezone: sanitized.timezone,
+        onboarding_status: 'completed',
+        onboarding_step: onboardingStep,
+        onboarding_completed_at: now,
+        updated_at: now,
+      })
+      .eq('id', user.id);
+
+    if (userUpdateError) {
+      console.error('Failed to update user onboarding status:', userUpdateError);
+      return createErrorResponse('Failed to update onboarding status', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    }
+
+    const { data: refreshedUser, error: refreshedUserError } = await supabase
+      .from('users')
+      .select('onboarding_status, onboarding_step, onboarding_completed_at, timezone')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (refreshedUserError) {
+      console.warn('Failed to fetch refreshed user after onboarding update:', refreshedUserError);
+    }
+
+    return createSuccessResponse(
+      {
+        user: {
+          onboardingStatus: (refreshedUser?.onboarding_status as 'pending' | 'in_progress' | 'completed' | undefined) ?? 'completed',
+          onboardingStep: refreshedUser?.onboarding_step ?? onboardingStep,
+          onboardingCompletedAt: refreshedUser?.onboarding_completed_at ?? now,
+          timezone: refreshedUser?.timezone ?? sanitized.timezone,
+        },
+      },
+      'Coach onboarding updated successfully'
+    );
   }
-
-  return { user, error: null } as const;
-}
+);
 
 export const GET = withErrorHandling(
   withRequestLogging(
-    rateLimitedCoachHandler(async (_request: NextRequest) => {
-      const { user, error } = await getAuthenticatedCoach();
-      if (!user) {
-        return error;
-      }
-
-      const supabase = await createClient();
-
-      const [{ data: profile, error: profileError }, { data: availability, error: availabilityError }, { data: userRecord, error: userError }] = await Promise.all([
-        supabase
-          .from('coach_profiles')
-          .select(getCoachProfileSelect)
-          .eq('coach_id', user.id)
-          .maybeSingle(),
-        supabase
-          .from('coach_availability')
-          .select('day_of_week, start_time, end_time, timezone, is_available')
-          .eq('coach_id', user.id)
-          .order('day_of_week', { ascending: true })
-          .order('start_time', { ascending: true }),
-        supabase
-          .from('users')
-          .select('onboarding_status, onboarding_step, onboarding_completed_at, timezone')
-          .eq('id', user.id)
-          .maybeSingle(),
-      ]);
-
-      if (profileError) {
-        console.error('Failed to load coach profile:', profileError);
-        return createErrorResponse('Failed to load coach profile data', HTTP_STATUS.INTERNAL_SERVER_ERROR);
-      }
-
-      if (availabilityError) {
-        console.error('Failed to load coach availability:', availabilityError);
-        return createErrorResponse('Failed to load availability data', HTTP_STATUS.INTERNAL_SERVER_ERROR);
-      }
-
-      if (userError) {
-        console.error('Failed to load user onboarding status:', userError);
-        return createErrorResponse('Failed to load onboarding status', HTTP_STATUS.INTERNAL_SERVER_ERROR);
-      }
-
-      const fallbackTimezone = userRecord?.timezone || 'UTC';
-      const availabilitySlots = (availability || [])
-        .filter((slot) => slot.is_available !== false)
-        .map((slot) => ({
-          dayOfWeek: slot.day_of_week ?? 0,
-          startTime: typeof slot.start_time === 'string' ? slot.start_time.slice(0, 5) : '09:00',
-          endTime: typeof slot.end_time === 'string' ? slot.end_time.slice(0, 5) : '17:00',
-        }));
-
-      return createSuccessResponse({
-        profile: {
-          title: profile?.title ?? '',
-          bio: profile?.bio ?? '',
-          experienceYears: typeof profile?.experience_years === 'number' ? profile.experience_years : 0,
-          specialties: Array.isArray(profile?.specializations) ? profile?.specializations : [],
-          credentials: Array.isArray(profile?.credentials) ? profile?.credentials : [],
-          languages: Array.isArray(profile?.languages) ? profile?.languages : [],
-          timezone: profile?.timezone ?? fallbackTimezone,
-          hourlyRate: typeof profile?.hourly_rate === 'number'
-            ? profile?.hourly_rate
-            : typeof profile?.session_rate === 'number'
-              ? profile.session_rate
-              : 100,
-          currency: profile?.currency ?? 'USD',
-          approach: profile?.approach ?? '',
-          location: profile?.location ?? '',
-        },
-        availability: availabilitySlots,
-        onboarding: {
-          status: (userRecord?.onboarding_status as 'pending' | 'in_progress' | 'completed' | undefined) ?? 'pending',
-          step: userRecord?.onboarding_step ?? 5,
-          completedAt: userRecord?.onboarding_completed_at ?? null,
-        },
-      });
-    }),
+    rateLimitedCoachHandler(
+      requireAuth(coachProfileHandler)
+    ),
     { name: 'GET /api/onboarding/coach' }
   )
 );
 
 export const PUT = withErrorHandling(
   withRequestLogging(
-    rateLimitedCoachHandler(async (request: NextRequest) => {
-      const { user, error } = await getAuthenticatedCoach();
-      if (!user) {
-        return error;
-      }
-
-      const payload = await request.json();
-      const validation = validateRequestBody(coachOnboardingFormSchema, payload, {
-        sanitize: true,
-        maxSize: 24 * 1024,
-      });
-
-      if (!validation.success) {
-        return createErrorResponse(validation.error, HTTP_STATUS.BAD_REQUEST);
-      }
-
-      const sanitized = sanitizeCoachFormData(validation.data);
-      const supabase = await createClient();
-
-      const { data: existingProfile, error: existingProfileError } = await supabase
-        .from('coach_profiles')
-        .select('default_session_duration, booking_buffer_time')
-        .eq('coach_id', user.id)
-        .maybeSingle();
-
-      if (existingProfileError) {
-        console.error('Failed to load existing coach profile:', existingProfileError);
-        return createErrorResponse('Failed to load existing coach profile', HTTP_STATUS.INTERNAL_SERVER_ERROR);
-      }
-
-      const now = new Date().toISOString();
-
-      const { error: profileError } = await supabase
-        .from('coach_profiles')
-        .upsert({
-          coach_id: user.id,
-          title: sanitized.title,
-          bio: sanitized.bio,
-          experience_years: sanitized.experienceYears,
-          specializations: sanitized.specialties,
-          credentials: sanitized.credentials,
-          languages: sanitized.languages,
-          timezone: sanitized.timezone,
-          session_rate: sanitized.hourlyRate,
-          hourly_rate: sanitized.hourlyRate,
-          currency: sanitized.currency,
-          location: sanitized.location,
-          approach: sanitized.approach,
-          onboarding_completed_at: now,
-          updated_at: now,
-          default_session_duration: existingProfile?.default_session_duration ?? 60,
-          booking_buffer_time: existingProfile?.booking_buffer_time ?? 15,
-        }, { onConflict: 'coach_id' });
-
-      if (profileError) {
-        console.error('Failed to update coach profile:', profileError);
-        return createErrorResponse('Failed to save coach profile', HTTP_STATUS.INTERNAL_SERVER_ERROR);
-      }
-
-      const { error: deleteAvailabilityError } = await supabase
-        .from('coach_availability')
-        .delete()
-        .eq('coach_id', user.id);
-
-      if (deleteAvailabilityError) {
-        console.error('Failed to reset coach availability:', deleteAvailabilityError);
-        return createErrorResponse('Failed to reset availability', HTTP_STATUS.INTERNAL_SERVER_ERROR);
-      }
-
-      const availabilityRecords = sanitized.availability.map((slot) => ({
-        coach_id: user.id,
-        day_of_week: slot.dayOfWeek,
-        start_time: normalizeTime(slot.startTime),
-        end_time: normalizeTime(slot.endTime),
-        timezone: sanitized.timezone,
-        is_available: true,
-        created_at: now,
-        updated_at: now,
-      }));
-
-      if (availabilityRecords.length > 0) {
-        const { error: insertAvailabilityError } = await supabase
-          .from('coach_availability')
-          .insert(availabilityRecords);
-
-        if (insertAvailabilityError) {
-          console.error('Failed to save coach availability:', insertAvailabilityError);
-          return createErrorResponse('Failed to save availability', HTTP_STATUS.INTERNAL_SERVER_ERROR);
-        }
-      }
-
-      const onboardingStep = Math.max(sanitized.step ?? 5, 5);
-
-      const { error: userUpdateError } = await supabase
-        .from('users')
-        .update({
-          timezone: sanitized.timezone,
-          onboarding_status: 'completed',
-          onboarding_step: onboardingStep,
-          onboarding_completed_at: now,
-          updated_at: now,
-        })
-        .eq('id', user.id);
-
-      if (userUpdateError) {
-        console.error('Failed to update user onboarding status:', userUpdateError);
-        return createErrorResponse('Failed to update onboarding status', HTTP_STATUS.INTERNAL_SERVER_ERROR);
-      }
-
-      const authService = await createAuthService(true);
-      const refreshedUser = await authService.getCurrentUser({ forceRefresh: true });
-
-      return createSuccessResponse(
-        {
-          user: {
-            onboardingStatus: (refreshedUser?.onboardingStatus ?? 'completed') as 'pending' | 'in_progress' | 'completed',
-            onboardingStep: refreshedUser?.onboardingStep ?? onboardingStep,
-            onboardingCompletedAt: refreshedUser?.onboardingCompletedAt ?? now,
-            timezone: refreshedUser?.timezone ?? sanitized.timezone,
-          },
-        },
-        'Coach onboarding updated successfully'
-      );
-    }),
+    rateLimitedCoachHandler(
+      requireAuth(updateCoachProfileHandler)
+    ),
     { name: 'PUT /api/onboarding/coach' }
   )
 );
