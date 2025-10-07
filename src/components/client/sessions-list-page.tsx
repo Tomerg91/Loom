@@ -28,7 +28,6 @@ import {
   Filter,
   List,
   CalendarDays,
-  User,
   AlertCircle,
   CheckCircle2,
   XCircle,
