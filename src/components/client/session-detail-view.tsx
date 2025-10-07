@@ -32,8 +32,6 @@ import {
   AlertCircle,
   Loader2,
   ArrowLeft,
-  Edit,
-  Trash2,
   Target,
   MessageSquare,
   Download,
@@ -45,7 +43,7 @@ import {
   Archive,
   Star,
 } from 'lucide-react';
-import { format, parseISO, isBefore, differenceInHours } from 'date-fns';
+import { format, parseISO, differenceInHours } from 'date-fns';
 import type { Session } from '@/types';
 import { RescheduleSessionDialog } from './reschedule-session-dialog';
 import { RateSessionDialog } from './rate-session-dialog';
@@ -572,22 +570,20 @@ export function SessionDetailView({ sessionId }: SessionDetailViewProps) {
       )}
 
       {/* Reschedule Dialog */}
-      {session && (
-        <RescheduleSessionDialog
-          sessionId={sessionId}
-          sessionTitle={session.title || 'Coaching Session'}
-          currentScheduledAt={session.scheduledAt}
-          open={showRescheduleDialog}
-          onOpenChange={setShowRescheduleDialog}
-          onSuccess={() => {
-            // Refetch session data after successful reschedule
-            queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-          }}
-        />
-      )}
+      <RescheduleSessionDialog
+        sessionId={sessionId}
+        sessionTitle={session.title || 'Coaching Session'}
+        currentScheduledAt={session.scheduledAt}
+        open={showRescheduleDialog}
+        onOpenChange={setShowRescheduleDialog}
+        onSuccess={() => {
+          // Refetch session data after successful reschedule
+          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+        }}
+      />
 
       {/* Rate Session Dialog */}
-      {session && session.status === 'completed' && (
+      {session.status === 'completed' && (
         <RateSessionDialog
           sessionId={sessionId}
           sessionTitle={session.title || 'Coaching Session'}

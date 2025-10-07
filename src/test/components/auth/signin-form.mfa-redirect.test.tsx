@@ -33,6 +33,10 @@ vi.mock('@/i18n/routing', () => ({
   Link: ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>
   ),
+  routing: {
+    locales: ['en', 'he'],
+    defaultLocale: 'he',
+  },
 }));
 
 describe('SigninForm MFA redirect', () => {
@@ -60,7 +64,7 @@ describe('SigninForm MFA redirect', () => {
     });
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/en/auth/mfa-verify?userId=user-123&redirectTo=%2Fdashboard');
+      expect(mockPush).toHaveBeenCalledWith('/en/auth/mfa-verify?userId=user-123&redirectTo=%2Fen%2Fdashboard');
     });
   });
 });

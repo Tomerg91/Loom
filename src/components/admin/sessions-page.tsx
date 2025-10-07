@@ -27,7 +27,7 @@ import {
   Eye
 } from 'lucide-react';
 import { DashboardHeader, LoadingState, ErrorState } from '@/components/dashboard';
-import { Link } from '@/i18n/routing';
+import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 
 interface Session {
@@ -67,12 +67,13 @@ interface SessionsData {
 
 export function AdminSessionsPage() {
   const t = useTranslations('admin.sessions');
+  const router = useRouter();
   const locale = useLocale();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState<'scheduled_at' | 'created_at'>('scheduled_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortOrder] = useState<'asc' | 'desc'>('desc');
 
   const { data: sessionsData, isLoading, error, refetch } = useQuery<SessionsData>({
     queryKey: ['admin-sessions', statusFilter, page, sortBy, sortOrder],
@@ -318,11 +319,9 @@ export function AdminSessionsPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    asChild
+                    onClick={() => router.push(`/${locale}/sessions/${session.id}`)}
                   >
-                    <Link href={`/sessions/${session.id}` as '/dashboard'}>
-                      <Eye className="h-4 w-4" />
-                    </Link>
+                    <Eye className="h-4 w-4" />
                   </Button>
                 </div>
               ))

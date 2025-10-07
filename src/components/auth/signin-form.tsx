@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/components/auth/auth-provider';
 import { Loader2 } from 'lucide-react';
+import { resolveAuthPath, resolveRedirect } from '@/lib/utils/redirect';
 
 interface SigninFormProps {
   redirectTo?: string;
@@ -38,28 +39,26 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
 
       if (result.error) {
         setError(result.error);
-        setIsLoading(false);
         return;
       }
 
-      const safeRedirectTo = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+      const targetPath = resolveRedirect(locale, redirectTo || '/dashboard');
 
       // Check if MFA is required
       if (result.user?.mfaEnabled) {
         const query = new URLSearchParams({
           userId: result.user.id,
-          redirectTo: safeRedirectTo,
+          redirectTo: targetPath,
         });
-        router.push(`/${locale}/auth/mfa-verify?${query.toString()}`);
+        const mfaPath = resolveAuthPath(locale, `/auth/mfa-verify?${query.toString()}`);
+        router.push(mfaPath);
       } else {
         // Auth state is now updated, safe to redirect
-        const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
-          ? safeRedirectTo
-          : `/${locale}${safeRedirectTo}`;
-        router.push(finalRedirectTo);
+        router.push(targetPath);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('signin.error'));
+    } finally {
       setIsLoading(false);
     }
   };

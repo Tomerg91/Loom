@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useUser, useAuthLoading } from '@/lib/store/auth-store';
 import { usePermission, useAnyPermission, useHasAnyRole } from '@/lib/permissions/hooks';
@@ -44,6 +44,7 @@ export function RouteGuard({
 }: RouteGuardProps) {
   const router = useRouter();
   const locale = useLocale();
+  const pathname = usePathname();
   const user = useUser();
   const isLoading = useAuthLoading();
   
@@ -61,10 +62,35 @@ export function RouteGuard({
 
     // Batch all redirect logic to reduce effect runs
     const checkAuthAndRedirect = () => {
+      const buildLoginRedirect = () => {
+        const baseLoginPath = resolveRedirect(locale, redirectTo || '/auth/signin');
+
+        // Only attach the return destination when we're heading to an auth route
+        if (typeof window === 'undefined' || !baseLoginPath.includes('/auth/')) {
+          return baseLoginPath;
+        }
+
+        const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+        const attemptedPath = `${pathname || (typeof window !== 'undefined' ? window.location.pathname : '/') || '/'}${currentSearch}`;
+        const safeReturnPath = resolveRedirect(locale, attemptedPath || '/dashboard');
+
+        try {
+          const loginUrl = new URL(baseLoginPath, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+          loginUrl.searchParams.set('redirectTo', safeReturnPath);
+          return `${loginUrl.pathname}${loginUrl.search}`;
+        } catch (error) {
+          console.warn('Failed to construct login redirect URL:', error);
+          return baseLoginPath;
+        }
+      };
+
+      const redirectToPath = (path: string) => {
+        router.push(path as '/auth/signin');
+      };
+
       // Check if authentication is required
       if (requireAuth && !user) {
-        const finalLoginPath = resolveRedirect(locale, redirectTo || '/auth/signin');
-        router.push(finalLoginPath as '/auth/signin');
+        redirectToPath(buildLoginRedirect());
         return;
       }
 
@@ -76,14 +102,14 @@ export function RouteGuard({
       // Check role requirements
       if ((requireRole || requireAnyRole) && !hasRequiredRole) {
         const finalUnauthorizedPath = resolveRedirect(locale, redirectTo || '/dashboard');
-        router.push(finalUnauthorizedPath as '/dashboard');
+        redirectToPath(finalUnauthorizedPath);
         return;
       }
 
       // Check permission requirements
       if (!permissionSatisfied || !anyPermissionSatisfied) {
         const finalUnauthorizedPath = resolveRedirect(locale, redirectTo || '/dashboard');
-        router.push(finalUnauthorizedPath as '/dashboard');
+        redirectToPath(finalUnauthorizedPath);
         return;
       }
     };
@@ -107,6 +133,8 @@ export function RouteGuard({
     requireAnyRole,
     redirectTo,
     router,
+    locale,
+    pathname,
   ]);
 
   // Show loading state with skeleton to reduce LCP
@@ -115,7 +143,10 @@ export function RouteGuard({
       <div
         className="min-h-screen bg-background flex flex-col"
         data-testid="route-guard-loading"
+        role="region"
+        aria-live="polite"
       >
+        <span className="sr-only">Loading...</span>
         <div className="h-16 bg-card border-b flex items-center px-4">
           <div className="h-8 w-32 bg-muted rounded animate-pulse" />
           <div className="ml-auto flex items-center space-x-4">
@@ -134,6 +165,10 @@ export function RouteGuard({
                 </div>
               ))}
             </div>
+            <div className="flex items-center justify-center gap-3 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
+              <span className="text-lg font-medium">Loading...</span>
+            </div>
           </div>
         </main>
       </div>
@@ -151,7 +186,7 @@ export function RouteGuard({
     if (user && (requireRole || requireAnyRole) && !hasRequiredRole) {
       return (
         <div className="min-h-screen flex items-center justify-center">
-          <Card className="w-full max-w-md">
+          <Card className="w-full max-w-md" role="region" aria-live="assertive">
             <CardContent className="flex items-center justify-center p-8 text-center">
               <div>
                 <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -170,7 +205,7 @@ export function RouteGuard({
     if (user && (!permissionSatisfied || !anyPermissionSatisfied)) {
       return (
         <div className="min-h-screen flex items-center justify-center">
-          <Card className="w-full max-w-md">
+          <Card className="w-full max-w-md" role="region" aria-live="assertive">
             <CardContent className="flex items-center justify-center p-8 text-center">
               <div>
                 <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
