@@ -32,8 +32,6 @@ import {
   AlertCircle,
   Loader2,
   ArrowLeft,
-  Edit,
-  Trash2,
   Target,
   MessageSquare,
   Download,
