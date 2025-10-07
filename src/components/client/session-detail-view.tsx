@@ -583,7 +583,7 @@ export function SessionDetailView({ sessionId }: SessionDetailViewProps) {
       />
 
       {/* Rate Session Dialog */}
-      {session && session.status === 'completed' && (
+      {session.status === 'completed' && (
         <RateSessionDialog
           sessionId={sessionId}
           sessionTitle={session.title || 'Coaching Session'}
