@@ -96,18 +96,6 @@ export function AdminDashboardPage() {
     }).format(amount);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'healthy':
-        return 'text-green-600';
-      case 'warning':
-        return 'text-yellow-600';
-      case 'error':
-        return 'text-red-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
