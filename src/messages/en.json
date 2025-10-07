@@ -39,8 +39,10 @@
     "reflections": "Reflections",
     "notifications": "Notifications",
     "admin": "Admin",
+    "admin_dashboard": "Admin Dashboard",
     "users": "Users",
     "analytics": "Analytics",
+    "audit": "Audit Logs",
     "system": "System",
     "availability": "Availability",
     "insights": "Insights",
@@ -1117,14 +1119,26 @@
     "passwordStrength": "Password must contain at least 8 characters, one uppercase, one lowercase, and one number"
   },
   "admin": {
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "description": "Platform overview and quick actions"
+    },
     "users": {
       "title": "User Management",
       "description": "Manage users, roles, and permissions",
       "addUser": "Add New User"
     },
+    "sessions": {
+      "title": "Sessions Management",
+      "description": "View and manage all platform sessions"
+    },
     "analytics": {
       "title": "Analytics Dashboard",
       "description": "View platform analytics and performance metrics"
+    },
+    "audit": {
+      "title": "Audit Logs",
+      "description": "Review system audit logs and activity"
     },
     "system": {
       "title": "System Administration",
