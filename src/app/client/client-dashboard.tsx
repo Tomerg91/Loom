@@ -355,10 +355,10 @@ export function ClientDashboard() {
                   </CardTitle>
                   <CardDescription>Your next coaching sessions</CardDescription>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setActiveTab('sessions')}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push(withLocale('/client/sessions'))}
                   className="text-muted-foreground hover:text-foreground"
                 >
                   View all <ArrowUpRight className="h-4 w-4 ml-1" />
@@ -378,7 +378,11 @@ export function ClientDashboard() {
                   ) : upcomingSessions?.length ? (
                     <div className="space-y-4">
                       {upcomingSessions.slice(0, 3).map((session) => (
-                        <div key={session.id} className="flex items-start space-x-3 p-3 bg-muted/30 rounded-lg">
+                        <div
+                          key={session.id}
+                          className="flex items-start space-x-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                          onClick={() => router.push(withLocale(`/client/sessions/${session.id}`))}
+                        >
                           <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                           <div className="flex-1 space-y-1">
                             <p className="font-medium">{session.title || 'Coaching Session'}</p>
