@@ -21,6 +21,10 @@ export async function GET(request: NextRequest): Promise<Response> {
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
+    if (session.user.role !== 'client' && session.user.role !== 'admin') {
+      return ApiResponseHelper.forbidden(`Client access required. Current role: ${session.user.role}`);
+    }
+
     const userId = session.user.id;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
@@ -79,6 +83,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     const session = await authService.getSession();
     if (!session?.user) {
       return ApiResponseHelper.unauthorized('Authentication required');
+    }
+
+    if (session.user.role !== 'client' && session.user.role !== 'admin') {
+      return ApiResponseHelper.forbidden(`Client access required. Current role: ${session.user.role}`);
     }
 
     const userId = session.user.id;

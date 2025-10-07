@@ -24,7 +24,7 @@ interface CoachClient {
   firstName: string;
   lastName: string;
   email: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending';
   nextSession?: string;
   lastSession?: string;
 }
@@ -71,7 +71,7 @@ export function CoachClientSnapshot({ translations }: { translations: DashboardT
     staleTime: 60_000,
   });
 
-  const pendingClients = data?.clients.filter((client) => client.status === 'inactive') ?? [];
+  const pendingClients = data?.clients.filter((client) => client.status === 'inactive' || client.status === 'pending') ?? [];
 
   const nextSessions = useMemo(() => {
     return (data?.clients ?? [])

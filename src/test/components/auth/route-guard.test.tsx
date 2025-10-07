@@ -33,6 +33,10 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+vi.mock('next-intl', () => ({
+  useLocale: () => 'en',
+}));
+
 // Import mocked dependencies
 import { useUser, useAuthLoading } from '@/lib/store/auth-store';
 import { usePermission, useAnyPermission, useHasAnyRole } from '@/lib/permissions/hooks';
@@ -75,7 +79,7 @@ describe('RouteGuard', () => {
       );
       
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/auth/signin');
+        expect(mockPush).toHaveBeenCalledWith('/en/auth/signin?redirectTo=%2Fen%2Ftest-path');
       });
     });
 
@@ -89,7 +93,7 @@ describe('RouteGuard', () => {
       );
       
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/custom-login');
+        expect(mockPush).toHaveBeenCalledWith('/en/custom-login');
       });
     });
 
@@ -115,7 +119,7 @@ describe('RouteGuard', () => {
         </RouteGuard>
       );
       
-      expect(screen.getByText('Loading...')).toBeInTheDocument();
+      expect(screen.getAllByText('Loading...').length).toBeGreaterThan(0);
       expect(mockPush).not.toHaveBeenCalled();
     });
   });
@@ -130,8 +134,9 @@ describe('RouteGuard', () => {
         </RouteGuard>
       );
       
-      expect(screen.getByText('Loading...')).toBeInTheDocument();
-      expect(document.querySelector('[data-lucide="loader-2"]')).toBeInTheDocument();
+      const loadingTexts = screen.getAllByText('Loading...');
+      expect(loadingTexts.length).toBeGreaterThan(0);
+      expect(document.querySelector('[class*="lucide-loader"]')).toBeInTheDocument();
     });
 
     it('hides loading component when showLoading is false', () => {
@@ -156,7 +161,7 @@ describe('RouteGuard', () => {
         </RouteGuard>
       );
       
-      const spinner = document.querySelector('[data-lucide="loader-2"]');
+      const spinner = document.querySelector('[class*="lucide-loader"]');
       expect(spinner).toBeInTheDocument();
       expect(spinner).toHaveClass('animate-spin');
     });
@@ -189,7 +194,7 @@ describe('RouteGuard', () => {
       await waitFor(() => {
         expect(screen.getByText('Access Denied')).toBeInTheDocument();
         expect(screen.getByText(/You do not have permission to access this page/i)).toBeInTheDocument();
-        expect(document.querySelector('[data-lucide="alert-circle"]')).toBeInTheDocument();
+        expect(document.querySelector('[class*="lucide-circle-alert"]')).toBeInTheDocument();
       });
     });
 
@@ -217,7 +222,7 @@ describe('RouteGuard', () => {
       );
       
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/dashboard');
+        expect(mockPush).toHaveBeenCalledWith('/en/dashboard');
       });
     });
 
@@ -232,7 +237,7 @@ describe('RouteGuard', () => {
       );
       
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/unauthorized');
+        expect(mockPush).toHaveBeenCalledWith('/en/unauthorized');
       });
     });
   });
@@ -301,7 +306,7 @@ describe('RouteGuard', () => {
       );
       
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/dashboard');
+        expect(mockPush).toHaveBeenCalledWith('/en/dashboard');
       });
     });
   });

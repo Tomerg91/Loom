@@ -72,6 +72,57 @@ ON CONFLICT (session_id) DO UPDATE SET
   review = EXCLUDED.review,
   created_at = EXCLUDED.created_at;
 
+-- Configure coach profiles so dashboard revenue uses per-coach pricing
+INSERT INTO coach_profiles (id, coach_id, session_rate, currency, specializations, bio, experience_years, updated_at)
+VALUES
+  ('880e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', 125.00, 'USD', ARRAY['leadership', 'executive'], 'Executive leadership coach with a focus on career transitions.', 8, NOW()),
+  ('880e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440002', 95.00, 'USD', ARRAY['career development'], 'Career strategist helping mid-level managers grow.', 6, NOW()),
+  ('880e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440003', 110.00, 'USD', ARRAY['wellness', 'resilience'], 'Holistic coach supporting wellbeing and balance.', 7, NOW())
+ON CONFLICT (coach_id) DO UPDATE SET
+  session_rate = EXCLUDED.session_rate,
+  currency = EXCLUDED.currency,
+  specializations = EXCLUDED.specializations,
+  bio = EXCLUDED.bio,
+  experience_years = EXCLUDED.experience_years,
+  updated_at = NOW();
+
+-- Seed client goals so progress widgets display meaningful data
+INSERT INTO client_goals (id, client_id, coach_id, title, description, category, target_date, status, progress_percentage, priority, created_at, updated_at)
+VALUES
+  ('990e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440011', '550e8400-e29b-41d4-a716-446655440001', 'Improve leadership presence', 'Build confidence when presenting to senior stakeholders.', 'leadership', CURRENT_DATE + INTERVAL '30 days', 'active', 55, 'high', NOW() - INTERVAL '20 days', NOW() - INTERVAL '2 days'),
+  ('990e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440012', '550e8400-e29b-41d4-a716-446655440001', 'Establish morning routine', 'Design a repeatable morning routine to improve focus.', 'productivity', CURRENT_DATE + INTERVAL '45 days', 'active', 40, 'medium', NOW() - INTERVAL '18 days', NOW() - INTERVAL '3 days'),
+  ('990e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440013', '550e8400-e29b-41d4-a716-446655440002', 'Launch pilot program', 'Deliver the first cohort of a new coaching pilot.', 'strategy', CURRENT_DATE + INTERVAL '14 days', 'active', 70, 'high', NOW() - INTERVAL '12 days', NOW() - INTERVAL '1 day'),
+  ('990e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440014', '550e8400-e29b-41d4-a716-446655440002', 'Increase client retention', 'Implement new retention experiments for top customers.', 'business', CURRENT_DATE + INTERVAL '60 days', 'paused', 20, 'medium', NOW() - INTERVAL '8 days', NOW() - INTERVAL '8 days'),
+  ('990e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440015', '550e8400-e29b-41d4-a716-446655440003', 'Build wellbeing toolkit', 'Develop sustainable habits for stress management.', 'wellness', CURRENT_DATE + INTERVAL '21 days', 'active', 65, 'high', NOW() - INTERVAL '15 days', NOW() - INTERVAL '2 days')
+ON CONFLICT (id) DO UPDATE SET
+  title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  category = EXCLUDED.category,
+  target_date = EXCLUDED.target_date,
+  status = EXCLUDED.status,
+  progress_percentage = EXCLUDED.progress_percentage,
+  priority = EXCLUDED.priority,
+  updated_at = NOW();
+
+-- Align session feedback data with ratings for richer analytics
+INSERT INTO session_feedback (id, session_id, client_id, coach_id, overall_rating, communication_rating, helpfulness_rating, preparation_rating, feedback_text, would_recommend, created_at, updated_at)
+VALUES
+  ('aa0e8400-e29b-41d4-a716-446655440001', '660e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440011', '550e8400-e29b-41d4-a716-446655440001', 5, 5, 5, 4, 'Felt fully supported throughout the session.', true, NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days'),
+  ('aa0e8400-e29b-41d4-a716-446655440002', '660e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440012', '550e8400-e29b-41d4-a716-446655440001', 4, 4, 5, 4, 'Clear action plan for the next month.', true, NOW() - INTERVAL '4 days', NOW() - INTERVAL '4 days'),
+  ('aa0e8400-e29b-41d4-a716-446655440003', '660e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440013', '550e8400-e29b-41d4-a716-446655440002', 5, 5, 5, 5, 'Incredibly insightful discussion.', true, NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day'),
+  ('aa0e8400-e29b-41d4-a716-446655440004', '660e8400-e29b-41d4-a716-446655440007', '550e8400-e29b-41d4-a716-446655440011', '550e8400-e29b-41d4-a716-446655440001', 4, 4, 4, 4, 'Great accountability check-in.', true, NOW() - INTERVAL '9 days', NOW() - INTERVAL '9 days'),
+  ('aa0e8400-e29b-41d4-a716-446655440005', '660e8400-e29b-41d4-a716-446655440008', '550e8400-e29b-41d4-a716-446655440012', '550e8400-e29b-41d4-a716-446655440002', 5, 5, 4, 5, 'Focused on the right strategic priorities.', true, NOW() - INTERVAL '14 days', NOW() - INTERVAL '14 days'),
+  ('aa0e8400-e29b-41d4-a716-446655440006', '660e8400-e29b-41d4-a716-446655440009', '550e8400-e29b-41d4-a716-446655440014', '550e8400-e29b-41d4-a716-446655440003', 4, 4, 4, 4, 'Celebrated big milestone wins together.', true, NOW() - INTERVAL '19 days', NOW() - INTERVAL '19 days'),
+  ('aa0e8400-e29b-41d4-a716-446655440007', '660e8400-e29b-41d4-a716-446655440010', '550e8400-e29b-41d4-a716-446655440015', '550e8400-e29b-41d4-a716-446655440001', 5, 5, 5, 5, 'Left with a clear tactical plan.', true, NOW() - INTERVAL '24 days', NOW() - INTERVAL '24 days')
+ON CONFLICT (session_id, client_id) DO UPDATE SET
+  overall_rating = EXCLUDED.overall_rating,
+  communication_rating = EXCLUDED.communication_rating,
+  helpfulness_rating = EXCLUDED.helpfulness_rating,
+  preparation_rating = EXCLUDED.preparation_rating,
+  feedback_text = EXCLUDED.feedback_text,
+  would_recommend = EXCLUDED.would_recommend,
+  updated_at = NOW();
+
 -- Verify the test data
 SELECT 
   'Users Summary' as summary,

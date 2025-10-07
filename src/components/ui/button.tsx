@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
+import * as React from 'react';
+
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
@@ -50,36 +50,111 @@ export interface ButtonProps
   'aria-label'?: string;
 }
 
+type AsChildElementProps = {
+  className?: string;
+  disabled?: boolean;
+  children?: React.ReactNode;
+  ['aria-label']?: string;
+  ariaLabel?: string;
+  ref?: React.Ref<unknown>;
+};
+
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ 
     className, 
     variant, 
     size, 
-    asChild = false, 
-    loading = false, 
-    loadingText = 'Loading...', 
+    asChild = false,
+    loading = false,
+    loadingText = 'Loading...',
     iconOnly = false,
-    disabled, 
-    children, 
+    disabled,
+    children,
     'aria-label': ariaLabel,
-    ...props 
+    ...props
   }, ref) => {
-    const Comp = asChild ? Slot : 'button';
-    
     // Ensure icon-only buttons have proper aria-label
     const shouldHaveAriaLabel = iconOnly && !ariaLabel && !children;
     if (shouldHaveAriaLabel && process.env.NODE_ENV === 'development') {
       console.warn('Icon-only buttons should have an aria-label for accessibility');
     }
-    
+
+    const baseClassName = cn(
+      buttonVariants({ variant, size }),
+      // Ensure minimum touch target size for mobile
+      size === 'icon' && 'min-w-[44px] min-h-[44px]',
+      'hover:scale-[1.01] active:scale-[0.99]',
+      className,
+    );
+
+    const spinner = loading ? (
+      <svg
+        className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4 animate-spin"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        />
+      </svg>
+    ) : null;
+
+    const loadingAnnouncement = loading ? (
+      <span aria-live="polite" className="sr-only">
+        {loadingText}
+      </span>
+    ) : null;
+
+    if (asChild) {
+      if (!React.isValidElement(children)) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Button with `asChild` expects a single React element child.');
+        }
+        return null;
+      }
+
+      const child = children as React.ReactElement<AsChildElementProps>;
+      const childProps = child.props;
+      const mergedClassName = cn(baseClassName, childProps.className);
+      const childAriaLabel = childProps['aria-label'] ?? childProps.ariaLabel;
+      const childDisabled = childProps.disabled;
+      const originalContent = childProps.children as React.ReactNode;
+
+      return React.cloneElement(child, {
+        className: mergedClassName,
+        ref,
+        disabled: disabled ?? childDisabled ?? loading,
+        'aria-disabled': (disabled ?? childDisabled) || loading,
+        'aria-busy': loading,
+        'aria-label': loading ? loadingText : ariaLabel ?? childAriaLabel,
+        ...props,
+        children: (
+          <>
+            {spinner}
+            <span className={loading ? 'sr-only' : undefined}>
+              {originalContent}
+            </span>
+            {loadingAnnouncement}
+          </>
+        ),
+      });
+    }
+
     return (
-      <Comp
-        className={cn(
-          buttonVariants({ variant, size, className }),
-          // Ensure minimum touch target size for mobile
-          size === 'icon' && 'min-w-[44px] min-h-[44px]',
-          'hover:scale-[1.01] active:scale-[0.99]'
-        )}
+      <button
+        className={baseClassName}
         ref={ref}
         disabled={disabled || loading}
         aria-disabled={disabled || loading}
@@ -87,38 +162,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         aria-label={loading ? loadingText : ariaLabel}
         {...props}
       >
-        {loading && (
-          <svg
-            className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4 animate-spin"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-        )}
+        {spinner}
         <span className={loading ? 'sr-only' : undefined}>
           {children}
         </span>
-        {loading && (
-          <span aria-live="polite" className="sr-only">
-            {loadingText}
-          </span>
-        )}
-      </Comp>
+        {loadingAnnouncement}
+      </button>
     );
   }
 );
