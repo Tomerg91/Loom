@@ -10,6 +10,7 @@ interface Client {
   firstName: string;
   lastName: string;
   email: string;
+  phone?: string;
   avatar?: string;
   lastSession?: string;
   totalSessions: number;
@@ -19,6 +20,10 @@ interface Client {
   completedSessions: number;
   averageRating: number;
   goals?: string[];
+  progress: {
+    current: number;
+    target: number;
+  };
 }
 
 function deriveClientStatus(
@@ -94,6 +99,7 @@ export async function GET(request: NextRequest): Promise<Response> {
           first_name,
           last_name,
           email,
+          phone,
           avatar_url,
           status,
           created_at
@@ -130,6 +136,7 @@ export async function GET(request: NextRequest): Promise<Response> {
           firstName: client.first_name || '',
           lastName: client.last_name || '',
           email: client.email,
+          phone: client.phone || undefined,
           avatar: client.avatar_url || undefined,
           lastSession: session.status === 'completed' ? sessionDate.toISOString() : undefined,
           totalSessions: 1,
@@ -139,6 +146,10 @@ export async function GET(request: NextRequest): Promise<Response> {
           completedSessions: session.status === 'completed' ? 1 : 0,
           averageRating: 0, // Will be calculated later
           goals: [],
+          progress: {
+            current: session.status === 'completed' ? 1 : 0,
+            target: 1,
+          },
         });
       } else {
         const existingClient = clientMap.get(clientId)!;
@@ -238,6 +249,10 @@ export async function GET(request: NextRequest): Promise<Response> {
         }
 
         client.goals = goalsByClient.get(clientId)?.slice(0, 3) ?? [];
+        client.progress = {
+          current: client.completedSessions,
+          target: Math.max(client.totalSessions, 1),
+        };
       }
     }
 
