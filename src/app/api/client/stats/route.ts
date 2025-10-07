@@ -23,6 +23,10 @@ export async function GET(request: NextRequest): Promise<Response> {
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
+    if (session.user.role !== 'client' && session.user.role !== 'admin') {
+      return ApiResponseHelper.forbidden(`Client access required. Current role: ${session.user.role}`);
+    }
+
     const userId = session.user.id;
     const supabase = createServerClient();
 
