@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { getCoachSessionRate } from '@/lib/coach-dashboard/coach-profile';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 const insightsQuerySchema = z.object({
   timeRange: z.enum(['7d', '30d', '90d', '1y']).default('30d'),
@@ -42,7 +42,7 @@ function getTimeRange(range: string): TimeRange {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {

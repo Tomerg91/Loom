@@ -1,7 +1,7 @@
 import { ANALYTICS_CONFIG } from '@/lib/config/analytics-constants';
-import type { createServerClient } from '@/lib/supabase/server';
+import type { createClient } from '@/lib/supabase/server';
 
-type SupabaseClientLike = ReturnType<typeof createServerClient>;
+type SupabaseClientLike = ReturnType<typeof createClient>;
 
 interface CoachSessionRateResult {
   rate: number;

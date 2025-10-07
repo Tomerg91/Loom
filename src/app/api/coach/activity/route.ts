@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { authService } from '@/lib/services/auth-service';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 interface RecentActivity {
   id: string;
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     console.log('[/api/coach/activity] Fetching activity for coach:', coachId);
 
-    const supabase = createServerClient();
+    const supabase = createClient();
 
     // Fetch recent activities from different sources
     const activities: RecentActivity[] = [];

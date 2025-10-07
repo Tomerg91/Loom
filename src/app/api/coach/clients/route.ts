@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { authService } from '@/lib/services/auth-service';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 interface Client {
   id: string;
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const statusFilter = searchParams.get('status') || 'all';
     const sortBy = searchParams.get('sortBy') || 'name';
 
-    const supabase = createServerClient();
+    const supabase = createClient();
 
     console.log('[/api/coach/clients] Fetching clients for coach:', coachId);
 

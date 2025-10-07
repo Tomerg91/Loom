@@ -5,7 +5,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { getCoachSessionRate } from '@/lib/coach-dashboard/coach-profile';
 import { getDefaultCoachRating } from '@/lib/config/analytics-constants';
 import { authService } from '@/lib/services/auth-service';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 interface DashboardStats {
   totalSessions: number;
@@ -45,7 +45,7 @@ export async function GET(_request: NextRequest): Promise<Response> {
     }
 
     const coachId = session.user.id;
-    const supabase = createServerClient();
+    const supabase = createClient();
 
     console.log('[/api/coach/stats] Fetching stats for coach:', coachId);
 
