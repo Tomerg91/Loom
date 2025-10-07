@@ -43,7 +43,7 @@ import {
   Archive,
   Star,
 } from 'lucide-react';
-import { format, parseISO, isBefore, differenceInHours } from 'date-fns';
+import { format, parseISO, differenceInHours } from 'date-fns';
 import type { Session } from '@/types';
 import { RescheduleSessionDialog } from './reschedule-session-dialog';
 import { RateSessionDialog } from './rate-session-dialog';
