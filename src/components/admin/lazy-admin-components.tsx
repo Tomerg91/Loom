@@ -184,9 +184,19 @@ const SystemPageSkeleton = ({ className }: { className?: string }) => (
 );
 
 // Lazy-loaded admin components
+export const LazyAdminDashboard = dynamic(
+  () => import('./dashboard-page').then(mod => ({
+    default: mod.AdminDashboardPage
+  })),
+  {
+    loading: () => <AdminPageSkeleton title="Admin Dashboard" description="Platform overview and quick actions" />,
+    ssr: false
+  }
+);
+
 export const LazyAdminAnalyticsPage = dynamic(
-  () => import('./analytics-page').then(mod => ({ 
-    default: mod.AdminAnalyticsPage 
+  () => import('./analytics-page').then(mod => ({
+    default: mod.AdminAnalyticsPage
   })),
   {
     loading: () => <AnalyticsPageSkeleton />,
@@ -195,8 +205,8 @@ export const LazyAdminAnalyticsPage = dynamic(
 );
 
 export const LazyAdminUsersPage = dynamic(
-  () => import('./users-page').then(mod => ({ 
-    default: mod.AdminUsersPage 
+  () => import('./users-page').then(mod => ({
+    default: mod.AdminUsersPage
   })),
   {
     loading: () => <UsersPageSkeleton />,
@@ -205,11 +215,31 @@ export const LazyAdminUsersPage = dynamic(
 );
 
 export const LazyAdminSystemPage = dynamic(
-  () => import('./system-page').then(mod => ({ 
-    default: mod.AdminSystemPage 
+  () => import('./system-page').then(mod => ({
+    default: mod.AdminSystemPage
   })),
   {
     loading: () => <SystemPageSkeleton />,
+    ssr: false
+  }
+);
+
+export const LazyAdminSessionsPage = dynamic(
+  () => import('./sessions-page').then(mod => ({
+    default: mod.AdminSessionsPage
+  })),
+  {
+    loading: () => <AdminPageSkeleton title="Sessions Management" description="View and manage all platform sessions" />,
+    ssr: false
+  }
+);
+
+export const LazyAdminAuditPage = dynamic(
+  () => import('./audit-page').then(mod => ({
+    default: mod.AdminAuditPage
+  })),
+  {
+    loading: () => <AdminPageSkeleton title="Audit Logs" description="Review system audit logs and activity" />,
     ssr: false
   }
 );

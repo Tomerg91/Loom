@@ -1,16 +1,16 @@
 import { Suspense } from 'react';
-import { LazyAdminDashboard, LoadingSpinner } from '@/components/lazy-components';
+import { LazyAdminSessions, LoadingSpinner } from '@/components/lazy-components';
 import { AdminRoute } from '@/components/auth/route-guard';
 
 // Force dynamic rendering to avoid prerender issues with event handlers
 export const dynamic = 'force-dynamic';
 
-export default function AdminPage() {
+export default function AdminSessionsPageRoute() {
   return (
     <AdminRoute>
       <div className="container mx-auto px-4 py-8">
-        <Suspense fallback={<LoadingSpinner message="Loading admin dashboard..." />}>
-          <LazyAdminDashboard />
+        <Suspense fallback={<LoadingSpinner message="Loading sessions management..." />}>
+          <LazyAdminSessions />
         </Suspense>
       </div>
     </AdminRoute>

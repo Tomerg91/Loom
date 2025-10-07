@@ -118,9 +118,19 @@ export const LazyClientDashboard = dynamic(
 );
 
 // Admin components
+export const LazyAdminDashboard = dynamic(
+  () => import('./admin/lazy-admin-components').then(mod => ({
+    default: mod.LazyAdminDashboard
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading admin dashboard..." />,
+    ssr: false
+  }
+);
+
 export const LazyAdminAnalytics = dynamic(
-  () => import('./admin/lazy-admin-components').then(mod => ({ 
-    default: mod.LazyAdminAnalyticsPage 
+  () => import('./admin/lazy-admin-components').then(mod => ({
+    default: mod.LazyAdminAnalyticsPage
   })),
   {
     loading: () => <LoadingSpinner message="Loading analytics dashboard..." />,
@@ -129,8 +139,8 @@ export const LazyAdminAnalytics = dynamic(
 );
 
 export const LazyAdminUsers = dynamic(
-  () => import('./admin/lazy-admin-components').then(mod => ({ 
-    default: mod.LazyAdminUsersPage 
+  () => import('./admin/lazy-admin-components').then(mod => ({
+    default: mod.LazyAdminUsersPage
   })),
   {
     loading: () => <LoadingSpinner message="Loading user management..." />,
@@ -139,11 +149,31 @@ export const LazyAdminUsers = dynamic(
 );
 
 export const LazyAdminSystem = dynamic(
-  () => import('./admin/lazy-admin-components').then(mod => ({ 
-    default: mod.LazyAdminSystemPage 
+  () => import('./admin/lazy-admin-components').then(mod => ({
+    default: mod.LazyAdminSystemPage
   })),
   {
     loading: () => <LoadingSpinner message="Loading system settings..." />,
+    ssr: false
+  }
+);
+
+export const LazyAdminSessions = dynamic(
+  () => import('./admin/lazy-admin-components').then(mod => ({
+    default: mod.LazyAdminSessionsPage
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading sessions management..." />,
+    ssr: false
+  }
+);
+
+export const LazyAdminAudit = dynamic(
+  () => import('./admin/lazy-admin-components').then(mod => ({
+    default: mod.LazyAdminAuditPage
+  })),
+  {
+    loading: () => <LoadingSpinner message="Loading audit logs..." />,
     ssr: false
   }
 );

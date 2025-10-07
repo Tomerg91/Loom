@@ -80,8 +80,11 @@ export function NavMenu() {
 
   // Role-specific navigation items
   const adminItems: NavItem[] = [
+    { label: t('admin_dashboard'), href: '/admin', icon: Shield, exact: true },
     { label: t('users'), href: '/admin/users', icon: Users },
+    { label: t('sessions'), href: '/admin/sessions', icon: Calendar },
     { label: t('analytics'), href: '/admin/analytics', icon: BarChart3 },
+    { label: t('audit'), href: '/admin/audit', icon: FileText },
     { label: t('system'), href: '/admin/system', icon: Settings },
   ];
 
@@ -159,21 +162,24 @@ export function NavMenu() {
 
               {/* Role-specific items */}
               <AdminOnly>
-                {adminItems.map((item) => (
-                  <Button
-                    key={item.href}
-                    asChild
-                    variant={isActive(item.href) ? "default" : "ghost"}
-                    size="sm"
-                    className="flex items-center rtl:space-x-reverse space-x-2"
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                  >
-                    <Link href={item.href as '/dashboard'}>
-                      <item.icon className="h-4 w-4" aria-hidden="true" />
-                      <span>{item.label}</span>
-                    </Link>
-                  </Button>
-                ))}
+                {adminItems.map((item) => {
+                  const active = isActive(item.href, item.exact);
+                  return (
+                    <Button
+                      key={item.href}
+                      asChild
+                      variant={active ? "default" : "ghost"}
+                      size="sm"
+                      className="flex items-center rtl:space-x-reverse space-x-2"
+                      aria-current={active ? "page" : undefined}
+                    >
+                      <Link href={item.href as '/dashboard'}>
+                        <item.icon className="h-4 w-4" aria-hidden="true" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </Button>
+                  );
+                })}
               </AdminOnly>
 
               <CoachOnly>
@@ -375,23 +381,26 @@ export function NavMenu() {
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pb-2">
                 {t('admin')}
               </p>
-              {adminItems.map((item) => (
-                <Button
-                  key={item.href}
-                  asChild
-                  variant={isActive(item.href) ? "default" : "ghost"}
-                  size="sm"
-                  className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
-                  aria-current={isActive(item.href) ? "page" : undefined}
-                >
-                  <Link href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
-                    <span className="flex items-center rtl:space-x-reverse space-x-3">
-                      <item.icon className="h-5 w-5" aria-hidden="true" />
-                      <span>{item.label}</span>
-                    </span>
-                  </Link>
-                </Button>
-              ))}
+              {adminItems.map((item) => {
+                const active = isActive(item.href, item.exact);
+                return (
+                  <Button
+                    key={item.href}
+                    asChild
+                    variant={active ? "default" : "ghost"}
+                    size="sm"
+                    className="w-full rtl:justify-end ltr:justify-start flex items-center rtl:space-x-reverse space-x-3 py-3 transition-all hover:scale-[1.02]"
+                    aria-current={active ? "page" : undefined}
+                  >
+                    <Link href={item.href as '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>
+                      <span className="flex items-center rtl:space-x-reverse space-x-3">
+                        <item.icon className="h-5 w-5" aria-hidden="true" />
+                        <span>{item.label}</span>
+                      </span>
+                    </Link>
+                  </Button>
+                );
+              })}
             </div>
           </AdminOnly>
 
