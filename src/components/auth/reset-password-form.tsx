@@ -13,6 +13,10 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { commonValidators } from '@/lib/validation/common';
+import { config } from '@/lib/config';
+
+const AUTH_ENDPOINTS = config.endpoints.auth;
+const HTTP_CONFIG = config.http;
 
 // Schema for password reset request
 const resetRequestSchema = z.object({
@@ -62,9 +66,9 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(AUTH_ENDPOINTS.RESET_PASSWORD, {
+        method: HTTP_CONFIG.methods.POST,
+        headers: { 'Content-Type': HTTP_CONFIG.contentTypes.JSON },
         body: JSON.stringify(data),
       });
 
@@ -107,9 +111,9 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/update-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(AUTH_ENDPOINTS.UPDATE_PASSWORD, {
+        method: HTTP_CONFIG.methods.POST,
+        headers: { 'Content-Type': HTTP_CONFIG.contentTypes.JSON },
         body: JSON.stringify({
           password: data.password,
           token,
