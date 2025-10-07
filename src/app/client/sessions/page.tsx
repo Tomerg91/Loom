@@ -9,4 +9,3 @@ export default function Page() {
   const locale = routing.defaultLocale;
   redirect(`/${locale}/client/sessions`);
 }
-// The actual page has been moved to /[locale]/client/sessions
