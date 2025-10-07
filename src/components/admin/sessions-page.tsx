@@ -73,7 +73,7 @@ export function AdminSessionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState<'scheduled_at' | 'created_at'>('scheduled_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortOrder] = useState<'asc' | 'desc'>('desc');
 
   const { data: sessionsData, isLoading, error, refetch } = useQuery<SessionsData>({
     queryKey: ['admin-sessions', statusFilter, page, sortBy, sortOrder],
