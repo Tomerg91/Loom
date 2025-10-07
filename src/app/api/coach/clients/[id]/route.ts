@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { authService } from '@/lib/services/auth-service';
-import { ApiResponseHelper } from '@/lib/api/types';
+import { NextRequest } from 'next/server';
+
 import { ApiError } from '@/lib/api/errors';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { authService } from '@/lib/services/auth-service';
 import { createServerClient } from '@/lib/supabase/server';
 
 interface ClientDetailResponse {
@@ -111,6 +112,8 @@ export async function GET(
       throw new ApiError('FETCH_SESSIONS_FAILED', 'Failed to fetch client sessions', 500);
     }
 
+    const sessionIds = sessions?.map((session) => session.id) ?? [];
+
     // Get client notes from this coach
     const { data: notes, error: notesError } = await supabase
       .from('coach_notes')
@@ -121,48 +124,140 @@ export async function GET(
       .order('created_at', { ascending: false })
       .limit(1);
 
-    // Get session reflections for rating calculation
-    const { data: reflections, error: reflectionsError } = await supabase
-      .from('reflections')
-      .select('mood_rating, session_id')
-      .in('session_id', sessions?.map(s => s.id) || []);
+    if (notesError) {
+      console.warn('[/api/coach/clients/:id] Failed to load coach notes', notesError);
+    }
 
-    // Calculate statistics
+    const feedbackPromise = sessionIds.length > 0
+      ? supabase
+          .from('session_feedback')
+          .select('session_id, overall_rating')
+          .eq('coach_id', coachId)
+          .in('session_id', sessionIds)
+      : Promise.resolve<{ data: { session_id: string; overall_rating: number | null }[]; error: null }>({
+          data: [],
+          error: null,
+        });
+
+    const ratingsPromise = sessionIds.length > 0
+      ? supabase
+          .from('session_ratings')
+          .select('session_id, rating')
+          .eq('coach_id', coachId)
+          .in('session_id', sessionIds)
+      : Promise.resolve<{ data: { session_id: string; rating: number | null }[]; error: null }>({
+          data: [],
+          error: null,
+        });
+
+    const goalsPromise = supabase
+      .from('client_goals')
+      .select('id, title, status, progress_percentage, target_date, completed_at')
+      .eq('coach_id', coachId)
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
+
+    const [feedbackResult, ratingsResult, goalsResult] = await Promise.all([
+      feedbackPromise,
+      ratingsPromise,
+      goalsPromise,
+    ]);
+
+    if (feedbackResult.error) {
+      console.warn('[/api/coach/clients/:id] Failed to load session feedback', feedbackResult.error);
+    }
+    if (ratingsResult.error) {
+      console.warn('[/api/coach/clients/:id] Failed to load session ratings', ratingsResult.error);
+    }
+    if (goalsResult.error) {
+      console.warn('[/api/coach/clients/:id] Failed to load client goals', goalsResult.error);
+    }
+
     const totalSessions = sessions?.length || 0;
-    const completedSessions = sessions?.filter(s => s.status === 'completed').length || 0;
-    
-    // Calculate average rating from reflections
-    const ratingsWithValues = reflections?.filter(r => r.mood_rating && r.mood_rating > 0) || [];
-    const averageRating = ratingsWithValues.length > 0 
-      ? ratingsWithValues.reduce((sum, r) => sum + (r.mood_rating || 0), 0) / ratingsWithValues.length
+    const completedSessions = sessions?.filter((s) => s.status === 'completed').length || 0;
+
+    const ratingBySession = new Map<string, number>();
+
+    feedbackResult.data
+      ?.filter((feedback) => feedback.overall_rating != null)
+      .forEach((feedback) => {
+        const parsed = Number(feedback.overall_rating);
+        if (Number.isFinite(parsed) && parsed > 0) {
+          ratingBySession.set(feedback.session_id, parsed);
+        }
+      });
+
+    ratingsResult.data
+      ?.filter((rating) => rating.rating != null)
+      .forEach((rating) => {
+        const parsed = Number(rating.rating);
+        if (!ratingBySession.has(rating.session_id) && Number.isFinite(parsed) && parsed > 0) {
+          ratingBySession.set(rating.session_id, parsed);
+        }
+      });
+
+    const ratingValues = Array.from(ratingBySession.values());
+    const averageRating = ratingValues.length > 0
+      ? Math.round(((ratingValues.reduce((sum, value) => sum + value, 0) / ratingValues.length) + Number.EPSILON) * 10) / 10
       : 0;
 
-    // Determine client status based on recent activity
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const hasRecentSession = sessions?.some(s => new Date(s.scheduled_at) >= thirtyDaysAgo);
-    const clientStatus = hasRecentSession ? 'active' : 'inactive';
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 30);
 
-    // Calculate progress (simplified - based on completed sessions vs total)
-    const progressPercentage = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+    const hasRecentSession = sessions?.some((session) => {
+      if (session.status === 'cancelled') return false;
+      const scheduledAt = new Date(session.scheduled_at);
+      return scheduledAt >= thirtyDaysAgo;
+    }) ?? false;
 
-    // Transform sessions for response
-    const sessionDetails: SessionDetail[] = sessions?.map(session => {
-      const reflection = reflections?.find(r => r.session_id === session.id);
+    const normalizedUserStatus = clientUser.status?.toLowerCase();
+    const clientStatus: 'active' | 'inactive' | 'pending' = normalizedUserStatus && (normalizedUserStatus === 'pending' || normalizedUserStatus === 'invited')
+      ? 'pending'
+      : hasRecentSession
+        ? 'active'
+        : 'inactive';
+
+    const goals = goalsResult.data ?? [];
+    const activeGoals = goals.filter((goal) => goal.status !== 'completed' && goal.status !== 'cancelled');
+    const goalProgressAverage = activeGoals.length > 0
+      ? Math.round(
+          (activeGoals.reduce((sum, goal) => sum + (goal.progress_percentage ?? 0), 0) / activeGoals.length)
+        )
+      : null;
+
+    const progressPercentage = goalProgressAverage ?? (totalSessions > 0
+      ? Math.round((completedSessions / totalSessions) * 100)
+      : 0);
+    const normalizedProgress = Math.max(0, Math.min(100, progressPercentage));
+
+    const goalSummaries = goals.map((goal) => {
+      const parts = [goal.title?.trim()].filter(Boolean) as string[];
+      if (goal.progress_percentage != null) {
+        parts.push(`${goal.progress_percentage}%`);
+      }
+      if (goal.status) {
+        parts.push(goal.status);
+      }
+      if (goal.target_date) {
+        parts.push(`due ${goal.target_date}`);
+      }
+      return parts.join(' • ');
+    });
+
+    const sessionDetails: SessionDetail[] = sessions?.map((session) => {
+      const rating = ratingBySession.get(session.id);
       return {
         id: session.id,
         date: session.scheduled_at,
         duration: session.duration_minutes || 60,
         status: session.status as 'completed' | 'scheduled' | 'cancelled',
-        rating: reflection?.mood_rating || undefined,
+        rating: rating ?? undefined,
         notes: session.description || undefined,
-        type: 'video', // Default to video for now since session_type doesn't exist in schema
+        type: 'video',
         title: session.title || undefined,
       };
     }) || [];
-
-    // Mock goals for now - this would come from a goals table in production
-    const mockGoals = ['Improve Wellness', 'Build Confidence', 'Career Development'];
 
     const clientDetail: ClientDetailResponse = {
       id: clientUser.id,
@@ -176,10 +271,10 @@ export async function GET(
       totalSessions,
       completedSessions,
       averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal
-      goals: mockGoals, // TODO: Replace with real goals from database
+      goals: goalSummaries.slice(0, 5),
       notes: notes?.[0]?.content || '',
       progress: {
-        current: progressPercentage,
+        current: normalizedProgress,
         target: 100,
       },
       sessions: sessionDetails,
@@ -246,6 +341,10 @@ export async function PUT(
       .eq('client_id', clientId)
       .eq('privacy_level', 'private')
       .single();
+
+    if (fetchError) {
+      console.warn('[/api/coach/clients/:id] Failed to fetch existing coach note', fetchError);
+    }
 
     if (existingNote) {
       // Update existing note

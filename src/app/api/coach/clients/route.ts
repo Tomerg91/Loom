@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import { authService } from '@/lib/services/auth-service';
-import { ApiResponseHelper } from '@/lib/api/types';
+
 import { ApiError } from '@/lib/api/errors';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { authService } from '@/lib/services/auth-service';
 import { createServerClient } from '@/lib/supabase/server';
 
 interface Client {
@@ -12,12 +13,36 @@ interface Client {
   avatar?: string;
   lastSession?: string;
   totalSessions: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending';
   joinedDate: string;
   nextSession?: string;
   completedSessions: number;
   averageRating: number;
   goals?: string[];
+}
+
+function deriveClientStatus(
+  userStatus: string | null | undefined,
+  sessionDate: Date,
+  activeThreshold: Date,
+  sessionStatus?: string | null
+): 'active' | 'inactive' | 'pending' {
+  const normalizedUser = userStatus?.toLowerCase();
+  const normalizedSession = sessionStatus?.toLowerCase();
+
+  if (normalizedUser && (normalizedUser === 'pending' || normalizedUser === 'invited')) {
+    return 'pending';
+  }
+
+  if (normalizedSession === 'cancelled') {
+    return sessionDate >= activeThreshold && normalizedUser === 'active' ? 'active' : 'inactive';
+  }
+
+  if (sessionDate >= activeThreshold) {
+    return 'active';
+  }
+
+  return 'inactive';
 }
 
 export async function GET(request: NextRequest): Promise<Response> {
@@ -108,12 +133,12 @@ export async function GET(request: NextRequest): Promise<Response> {
           avatar: client.avatar_url || undefined,
           lastSession: session.status === 'completed' ? sessionDate.toISOString() : undefined,
           totalSessions: 1,
-          status: sessionDate >= thirtyDaysAgo ? 'active' : 'inactive',
+          status: deriveClientStatus(client.status, sessionDate, thirtyDaysAgo, session.status),
           joinedDate: client.created_at,
           nextSession: session.status === 'scheduled' && sessionDate > new Date() ? sessionDate.toISOString() : undefined,
           completedSessions: session.status === 'completed' ? 1 : 0,
           averageRating: 0, // Will be calculated later
-          goals: [], // Will be fetched later
+          goals: [],
         });
       } else {
         const existingClient = clientMap.get(clientId)!;
@@ -129,37 +154,91 @@ export async function GET(request: NextRequest): Promise<Response> {
             existingClient.nextSession = sessionDate.toISOString();
           }
         }
-        if (sessionDate >= thirtyDaysAgo) {
+        if (session.status !== 'cancelled' && sessionDate >= thirtyDaysAgo && existingClient.status !== 'pending') {
           existingClient.status = 'active';
         }
       }
     }
 
-    // Fetch average ratings
     const clientIds = Array.from(clientMap.keys());
-    const { data: ratings } = await supabase
-      .from('reflections')
-      .select('client_id, mood_rating')
-      .in('client_id', clientIds);
 
-    const clientRatings = new Map<string, number[]>();
-    for (const rating of ratings || []) {
-      if (!clientRatings.has(rating.client_id)) {
-        clientRatings.set(rating.client_id, []);
+    if (clientIds.length > 0) {
+      const [feedbackResult, ratingsResult, goalsResult] = await Promise.all([
+        supabase
+          .from('session_feedback')
+          .select('client_id, overall_rating')
+          .eq('coach_id', coachId)
+          .in('client_id', clientIds),
+        supabase
+          .from('session_ratings')
+          .select('client_id, rating')
+          .eq('coach_id', coachId)
+          .in('client_id', clientIds),
+        supabase
+          .from('client_goals')
+          .select('client_id, title, status, progress_percentage, target_date')
+          .eq('coach_id', coachId)
+          .in('client_id', clientIds)
+          .order('created_at', { ascending: false }),
+      ]);
+
+      if (feedbackResult.error) {
+        console.warn('[/api/coach/clients] Failed to load session feedback', feedbackResult.error);
       }
-      clientRatings.get(rating.client_id)!.push(rating.mood_rating);
-    }
-
-    for (const [clientId, client] of clientMap.entries()) {
-      const ratings = clientRatings.get(clientId);
-      if (ratings && ratings.length > 0) {
-        client.averageRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+      if (ratingsResult.error) {
+        console.warn('[/api/coach/clients] Failed to load session ratings', ratingsResult.error);
       }
-    }
+      if (goalsResult.error) {
+        console.warn('[/api/coach/clients] Failed to load client goals', goalsResult.error);
+      }
 
-    // Fetch goals (to be implemented)
-    for (const client of clientMap.values()) {
-      client.goals = []; // TODO: Fetch goals from the database
+      const ratingMap = new Map<string, number[]>();
+
+      feedbackResult.data?.forEach((feedback) => {
+        if (feedback.overall_rating == null) return;
+        const value = Number(feedback.overall_rating);
+        if (!Number.isFinite(value) || value <= 0) return;
+        if (!ratingMap.has(feedback.client_id)) {
+          ratingMap.set(feedback.client_id, []);
+        }
+        ratingMap.get(feedback.client_id)!.push(value);
+      });
+
+      ratingsResult.data?.forEach((rating) => {
+        if (rating.rating == null) return;
+        const value = Number(rating.rating);
+        if (!Number.isFinite(value) || value <= 0) return;
+        if (!ratingMap.has(rating.client_id)) {
+          ratingMap.set(rating.client_id, []);
+        }
+        ratingMap.get(rating.client_id)!.push(value);
+      });
+
+      const goalsByClient = new Map<string, string[]>();
+      goalsResult.data?.forEach((goal) => {
+        if (!goalsByClient.has(goal.client_id)) {
+          goalsByClient.set(goal.client_id, []);
+        }
+
+        const goalLabelParts = [goal.title.trim()];
+        if (goal.status && goal.status !== 'active') {
+          goalLabelParts.push(`(${goal.status})`);
+        }
+        if (goal.progress_percentage != null) {
+          goalLabelParts.push(`${goal.progress_percentage}%`);
+        }
+        goalsByClient.get(goal.client_id)!.push(goalLabelParts.filter(Boolean).join(' '));
+      });
+
+      for (const [clientId, client] of clientMap.entries()) {
+        const ratings = ratingMap.get(clientId);
+        if (ratings && ratings.length > 0) {
+          const sum = ratings.reduce((total, value) => total + value, 0);
+          client.averageRating = Math.round(((sum / ratings.length) + Number.EPSILON) * 10) / 10;
+        }
+
+        client.goals = goalsByClient.get(clientId)?.slice(0, 3) ?? [];
+      }
     }
 
     // Convert to array and apply filtering
