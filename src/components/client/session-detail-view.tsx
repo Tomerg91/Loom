@@ -570,19 +570,17 @@ export function SessionDetailView({ sessionId }: SessionDetailViewProps) {
       )}
 
       {/* Reschedule Dialog */}
-      {session && (
-        <RescheduleSessionDialog
-          sessionId={sessionId}
-          sessionTitle={session.title || 'Coaching Session'}
-          currentScheduledAt={session.scheduledAt}
-          open={showRescheduleDialog}
-          onOpenChange={setShowRescheduleDialog}
-          onSuccess={() => {
-            // Refetch session data after successful reschedule
-            queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-          }}
-        />
-      )}
+      <RescheduleSessionDialog
+        sessionId={sessionId}
+        sessionTitle={session.title || 'Coaching Session'}
+        currentScheduledAt={session.scheduledAt}
+        open={showRescheduleDialog}
+        onOpenChange={setShowRescheduleDialog}
+        onSuccess={() => {
+          // Refetch session data after successful reschedule
+          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+        }}
+      />
 
       {/* Rate Session Dialog */}
       {session && session.status === 'completed' && (
