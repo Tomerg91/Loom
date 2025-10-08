@@ -63,12 +63,6 @@
 - Integrated recurrence planning into the Supabase-backed `TaskService` so task creation and updates persist canonical rule metadata, regenerate upcoming instances, and keep the primary instance synchronized with due date changes.
 - Introduced shared recurrence schemas/types and unit coverage for the scheduling service so contributors can extend supported patterns with confidence.
 
-## Step 7 – Progress Updates & Attachments API (Completed)
-
-- Implemented the `/api/tasks/[taskId]/instances/[instanceId]/progress` endpoint, enabling authenticated clients and coaches to submit progress percentages, visibility preferences, and notes while the service layer enforces ownership, updates task instance status, and synchronizes parent task state.
-- Added a Supabase-backed `ProgressService` that persists progress records, stores attachment metadata, recalculates completion status, and safely rolls back when attachment inserts fail.
-- Created a signed-upload helper at `/api/attachments/sign` so authenticated users can request scoped Supabase Storage URLs; documented the new `TASK_ATTACHMENTS_BUCKET` environment variable in `.env.example` for bucket configuration.
-
 ## Step Tracking
 
 - [x] Step 1: Audit existing codebase and align prerequisites (this document).
@@ -77,5 +71,4 @@
 - [x] Step 4: Seed reference data and helper scripts.
 - [x] Step 5: Implement task CRUD API route handlers.
 - [x] Step 6: Build recurrence scheduling utilities.
-- [x] Step 7: Create progress update and attachment APIs.
-- [ ] Steps 8-20: Pending as outlined in the implementation roadmap.
+- [ ] Steps 7-20: Pending as outlined in the implementation roadmap.

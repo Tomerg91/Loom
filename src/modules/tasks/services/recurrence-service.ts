@@ -214,11 +214,7 @@ export class RecurrenceService {
     const targetCount = rule.count ? Math.min(rule.count, limit) : limit;
 
     const pushIfValid = (candidate: Date) => {
-      // Guard against inserting dates that fall before the provided start date.
-      // This is especially important for weekly recurrences with multiple
-      // weekdays where the rule might otherwise re-introduce days earlier in
-      // the same week (e.g., starting on Wednesday with BYDAY=MO,WE).
-      if (candidate < startDate) {
+      if (candidate < startDate && occurrences.length === 0) {
         return;
       }
 
