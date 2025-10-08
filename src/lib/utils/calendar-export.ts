@@ -3,9 +3,18 @@ import type { Session } from '@/types';
 
 /**
  * Format date for ICS format (YYYYMMDDTHHMMSSZ)
+ *
+ * IMPORTANT: This formats the date in UTC timezone.
+ * The literal 'Z' suffix indicates UTC, so we must convert the date to UTC first.
+ * Using toISOString() ensures the date is in UTC before formatting.
  */
 function formatICSDate(date: Date): string {
-  return format(date, "yyyyMMdd'T'HHmmss'Z'");
+  // Convert to UTC and format as YYYYMMDDTHHMMSSZ
+  const isoString = date.toISOString();
+  // Remove hyphens, colons, and milliseconds from ISO string
+  // From: 2024-01-15T09:30:00.000Z
+  // To:   20240115T093000Z
+  return isoString.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 }
 
 /**
@@ -86,7 +95,11 @@ export function generateGoogleCalendarURL(session: Session): string {
   const endDate = addMinutes(startDate, session.durationMinutes || session.duration);
 
   // Google Calendar date format: YYYYMMDDTHHmmssZ
-  const formatGoogleDate = (date: Date) => format(date, "yyyyMMdd'T'HHmmss'Z'");
+  // IMPORTANT: Must be in UTC timezone (indicated by 'Z' suffix)
+  const formatGoogleDate = (date: Date) => {
+    const isoString = date.toISOString();
+    return isoString.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  };
 
   const params = new URLSearchParams({
     action: 'TEMPLATE',
