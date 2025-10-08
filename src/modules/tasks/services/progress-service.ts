@@ -165,7 +165,7 @@ export class ProgressService {
       input.attachments ?? []
     );
 
-    const currentStatus = instance.task.status as TaskStatus;
+    const currentStatus = instance.status as TaskStatus;
     const nextStatus = resolveInstanceStatus(percentage, currentStatus);
     const completedAt =
       nextStatus === 'COMPLETED' ? new Date().toISOString() : null;
