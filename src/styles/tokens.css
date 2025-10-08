@@ -1,0 +1,210 @@
+/**
+ * Design Tokens - Satya Method Coaching Platform
+ *
+ * This file defines the core design system tokens used throughout the app.
+ * These tokens are referenced by Tailwind config and components for consistent theming.
+ *
+ * Organization:
+ * - Color tokens (semantic colors, brand colors)
+ * - Spacing tokens
+ * - Typography tokens
+ * - Border & radius tokens
+ * - Shadow tokens
+ * - Animation tokens
+ */
+
+:root {
+  /* ===== Color Tokens - Light Theme ===== */
+
+  /* Background & Surfaces */
+  --background: 20 33% 99%; /* Custom off-white (#fdfcfb) - calm, grounded */
+  --foreground: 20 14% 11%; /* Stone 900 (#1c1917) - readable text */
+  --card: 20 33% 99%; /* Matching background for elevation */
+  --card-foreground: 20 14% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14% 11%;
+
+  /* Primary - Soft Teal (Satya Method signature) */
+  --primary: 174 72% 56%; /* Teal 400 (#2dd4bf) - primary actions */
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary - Warm neutrals for subtle UI */
+  --secondary: 20 6% 90%; /* Sand 200 (#e7e5e4) */
+  --secondary-foreground: 20 25% 27%; /* Sand 700 (#44403c) */
+
+  /* Muted - Grounded tones for less emphasis */
+  --muted: 20 6% 90%; /* Sand 200 */
+  --muted-foreground: 20 16% 45%; /* Sand 500 (#78716c) */
+
+  /* Accent - Highlights and hover states */
+  --accent: 174 64% 47%; /* Teal 500 (#14b8a6) */
+  --accent-foreground: 0 0% 100%;
+
+  /* Semantic Colors */
+  --destructive: 24 95% 53%; /* Terracotta 500 (#f97316) - warm alert */
+  --destructive-foreground: 0 0% 100%;
+  --success: 84 81% 44%; /* Moss 500 (#84cc16) - affirmative */
+  --success-foreground: 0 0% 100%;
+
+  /* Input & Interaction States */
+  --border: 20 6% 90%; /* Sand 200 (#e7e5e4) - subtle borders */
+  --input: 20 33% 99%; /* Matching background */
+  --ring: 174 72% 56%; /* Teal 400 - focus ring */
+
+  /* Brand Colors (for direct reference) */
+  --brand-teal: 174 72% 56%;
+  --brand-terracotta: 24 95% 53%;
+  --brand-moss: 84 81% 44%;
+  --brand-sand: 20 33% 99%;
+  --brand-stone: 20 14% 11%;
+
+  /* ===== Spacing Tokens ===== */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem; /* 8px */
+  --spacing-md: 1rem; /* 16px */
+  --spacing-lg: 1.5rem; /* 24px */
+  --spacing-xl: 2rem; /* 32px */
+  --spacing-2xl: 3rem; /* 48px */
+  --spacing-3xl: 4rem; /* 64px */
+
+  /* ===== Typography Tokens ===== */
+  --font-sans: var(--font-assistant), var(--font-inter), system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, monospace;
+
+  /* Font Sizes */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem; /* 36px */
+
+  /* Line Heights */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* Font Weights */
+  --font-thin: 100;
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* ===== Border & Radius Tokens ===== */
+  --radius: 0.75rem; /* 12px - soft, rounded corners */
+  --radius-sm: 0.5rem; /* 8px */
+  --radius-md: 0.75rem; /* 12px */
+  --radius-lg: 1rem; /* 16px */
+  --radius-full: 9999px; /* Fully rounded */
+
+  --border-width: 1px;
+  --border-width-2: 2px;
+  --border-width-4: 4px;
+
+  /* ===== Shadow Tokens ===== */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.02);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+
+  /* ===== Animation Tokens ===== */
+  --transition-fast: 150ms;
+  --transition-base: 200ms;
+  --transition-slow: 300ms;
+  --transition-slower: 500ms;
+
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ===== Z-Index Scale ===== */
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-fixed: 1200;
+  --z-modal-backdrop: 1300;
+  --z-modal: 1400;
+  --z-popover: 1500;
+  --z-tooltip: 1600;
+  --z-notification: 1700;
+  --z-max: 9999;
+}
+
+.dark {
+  /* ===== Color Tokens - Dark Theme ===== */
+
+  /* Background & Surfaces - Premium obsidian palette */
+  --background: 215 30% 8%; /* Deep obsidian */
+  --foreground: 51 20% 90%; /* Warm platinum text */
+  --card: 215 25% 10%; /* Rich charcoal card */
+  --card-foreground: 51 15% 88%;
+  --popover: 215 25% 10%;
+  --popover-foreground: 51 15% 88%;
+
+  /* Primary - Gold accent for dark mode luxury */
+  --primary: 46 75% 55%; /* Gold primary in dark */
+  --primary-foreground: 215 30% 8%;
+
+  /* Secondary - Dark charcoal */
+  --secondary: 215 20% 15%;
+  --secondary-foreground: 51 15% 85%;
+
+  /* Muted - Subtle dark tones */
+  --muted: 215 20% 12%;
+  --muted-foreground: 51 8% 60%;
+
+  /* Accent - Warm gold */
+  --accent: 46 60% 75%;
+  --accent-foreground: 215 30% 8%;
+
+  /* Semantic Colors - Adjusted for dark mode */
+  --destructive: 0 55% 45%;
+  --destructive-foreground: 0 0% 98%;
+  --success: 84 65% 50%;
+  --success-foreground: 0 0% 98%;
+
+  /* Input & Interaction States */
+  --border: 215 15% 20%; /* Sophisticated border */
+  --input: 215 15% 18%;
+  --ring: 46 75% 55%; /* Consistent gold ring */
+
+  /* Dark luxury material tokens */
+  --glass-background: rgba(0, 0, 0, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --surface-elevation: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+
+  /* Shadows adjusted for dark mode */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.6);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.7);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.8);
+}
+
+/**
+ * Usage Guidelines:
+ *
+ * 1. Use semantic color tokens (--primary, --muted, --destructive) for UI elements
+ * 2. Use brand tokens (--brand-*) only for brand-specific elements
+ * 3. Spacing tokens ensure consistent rhythm across the app
+ * 4. Typography tokens maintain hierarchy and readability
+ * 5. Shadow tokens provide depth and elevation
+ * 6. Animation tokens ensure smooth, consistent transitions
+ *
+ * Example:
+ * .button {
+ *   background: hsl(var(--primary));
+ *   color: hsl(var(--primary-foreground));
+ *   padding: var(--spacing-md) var(--spacing-lg);
+ *   border-radius: var(--radius-md);
+ *   transition: all var(--transition-base) var(--ease-out);
+ * }
+ */

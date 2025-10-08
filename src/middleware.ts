@@ -58,8 +58,9 @@ const publicRoutes = [
 ];
 
 // Feature flag to control whether auth gating runs in middleware.
-// Keep enabled by default to avoid behavior changes until routes are fully guarded.
-const AUTH_GATING_ENABLED = process.env.MIDDLEWARE_AUTH_ENABLED !== 'false';
+// Disabled by default as auth is now handled at page/API level per Phase 2 refactor plan.
+// Set MIDDLEWARE_AUTH_ENABLED=true to re-enable if needed during transition.
+const AUTH_GATING_ENABLED = process.env.MIDDLEWARE_AUTH_ENABLED === 'true';
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;

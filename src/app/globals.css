@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Import design tokens */
+@import '../styles/tokens.css';
+
 /* Import accessibility styles */
 @import '../styles/accessibility.css';
 

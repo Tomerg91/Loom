@@ -1,0 +1,34 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Security Headers - Snapshot Tests > should apply correct security headers to HTML responses 1`] = `
+{
+  "content-security-policy": "script-src 'self' 'unsafe-inline' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://js.sentry-cdn.com https://*.sentry.io; default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com; frame-ancestors 'none'; frame-src 'self' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io; connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://sentry.io https://*.sentry.io; worker-src 'self' blob:; manifest-src 'self'",
+  "content-type": "text/html",
+  "cross-origin-embedder-policy": "unsafe-none",
+  "cross-origin-opener-policy": "same-origin-allow-popups",
+  "cross-origin-resource-policy": "cross-origin",
+  "permissions-policy": "camera=(), microphone=(), geolocation=()",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "x-middleware-next": "1",
+}
+`;
+
+exports[`Security Headers - Snapshot Tests > should apply correct security headers to JSON API responses 1`] = `
+{
+  "cache-control": "no-store, max-age=0",
+  "content-security-policy": "script-src 'self' 'unsafe-inline' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://js.sentry-cdn.com https://*.sentry.io; default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://secure5.tranzila.com https://direct.tranzila.com; frame-ancestors 'none'; frame-src 'self' https://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://*.sentry.io; connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://vercel.live wss://vercel.live https://secure5.tranzila.com https://direct.tranzila.com https://sentry.io https://*.sentry.io; worker-src 'self' blob:; manifest-src 'self'",
+  "content-type": "application/json",
+  "cross-origin-embedder-policy": "unsafe-none",
+  "cross-origin-opener-policy": "same-origin-allow-popups",
+  "cross-origin-resource-policy": "cross-origin",
+  "permissions-policy": "camera=(), microphone=(), geolocation=()",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "x-robots-tag": "noindex, nofollow",
+}
+`;

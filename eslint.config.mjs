@@ -42,7 +42,7 @@ const eslintConfig = [
       'import/no-cycle': 'warn',
       'import/no-extraneous-dependencies': [
         'error',
-        { devDependencies: ['**/*.test.*', 'tests/**', 'scripts/**'] }
+        { devDependencies: ['**/*.test.*', 'tests/**', 'scripts/**', 'src/test/**'] }
       ],
     },
   }
