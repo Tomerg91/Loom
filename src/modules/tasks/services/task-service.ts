@@ -171,12 +171,22 @@ export class TaskServiceError extends Error {
 }
 
 export class TaskService {
+  private clientInstance: SupabaseClient | null = null;
+
   constructor(
-    private readonly client: SupabaseClient = createAdminClient(),
+    private readonly clientFactory: () => SupabaseClient = createAdminClient,
     private readonly recurrenceService: RecurrenceService = new RecurrenceService(
       DEFAULT_INSTANCE_LIMIT
     )
   ) {}
+
+  private getClient(): SupabaseClient {
+    if (!this.clientInstance) {
+      this.clientInstance = this.clientFactory();
+    }
+
+    return this.clientInstance;
+  }
 
   public async createTask(
     actor: TaskActor,
@@ -185,6 +195,8 @@ export class TaskService {
     if (!isCoachRole(actor.role)) {
       throw accessDenied();
     }
+
+    const client = this.getClient();
 
     const coachId = resolveCoachId(actor, input.coachId);
     const dueDate = input.dueDate ? new Date(input.dueDate) : null;
@@ -206,7 +218,7 @@ export class TaskService {
     const firstDueDate =
       plan.instances[0]?.dueDate ?? (dueDate ? new Date(dueDate) : null);
 
-    const { data: insertedTask, error: insertError } = await this.client
+    const { data: insertedTask, error: insertError } = await client
       .from('tasks')
       .insert({
         coach_id: coachId,
@@ -233,7 +245,7 @@ export class TaskService {
     }
 
     if (plan.instances.length > 0) {
-      const { error: instanceError } = await this.client
+      const { error: instanceError } = await client
         .from('task_instances')
         .insert(
           plan.instances.map(instance => ({
@@ -265,6 +277,8 @@ export class TaskService {
       throw accessDenied();
     }
 
+    const client = this.getClient();
+
     const coachId = resolveCoachId(actor, filters.coachId);
 
     const page = filters.page ?? 1;
@@ -272,7 +286,7 @@ export class TaskService {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    let query = this.client
+    let query = client
       .from('tasks')
       .select(TASK_SELECT, { count: 'exact' })
       .eq('coach_id', coachId);
@@ -355,6 +369,8 @@ export class TaskService {
       throw accessDenied();
     }
 
+    const client = this.getClient();
+
     const task = await this.fetchTaskRecord(taskId);
 
     if (actor.role === 'coach' && task.coach_id !== actor.id) {
@@ -418,7 +434,7 @@ export class TaskService {
       updates.due_date = firstDueDate ? firstDueDate.toISOString() : null;
       updates.recurrence_rule = toJsonOrNull(plan.recurrenceRule);
 
-      const { error: deleteError } = await this.client
+      const { error: deleteError } = await client
         .from('task_instances')
         .delete()
         .eq('task_id', taskId);
@@ -432,7 +448,7 @@ export class TaskService {
       }
 
       if (plan.instances.length > 0) {
-        const { error: insertError } = await this.client
+        const { error: insertError } = await client
           .from('task_instances')
           .insert(
             plan.instances.map(instance => ({
@@ -461,7 +477,7 @@ export class TaskService {
     }
 
     if (Object.keys(updates).length > 0) {
-      const { error: updateError } = await this.client
+      const { error: updateError } = await client
         .from('tasks')
         .update(updates)
         .eq('id', taskId);
@@ -479,7 +495,9 @@ export class TaskService {
   }
 
   private async fetchTaskRecord(taskId: string): Promise<TaskRecord> {
-    const { data, error } = await this.client
+    const client = this.getClient();
+
+    const { data, error } = await client
       .from('tasks')
       .select(TASK_SELECT)
       .eq('id', taskId)
