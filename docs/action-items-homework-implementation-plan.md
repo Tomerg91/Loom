@@ -33,10 +33,16 @@
 - Confirm that contributors possess Supabase service-role access as highlighted in the README checklist to prevent runtime failures in server-side actions.
 - Plan to regenerate Prisma client and Supabase type definitions immediately after Step 3 migrations to bring typings back in sync with the new task domain tables.
 
+## Step 2 – Tasks Module Scaffolding (Completed)
+
+- Created the `src/modules/tasks` workspace with dedicated subdirectories for `api`, `components`, `hooks`, `services`, and `types` so future features can be developed in isolation.
+- Documented module conventions, folder responsibilities, and roadmap alignment in `src/modules/tasks/README.md` to streamline onboarding and code reviews.
+- Added placeholder `index.ts` files in each subdirectory to establish public export hubs that will be expanded as APIs, UI, and services are implemented in later steps.
+
 ## Step Tracking
 
 - [x] Step 1: Audit existing codebase and align prerequisites (this document).
-- [ ] Step 2: Establish domain-specific workspace.
+- [x] Step 2: Establish domain-specific workspace.
 - [ ] Step 3: Define Prisma schema extensions for tasks domain.
 - [ ] Step 4: Seed reference data and helper scripts.
 - [ ] Steps 5-20: Pending as outlined in the implementation roadmap.
