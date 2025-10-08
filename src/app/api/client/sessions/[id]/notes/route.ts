@@ -25,6 +25,11 @@ export async function GET(
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
+    const isAdmin = session.user.role === 'admin';
+    if (session.user.role !== 'client' && !isAdmin) {
+      return ApiResponseHelper.forbidden(`Client access required. Current role: ${session.user.role}`);
+    }
+
     const userId = session.user.id;
     const sessionId = params.id;
     const supabase = createServerClient();
@@ -41,7 +46,7 @@ export async function GET(
     }
 
     // Check if user is the client for this session
-    if (sessionData.client_id !== userId) {
+    if (!isAdmin && sessionData.client_id !== userId) {
       return ApiResponseHelper.forbidden('You can only view notes for your own sessions');
     }
 

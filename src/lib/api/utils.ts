@@ -12,6 +12,10 @@ export type AuthenticatedUser = {
   email: string;
   role: UserRole;
   status: string;
+  metadata?: Record<string, unknown>;
+  phone?: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 // HTTP status codes
@@ -348,39 +352,81 @@ export function requireAuth<T extends unknown[]>(
 ) {
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
-      // Extract and validate authorization header
-      const authHeader = request.headers.get('authorization');
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return createErrorResponse(
-          'Authentication required. Please provide a valid Bearer token.',
-          HTTP_STATUS.UNAUTHORIZED
-        );
-      }
-
-      const token = authHeader.split(' ')[1];
-      if (!token || token.length < 10) {
-        return createErrorResponse(
-          'Invalid authentication token format',
-          HTTP_STATUS.UNAUTHORIZED
-        );
-      }
-
-      // Get authenticated user from Supabase with proper error handling
       const supabase = await createClient();
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+      const authHeader = request.headers.get('authorization');
 
-      if (authError) {
-        // Log security event for monitoring
-        console.warn('Authentication failed:', {
-          error: authError.message,
-          timestamp: new Date().toISOString(),
-          ip: request.headers.get('x-forwarded-for') || 'unknown'
-        });
-        
-        return createErrorResponse(
-          'Invalid or expired authentication token',
-          HTTP_STATUS.UNAUTHORIZED
-        );
+      type SupabaseUser = {
+        id: string;
+        email: string;
+        role?: string;
+        exp?: number;
+        phone?: string | null;
+        user_metadata?: Record<string, unknown> | null;
+      } | null;
+
+      let authUser: SupabaseUser = null;
+      let sessionExpiresAt: number | null = null;
+
+      if (authHeader) {
+        if (!authHeader.startsWith('Bearer ')) {
+          return createErrorResponse(
+            'Invalid authentication header format',
+            HTTP_STATUS.UNAUTHORIZED
+          );
+        }
+
+        const token = authHeader.split(' ')[1];
+        if (!token || token.length < 10) {
+          return createErrorResponse(
+            'Invalid authentication token format',
+            HTTP_STATUS.UNAUTHORIZED
+          );
+        }
+
+        const { data, error } = await supabase.auth.getUser(token);
+
+        if (error) {
+          console.warn('Authentication failed:', {
+            error: error.message,
+            timestamp: new Date().toISOString(),
+            ip: request.headers.get('x-forwarded-for') || 'unknown'
+          });
+
+          return createErrorResponse(
+            'Invalid or expired authentication token',
+            HTTP_STATUS.UNAUTHORIZED
+          );
+        }
+
+        authUser = data.user as SupabaseUser;
+        sessionExpiresAt = authUser?.exp ? authUser.exp * 1000 : null;
+      } else {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          console.warn('Session lookup failed:', {
+            error: sessionError.message,
+            timestamp: new Date().toISOString(),
+            ip: request.headers.get('x-forwarded-for') || 'unknown'
+          });
+
+          return createErrorResponse(
+            'Authentication required. Please sign in again.',
+            HTTP_STATUS.UNAUTHORIZED
+          );
+        }
+
+        if (!sessionData.session) {
+          return createErrorResponse(
+            'Authentication required. Please sign in again.',
+            HTTP_STATUS.UNAUTHORIZED
+          );
+        }
+
+        authUser = sessionData.session.user as SupabaseUser;
+        sessionExpiresAt = sessionData.session.expires_at
+          ? new Date(sessionData.session.expires_at).getTime()
+          : null;
       }
 
       if (!authUser || !authUser.id || !authUser.email) {
@@ -390,21 +436,18 @@ export function requireAuth<T extends unknown[]>(
         );
       }
 
-      // Verify token expiry explicitly
-      const tokenExpiry = authUser.exp;
-      if (tokenExpiry && tokenExpiry * 1000 < Date.now()) {
+      if (sessionExpiresAt && sessionExpiresAt < Date.now()) {
         return createErrorResponse(
           'Authentication token has expired',
           HTTP_STATUS.UNAUTHORIZED
         );
       }
 
-      // Get user profile from database with additional security checks
       const { data: userProfile, error: profileError } = await supabase
         .from('users')
         .select('id, email, role, status, created_at, updated_at')
         .eq('id', authUser.id)
-        .eq('email', authUser.email) // Additional verification
+        .eq('email', authUser.email)
         .single();
 
       if (profileError) {
@@ -413,7 +456,7 @@ export function requireAuth<T extends unknown[]>(
           error: profileError.message,
           timestamp: new Date().toISOString()
         });
-        
+
         return createErrorResponse(
           'User profile not found or access denied',
           HTTP_STATUS.UNAUTHORIZED
@@ -427,7 +470,6 @@ export function requireAuth<T extends unknown[]>(
         );
       }
 
-      // Enhanced status checks
       if (!userProfile.status || userProfile.status !== 'active') {
         return createErrorResponse(
           `User account is ${userProfile.status || 'inactive'}. Please contact support.`,
@@ -435,7 +477,6 @@ export function requireAuth<T extends unknown[]>(
         );
       }
 
-      // Validate role exists and is valid
       const validRoles: UserRole[] = ['admin', 'coach', 'client'];
       if (!userProfile.role || !validRoles.includes(userProfile.role)) {
         return createErrorResponse(
@@ -444,8 +485,8 @@ export function requireAuth<T extends unknown[]>(
         );
       }
 
-      // Check for account suspension or security flags
-      const accountAge = new Date().getTime() - new Date(userProfile.createdAt || userProfile.created_at).getTime();
+      const createdAt = (userProfile as { createdAt?: string }).createdAt || userProfile.created_at;
+      const accountAge = createdAt ? Date.now() - new Date(createdAt).getTime() : 0;
       if (accountAge < 0) {
         return createErrorResponse(
           'Invalid account creation date detected',
@@ -457,24 +498,26 @@ export function requireAuth<T extends unknown[]>(
         id: userProfile.id,
         email: userProfile.email,
         role: userProfile.role,
-        status: userProfile.status
+        status: userProfile.status,
+        metadata: authUser.user_metadata ?? undefined,
+        phone: authUser.phone ?? undefined,
+        created_at: userProfile.created_at ?? undefined,
+        updated_at: userProfile.updated_at ?? undefined,
       };
-      
-      // Update last seen timestamp for security auditing
+
       await supabase
         .from('users')
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', userProfile.id);
-      
-      return await handler(user, request, ...args);
+
+      return handler(user, request, ...args);
     } catch (error) {
-      // Log security event
       console.error('Authentication error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
         ip: request.headers.get('x-forwarded-for') || 'unknown'
       });
-      
+
       return createErrorResponse(
         'Authentication failed due to server error',
         HTTP_STATUS.INTERNAL_SERVER_ERROR

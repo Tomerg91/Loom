@@ -96,26 +96,37 @@ export function CoachClientsPage() {
   });
 
   // Transform API data to match component interface
-  const clients: Client[] = clientsData?.map((client: any) => ({
-    id: client.id,
-    firstName: client.firstName,
-    lastName: client.lastName,
-    email: client.email,
-    phone: client.phone || undefined,
-    avatarUrl: client.avatar || undefined,
-    status: client.status,
-    joinedDate: new Date().toISOString(), // API doesn't provide this, use current date
-    lastSession: client.lastSession,
-    nextSession: undefined, // API doesn't provide this yet
-    totalSessions: client.totalSessions,
-    completedSessions: Math.floor(client.totalSessions * 0.8), // Estimate
-    averageRating: 4.5, // Default rating since API doesn't provide this yet
-    goals: [], // API doesn't provide goals yet
-    progress: { 
-      current: Math.min(client.totalSessions * 10, 100), // Rough progress estimate
-      target: 100 
-    },
-  })) || [];
+  const clients: Client[] = clientsData?.map((client: any) => {
+    const totalSessions = client.totalSessions ?? client.total_sessions ?? 0;
+    const completedSessions = client.completedSessions ?? client.completed_sessions ?? 0;
+    const rawProgress = client.progress ?? null;
+    const progressCurrent = rawProgress?.current ?? completedSessions;
+    const progressTarget = rawProgress?.target ?? Math.max(totalSessions, 1);
+    const progressPercent = progressTarget > 0
+      ? Math.min(Math.round((progressCurrent / progressTarget) * 100), 100)
+      : 0;
+
+    return {
+      id: client.id,
+      firstName: client.firstName ?? client.first_name ?? '',
+      lastName: client.lastName ?? client.last_name ?? '',
+      email: client.email,
+      phone: client.phone || undefined,
+      avatarUrl: client.avatar || client.avatarUrl || undefined,
+      status: client.status,
+      joinedDate: client.joinedDate || client.joined_date || new Date().toISOString(),
+      lastSession: client.lastSession || client.last_session,
+      nextSession: client.nextSession || client.next_session,
+      totalSessions,
+      completedSessions,
+      averageRating: client.averageRating ?? client.average_rating ?? 0,
+      goals: client.goals ?? [],
+      progress: {
+        current: progressPercent,
+        target: 100,
+      },
+    };
+  }) || [];
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {

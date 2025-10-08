@@ -1,9 +1,11 @@
 import { NextRequest } from 'next/server';
-import { authService } from '@/lib/services/auth-service';
-import { ApiResponseHelper } from '@/lib/api/types';
+
 import { ApiError } from '@/lib/api/errors';
-import { createServerClient } from '@/lib/supabase/server';
-import { getSessionRate, getDefaultCoachRating } from '@/lib/config/analytics-constants';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { getCoachSessionRate } from '@/lib/coach-dashboard/coach-profile';
+import { getDefaultCoachRating } from '@/lib/config/analytics-constants';
+import { authService } from '@/lib/services/auth-service';
+import { createClient } from '@/lib/supabase/server';
 
 interface DashboardStats {
   totalSessions: number;
@@ -16,7 +18,7 @@ interface DashboardStats {
   totalRevenue: number;
 }
 
-export async function GET(request: NextRequest): Promise<Response> {
+export async function GET(_request: NextRequest): Promise<Response> {
   try {
     // Verify authentication and get user
     const session = await authService.getSession();
@@ -43,7 +45,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     }
 
     const coachId = session.user.id;
-    const supabase = createServerClient();
+    const supabase = createClient();
 
     console.log('[/api/coach/stats] Fetching stats for coach:', coachId);
 
@@ -52,79 +54,121 @@ export async function GET(request: NextRequest): Promise<Response> {
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+    endOfWeek.setHours(23, 59, 59, 999);
 
-    // Fetch session statistics
-    const { data: sessionStats, error: sessionError } = await supabase
+    // Fetch session statistics and coach rate concurrently
+    const sessionsPromise = supabase
       .from('sessions')
       .select('id, status, scheduled_at, client_id')
       .eq('coach_id', coachId);
 
-    if (sessionError) {
-      console.error('[/api/coach/stats] Error fetching sessions:', sessionError);
+    const [sessionsResult, coachRate] = await Promise.all([
+      sessionsPromise,
+      getCoachSessionRate(supabase, coachId),
+    ]);
+
+    if (sessionsResult.error) {
+      console.error('[/api/coach/stats] Error fetching sessions:', sessionsResult.error);
     }
+
+    const sessionStats = sessionsResult.data ?? [];
 
     console.log('[/api/coach/stats] Sessions query result:', {
-      count: sessionStats?.length || 0,
-      hasError: !!sessionError,
-      error: sessionError?.message
+      count: sessionStats.length,
+      hasError: !!sessionsResult.error,
+      error: sessionsResult.error?.message,
     });
 
-    const totalSessions = sessionStats?.length || 0;
-    const completedSessions = sessionStats?.filter(s => s.status === 'completed').length || 0;
-    const upcomingSessions = sessionStats?.filter(s => 
-      s.status === 'scheduled' && new Date(s.scheduled_at) > now
-    ).length || 0;
-    
-    const thisWeekSessions = sessionStats?.filter(s => 
-      new Date(s.scheduled_at) >= startOfWeek && new Date(s.scheduled_at) <= now
-    ).length || 0;
+    const totalSessions = sessionStats.length;
+    const completedSessions = sessionStats.filter((s) => s.status === 'completed').length;
+    const upcomingSessions = sessionStats.filter((s) => {
+      if (s.status !== 'scheduled') return false;
+      const scheduledAt = new Date(s.scheduled_at);
+      return scheduledAt > now;
+    }).length;
 
-    // Calculate unique clients
-    const uniqueClientIds = new Set(sessionStats?.map(s => s.client_id) || []);
+    const thisWeekSessions = sessionStats.filter((s) => {
+      if (s.status === 'cancelled') return false;
+      const scheduledAt = new Date(s.scheduled_at);
+      return scheduledAt >= startOfWeek && scheduledAt <= endOfWeek;
+    }).length;
+
+    const uniqueClientIds = new Set(sessionStats.map((s) => s.client_id).filter(Boolean));
     const totalClients = uniqueClientIds.size;
 
-    // Calculate active clients (had a session in the last 30 days)
-    const thirtyDaysAgo = new Date();
+    const thirtyDaysAgo = new Date(now);
     thirtyDaysAgo.setDate(now.getDate() - 30);
-    
-    const recentClientIds = new Set(
-      sessionStats?.filter(s => 
-        new Date(s.scheduled_at) >= thirtyDaysAgo && 
-        (s.status === 'completed' || s.status === 'scheduled')
-      ).map(s => s.client_id) || []
-    );
+
+    const recentClientIds = new Set<string>();
+    sessionStats.forEach((session) => {
+      if (!session.client_id) return;
+      const scheduledAt = new Date(session.scheduled_at);
+      if (scheduledAt >= thirtyDaysAgo && session.status !== 'cancelled') {
+        recentClientIds.add(session.client_id);
+      }
+    });
+
     const activeClients = recentClientIds.size;
 
-    // Calculate real revenue from session rates
-    // Use default session rate (coach_profiles table doesn't exist in current schema)
-    const sessionRate = getSessionRate();
-    const totalRevenue = completedSessions * sessionRate;
+    // Calculate revenue using the coach's configured session rate
+    const totalRevenue = Number((completedSessions * coachRate.rate).toFixed(2));
 
-    // Calculate real average rating from session reflections
+    // Calculate average rating from feedback/ratings tables
     let averageRating = 0;
-    if (completedSessions > 0) {
-      const completedSessionIds = sessionStats
-        ?.filter(s => s.status === 'completed')
-        .map(s => s.id) || [];
-      
-      if (completedSessionIds.length > 0) {
-        const { data: reflections } = await supabase
-          .from('reflections')
-          .select('mood_rating')
-          .in('session_id', completedSessionIds)
-          .not('mood_rating', 'is', null);
-        
-        if (reflections && reflections.length > 0) {
-          const validRatings = reflections.filter(r => r.mood_rating != null && r.mood_rating > 0);
-          if (validRatings.length > 0) {
-            averageRating = validRatings.reduce((sum, r) => sum + (r.mood_rating || 0), 0) / validRatings.length;
-            averageRating = Math.round(averageRating * 10) / 10; // Round to 1 decimal
+    const completedSessionIds = sessionStats
+      .filter((s) => s.status === 'completed')
+      .map((s) => s.id);
+
+    if (completedSessionIds.length > 0) {
+      const [feedbackResult, ratingsResult] = await Promise.all([
+        supabase
+          .from('session_feedback')
+          .select('session_id, overall_rating')
+          .eq('coach_id', coachId)
+          .in('session_id', completedSessionIds),
+        supabase
+          .from('session_ratings')
+          .select('session_id, rating')
+          .eq('coach_id', coachId)
+          .in('session_id', completedSessionIds),
+      ]);
+
+      if (feedbackResult.error) {
+        console.warn('[/api/coach/stats] Failed to load session feedback', feedbackResult.error);
+      }
+      if (ratingsResult.error) {
+        console.warn('[/api/coach/stats] Failed to load session ratings', ratingsResult.error);
+      }
+
+      const ratingBySession = new Map<string, number>();
+
+      feedbackResult.data
+        ?.filter((feedback) => feedback.overall_rating != null)
+        .forEach((feedback) => {
+          const rating = Number(feedback.overall_rating);
+          if (Number.isFinite(rating) && rating > 0) {
+            ratingBySession.set(feedback.session_id, rating);
           }
-        }
+        });
+
+      ratingsResult.data
+        ?.filter((rating) => rating.rating != null)
+        .forEach((rating) => {
+          const parsed = Number(rating.rating);
+          if (!ratingBySession.has(rating.session_id) && Number.isFinite(parsed) && parsed > 0) {
+            ratingBySession.set(rating.session_id, parsed);
+          }
+        });
+
+      const ratingValues = Array.from(ratingBySession.values());
+      if (ratingValues.length > 0) {
+        const sum = ratingValues.reduce((total, value) => total + value, 0);
+        averageRating = Math.round(((sum / ratingValues.length) + Number.EPSILON) * 10) / 10;
       }
     }
-    
-    // Fallback to configured default if no ratings available
+
     if (averageRating === 0) {
       averageRating = getDefaultCoachRating();
     }

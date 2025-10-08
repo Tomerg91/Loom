@@ -1,11 +1,11 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, addDays, parseISO } from 'date-fns';
-import { Calendar, Clock, Loader2, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
-
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -14,9 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Calendar, Clock, Loader2, AlertCircle } from 'lucide-react';
+import { format, addDays, parseISO } from 'date-fns';
 
 interface RescheduleSessionDialogProps {
   sessionId: string;
@@ -48,9 +47,7 @@ export function RescheduleSessionDialog({
         throw new Error('Please select both a date and time');
       }
 
-      // Construct ISO timestamp with timezone offset to preserve user's local time
-      const localDateTime = new Date(`${newDate}T${newTime}:00`);
-      const newScheduledAt = localDateTime.toISOString();
+      const newScheduledAt = `${newDate}T${newTime}:00.000Z`;
 
       const response = await fetch(`/api/sessions/${sessionId}/reschedule`, {
         method: 'POST',
@@ -100,7 +97,7 @@ export function RescheduleSessionDialog({
         <DialogHeader>
           <DialogTitle>Reschedule Session</DialogTitle>
           <DialogDescription>
-            Change the date and time for &ldquo;{sessionTitle}&rdquo;
+            Change the date and time for "{sessionTitle}"
           </DialogDescription>
         </DialogHeader>
 

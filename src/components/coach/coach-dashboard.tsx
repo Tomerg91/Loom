@@ -67,7 +67,7 @@ interface Client {
   avatar?: string;
   lastSession?: string;
   totalSessions: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending';
 }
 
 interface RecentActivity {

@@ -1,4 +1,5 @@
 import type { UserRole, Language } from '@/types';
+import { config } from '@/lib/config';
 
 export interface AuthUser {
   id: string;
@@ -47,10 +48,16 @@ export interface ApiResponse<T = unknown> {
 }
 
 class AuthApiClient {
-  private baseUrl: string;
+  private readonly baseUrl: string;
+  private readonly authEndpoints = config.endpoints.auth;
+  private readonly httpConfig = config.http;
 
-  constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '') {
+    this.baseUrl = baseUrl.replace(/\/$/, '');
+  }
+
+  private resolveUrl(endpoint: string): string {
+    return `${this.baseUrl}${endpoint}`;
   }
 
   private async request<T>(
@@ -58,15 +65,17 @@ class AuthApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
-      const url = `${this.baseUrl}/api/auth${endpoint}`;
-      
+      const url = this.resolveUrl(endpoint);
+      const headers = new Headers(options.headers ?? {});
+
+      if (!headers.has('Content-Type')) {
+        headers.set('Content-Type', this.httpConfig.contentTypes.JSON);
+      }
+
       const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        credentials: 'include',
         ...options,
+        headers,
+        credentials: options.credentials ?? 'include',
       });
 
       const data = await response.json();
@@ -95,8 +104,8 @@ class AuthApiClient {
    * Sign up a new user
    */
   async signUp(data: SignUpData): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>('/signup', {
-      method: 'POST',
+    return this.request<AuthUser>(this.authEndpoints.SIGN_UP, {
+      method: this.httpConfig.methods.POST,
       body: JSON.stringify(data),
     });
   }
@@ -105,8 +114,8 @@ class AuthApiClient {
    * Sign in an existing user
    */
   async signIn(data: SignInData): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>('/signin', {
-      method: 'POST',
+    return this.request<AuthUser>(this.authEndpoints.SIGN_IN, {
+      method: this.httpConfig.methods.POST,
       body: JSON.stringify(data),
     });
   }
@@ -115,8 +124,8 @@ class AuthApiClient {
    * Sign out the current user
    */
   async signOut(): Promise<ApiResponse> {
-    return this.request('/signout', {
-      method: 'POST',
+    return this.request(this.authEndpoints.SIGN_OUT, {
+      method: this.httpConfig.methods.POST,
     });
   }
 
@@ -124,22 +133,22 @@ class AuthApiClient {
    * Get the current user profile
    */
   async getCurrentUser(): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>('/me');
+    return this.request<AuthUser>(this.authEndpoints.ME);
   }
 
   /**
    * Get the current session
    */
   async getSession(): Promise<ApiResponse> {
-    return this.request('/session');
+    return this.request(this.authEndpoints.SESSION);
   }
 
   /**
    * Terminate the current session
    */
   async terminateSession(): Promise<ApiResponse> {
-    return this.request('/session', {
-      method: 'DELETE',
+    return this.request(this.authEndpoints.SESSION, {
+      method: this.httpConfig.methods.DELETE,
     });
   }
 
@@ -147,8 +156,8 @@ class AuthApiClient {
    * Reset password
    */
   async resetPassword(email: string): Promise<ApiResponse> {
-    return this.request('/reset-password', {
-      method: 'POST',
+    return this.request(this.authEndpoints.RESET_PASSWORD, {
+      method: this.httpConfig.methods.POST,
       body: JSON.stringify({ email }),
     });
   }
@@ -157,8 +166,8 @@ class AuthApiClient {
    * Update password
    */
   async updatePassword(password: string, confirmPassword: string): Promise<ApiResponse> {
-    return this.request('/update-password', {
-      method: 'POST',
+    return this.request(this.authEndpoints.UPDATE_PASSWORD, {
+      method: this.httpConfig.methods.POST,
       body: JSON.stringify({ password, confirmPassword }),
     });
   }
@@ -167,15 +176,15 @@ class AuthApiClient {
    * Get user profile
    */
   async getProfile(): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>('/profile');
+    return this.request<AuthUser>(this.authEndpoints.PROFILE);
   }
 
   /**
    * Update user profile
    */
   async updateProfile(data: UpdateProfileData): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>('/profile', {
-      method: 'PUT',
+    return this.request<AuthUser>(this.authEndpoints.PROFILE, {
+      method: this.httpConfig.methods.PUT,
       body: JSON.stringify(data),
     });
   }
@@ -184,8 +193,8 @@ class AuthApiClient {
    * Verify email token
    */
   async verifyToken(tokenHash: string, type: string = 'signup'): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>('/verify', {
-      method: 'POST',
+    return this.request<AuthUser>(this.authEndpoints.VERIFY, {
+      method: this.httpConfig.methods.POST,
       body: JSON.stringify({ token_hash: tokenHash, type }),
     });
   }
