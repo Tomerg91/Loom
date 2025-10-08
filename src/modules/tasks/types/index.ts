@@ -1,6 +1,5 @@
 /**
- * @fileoverview Shared TypeScript definitions and schema exports for the tasks module.
- * Concrete DTOs, enums, and validation schemas will replace this placeholder
- * once the tasks domain schema is implemented.
+ * @fileoverview Barrel file re-exporting task module types so that API routes
+ * and UI code can import strongly-typed contracts from a single location.
  */
-export {};
+export * from './task';

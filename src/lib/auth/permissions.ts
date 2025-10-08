@@ -1,6 +1,6 @@
 // Permission system for role-based access control
 
-export type Permission = 
+export type Permission =
   | 'sessions:read'
   | 'sessions:create'
   | 'sessions:update'
@@ -18,7 +18,11 @@ export type Permission =
   | 'billing:read'
   | 'billing:write'
   | 'reports:read'
-  | 'reports:write';
+  | 'reports:write'
+  | 'tasks:read'
+  | 'tasks:create'
+  | 'tasks:update'
+  | 'tasks:delete';
 
 export type Role = 'admin' | 'coach' | 'client';
 
@@ -43,6 +47,10 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'billing:write',
     'reports:read',
     'reports:write',
+    'tasks:read',
+    'tasks:create',
+    'tasks:update',
+    'tasks:delete',
   ],
   coach: [
     'sessions:read',
@@ -53,12 +61,16 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'coach:write',
     'client:read',
     'reports:read',
+    'tasks:read',
+    'tasks:create',
+    'tasks:update',
   ],
   client: [
     'sessions:read',
     'sessions:create',
     'client:read',
     'client:write',
+    'tasks:read',
   ],
 };
 
@@ -73,7 +85,10 @@ export function checkPermission(role: Role, permission: Permission): boolean {
 /**
  * Check if a user has a specific permission
  */
-export function hasPermission(userRole: Role | undefined, permission: Permission): boolean {
+export function hasPermission(
+  userRole: Role | undefined,
+  permission: Permission
+): boolean {
   if (!userRole) return false;
   return checkPermission(userRole, permission);
 }
@@ -88,7 +103,11 @@ export function getRolePermissions(role: Role): Permission[] {
 /**
  * Check if a role can access a resource
  */
-export function canAccessResource(role: Role, resource: string, action: string): boolean {
+export function canAccessResource(
+  role: Role,
+  resource: string,
+  action: string
+): boolean {
   const permission = `${resource}:${action}` as Permission;
   return checkPermission(role, permission);
 }
@@ -112,6 +131,13 @@ export function canManageUser(managerRole: Role, targetRole: Role): boolean {
 }
 
 /**
+ * Convenience helper for modules that only need to check coach-level access.
+ */
+export function isCoachOrAdmin(role: Role | undefined): boolean {
+  return role === 'coach' || role === 'admin';
+}
+
+/**
  * Get accessible roles for a user role
  */
 export function getAccessibleRoles(userRole: Role): Role[] {
@@ -130,7 +156,10 @@ export function getAccessibleRoles(userRole: Role): Role[] {
 /**
  * Permission guard for API routes
  */
-export function requirePermission(userRole: Role | undefined, permission: Permission) {
+export function requirePermission(
+  userRole: Role | undefined,
+  permission: Permission
+) {
   if (!hasPermission(userRole, permission)) {
     throw new Error(`Access denied. Required permission: ${permission}`);
   }
@@ -148,7 +177,10 @@ export function requireRole(userRole: Role | undefined, requiredRole: Role) {
 /**
  * Multiple permission check (user must have ALL permissions)
  */
-export function hasAllPermissions(userRole: Role | undefined, permissions: Permission[]): boolean {
+export function hasAllPermissions(
+  userRole: Role | undefined,
+  permissions: Permission[]
+): boolean {
   if (!userRole) return false;
   return permissions.every(permission => hasPermission(userRole, permission));
 }
@@ -156,7 +188,10 @@ export function hasAllPermissions(userRole: Role | undefined, permissions: Permi
 /**
  * Multiple permission check (user must have ANY of the permissions)
  */
-export function hasAnyPermission(userRole: Role | undefined, permissions: Permission[]): boolean {
+export function hasAnyPermission(
+  userRole: Role | undefined,
+  permissions: Permission[]
+): boolean {
   if (!userRole) return false;
   return permissions.some(permission => hasPermission(userRole, permission));
 }
@@ -164,14 +199,20 @@ export function hasAnyPermission(userRole: Role | undefined, permissions: Permis
 /**
  * Get permission level for a resource (read, write, admin)
  */
-export function getPermissionLevel(role: Role, resource: string): 'none' | 'read' | 'write' | 'admin' {
+export function getPermissionLevel(
+  role: Role,
+  resource: string
+): 'none' | 'read' | 'write' | 'admin' {
   const permissions = getRolePermissions(role);
   const resourcePermissions = permissions.filter(p => p.startsWith(resource));
-  
-  if (resourcePermissions.includes(`${resource}:delete` as Permission)) return 'admin';
-  if (resourcePermissions.includes(`${resource}:write` as Permission)) return 'write';
-  if (resourcePermissions.includes(`${resource}:read` as Permission)) return 'read';
-  
+
+  if (resourcePermissions.includes(`${resource}:delete` as Permission))
+    return 'admin';
+  if (resourcePermissions.includes(`${resource}:write` as Permission))
+    return 'write';
+  if (resourcePermissions.includes(`${resource}:read` as Permission))
+    return 'read';
+
   return 'none';
 }
 
@@ -186,12 +227,12 @@ export function canAccessSession(
 ): boolean {
   // Admin can access all sessions
   if (userRole === 'admin') return true;
-  
+
   // Coach can access sessions they're coaching
   if (userRole === 'coach' && sessionCoachId === userId) return true;
-  
+
   // Client can access their own sessions
   if (userRole === 'client' && sessionOwnerId === userId) return true;
-  
+
   return false;
 }

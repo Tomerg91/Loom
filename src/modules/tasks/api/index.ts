@@ -1,6 +1,11 @@
 /**
- * @fileoverview Export surface for the tasks API helpers.
- * The file intentionally exports nothing yet; concrete helpers
- * will be introduced alongside task CRUD implementations in later steps.
+ * @fileoverview Aggregates API-facing task module exports. Keeping re-exports
+ * alongside the API folder allows client hooks to import DTOs without
+ * depending on deeper service internals.
  */
-export {};
+export type { TaskDto, TaskInstanceDto, TaskListResponse } from '../types/task';
+export {
+  createTaskSchema,
+  updateTaskSchema,
+  taskListQuerySchema,
+} from '../types/task';

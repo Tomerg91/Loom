@@ -49,6 +49,10 @@ declare module '@prisma/client' {
     taskInstance: any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     exportLog: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $transaction<T>(promises: Promise<T>[]): Promise<T[]>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $transaction<T>(fn: (client: PrismaClient) => Promise<T>): Promise<T>;
     $disconnect(): Promise<void>;
   }
 }

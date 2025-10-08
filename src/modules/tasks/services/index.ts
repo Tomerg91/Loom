@@ -1,6 +1,8 @@
 /**
  * @fileoverview Re-export hub for task domain services.
- * The service layer will encapsulate Prisma access, recurrence utilities,
- * notification scheduling, and additional business rules as they are built.
+ * Exposing the service layer through a central module keeps consumer imports
+ * stable while additional services (progress, recurrence, notifications) are
+ * introduced in later steps of the implementation plan.
  */
-export {};
+export { TaskService, TaskServiceError } from './task-service';
+export type { TaskActor } from './task-service';

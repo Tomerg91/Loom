@@ -31,11 +31,45 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      { find: 'next-intl/middleware', replacement: path.resolve(__dirname, './src/test/mocks/next-intl-middleware.ts') },
-      { find: 'next-intl/routing', replacement: path.resolve(__dirname, './src/test/mocks/next-intl-routing.ts') },
-      { find: 'next-intl/navigation', replacement: path.resolve(__dirname, './src/test/mocks/next-intl-navigation.ts') },
-      { find: 'next-intl', replacement: path.resolve(__dirname, './src/test/mocks/next-intl.ts') },
-      { find: 'next/navigation', replacement: path.resolve(__dirname, './src/test/mocks/next-navigation.ts') },
+      {
+        find: 'next-intl/middleware',
+        replacement: path.resolve(
+          __dirname,
+          './src/test/mocks/next-intl-middleware.ts'
+        ),
+      },
+      {
+        find: 'next-intl/routing',
+        replacement: path.resolve(
+          __dirname,
+          './src/test/mocks/next-intl-routing.ts'
+        ),
+      },
+      {
+        find: 'next-intl/navigation',
+        replacement: path.resolve(
+          __dirname,
+          './src/test/mocks/next-intl-navigation.ts'
+        ),
+      },
+      {
+        find: 'next-intl',
+        replacement: path.resolve(__dirname, './src/test/mocks/next-intl.ts'),
+      },
+      {
+        find: 'next/navigation',
+        replacement: path.resolve(
+          __dirname,
+          './src/test/mocks/next-navigation.ts'
+        ),
+      },
+      {
+        find: '@prisma/client',
+        replacement: path.resolve(
+          __dirname,
+          './src/test/mocks/prisma-client.ts'
+        ),
+      },
       { find: '@', replacement: path.resolve(__dirname, './src') },
     ],
   },

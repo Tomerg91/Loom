@@ -53,10 +53,18 @@
 - Seed helpers accept optional `SEED_COACH_ID` and `SEED_CLIENT_ID` environment variables; when omitted, deterministic demo IDs are used so contributors can explore the feature end-to-end without provisioning Supabase users upfront.
 - Recommended workflow: `npx prisma migrate dev --name init_tasks_domain` → `npm run db:seed` (optionally overriding IDs) to ensure local databases reflect the example tasks before API development continues in Step 5.
 
+## Step 5 – Task CRUD API (Completed)
+
+- Implemented collection and item route handlers under `/api/tasks` using the shared API utility wrappers to enforce authentication, coach-role authorization, and structured JSON responses.
+- Added a Prisma-backed `TaskService` that encapsulates task creation, listing with pagination and filtering, detailed retrieval, and update logic while performing ownership checks for coaches, admins, and clients.
+- Introduced Zod DTO schemas for task payloads and query parameters alongside a Prisma singleton helper to standardize database access across the new domain modules.
+- Expanded the auth permission matrix with task-centric permissions and delivered Vitest API unit tests that exercise success paths and error handling for the new endpoints.
+
 ## Step Tracking
 
 - [x] Step 1: Audit existing codebase and align prerequisites (this document).
 - [x] Step 2: Establish domain-specific workspace.
 - [x] Step 3: Define Prisma schema extensions for tasks domain.
 - [x] Step 4: Seed reference data and helper scripts.
-- [ ] Steps 5-20: Pending as outlined in the implementation roadmap.
+- [x] Step 5: Implement task CRUD API route handlers.
+- [ ] Steps 6-20: Pending as outlined in the implementation roadmap.
