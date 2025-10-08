@@ -53,7 +53,7 @@
     "supabase:types": "supabase gen types typescript --local > src/types/supabase.ts",
     "supabase:migration": "supabase migration new",
     "supabase:push": "supabase db push",
-    "db:seed": "supabase seed"
+    "db:seed": "supabase db reset"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
