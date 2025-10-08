@@ -39,10 +39,17 @@
 - Documented module conventions, folder responsibilities, and roadmap alignment in `src/modules/tasks/README.md` to streamline onboarding and code reviews.
 - Added placeholder `index.ts` files in each subdirectory to establish public export hubs that will be expanded as APIs, UI, and services are implemented in later steps.
 
+## Step 3 – Prisma Schema & Migration (Completed)
+
+- Added a dedicated `prisma/schema.prisma` that introduces enums for task status, task priority, notification job type, and notification job status alongside models for task categories, tasks, task instances, progress updates, attachments, notification jobs, and export logs.
+- Established relational links across the task domain (e.g., tasks to categories, instances to tasks, attachments to both instances and progress updates) while preserving Supabase ownership of user identity tables by using UUID foreign key fields.
+- Authored an initial migration (`prisma/migrations/20250209120000_init_tasks_domain/migration.sql`) that creates the necessary enums, tables, indices, and timestamp triggers to keep the domain schema synchronized with Prisma definitions.
+- Next action for contributors: run `npx prisma migrate dev --name init_tasks_domain` against a local database, followed by `npx prisma generate`, to materialize the tables and client before proceeding to seeding in Step 4.
+
 ## Step Tracking
 
 - [x] Step 1: Audit existing codebase and align prerequisites (this document).
 - [x] Step 2: Establish domain-specific workspace.
-- [ ] Step 3: Define Prisma schema extensions for tasks domain.
+- [x] Step 3: Define Prisma schema extensions for tasks domain.
 - [ ] Step 4: Seed reference data and helper scripts.
 - [ ] Steps 5-20: Pending as outlined in the implementation roadmap.

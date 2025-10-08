@@ -57,6 +57,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
+    "@prisma/client": "^5.22.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-avatar": "^1.1.10",
@@ -145,6 +146,7 @@
     "lint-staged": "^16.1.2",
     "playwright": "^1.53.2",
     "prettier": "^3.6.2",
+    "prisma": "^5.22.0",
     "supabase": "^2.30.4",
     "tailwindcss": "^4",
     "tdd-guard": "^0.1.4",
