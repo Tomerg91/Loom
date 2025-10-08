@@ -53,7 +53,7 @@
     "supabase:types": "supabase gen types typescript --local > src/types/supabase.ts",
     "supabase:migration": "supabase migration new",
     "supabase:push": "supabase db push",
-    "db:seed": "supabase seed"
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -155,5 +155,8 @@
     "vitest": "^3.2.4",
     "web-streams-polyfill": "^4.0.0",
     "webpack-bundle-analyzer": "^4.10.2"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }

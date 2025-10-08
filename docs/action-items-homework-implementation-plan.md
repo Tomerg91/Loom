@@ -46,10 +46,17 @@
 - Authored an initial migration (`prisma/migrations/20250209120000_init_tasks_domain/migration.sql`) that creates the necessary enums, tables, indices, and timestamp triggers to keep the domain schema synchronized with Prisma definitions.
 - Next action for contributors: run `npx prisma migrate dev --name init_tasks_domain` against a local database, followed by `npx prisma generate`, to materialize the tables and client before proceeding to seeding in Step 4.
 
+## Step 4 – Demo Seed Data (Completed)
+
+- Authored dual seed scripts (`prisma/seed.ts` for typed references and `prisma/seed.js` for runtime execution) that hydrate the tasks domain with three representative categories, recurring and one-off tasks, task instances spanning pending/in-progress/overdue states, nested progress updates, attachments, notification jobs, and an example export log entry.
+- Updated the `npm run db:seed` workflow to call `prisma db seed`, wiring Prisma's seed hook to execute the JavaScript runtime script so the dataset can be refreshed idempotently.
+- Seed helpers accept optional `SEED_COACH_ID` and `SEED_CLIENT_ID` environment variables; when omitted, deterministic demo IDs are used so contributors can explore the feature end-to-end without provisioning Supabase users upfront.
+- Recommended workflow: `npx prisma migrate dev --name init_tasks_domain` → `npm run db:seed` (optionally overriding IDs) to ensure local databases reflect the example tasks before API development continues in Step 5.
+
 ## Step Tracking
 
 - [x] Step 1: Audit existing codebase and align prerequisites (this document).
 - [x] Step 2: Establish domain-specific workspace.
 - [x] Step 3: Define Prisma schema extensions for tasks domain.
-- [ ] Step 4: Seed reference data and helper scripts.
+- [x] Step 4: Seed reference data and helper scripts.
 - [ ] Steps 5-20: Pending as outlined in the implementation roadmap.
