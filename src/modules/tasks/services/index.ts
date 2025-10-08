@@ -5,7 +5,7 @@
  * introduced in later steps of the implementation plan.
  */
 export { TaskService, TaskServiceError } from './task-service';
-export type { TaskActor } from './task-service';
+export type { TaskActor, TaskActorRole } from './task-service';
 export {
   RecurrenceService,
   RecurrenceServiceError,

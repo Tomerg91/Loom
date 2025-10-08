@@ -63,13 +63,6 @@ export default defineConfig({
           './src/test/mocks/next-navigation.ts'
         ),
       },
-      {
-        find: '@prisma/client',
-        replacement: path.resolve(
-          __dirname,
-          './src/test/mocks/prisma-client.ts'
-        ),
-      },
       { find: '@', replacement: path.resolve(__dirname, './src') },
     ],
   },

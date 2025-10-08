@@ -3,15 +3,31 @@
  * These types provide a shared contract between route handlers, services,
  * and client-side consumers when creating, updating, and retrieving tasks.
  */
-import { TaskPriority, TaskStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import { recurrenceRuleSchema } from './recurrence';
 
+const taskPriorityTuple = ['LOW', 'MEDIUM', 'HIGH'] as const;
+type TaskPriorityTuple = typeof taskPriorityTuple;
+export type TaskPriority = TaskPriorityTuple[number];
+export const taskPriorityValues: readonly TaskPriority[] = [
+  ...taskPriorityTuple,
+];
+
+const taskStatusTuple = [
+  'PENDING',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'OVERDUE',
+] as const;
+type TaskStatusTuple = typeof taskStatusTuple;
+export type TaskStatus = TaskStatusTuple[number];
+export const taskStatusValues: readonly TaskStatus[] = [...taskStatusTuple];
+
 /**
  * Utility schema that converts ISO-8601 strings into native JavaScript Date
  * instances. The API accepts ISO strings and service layers operate on Date
- * objects so downstream Prisma calls can work with native types.
+ * objects so downstream database helpers can work with native types.
  */
 const isoDateStringSchema = z
   .string()
@@ -22,6 +38,10 @@ const uuidSchema = z.string().uuid({ message: 'Value must be a valid UUID' });
 /**
  * Schema describing the body accepted by the collection POST handler.
  */
+const taskPrioritySchema = z.enum(taskPriorityTuple);
+
+const taskStatusSchema = z.enum(taskStatusTuple);
+
 export const createTaskSchema = z.object({
   title: z
     .string()
@@ -34,7 +54,7 @@ export const createTaskSchema = z.object({
   clientId: uuidSchema,
   coachId: uuidSchema.optional(),
   categoryId: uuidSchema.optional(),
-  priority: z.nativeEnum(TaskPriority).default(TaskPriority.MEDIUM).optional(),
+  priority: taskPrioritySchema.default('MEDIUM').optional(),
   visibilityToCoach: z.boolean().optional(),
   dueDate: isoDateStringSchema.optional(),
   recurrenceRule: recurrenceRuleSchema.nullable().optional(),
@@ -56,11 +76,11 @@ export const updateTaskSchema = z
       .nullable()
       .optional(),
     categoryId: uuidSchema.nullish(),
-    priority: z.nativeEnum(TaskPriority).optional(),
+    priority: taskPrioritySchema.optional(),
     visibilityToCoach: z.boolean().optional(),
     dueDate: isoDateStringSchema.optional(),
     archivedAt: isoDateStringSchema.nullable().optional(),
-    status: z.nativeEnum(TaskStatus).optional(),
+    status: taskStatusSchema.optional(),
     recurrenceRule: recurrenceRuleSchema.nullable().optional(),
   })
   .refine(payload => payload !== null && Object.keys(payload).length > 0, {
@@ -79,8 +99,8 @@ export const taskListQuerySchema = z.object({
   coachId: uuidSchema.optional(),
   clientId: uuidSchema.optional(),
   categoryId: uuidSchema.optional(),
-  status: z.array(z.nativeEnum(TaskStatus)).optional(),
-  priority: z.array(z.nativeEnum(TaskPriority)).optional(),
+  status: z.array(taskStatusSchema).optional(),
+  priority: z.array(taskPrioritySchema).optional(),
   includeArchived: booleanFromQuery,
   search: z
     .string()

@@ -1,15 +1,11 @@
 /**
- * @fileoverview Service encapsulating Prisma-backed operations for the task
- * domain. The service mediates data validation, access control, and conversion
- * to DTOs so that API route handlers can remain thin orchestration layers.
+ * @fileoverview Service encapsulating Supabase-backed operations for the task
+ * domain. The service coordinates validation, access control, recurrence
+ * planning, and serialization so that API handlers can remain thin orchestration
+ * layers.
  */
-import type { Prisma, TaskPriority, TaskStatus } from '@prisma/client';
-import {
-  TaskPriority as TaskPriorityEnum,
-  TaskStatus as TaskStatusEnum,
-} from '@prisma/client';
-
-import prisma from '@/lib/prisma';
+import { createAdminClient } from '@/lib/supabase/server';
+import type { Database, Json } from '@/types/supabase';
 
 import {
   RecurrenceService,
@@ -22,159 +18,112 @@ import type {
   TaskInstanceDto,
   TaskListQueryInput,
   TaskListResponse,
+  TaskPriority,
+  TaskStatus,
   UpdateTaskInput,
 } from '../types/task';
 
 /** Roles that interact with the task domain. */
-type TaskActorRole = 'admin' | 'coach' | 'client';
+export type TaskActorRole = 'admin' | 'coach' | 'client';
 
 export interface TaskActor {
   id: string;
   role: TaskActorRole;
 }
 
-interface TaskCategoryRecord {
-  id: string;
-  label: string;
-  colorHex: string;
-}
+type SupabaseClient = ReturnType<typeof createAdminClient>;
+type TaskRow = Database['public']['Tables']['tasks']['Row'];
+type TaskCategoryRow = Database['public']['Tables']['task_categories']['Row'];
+type TaskInstanceRow = Database['public']['Tables']['task_instances']['Row'];
 
-interface TaskInstanceRecord {
-  id: string;
-  taskId: string;
-  scheduledDate: Date | null;
-  dueDate: Date;
-  status: TaskStatus;
-  completionPercentage: number;
-  completedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+type TaskRecord = TaskRow & {
+  category?: (TaskCategoryRow | null) & { color_hex?: string | null };
+  instances?: TaskInstanceRow[] | null;
+};
 
-interface TaskRecord {
-  id: string;
-  coachId: string;
-  clientId: string;
-  title: string;
-  description: string | null;
-  priority: TaskPriority;
-  visibilityToCoach: boolean;
-  dueDate: Date | null;
-  recurrenceRule: Prisma.JsonValue | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  category: TaskCategoryRecord | null;
-  instances: TaskInstanceRecord[];
-}
+const TASK_SELECT = `
+  *,
+  category:task_categories!tasks_category_id_fkey(
+    id,
+    label,
+    color_hex
+  ),
+  instances:task_instances(*)
+`;
 
 const DEFAULT_INSTANCE_LIMIT = 10;
-
-export class TaskServiceError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-    public readonly code: string = 'TASK_SERVICE_ERROR'
-  ) {
-    super(message);
-    this.name = 'TaskServiceError';
-  }
-}
 
 const accessDenied = (message = 'Access denied') =>
   new TaskServiceError(message, 403, 'ACCESS_DENIED');
 const taskNotFound = () =>
   new TaskServiceError('Task not found', 404, 'TASK_NOT_FOUND');
 
-const ALLOWED_COACH_ROLES: TaskActorRole[] = ['coach', 'admin'];
+const toISOStringOrNull = (value: string | null | undefined) =>
+  value ? new Date(value).toISOString() : null;
 
-const toDateOrNull = (value: string | null | undefined): Date | null => {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  return new Date(value);
-};
+const serializeInstance = (instance: TaskInstanceRow): TaskInstanceDto => ({
+  id: instance.id,
+  taskId: instance.task_id,
+  scheduledDate: toISOStringOrNull(instance.scheduled_date),
+  dueDate: new Date(instance.due_date).toISOString(),
+  status: instance.status,
+  completionPercentage: instance.completion_percentage,
+  completedAt: toISOStringOrNull(instance.completed_at),
+  createdAt: new Date(instance.created_at).toISOString(),
+  updatedAt: new Date(instance.updated_at).toISOString(),
+});
 
-function serializeInstance(instance: TaskInstanceRecord): TaskInstanceDto {
-  return {
-    id: instance.id,
-    taskId: instance.taskId,
-    scheduledDate: instance.scheduledDate
-      ? instance.scheduledDate.toISOString()
-      : null,
-    dueDate: instance.dueDate.toISOString(),
-    status: instance.status,
-    completionPercentage: instance.completionPercentage,
-    completedAt: instance.completedAt
-      ? instance.completedAt.toISOString()
-      : null,
-    createdAt: instance.createdAt.toISOString(),
-    updatedAt: instance.updatedAt.toISOString(),
-  };
-}
+const serializeTask = (task: TaskRecord): TaskDto => {
+  const instances = [...(task.instances ?? [])]
+    .map(serializeInstance)
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
-function serializeTask(task: TaskRecord): TaskDto {
+  const category = task.category
+    ? {
+        id: task.category.id,
+        label: task.category.label,
+        colorHex: task.category.color_hex ?? '#1D7A85',
+      }
+    : null;
+
   return {
     id: task.id,
-    coachId: task.coachId,
-    clientId: task.clientId,
-    category: task.category
-      ? {
-          id: task.category.id,
-          label: task.category.label,
-          colorHex: task.category.colorHex,
-        }
-      : null,
+    coachId: task.coach_id,
+    clientId: task.client_id,
+    category,
     title: task.title,
     description: task.description,
     priority: task.priority,
-    visibilityToCoach: task.visibilityToCoach,
-    dueDate: task.dueDate ? task.dueDate.toISOString() : null,
-    recurrenceRule: task.recurrenceRule
-      ? JSON.parse(JSON.stringify(task.recurrenceRule))
-      : null,
-    archivedAt: task.archivedAt ? task.archivedAt.toISOString() : null,
-    createdAt: task.createdAt.toISOString(),
-    updatedAt: task.updatedAt.toISOString(),
-    instances: task.instances.map(serializeInstance),
+    visibilityToCoach: task.visibility_to_coach,
+    dueDate: toISOStringOrNull(task.due_date),
+    recurrenceRule: task.recurrence_rule ?? null,
+    archivedAt: toISOStringOrNull(task.archived_at),
+    createdAt: new Date(task.created_at).toISOString(),
+    updatedAt: new Date(task.updated_at).toISOString(),
+    instances,
   };
-}
+};
 
-function buildInstanceFilters(
-  filters: TaskListQueryInput
-): Record<string, unknown> | undefined {
-  const instanceFilters: Record<string, unknown> = {};
+const isCoachRole = (role: TaskActorRole) =>
+  role === 'coach' || role === 'admin';
 
-  if (filters.status && filters.status.length > 0) {
-    instanceFilters.status = { in: [...new Set(filters.status)] };
+const ensureActorCanViewTask = (task: TaskRow, actor: TaskActor) => {
+  if (actor.role === 'admin') {
+    return;
   }
 
-  if (filters.dueDateFrom || filters.dueDateTo) {
-    const dueDateConditions: Record<string, Date> = {};
-    if (filters.dueDateFrom) {
-      dueDateConditions.gte = new Date(filters.dueDateFrom);
-    }
-    if (filters.dueDateTo) {
-      dueDateConditions.lte = new Date(filters.dueDateTo);
-    }
-    instanceFilters.dueDate = dueDateConditions;
+  if (actor.role === 'coach' && task.coach_id === actor.id) {
+    return;
   }
 
-  return Object.keys(instanceFilters).length > 0 ? instanceFilters : undefined;
-}
-
-function buildOrderBy(filters: TaskListQueryInput) {
-  if (filters.sort === 'createdAt') {
-    return [{ createdAt: filters.sortOrder }];
+  if (actor.role === 'client' && task.client_id === actor.id) {
+    return;
   }
 
-  return [
-    { instances: { _min: { dueDate: filters.sortOrder } } },
-    { createdAt: 'desc' },
-  ];
-}
+  throw accessDenied();
+};
 
-function resolveCoachId(actor: TaskActor, payloadCoachId?: string): string {
+const resolveCoachId = (actor: TaskActor, payloadCoachId?: string): string => {
   if (actor.role === 'coach') {
     return actor.id;
   }
@@ -191,183 +140,210 @@ function resolveCoachId(actor: TaskActor, payloadCoachId?: string): string {
   }
 
   throw accessDenied();
+};
+
+const planRecurrence = (
+  recurrenceService: RecurrenceService,
+  { dueDate, recurrenceRule }: { dueDate: Date | null; recurrenceRule: unknown }
+): RecurrencePlan => {
+  try {
+    return recurrenceService.planInstances({ dueDate, recurrenceRule });
+  } catch (error) {
+    if (error instanceof RecurrenceServiceError) {
+      throw new TaskServiceError(error.message, 400, 'RECURRENCE_INVALID');
+    }
+    throw error;
+  }
+};
+
+const toJsonOrNull = (value: RecurrencePlan['recurrenceRule']): Json | null =>
+  value ? (value as unknown as Json) : null;
+
+export class TaskServiceError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly code: string = 'TASK_SERVICE_ERROR'
+  ) {
+    super(message);
+    this.name = 'TaskServiceError';
+  }
 }
 
 export class TaskService {
   constructor(
-    private readonly client: typeof prisma = prisma,
+    private readonly client: SupabaseClient = createAdminClient(),
     private readonly recurrenceService: RecurrenceService = new RecurrenceService(
       DEFAULT_INSTANCE_LIMIT
     )
   ) {}
 
-  private get baseInclude() {
-    return {
-      category: true,
-      instances: {
-        orderBy: { dueDate: 'asc' as const },
-        take: this.recurrenceService.maxInstances,
-      },
-    };
-  }
-
   public async createTask(
     actor: TaskActor,
-    payload: CreateTaskInput
+    input: CreateTaskInput
   ): Promise<TaskDto> {
-    if (!ALLOWED_COACH_ROLES.includes(actor.role)) {
+    if (!isCoachRole(actor.role)) {
       throw accessDenied();
     }
 
-    const coachId = resolveCoachId(actor, payload.coachId);
-    const dueDateValue = payload.dueDate ? new Date(payload.dueDate) : null;
-    let recurrencePlan: RecurrencePlan;
-    try {
-      recurrencePlan = this.recurrenceService.planInstances({
-        dueDate: dueDateValue,
-        recurrenceRule: payload.recurrenceRule,
-      });
-    } catch (error) {
-      if (error instanceof RecurrenceServiceError) {
+    const coachId = resolveCoachId(actor, input.coachId);
+    const dueDate = input.dueDate ? new Date(input.dueDate) : null;
+    if (!dueDate && input.recurrenceRule) {
+      throw new TaskServiceError(
+        'A due date is required when specifying a recurrence rule',
+        400,
+        'DUE_DATE_REQUIRED'
+      );
+    }
+
+    const plan = dueDate
+      ? planRecurrence(this.recurrenceService, {
+          dueDate,
+          recurrenceRule: input.recurrenceRule ?? null,
+        })
+      : { recurrenceRule: null, instances: [] };
+
+    const firstDueDate =
+      plan.instances[0]?.dueDate ?? (dueDate ? new Date(dueDate) : null);
+
+    const { data: insertedTask, error: insertError } = await this.client
+      .from('tasks')
+      .insert({
+        coach_id: coachId,
+        client_id: input.clientId,
+        category_id: input.categoryId ?? null,
+        title: input.title,
+        description: input.description ?? null,
+        priority: (input.priority ?? 'MEDIUM') as TaskPriority,
+        status: 'PENDING' satisfies TaskStatus,
+        visibility_to_coach: input.visibilityToCoach ?? true,
+        due_date: firstDueDate ? firstDueDate.toISOString() : null,
+        recurrence_rule: toJsonOrNull(plan.recurrenceRule),
+        archived_at: null,
+      })
+      .select(TASK_SELECT)
+      .single();
+
+    if (insertError || !insertedTask) {
+      throw new TaskServiceError(
+        insertError?.message ?? 'Failed to create task',
+        500,
+        'TASK_CREATE_FAILED'
+      );
+    }
+
+    if (plan.instances.length > 0) {
+      const { error: instanceError } = await this.client
+        .from('task_instances')
+        .insert(
+          plan.instances.map(instance => ({
+            task_id: insertedTask.id,
+            due_date: instance.dueDate.toISOString(),
+            scheduled_date: instance.scheduledDate.toISOString(),
+            status: 'PENDING' as TaskStatus,
+            completion_percentage: 0,
+          }))
+        );
+
+      if (instanceError) {
         throw new TaskServiceError(
-          error.message,
-          400,
-          'INVALID_RECURRENCE_RULE'
+          instanceError.message,
+          500,
+          'TASK_INSTANCE_CREATE_FAILED'
         );
       }
-      throw error;
     }
 
-    const createData: Record<string, unknown> = {
-      coachId,
-      clientId: payload.clientId,
-      title: payload.title,
-      description: payload.description ?? null,
-      priority: payload.priority ?? TaskPriorityEnum.MEDIUM,
-      visibilityToCoach: payload.visibilityToCoach ?? true,
-      dueDate:
-        recurrencePlan.instances.length > 0
-          ? recurrencePlan.instances[0].dueDate
-          : dueDateValue,
-      recurrenceRule: recurrencePlan.recurrenceRule,
-    };
-
-    if (payload.categoryId) {
-      createData.category = { connect: { id: payload.categoryId } };
-    }
-
-    if (recurrencePlan.instances.length > 0) {
-      createData.instances = {
-        create: recurrencePlan.instances.map(instance => ({
-          dueDate: instance.dueDate,
-          scheduledDate: instance.scheduledDate,
-          status: TaskStatusEnum.PENDING,
-        })),
-      };
-    }
-
-    const task = (await this.client.task.create({
-      data: createData,
-      include: this.baseInclude,
-    })) as TaskRecord;
-
-    return serializeTask(task);
+    return this.getTaskById(insertedTask.id, actor);
   }
 
   public async listTasks(
     actor: TaskActor,
     filters: TaskListQueryInput
   ): Promise<TaskListResponse> {
-    const where: Record<string, unknown> = {};
-
-    if (!filters.includeArchived) {
-      where.archivedAt = null;
+    if (!isCoachRole(actor.role)) {
+      throw accessDenied();
     }
 
-    if (actor.role === 'coach') {
-      where.coachId = actor.id;
-    } else if (actor.role === 'client') {
-      where.clientId = actor.id;
-    } else if (actor.role === 'admin' && filters.coachId) {
-      where.coachId = filters.coachId;
-    }
+    const coachId = resolveCoachId(actor, filters.coachId);
+
+    const page = filters.page ?? 1;
+    const pageSize = filters.pageSize ?? 20;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = this.client
+      .from('tasks')
+      .select(TASK_SELECT, { count: 'exact' })
+      .eq('coach_id', coachId);
 
     if (filters.clientId) {
-      if (actor.role === 'client' && filters.clientId !== actor.id) {
-        throw accessDenied();
-      }
-      where.clientId = filters.clientId;
+      query = query.eq('client_id', filters.clientId);
     }
 
     if (filters.categoryId) {
-      where.categoryId = filters.categoryId;
+      query = query.eq('category_id', filters.categoryId);
     }
 
     if (filters.priority && filters.priority.length > 0) {
-      where.priority = { in: [...new Set(filters.priority)] as TaskPriority[] };
+      query = query.in('priority', filters.priority as TaskPriority[]);
+    }
+
+    if (filters.status && filters.status.length > 0) {
+      query = query.in('status', filters.status as TaskStatus[]);
+    }
+
+    if (!filters.includeArchived) {
+      query = query.is('archived_at', null);
     }
 
     if (filters.search) {
-      const sanitized = filters.search.trim();
-      if (sanitized) {
-        where.OR = [
-          { title: { contains: sanitized, mode: 'insensitive' } },
-          { description: { contains: sanitized, mode: 'insensitive' } },
-        ];
-      }
+      query = query.ilike('title', `%${filters.search}%`);
     }
 
-    const instanceFilters = buildInstanceFilters(filters);
-    if (instanceFilters) {
-      where.instances = { some: instanceFilters };
+    if (filters.dueDateFrom) {
+      query = query.gte('due_date', filters.dueDateFrom);
     }
 
-    const skip = (filters.page - 1) * filters.pageSize;
-    const take = filters.pageSize;
+    if (filters.dueDateTo) {
+      query = query.lte('due_date', filters.dueDateTo);
+    }
 
-    const [tasks, total] = (await this.client.$transaction([
-      this.client.task.findMany({
-        where,
-        include: this.baseInclude,
-        orderBy: buildOrderBy(filters),
-        skip,
-        take,
-      }),
-      this.client.task.count({ where }),
-    ])) as [TaskRecord[], number];
+    const ascending = filters.sortOrder !== 'desc';
 
-    const totalPages = total > 0 ? Math.ceil(total / filters.pageSize) : 0;
+    if (filters.sort === 'createdAt') {
+      query = query.order('created_at', { ascending });
+    } else {
+      query = query
+        .order('due_date', { ascending, nullsFirst: true })
+        .order('created_at', { ascending: false });
+    }
+
+    const { data, error, count } = await query.range(from, to);
+
+    if (error) {
+      throw new TaskServiceError(error.message, 500, 'TASK_LIST_FAILED');
+    }
+
+    const rows = (data ?? []) as TaskRecord[];
+    const tasks = rows.map(serializeTask);
+    const total = count ?? tasks.length;
 
     return {
-      data: tasks.map(serializeTask),
+      data: tasks,
       pagination: {
-        page: filters.page,
-        pageSize: filters.pageSize,
+        page,
+        pageSize,
         total,
-        totalPages,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
       },
     };
   }
 
   public async getTaskById(taskId: string, actor: TaskActor): Promise<TaskDto> {
-    const task = (await this.client.task.findUnique({
-      where: { id: taskId },
-      include: this.baseInclude,
-    })) as TaskRecord | null;
-
-    if (!task) {
-      throw taskNotFound();
-    }
-
-    if (actor.role === 'coach' && actor.id !== task.coachId) {
-      throw accessDenied();
-    }
-
-    if (actor.role === 'client' && actor.id !== task.clientId) {
-      throw accessDenied();
-    }
-
-    return serializeTask(task);
+    const task = await this.fetchTaskRecord(taskId);
+    ensureActorCanViewTask(task, actor);
+    return serializeTask(task as TaskRecord);
   }
 
   public async updateTask(
@@ -375,184 +351,144 @@ export class TaskService {
     actor: TaskActor,
     payload: UpdateTaskInput
   ): Promise<TaskDto> {
-    const task = (await this.client.task.findUnique({
-      where: { id: taskId },
-      include: {
-        category: true,
-        instances: {
-          orderBy: { dueDate: 'asc' as const },
-        },
-      },
-    })) as TaskRecord | null;
-
-    if (!task) {
-      throw taskNotFound();
-    }
-
-    if (actor.role === 'coach' && actor.id !== task.coachId) {
+    if (!isCoachRole(actor.role)) {
       throw accessDenied();
     }
 
-    const updateData: Record<string, unknown> = {};
+    const task = await this.fetchTaskRecord(taskId);
+
+    if (actor.role === 'coach' && task.coach_id !== actor.id) {
+      throw accessDenied();
+    }
+
+    const updates: Database['public']['Tables']['tasks']['Update'] = {};
 
     if (payload.title !== undefined) {
-      updateData.title = payload.title;
+      updates.title = payload.title;
     }
 
     if (payload.description !== undefined) {
-      updateData.description = payload.description;
+      updates.description = payload.description ?? null;
     }
 
     if (payload.categoryId !== undefined) {
-      updateData.category = payload.categoryId
-        ? { connect: { id: payload.categoryId } }
-        : { disconnect: true };
+      updates.category_id = payload.categoryId ?? null;
     }
 
     if (payload.priority !== undefined) {
-      updateData.priority = payload.priority;
+      updates.priority = payload.priority as TaskPriority;
     }
 
     if (payload.visibilityToCoach !== undefined) {
-      updateData.visibilityToCoach = payload.visibilityToCoach;
+      updates.visibility_to_coach = payload.visibilityToCoach;
     }
 
     if (payload.archivedAt !== undefined) {
-      updateData.archivedAt = toDateOrNull(payload.archivedAt);
-    }
-    let recurrencePlan: RecurrencePlan | null = null;
-    let dueDateOverride: Date | null | undefined;
-
-    if (payload.dueDate !== undefined) {
-      dueDateOverride = toDateOrNull(payload.dueDate);
+      updates.archived_at = payload.archivedAt ?? null;
     }
 
-    if (payload.recurrenceRule !== undefined || payload.dueDate !== undefined) {
-      const baselineDueDate =
-        dueDateOverride !== undefined
-          ? dueDateOverride
-          : (task.dueDate ?? task.instances[0]?.dueDate ?? null);
+    if (payload.status !== undefined) {
+      updates.status = payload.status as TaskStatus;
+    }
 
-      try {
-        recurrencePlan = this.recurrenceService.planInstances({
-          dueDate: baselineDueDate,
-          recurrenceRule:
-            payload.recurrenceRule !== undefined
-              ? payload.recurrenceRule
-              : task.recurrenceRule,
-        });
-      } catch (error) {
-        if (error instanceof RecurrenceServiceError) {
+    const shouldRebuildInstances =
+      payload.dueDate !== undefined || payload.recurrenceRule !== undefined;
+
+    if (shouldRebuildInstances) {
+      const effectiveDueDate = payload.dueDate
+        ? new Date(payload.dueDate)
+        : task.due_date
+          ? new Date(task.due_date)
+          : null;
+
+      const plan = effectiveDueDate
+        ? planRecurrence(this.recurrenceService, {
+            dueDate: effectiveDueDate,
+            recurrenceRule:
+              payload.recurrenceRule !== undefined
+                ? payload.recurrenceRule
+                : (task.recurrence_rule ?? null),
+          })
+        : { recurrenceRule: null, instances: [] };
+
+      const firstDueDate =
+        plan.instances[0]?.dueDate ??
+        (effectiveDueDate ? new Date(effectiveDueDate) : null);
+
+      updates.due_date = firstDueDate ? firstDueDate.toISOString() : null;
+      updates.recurrence_rule = toJsonOrNull(plan.recurrenceRule);
+
+      const { error: deleteError } = await this.client
+        .from('task_instances')
+        .delete()
+        .eq('task_id', taskId);
+
+      if (deleteError) {
+        throw new TaskServiceError(
+          deleteError.message,
+          500,
+          'TASK_INSTANCE_DELETE_FAILED'
+        );
+      }
+
+      if (plan.instances.length > 0) {
+        const { error: insertError } = await this.client
+          .from('task_instances')
+          .insert(
+            plan.instances.map(instance => ({
+              task_id: taskId,
+              due_date: instance.dueDate.toISOString(),
+              scheduled_date: instance.scheduledDate.toISOString(),
+              status: 'PENDING' as TaskStatus,
+              completion_percentage: 0,
+            }))
+          );
+
+        if (insertError) {
           throw new TaskServiceError(
-            error.message,
-            400,
-            'INVALID_RECURRENCE_RULE'
+            insertError.message,
+            500,
+            'TASK_INSTANCE_CREATE_FAILED'
           );
         }
-        throw error;
       }
-
-      updateData.dueDate =
-        recurrencePlan.instances.length > 0
-          ? recurrencePlan.instances[0].dueDate
-          : null;
-      updateData.recurrenceRule = recurrencePlan.recurrenceRule;
+    } else if (payload.dueDate !== undefined) {
+      updates.due_date = payload.dueDate ?? null;
     }
 
-    const hasTaskChanges = Object.keys(updateData).length > 0;
-    const activeInstance = task.instances[0];
-    const shouldSyncInstances = recurrencePlan !== null;
-    const shouldUpdateStatus = payload.status !== undefined;
+    if (payload.recurrenceRule === null && !shouldRebuildInstances) {
+      updates.recurrence_rule = null;
+    }
 
-    await this.client.$transaction(async tx => {
-      if (hasTaskChanges) {
-        await tx.task.update({
-          where: { id: taskId },
-          data: updateData,
-        });
+    if (Object.keys(updates).length > 0) {
+      const { error: updateError } = await this.client
+        .from('tasks')
+        .update(updates)
+        .eq('id', taskId);
+
+      if (updateError) {
+        throw new TaskServiceError(
+          updateError.message,
+          500,
+          'TASK_UPDATE_FAILED'
+        );
       }
+    }
 
-      if (shouldSyncInstances) {
-        const plannedInstances = recurrencePlan?.instances ?? [];
-        const [plannedPrimary, ...plannedRest] = plannedInstances;
+    return this.getTaskById(taskId, actor);
+  }
 
-        if (activeInstance) {
-          if (plannedPrimary) {
-            await tx.taskInstance.update({
-              where: { id: activeInstance.id },
-              data: {
-                dueDate: plannedPrimary.dueDate,
-                scheduledDate: plannedPrimary.scheduledDate,
-              },
-            });
-          } else {
-            await tx.taskInstance.delete({ where: { id: activeInstance.id } });
-          }
+  private async fetchTaskRecord(taskId: string): Promise<TaskRecord> {
+    const { data, error } = await this.client
+      .from('tasks')
+      .select(TASK_SELECT)
+      .eq('id', taskId)
+      .single();
 
-          await tx.taskInstance.deleteMany({
-            where: {
-              taskId,
-              id: { not: activeInstance.id },
-            },
-          });
-
-          if (plannedPrimary && plannedRest.length > 0) {
-            await tx.taskInstance.createMany({
-              data: plannedRest.map(instance => ({
-                taskId,
-                dueDate: instance.dueDate,
-                scheduledDate: instance.scheduledDate,
-                status: TaskStatusEnum.PENDING,
-              })),
-            });
-          }
-        } else {
-          await tx.taskInstance.deleteMany({ where: { taskId } });
-
-          if (plannedInstances.length > 0) {
-            await tx.taskInstance.createMany({
-              data: plannedInstances.map(instance => ({
-                taskId,
-                dueDate: instance.dueDate,
-                scheduledDate: instance.scheduledDate,
-                status: TaskStatusEnum.PENDING,
-              })),
-            });
-          }
-        }
-      }
-
-      const hasPrimaryAfterSync =
-        !shouldSyncInstances || (recurrencePlan?.instances.length ?? 0) > 0;
-
-      if (activeInstance && shouldUpdateStatus && hasPrimaryAfterSync) {
-        const instanceData: Record<string, unknown> = {
-          status: payload.status,
-        };
-
-        instanceData.completedAt =
-          payload.status === TaskStatusEnum.COMPLETED
-            ? new Date()
-            : payload.status === TaskStatusEnum.PENDING
-              ? null
-              : activeInstance.completedAt;
-
-        await tx.taskInstance.update({
-          where: { id: activeInstance.id },
-          data: instanceData,
-        });
-      }
-    });
-
-    const updatedTask = (await this.client.task.findUnique({
-      where: { id: taskId },
-      include: this.baseInclude,
-    })) as TaskRecord | null;
-
-    if (!updatedTask) {
+    if (error || !data) {
       throw taskNotFound();
     }
 
-    return serializeTask(updatedTask);
+    return data as TaskRecord;
   }
 }

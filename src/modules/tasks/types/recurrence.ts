@@ -31,9 +31,8 @@ const isoDateSchema = z
 
 /**
  * Schema describing the recurrence rule payload accepted by the API layer.
- * The structure intentionally aligns with a subset of the RFC 5545 options
- * supported by the `rrule` library so that conversion to recurrence options
- * remains deterministic and auditable.
+ * The structure intentionally aligns with a subset of the RFC 5545 options so
+ * that conversion to recurrence schedules remains deterministic and auditable.
  */
 export const recurrenceRuleSchema = z
   .object({

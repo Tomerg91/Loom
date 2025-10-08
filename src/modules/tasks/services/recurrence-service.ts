@@ -1,57 +1,93 @@
 /**
  * @fileoverview Service responsible for normalizing recurrence rules and
- * generating TaskInstance schedules using the `rrule` library. The service
- * centralizes conversion logic so both creation and update flows can generate
- * deterministic instance plans from user-provided recurrence metadata.
+ * generating task-instance schedules. The implementation purposefully avoids
+ * heavy third-party dependencies so it can run in constrained environments
+ * (e.g., sandboxes without npm registry access) while still covering the
+ * recurrence scenarios required by the Action Items & Homework roadmap.
  */
-import {
-  RRule,
-  type Frequency,
-  type RRuleInstance,
-  type RRuleOptions,
-  type Weekday,
-} from 'rrule';
 
-import type {
-  RecurrencePlan,
-  RecurrenceRuleInput,
-  RecurrenceRulePersisted,
-  RecurrenceScheduleEntry,
+import {
+  recurrenceRuleSchema,
+  type RecurrenceRuleInput,
+  type RecurrenceRulePersisted,
+  type RecurrencePlan,
 } from '../types/recurrence';
-import { recurrenceRuleSchema } from '../types/recurrence';
 
 /** Maximum number of future instances generated during planning. */
 const DEFAULT_INSTANCE_LIMIT = 10;
 
 type RecurrenceWeekday = NonNullable<RecurrenceRuleInput['byWeekday']>[number];
 
-const WEEKDAY_CODES: RecurrenceWeekday[] = [
-  'MO',
-  'TU',
-  'WE',
-  'TH',
-  'FR',
-  'SA',
-  'SU',
-];
+const WEEKDAY_INDEX: Record<RecurrenceWeekday, number> = {
+  MO: 1,
+  TU: 2,
+  WE: 3,
+  TH: 4,
+  FR: 5,
+  SA: 6,
+  SU: 0,
+};
 
-const FREQUENCY_TO_STRING: Record<number, RecurrenceRuleInput['frequency']> = {
-  [RRule.DAILY]: 'DAILY',
-  [RRule.WEEKLY]: 'WEEKLY',
-  [RRule.MONTHLY]: 'MONTHLY',
-  [RRule.YEARLY]: 'YEARLY',
+const INDEX_WEEKDAY: Record<number, RecurrenceWeekday> = {
+  0: 'SU',
+  1: 'MO',
+  2: 'TU',
+  3: 'WE',
+  4: 'TH',
+  5: 'FR',
+  6: 'SA',
 };
 
 const cloneDate = (value: Date) => new Date(value.getTime());
 
-const WEEKDAY_LOOKUP: Record<RecurrenceWeekday, Weekday> = {
-  MO: RRule.MO,
-  TU: RRule.TU,
-  WE: RRule.WE,
-  TH: RRule.TH,
-  FR: RRule.FR,
-  SA: RRule.SA,
-  SU: RRule.SU,
+const startOfWeek = (date: Date, weekStart: RecurrenceWeekday): Date => {
+  const result = cloneDate(date);
+  const current = result.getUTCDay();
+  const target = WEEKDAY_INDEX[weekStart];
+  const diff = (current - target + 7) % 7 || 0;
+  result.setUTCDate(result.getUTCDate() - diff);
+  result.setUTCHours(0, 0, 0, 0);
+  return result;
+};
+
+const addDays = (date: Date, days: number): Date => {
+  const result = cloneDate(date);
+  result.setUTCDate(result.getUTCDate() + days);
+  return result;
+};
+
+const addMonths = (date: Date, months: number): Date => {
+  const result = cloneDate(date);
+  const day = result.getUTCDate();
+  result.setUTCDate(1);
+  result.setUTCMonth(result.getUTCMonth() + months);
+  const monthLength = new Date(
+    result.getUTCFullYear(),
+    result.getUTCMonth() + 1,
+    0
+  ).getUTCDate();
+  result.setUTCDate(Math.min(day, monthLength));
+  return result;
+};
+
+const addYears = (date: Date, years: number): Date => {
+  const result = cloneDate(date);
+  result.setUTCFullYear(result.getUTCFullYear() + years);
+  return result;
+};
+
+const sortAndDeduplicate = (dates: Date[]): Date[] => {
+  const seen = new Set<number>();
+  return dates
+    .sort((a, b) => a.getTime() - b.getTime())
+    .filter(date => {
+      const time = date.getTime();
+      if (seen.has(time)) {
+        return false;
+      }
+      seen.add(time);
+      return true;
+    });
 };
 
 /**
@@ -118,15 +154,18 @@ export class RecurrenceService {
       };
     }
 
-    const { instances, rruleString } = this.generateSchedule(
+    const occurrences = this.generateOccurrences(
       dueDate,
       normalizedRule,
       limit
     );
 
     return {
-      recurrenceRule: this.persistRule(normalizedRule, dueDate, rruleString),
-      instances,
+      recurrenceRule: this.persistRule(normalizedRule, dueDate, occurrences),
+      instances: occurrences.map(date => ({
+        dueDate: cloneDate(date),
+        scheduledDate: cloneDate(date),
+      })),
     };
   }
 
@@ -139,29 +178,21 @@ export class RecurrenceService {
     }
 
     if (typeof rule === 'string') {
-      try {
-        const parsed = RRule.fromString(rule);
-        return this.fromOptions(parsed.origOptions);
-      } catch (_error) {
-        throw new RecurrenceServiceError(
-          'Unsupported recurrence string. Expected an RFC 5545 RRULE.'
-        );
-      }
+      throw new RecurrenceServiceError(
+        'String-based recurrence rules are not supported in this environment.'
+      );
     }
 
     if (typeof rule !== 'object') {
       throw new RecurrenceServiceError('Unsupported recurrence payload.');
     }
 
-    const candidate = this.extractRuleObject(rule as Record<string, unknown>);
-    return recurrenceRuleSchema.parse(candidate);
+    return recurrenceRuleSchema.parse(
+      this.extractRuleObject(rule as Record<string, unknown>)
+    );
   }
 
   private extractRuleObject(raw: Record<string, unknown>): unknown {
-    if (typeof raw.frequency === 'string') {
-      return raw;
-    }
-
     if (raw.rule && typeof raw.rule === 'object') {
       return raw.rule;
     }
@@ -170,213 +201,208 @@ export class RecurrenceService {
       return raw.options;
     }
 
-    if (raw.rrule && typeof raw.rrule === 'string') {
-      return this.normalizeRule(raw.rrule);
-    }
-
     return raw;
   }
 
-  private generateSchedule(
+  private generateOccurrences(
     startDate: Date,
     rule: RecurrenceRuleInput,
     limit: number
-  ): { instances: RecurrenceScheduleEntry[]; rruleString: string } {
-    const { rrule, occurrences } = this.buildRRule(startDate, rule, limit);
+  ): Date[] {
+    const occurrences: Date[] = [];
+    const until = rule.until ? new Date(rule.until) : null;
+    const targetCount = rule.count ? Math.min(rule.count, limit) : limit;
 
-    const schedule = occurrences.length > 0 ? occurrences : [startDate];
+    const pushIfValid = (candidate: Date) => {
+      if (candidate < startDate && occurrences.length === 0) {
+        return;
+      }
 
-    return {
-      instances: schedule.map(date => ({
-        dueDate: cloneDate(date),
-        scheduledDate: cloneDate(date),
-      })),
-      rruleString: rrule.toString(),
-    };
-  }
+      if (until && candidate > until) {
+        return;
+      }
 
-  private buildRRule(
-    startDate: Date,
-    rule: RecurrenceRuleInput,
-    limit: number
-  ): { rrule: RRuleInstance; occurrences: Date[] } {
-    const options: RRuleOptions = {
-      freq: this.toFrequency(rule.frequency),
-      interval: rule.interval ?? 1,
-      dtstart: startDate,
+      occurrences.push(candidate);
     };
 
-    if (rule.count !== undefined) {
-      options.count = rule.count;
-    }
+    switch (rule.frequency) {
+      case 'DAILY': {
+        let current = cloneDate(startDate);
+        while (occurrences.length < targetCount) {
+          pushIfValid(cloneDate(current));
+          current = addDays(current, rule.interval);
+          if (until && current > until && occurrences.length >= targetCount) {
+            break;
+          }
+        }
+        break;
+      }
+      case 'WEEKLY': {
+        const weekStart = rule.weekStart ?? 'MO';
+        const weekdays =
+          rule.byWeekday && rule.byWeekday.length > 0
+            ? (Array.from(new Set(rule.byWeekday)) as RecurrenceWeekday[])
+            : [INDEX_WEEKDAY[startDate.getUTCDay()] as RecurrenceWeekday];
 
-    if (rule.until) {
-      options.until = new Date(rule.until);
-    }
+        const applyStartTime = (date: Date) => {
+          const withTime = cloneDate(date);
+          withTime.setUTCHours(
+            startDate.getUTCHours(),
+            startDate.getUTCMinutes(),
+            startDate.getUTCSeconds(),
+            startDate.getUTCMilliseconds()
+          );
+          return withTime;
+        };
 
-    if (!options.count && !options.until) {
-      options.count = limit;
-    }
+        pushIfValid(cloneDate(startDate));
 
-    if (rule.byWeekday) {
-      options.byweekday = rule.byWeekday.map(
-        weekday => WEEKDAY_LOOKUP[weekday]
-      );
-    }
+        const weekCursor = startOfWeek(startDate, weekStart);
+        let weeksGenerated = 0;
 
-    if (rule.byMonthDay) {
-      options.bymonthday = [...rule.byMonthDay];
-    }
+        while (occurrences.length < targetCount) {
+          const candidateWeek =
+            weeksGenerated === 0
+              ? startOfWeek(startDate, weekStart)
+              : addDays(weekCursor, weeksGenerated * rule.interval * 7);
 
-    if (rule.bySetPosition) {
-      options.bysetpos = [...rule.bySetPosition];
-    }
+          for (const weekday of weekdays) {
+            const dayIndex = WEEKDAY_INDEX[weekday];
+            const candidate = applyStartTime(
+              addDays(
+                candidateWeek,
+                (dayIndex - candidateWeek.getUTCDay() + 7) % 7
+              )
+            );
+            if (
+              weeksGenerated === 0 &&
+              candidate.getTime() === startDate.getTime()
+            ) {
+              continue;
+            }
+            if (occurrences.length >= targetCount) {
+              break;
+            }
+            pushIfValid(candidate);
+          }
 
-    if (rule.weekStart) {
-      options.wkst = WEEKDAY_LOOKUP[rule.weekStart];
-    }
+          weeksGenerated += 1;
+          if (until && addDays(candidateWeek, rule.interval * 7) > until) {
+            break;
+          }
+        }
+        break;
+      }
+      case 'MONTHLY': {
+        const monthDays =
+          rule.byMonthDay && rule.byMonthDay.length > 0
+            ? sortAndDeduplicate(
+                rule.byMonthDay.map(
+                  day =>
+                    new Date(
+                      Date.UTC(
+                        startDate.getUTCFullYear(),
+                        startDate.getUTCMonth(),
+                        day
+                      )
+                    )
+                )
+              ).map(date => date.getUTCDate())
+            : [startDate.getUTCDate()];
 
-    if (rule.timezone) {
-      (options as RRuleOptions & { tzid?: string }).tzid = rule.timezone;
-    }
-
-    const rrule = new RRule(options);
-    const occurrences = rrule.all(
-      (_date: Date, occurrenceIndex: number) => occurrenceIndex < limit
-    );
-
-    return { rrule, occurrences };
-  }
-
-  private toFrequency(frequency: RecurrenceRuleInput['frequency']): Frequency {
-    switch (frequency) {
-      case 'DAILY':
-        return RRule.DAILY;
-      case 'WEEKLY':
-        return RRule.WEEKLY;
-      case 'MONTHLY':
-        return RRule.MONTHLY;
-      case 'YEARLY':
-        return RRule.YEARLY;
+        let cursor = cloneDate(startDate);
+        while (occurrences.length < targetCount) {
+          for (const day of monthDays) {
+            const candidate = new Date(
+              Date.UTC(
+                cursor.getUTCFullYear(),
+                cursor.getUTCMonth(),
+                day,
+                cursor.getUTCHours(),
+                cursor.getUTCMinutes(),
+                cursor.getUTCSeconds(),
+                cursor.getUTCMilliseconds()
+              )
+            );
+            if (candidate.getUTCMonth() !== cursor.getUTCMonth()) {
+              continue;
+            }
+            pushIfValid(candidate);
+            if (occurrences.length >= targetCount) {
+              break;
+            }
+          }
+          cursor = addMonths(cursor, rule.interval);
+          if (until && cursor > until) {
+            break;
+          }
+        }
+        break;
+      }
+      case 'YEARLY': {
+        let cursor = cloneDate(startDate);
+        while (occurrences.length < targetCount) {
+          pushIfValid(cloneDate(cursor));
+          cursor = addYears(cursor, rule.interval);
+          if (until && cursor > until) {
+            break;
+          }
+        }
+        break;
+      }
       default: {
-        const exhaustiveCheck: never = frequency;
-        throw new RecurrenceServiceError(
-          `Unsupported recurrence frequency: ${exhaustiveCheck}`
-        );
+        throw new RecurrenceServiceError('Unsupported recurrence frequency.');
       }
     }
+
+    return sortAndDeduplicate(occurrences).slice(0, targetCount);
   }
 
   private persistRule(
     rule: RecurrenceRuleInput,
     startDate: Date,
-    rruleString: string
+    occurrences: Date[]
   ): RecurrenceRulePersisted {
+    const firstOccurrence = occurrences[0] ?? startDate;
     return {
       ...rule,
-      interval: rule.interval ?? 1,
-      startDate: startDate.toISOString(),
-      rrule: rruleString,
+      startDate: firstOccurrence.toISOString(),
+      rrule: this.toRRuleLikeString(rule, firstOccurrence),
     };
   }
 
-  private fromOptions(options: Partial<RRuleOptions>): RecurrenceRuleInput {
-    const frequency =
-      options.freq !== undefined
-        ? FREQUENCY_TO_STRING[options.freq]
-        : undefined;
+  private toRRuleLikeString(
+    rule: RecurrenceRuleInput,
+    startDate: Date
+  ): string {
+    const components: string[] = [`FREQ=${rule.frequency}`];
 
-    if (!frequency) {
-      throw new RecurrenceServiceError(
-        'Unable to determine recurrence frequency from RRULE options.'
+    if (rule.interval && rule.interval !== 1) {
+      components.push(`INTERVAL=${rule.interval}`);
+    }
+
+    if (rule.count) {
+      components.push(`COUNT=${rule.count}`);
+    }
+
+    if (rule.until) {
+      components.push(
+        `UNTIL=${rule.until.replace(/[-:]/g, '').replace('.000', '')}`
       );
     }
 
-    const normalized: Record<string, unknown> = {
-      frequency,
-      interval: options.interval ?? 1,
-    };
-
-    if (options.count !== undefined) {
-      normalized.count = options.count;
+    if (rule.byWeekday && rule.byWeekday.length > 0) {
+      components.push(`BYDAY=${rule.byWeekday.join(',')}`);
     }
 
-    if (options.until instanceof Date) {
-      normalized.until = options.until.toISOString();
+    if (rule.byMonthDay && rule.byMonthDay.length > 0) {
+      components.push(`BYMONTHDAY=${rule.byMonthDay.join(',')}`);
     }
 
-    const weekdays = this.normalizeWeekdays(options.byweekday);
-    if (weekdays && weekdays.length > 0) {
-      normalized.byWeekday = weekdays;
-    }
+    components.push(
+      `DTSTART=${startDate.toISOString().replace(/[-:]/g, '').replace('.000', '')}`
+    );
 
-    const monthDays = this.normalizeNumericArray(options.bymonthday);
-    if (monthDays) {
-      normalized.byMonthDay = monthDays;
-    }
-
-    const setPositions = this.normalizeNumericArray(options.bysetpos);
-    if (setPositions) {
-      normalized.bySetPosition = setPositions;
-    }
-
-    const weekStart = this.normalizeWeekday(options.wkst);
-    if (weekStart) {
-      normalized.weekStart = weekStart;
-    }
-
-    const tzid = (options as { tzid?: string }).tzid;
-    if (tzid) {
-      normalized.timezone = tzid;
-    }
-
-    return recurrenceRuleSchema.parse(normalized);
-  }
-
-  private normalizeWeekdays(
-    input?: Weekday | number | (Weekday | number)[]
-  ): RecurrenceWeekday[] | undefined {
-    if (input === undefined) {
-      return undefined;
-    }
-
-    const values = Array.isArray(input) ? input : [input];
-    return values.map(value => this.weekdayToCode(value));
-  }
-
-  private normalizeWeekday(
-    value?: Weekday | number
-  ): RecurrenceWeekday | undefined {
-    if (value === undefined) {
-      return undefined;
-    }
-
-    return this.weekdayToCode(value);
-  }
-
-  private normalizeNumericArray(
-    value?: number | number[] | null
-  ): number[] | undefined {
-    if (value === undefined || value === null) {
-      return undefined;
-    }
-
-    const values = Array.isArray(value) ? value : [value];
-    return values.length > 0 ? [...values] : undefined;
-  }
-
-  private weekdayToCode(value: Weekday | number): RecurrenceWeekday {
-    const weekdayIndex =
-      typeof value === 'number' ? value : (value as Weekday).weekday;
-    const normalizedIndex = ((weekdayIndex % 7) + 7) % 7;
-    const code = WEEKDAY_CODES[normalizedIndex];
-
-    if (!code) {
-      throw new RecurrenceServiceError(
-        `Unsupported weekday index: ${weekdayIndex}`
-      );
-    }
-
-    return code;
+    return components.join(';');
   }
 }

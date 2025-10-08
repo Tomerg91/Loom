@@ -7,7 +7,7 @@ This module centralizes task and homework functionality for both coaches and cli
 - `api/` – Client- and server-side request helpers, React Query hooks, and shared fetch utilities.
 - `components/` – React components dedicated to task management experiences (lists, forms, drawers, etc.).
 - `hooks/` – Custom React hooks used by task components for state management and side effects.
-- `services/` – Domain services encapsulating business logic (Prisma accessors, recurrence utilities, notification helpers).
+- `services/` – Domain services encapsulating business logic (Supabase data accessors, recurrence utilities, notification helpers).
 - `types/` – Shared TypeScript definitions and schema validators.
 
 Each subdirectory exposes a local `index.ts` file to aggregate exports. When adding new modules, update the relevant index to maintain a clean public API for the tasks domain.
@@ -23,7 +23,7 @@ Each subdirectory exposes a local `index.ts` file to aggregate exports. When add
 
 The scaffolding created in Step 2 supports upcoming milestones:
 
-- **Step 3:** Extend the Prisma schema with task-related entities and generate migrations.
+- **Step 3:** Extend the Supabase SQL schema with task-related entities and generate migrations.
 - **Step 5:** Implement task CRUD APIs and shared DTOs.
 - **Step 6:** Introduce recurrence utilities and integrate them into task services.
 - **Steps 7-14:** Layer on progress updates, notifications, exports, and UI experiences specific to coaches and clients.
