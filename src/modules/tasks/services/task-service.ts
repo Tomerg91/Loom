@@ -11,6 +11,11 @@ import {
 
 import prisma from '@/lib/prisma';
 
+import {
+  RecurrenceService,
+  RecurrenceServiceError,
+} from './recurrence-service';
+import type { RecurrencePlan } from '../types/recurrence';
 import type {
   CreateTaskInput,
   TaskDto,
@@ -63,12 +68,7 @@ interface TaskRecord {
   instances: TaskInstanceRecord[];
 }
 
-interface TaskWithInstancesRecord {
-  id: string;
-  coachId: string;
-  clientId: string;
-  instances: TaskInstanceRecord[];
-}
+const DEFAULT_INSTANCE_LIMIT = 10;
 
 export class TaskServiceError extends Error {
   constructor(
@@ -194,15 +194,22 @@ function resolveCoachId(actor: TaskActor, payloadCoachId?: string): string {
 }
 
 export class TaskService {
-  constructor(private readonly client: typeof prisma = prisma) {}
+  constructor(
+    private readonly client: typeof prisma = prisma,
+    private readonly recurrenceService: RecurrenceService = new RecurrenceService(
+      DEFAULT_INSTANCE_LIMIT
+    )
+  ) {}
 
-  private baseInclude = {
-    category: true,
-    instances: {
-      orderBy: { dueDate: 'asc' as const },
-      take: 10,
-    },
-  };
+  private get baseInclude() {
+    return {
+      category: true,
+      instances: {
+        orderBy: { dueDate: 'asc' as const },
+        take: this.recurrenceService.maxInstances,
+      },
+    };
+  }
 
   public async createTask(
     actor: TaskActor,
@@ -214,6 +221,22 @@ export class TaskService {
 
     const coachId = resolveCoachId(actor, payload.coachId);
     const dueDateValue = payload.dueDate ? new Date(payload.dueDate) : null;
+    let recurrencePlan: RecurrencePlan;
+    try {
+      recurrencePlan = this.recurrenceService.planInstances({
+        dueDate: dueDateValue,
+        recurrenceRule: payload.recurrenceRule,
+      });
+    } catch (error) {
+      if (error instanceof RecurrenceServiceError) {
+        throw new TaskServiceError(
+          error.message,
+          400,
+          'INVALID_RECURRENCE_RULE'
+        );
+      }
+      throw error;
+    }
 
     const createData: Record<string, unknown> = {
       coachId,
@@ -222,21 +245,24 @@ export class TaskService {
       description: payload.description ?? null,
       priority: payload.priority ?? TaskPriorityEnum.MEDIUM,
       visibilityToCoach: payload.visibilityToCoach ?? true,
-      dueDate: dueDateValue,
-      recurrenceRule: payload.recurrenceRule ?? null,
+      dueDate:
+        recurrencePlan.instances.length > 0
+          ? recurrencePlan.instances[0].dueDate
+          : dueDateValue,
+      recurrenceRule: recurrencePlan.recurrenceRule,
     };
 
     if (payload.categoryId) {
       createData.category = { connect: { id: payload.categoryId } };
     }
 
-    if (dueDateValue) {
+    if (recurrencePlan.instances.length > 0) {
       createData.instances = {
-        create: {
-          dueDate: dueDateValue,
-          scheduledDate: dueDateValue,
+        create: recurrencePlan.instances.map(instance => ({
+          dueDate: instance.dueDate,
+          scheduledDate: instance.scheduledDate,
           status: TaskStatusEnum.PENDING,
-        },
+        })),
       };
     }
 
@@ -352,11 +378,12 @@ export class TaskService {
     const task = (await this.client.task.findUnique({
       where: { id: taskId },
       include: {
+        category: true,
         instances: {
           orderBy: { dueDate: 'asc' as const },
         },
       },
-    })) as TaskWithInstancesRecord | null;
+    })) as TaskRecord | null;
 
     if (!task) {
       throw taskNotFound();
@@ -390,20 +417,52 @@ export class TaskService {
       updateData.visibilityToCoach = payload.visibilityToCoach;
     }
 
-    if (payload.dueDate !== undefined) {
-      updateData.dueDate = toDateOrNull(payload.dueDate);
-    }
-
     if (payload.archivedAt !== undefined) {
       updateData.archivedAt = toDateOrNull(payload.archivedAt);
     }
+    let recurrencePlan: RecurrencePlan | null = null;
+    let dueDateOverride: Date | null | undefined;
 
-    if (payload.recurrenceRule !== undefined) {
-      updateData.recurrenceRule = payload.recurrenceRule ?? null;
+    if (payload.dueDate !== undefined) {
+      dueDateOverride = toDateOrNull(payload.dueDate);
+    }
+
+    if (payload.recurrenceRule !== undefined || payload.dueDate !== undefined) {
+      const baselineDueDate =
+        dueDateOverride !== undefined
+          ? dueDateOverride
+          : (task.dueDate ?? task.instances[0]?.dueDate ?? null);
+
+      try {
+        recurrencePlan = this.recurrenceService.planInstances({
+          dueDate: baselineDueDate,
+          recurrenceRule:
+            payload.recurrenceRule !== undefined
+              ? payload.recurrenceRule
+              : task.recurrenceRule,
+        });
+      } catch (error) {
+        if (error instanceof RecurrenceServiceError) {
+          throw new TaskServiceError(
+            error.message,
+            400,
+            'INVALID_RECURRENCE_RULE'
+          );
+        }
+        throw error;
+      }
+
+      updateData.dueDate =
+        recurrencePlan.instances.length > 0
+          ? recurrencePlan.instances[0].dueDate
+          : null;
+      updateData.recurrenceRule = recurrencePlan.recurrenceRule;
     }
 
     const hasTaskChanges = Object.keys(updateData).length > 0;
     const activeInstance = task.instances[0];
+    const shouldSyncInstances = recurrencePlan !== null;
+    const shouldUpdateStatus = payload.status !== undefined;
 
     await this.client.$transaction(async tx => {
       if (hasTaskChanges) {
@@ -413,34 +472,75 @@ export class TaskService {
         });
       }
 
-      if (
-        activeInstance &&
-        (payload.dueDate !== undefined || payload.status !== undefined)
-      ) {
-        const instanceData: Record<string, unknown> = {};
+      if (shouldSyncInstances) {
+        const plannedInstances = recurrencePlan?.instances ?? [];
+        const [plannedPrimary, ...plannedRest] = plannedInstances;
 
-        if (payload.dueDate !== undefined && payload.dueDate !== null) {
-          const dueDate = new Date(payload.dueDate);
-          instanceData.dueDate = dueDate;
-          instanceData.scheduledDate = dueDate;
-        }
+        if (activeInstance) {
+          if (plannedPrimary) {
+            await tx.taskInstance.update({
+              where: { id: activeInstance.id },
+              data: {
+                dueDate: plannedPrimary.dueDate,
+                scheduledDate: plannedPrimary.scheduledDate,
+              },
+            });
+          } else {
+            await tx.taskInstance.delete({ where: { id: activeInstance.id } });
+          }
 
-        if (payload.status !== undefined) {
-          instanceData.status = payload.status;
-          instanceData.completedAt =
-            payload.status === TaskStatusEnum.COMPLETED
-              ? new Date()
-              : payload.status === TaskStatusEnum.PENDING
-                ? null
-                : activeInstance.completedAt;
-        }
-
-        if (Object.keys(instanceData).length > 0) {
-          await tx.taskInstance.update({
-            where: { id: activeInstance.id },
-            data: instanceData,
+          await tx.taskInstance.deleteMany({
+            where: {
+              taskId,
+              id: { not: activeInstance.id },
+            },
           });
+
+          if (plannedPrimary && plannedRest.length > 0) {
+            await tx.taskInstance.createMany({
+              data: plannedRest.map(instance => ({
+                taskId,
+                dueDate: instance.dueDate,
+                scheduledDate: instance.scheduledDate,
+                status: TaskStatusEnum.PENDING,
+              })),
+            });
+          }
+        } else {
+          await tx.taskInstance.deleteMany({ where: { taskId } });
+
+          if (plannedInstances.length > 0) {
+            await tx.taskInstance.createMany({
+              data: plannedInstances.map(instance => ({
+                taskId,
+                dueDate: instance.dueDate,
+                scheduledDate: instance.scheduledDate,
+                status: TaskStatusEnum.PENDING,
+              })),
+            });
+          }
         }
+      }
+
+      const hasPrimaryAfterSync =
+        !shouldSyncInstances || (recurrencePlan?.instances.length ?? 0) > 0;
+
+      if (activeInstance && shouldUpdateStatus && hasPrimaryAfterSync) {
+        const instanceData: Record<string, unknown> = {
+          status: payload.status,
+        };
+
+        instanceData.completedAt =
+          payload.status === TaskStatusEnum.COMPLETED
+            ? new Date()
+            : payload.status === TaskStatusEnum.PENDING
+              ? null
+              : activeInstance.completedAt;
+
+        await tx.taskInstance.update({
+          where: { id: activeInstance.id },
+          data: instanceData,
+        });
       }
     });
 

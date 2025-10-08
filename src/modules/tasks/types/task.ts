@@ -6,6 +6,8 @@
 import { TaskPriority, TaskStatus } from '@prisma/client';
 import { z } from 'zod';
 
+import { recurrenceRuleSchema } from './recurrence';
+
 /**
  * Utility schema that converts ISO-8601 strings into native JavaScript Date
  * instances. The API accepts ISO strings and service layers operate on Date
@@ -35,7 +37,7 @@ export const createTaskSchema = z.object({
   priority: z.nativeEnum(TaskPriority).default(TaskPriority.MEDIUM).optional(),
   visibilityToCoach: z.boolean().optional(),
   dueDate: isoDateStringSchema.optional(),
-  recurrenceRule: z.unknown().nullable().optional(),
+  recurrenceRule: recurrenceRuleSchema.nullable().optional(),
 });
 
 /**
@@ -59,7 +61,7 @@ export const updateTaskSchema = z
     dueDate: isoDateStringSchema.optional(),
     archivedAt: isoDateStringSchema.nullable().optional(),
     status: z.nativeEnum(TaskStatus).optional(),
-    recurrenceRule: z.unknown().nullable().optional(),
+    recurrenceRule: recurrenceRuleSchema.nullable().optional(),
   })
   .refine(payload => payload !== null && Object.keys(payload).length > 0, {
     message: 'At least one property must be provided for an update',

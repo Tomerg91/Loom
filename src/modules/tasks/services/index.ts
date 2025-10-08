@@ -6,3 +6,7 @@
  */
 export { TaskService, TaskServiceError } from './task-service';
 export type { TaskActor } from './task-service';
+export {
+  RecurrenceService,
+  RecurrenceServiceError,
+} from './recurrence-service';

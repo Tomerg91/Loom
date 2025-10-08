@@ -3,3 +3,4 @@
  * and UI code can import strongly-typed contracts from a single location.
  */
 export * from './task';
+export * from './recurrence';

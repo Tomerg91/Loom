@@ -60,6 +60,12 @@
 - Introduced Zod DTO schemas for task payloads and query parameters alongside a Prisma singleton helper to standardize database access across the new domain modules.
 - Expanded the auth permission matrix with task-centric permissions and delivered Vitest API unit tests that exercise success paths and error handling for the new endpoints.
 
+## Step 6 – Recurrence Scheduling Utilities (Completed)
+
+- Added a `RecurrenceService` powered by the `rrule` library that normalizes recurrence metadata and generates deterministic task instance schedules with sane safety limits.
+- Integrated recurrence planning into `TaskService` so task creation and updates persist canonical rule metadata, regenerate upcoming instances, and keep the primary instance synchronized with due date changes.
+- Introduced shared recurrence schemas/types, unit coverage for the scheduling service, and documented the new dependency to guide contributors on installing `rrule` locally.
+
 ## Step Tracking
 
 - [x] Step 1: Audit existing codebase and align prerequisites (this document).
@@ -67,4 +73,5 @@
 - [x] Step 3: Define Prisma schema extensions for tasks domain.
 - [x] Step 4: Seed reference data and helper scripts.
 - [x] Step 5: Implement task CRUD API route handlers.
-- [ ] Steps 6-20: Pending as outlined in the implementation roadmap.
+- [x] Step 6: Build recurrence scheduling utilities.
+- [ ] Steps 7-20: Pending as outlined in the implementation roadmap.
