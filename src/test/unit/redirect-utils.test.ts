@@ -21,5 +21,16 @@ describe('resolveRedirect', () => {
     expect(resolveRedirect('en', '/he/profile')).toBe('/he/profile');
     expect(resolveRedirect('he', '/en')).toBe('/en');
   });
+
+  it('prevents redirecting back to auth routes', () => {
+    expect(resolveRedirect('en', '/auth/signin')).toBe('/en/dashboard');
+    expect(resolveRedirect('he', '/auth/signup')).toBe('/he/dashboard');
+    expect(resolveRedirect('en', '/en/auth/signin?redirectTo=%2Fen%2Fdashboard')).toBe('/en/dashboard');
+  });
+
+  it('allows auth routes when explicitly permitted', () => {
+    expect(resolveRedirect('en', '/auth/signin', { allowAuthPaths: true })).toBe('/en/auth/signin');
+    expect(resolveRedirect('he', '/auth/signup', { allowAuthPaths: true })).toBe('/he/auth/signup');
+  });
 });
 
