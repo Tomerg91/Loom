@@ -63,6 +63,12 @@
 - Integrated recurrence planning into the Supabase-backed `TaskService` so task creation and updates persist canonical rule metadata, regenerate upcoming instances, and keep the primary instance synchronized with due date changes.
 - Introduced shared recurrence schemas/types and unit coverage for the scheduling service so contributors can extend supported patterns with confidence.
 
+## Step 7 – Client Task API Utilities (Completed)
+
+- Implemented a typed `/api/tasks` client (`src/modules/tasks/api/client.ts`) that normalizes query parameters, surfaces friendly `TaskApiError` instances, and exposes helpers for listing, retrieving, creating, updating, and recording progress on action items.
+- Added React Query hooks (`useTaskList`, `useTask`, `useCreateTask`, `useUpdateTask`, `useCreateProgressUpdate`) and cache keys so coach and client experiences can integrate task data with consistent caching and invalidation semantics.
+- Documented the new utilities in `src/modules/tasks/README.md`, ensuring future steps can plug the hooks into UI flows without duplicating fetch logic.
+
 ## Step Tracking
 
 - [x] Step 1: Audit existing codebase and align prerequisites (this document).
@@ -71,4 +77,5 @@
 - [x] Step 4: Seed reference data and helper scripts.
 - [x] Step 5: Implement task CRUD API route handlers.
 - [x] Step 6: Build recurrence scheduling utilities.
-- [ ] Steps 7-20: Pending as outlined in the implementation roadmap.
+- [x] Step 7: Ship client API utilities and React Query hooks.
+- [ ] Steps 8-20: Pending as outlined in the implementation roadmap.
