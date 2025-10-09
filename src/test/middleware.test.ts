@@ -221,38 +221,3 @@ describe('Middleware - Request ID Tracking', () => {
     expect(response.headers.has('X-Request-ID')).toBe(false);
   });
 });
-
-describe('Middleware - Auth Gating Default Behavior', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    delete process.env.MIDDLEWARE_AUTH_ENABLED;
-  });
-
-  it('should enable auth gating by default for security', async () => {
-    // Ensure the flag is explicitly undefined (not set)
-    delete process.env.MIDDLEWARE_AUTH_ENABLED;
-
-    // The default behavior (when flag is not set) should be to ENABLE auth
-    // This is tested by the logic: AUTH_GATING_ENABLED = process.env.MIDDLEWARE_AUTH_ENABLED !== 'false'
-    // When undefined: undefined !== 'false' => true (auth enabled) ✓
-
-    // This test documents the secure default behavior
-    expect(process.env.MIDDLEWARE_AUTH_ENABLED).toBeUndefined();
-
-    // The middleware will protect routes by default
-    // Note: The actual redirect happens in the middleware, this test documents the intent
-  });
-
-  it('should allow disabling auth gating with explicit flag', async () => {
-    // Set flag to explicitly disable auth
-    process.env.MIDDLEWARE_AUTH_ENABLED = 'false';
-
-    // The behavior when flag is 'false': 'false' !== 'false' => false (auth disabled)
-    // This allows gradual migration once page-level guards are in place
-
-    // This test documents that auth can be disabled when ready
-    expect(process.env.MIDDLEWARE_AUTH_ENABLED).toBe('false');
-
-    // In production, this should only be used after page-level guards are fully deployed
-  });
-});
