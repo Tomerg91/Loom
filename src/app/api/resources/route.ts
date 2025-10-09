@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getResourceLibraryService } from '@/lib/services/resource-library-service';
 import { createClient } from '@/lib/supabase/server';
+import { sanitizeError, unauthorizedError, forbiddenError, validationError } from '@/lib/utils/api-errors';
 import type { ResourceListParams } from '@/types/resources';
 
 /**
@@ -43,19 +44,15 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only coaches can access library resources' },
-        { status: 403 }
-      );
+      const { response, statusCode } = forbiddenError('Only coaches can access the resource library.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Parse query parameters
@@ -86,14 +83,11 @@ export async function GET(request: NextRequest) {
       data: result.data,
     });
   } catch (error) {
-    console.error('GET /api/resources error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'GET /api/resources',
+      userMessage: 'Failed to fetch resources. Please try again.',
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 
@@ -124,19 +118,15 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only coaches can upload library resources' },
-        { status: 403 }
-      );
+      const { response, statusCode } = forbiddenError('Only coaches can upload resources.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Parse form data
@@ -149,17 +139,13 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!file) {
-      return NextResponse.json(
-        { success: false, error: 'File is required' },
-        { status: 400 }
-      );
+      const { response, statusCode } = validationError('File is required.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     if (!category) {
-      return NextResponse.json(
-        { success: false, error: 'Category is required' },
-        { status: 400 }
-      );
+      const { response, statusCode } = validationError('Category is required.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Parse tags
@@ -170,11 +156,9 @@ export async function POST(request: NextRequest) {
         if (!Array.isArray(tags)) {
           throw new Error('Tags must be an array');
         }
-      } catch (error) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid tags format (must be JSON array)' },
-          { status: 400 }
-        );
+      } catch {
+        const { response, statusCode } = validationError('Invalid tags format. Tags must be a JSON array.');
+        return NextResponse.json(response, { status: statusCode });
       }
     }
 
@@ -204,13 +188,11 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('POST /api/resources error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'POST /api/resources',
+      userMessage: 'Failed to upload resource. Please try again.',
+      metadata: { category, hasFile: !!file },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }

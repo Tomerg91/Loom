@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getResourceLibraryService } from '@/lib/services/resource-library-service';
 import { createClient } from '@/lib/supabase/server';
+import { sanitizeError, unauthorizedError, forbiddenError, validationError } from '@/lib/utils/api-errors';
 import { createCollectionSchema, validateData } from '@/lib/validations/resources';
 import type { CreateCollectionRequest } from '@/types/resources';
 
@@ -37,19 +38,15 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only coaches can access collections' },
-        { status: 403 }
-      );
+      const { response, statusCode } = forbiddenError('Only coaches can access collections.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Parse query parameters
@@ -61,10 +58,12 @@ export async function GET(request: NextRequest) {
     const result = await service.getCollections(user.id, includeArchived);
 
     if (!result.success) {
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status: 400 }
-      );
+      const { response, statusCode } = sanitizeError(new Error(result.error), {
+        context: 'GET /api/resources/collections',
+        userMessage: 'Failed to fetch collections. Please try again.',
+        metadata: { userId: user.id },
+      });
+      return NextResponse.json(response, { status: statusCode });
     }
 
     return NextResponse.json({
@@ -74,14 +73,12 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('GET /api/resources/collections error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'GET /api/resources/collections',
+      userMessage: 'Failed to fetch collections. Please try again later.',
+      metadata: { userId: 'collections' },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 
@@ -113,19 +110,15 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only coaches can create collections' },
-        { status: 403 }
-      );
+      const { response, statusCode } = forbiddenError('Only coaches can create collections.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Parse and validate request body
@@ -133,14 +126,8 @@ export async function POST(request: NextRequest) {
     const validation = validateData(createCollectionSchema, body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation failed',
-          details: validation.errors.errors,
-        },
-        { status: 400 }
-      );
+      const { response, statusCode } = validationError('Validation failed. Please check your input.');
+      return NextResponse.json({ ...response, details: validation.errors.errors }, { status: statusCode });
     }
 
     const data = validation.data as CreateCollectionRequest;
@@ -150,10 +137,12 @@ export async function POST(request: NextRequest) {
     const result = await service.createCollection(user.id, data);
 
     if (!result.success) {
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status: 400 }
-      );
+      const { response, statusCode } = sanitizeError(new Error(result.error), {
+        context: 'POST /api/resources/collections',
+        userMessage: 'Failed to create collection. Please try again.',
+        metadata: { userId: user.id },
+      });
+      return NextResponse.json(response, { status: statusCode });
     }
 
     return NextResponse.json(
@@ -166,13 +155,11 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('POST /api/resources/collections error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'POST /api/resources/collections',
+      userMessage: 'Failed to create collection. Please try again later.',
+      metadata: { userId: 'create-collection' },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }
