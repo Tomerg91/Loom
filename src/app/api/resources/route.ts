@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getResourceLibraryService } from '@/lib/services/resource-library-service';
 import { createClient } from '@/lib/supabase/server';
 import { sanitizeError, unauthorizedError, forbiddenError, validationError } from '@/lib/utils/api-errors';
+import { validateUploadedFile } from '@/lib/utils/file-validation';
 import type { ResourceListParams } from '@/types/resources';
 
 /**
@@ -145,6 +146,13 @@ export async function POST(request: NextRequest) {
 
     if (!category) {
       const { response, statusCode } = validationError('Category is required.');
+      return NextResponse.json(response, { status: statusCode });
+    }
+
+    // Validate file (MIME type, size, extension, sanitize filename)
+    const fileValidation = validateUploadedFile(file);
+    if (!fileValidation.valid) {
+      const { response, statusCode } = validationError(fileValidation.error || 'Invalid file');
       return NextResponse.json(response, { status: statusCode });
     }
 
