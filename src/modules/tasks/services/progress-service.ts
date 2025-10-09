@@ -187,10 +187,35 @@ export class ProgressService {
       );
     }
 
-    if ((instance.task.status as TaskStatus) !== nextStatus) {
+    let taskStatus: TaskStatus = nextStatus;
+
+    if (nextStatus !== 'OVERDUE') {
+      const { data: siblingInstances, error: siblingFetchError } = await client
+        .from('task_instances')
+        .select('status')
+        .eq('task_id', instance.task.id);
+
+      if (siblingFetchError || !siblingInstances) {
+        throw new ProgressServiceError(
+          siblingFetchError?.message ?? 'Failed to resolve task status',
+          500,
+          'TASK_STATUS_RESOLUTION_FAILED'
+        );
+      }
+
+      const hasOverdueSibling = siblingInstances.some(
+        sibling => (sibling.status as TaskStatus) === 'OVERDUE'
+      );
+
+      if (hasOverdueSibling) {
+        taskStatus = 'OVERDUE';
+      }
+    }
+
+    if ((instance.task.status as TaskStatus) !== taskStatus) {
       const { error: taskUpdateError } = await client
         .from('tasks')
-        .update({ status: nextStatus })
+        .update({ status: taskStatus })
         .eq('id', instance.task.id);
 
       if (taskUpdateError) {
