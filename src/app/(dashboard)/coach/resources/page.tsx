@@ -25,6 +25,7 @@ import {
   ResourceUploadDialog,
   ResourceShareDialog,
 } from '@/components/resources';
+import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
@@ -71,9 +72,19 @@ async function fetchCollections() {
 }
 
 /**
+ * Upload resource metadata type
+ */
+interface UploadMetadata {
+  category: string;
+  tags?: string;
+  description?: string;
+  collectionId?: string;
+}
+
+/**
  * Upload resource
  */
-async function uploadResource(file: File, metadata: any) {
+async function uploadResource(file: File, metadata: UploadMetadata) {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('category', metadata.category);
@@ -107,9 +118,15 @@ async function uploadResource(file: File, metadata: any) {
 /**
  * Share resource with all clients
  */
+interface ShareData {
+  permission: string;
+  expiresAt?: Date;
+  message?: string;
+}
+
 async function shareResourceWithAllClients(
   resourceId: string,
-  data: { permission: string; expiresAt?: Date; message?: string }
+  data: ShareData
 ) {
   const res = await fetch(`/api/resources/${resourceId}/share-all-clients`, {
     method: 'POST',
@@ -181,7 +198,7 @@ export default function CoachResourcesPage() {
 
   // Upload mutation
   const uploadMutation = useMutation({
-    mutationFn: ({ file, metadata }: { file: File; metadata: any }) =>
+    mutationFn: ({ file, metadata }: { file: File; metadata: UploadMetadata }) =>
       uploadResource(file, metadata),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
@@ -202,7 +219,7 @@ export default function CoachResourcesPage() {
 
   // Share mutation
   const shareMutation = useMutation({
-    mutationFn: ({ resourceId, data }: { resourceId: string; data: any }) =>
+    mutationFn: ({ resourceId, data }: { resourceId: string; data: ShareData }) =>
       shareResourceWithAllClients(resourceId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
@@ -248,7 +265,7 @@ export default function CoachResourcesPage() {
 
   // Handlers
   const handleUpload = useCallback(
-    async (file: File, metadata: any) => {
+    async (file: File, metadata: UploadMetadata) => {
       await uploadMutation.mutateAsync({ file, metadata });
     },
     [uploadMutation]
@@ -263,7 +280,7 @@ export default function CoachResourcesPage() {
   );
 
   const handleShareSubmit = useCallback(
-    async (resourceId: string, data: any) => {
+    async (resourceId: string, data: ShareData) => {
       await shareMutation.mutateAsync({ resourceId, data });
     },
     [shareMutation]
@@ -294,97 +311,99 @@ export default function CoachResourcesPage() {
   }, []);
 
   return (
-    <div className="container py-8 space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Resource Library</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage and share resources with your clients
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={() => router.push('/coach/resources/analytics')}
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Analytics
-          </Button>
-
-          <Button onClick={() => setUploadDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Upload Resource
-          </Button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="all-resources" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="all-resources">All Resources</TabsTrigger>
-          <TabsTrigger value="collections">Collections</TabsTrigger>
-        </TabsList>
-
-        {/* All Resources Tab */}
-        <TabsContent value="all-resources" className="space-y-6">
-          {/* Filters */}
-          <ResourceFilters
-            availableTags={availableTags}
-            initialFilters={filters}
-            onFiltersChange={setFilters}
-          />
-
-          {/* Resource Grid */}
-          <ResourceGrid
-            resources={resources}
-            viewMode="coach"
-            isLoading={isLoading}
-            emptyStateTitle="No resources yet"
-            emptyStateDescription="Upload your first resource to start building your library"
-            emptyStateAction={
-              <Button onClick={() => setUploadDialogOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Upload Resource
-              </Button>
-            }
-            onView={handleView}
-            onDownload={handleDownload}
-            onShare={handleShare}
-            onDelete={handleDelete}
-          />
-        </TabsContent>
-
-        {/* Collections Tab */}
-        <TabsContent value="collections" className="space-y-6">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-semibold mb-2">Collections</h3>
-            <p className="text-muted-foreground mb-6">
-              Organize your resources into themed collections
+    <ResourceErrorBoundary>
+      <div className="container py-8 space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Resource Library</h1>
+            <p className="text-muted-foreground mt-2">
+              Manage and share resources with your clients
             </p>
-            <Button onClick={() => router.push('/coach/resources/collections')}>
-              Manage Collections
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => router.push('/coach/resources/analytics')}
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Analytics
+            </Button>
+
+            <Button onClick={() => setUploadDialogOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Upload Resource
             </Button>
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
 
-      {/* Upload Dialog */}
-      <ResourceUploadDialog
-        open={uploadDialogOpen}
-        onOpenChange={setUploadDialogOpen}
-        collections={collections}
-        onUpload={handleUpload}
-      />
+        {/* Tabs */}
+        <Tabs defaultValue="all-resources" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="all-resources">All Resources</TabsTrigger>
+            <TabsTrigger value="collections">Collections</TabsTrigger>
+          </TabsList>
 
-      {/* Share Dialog */}
-      <ResourceShareDialog
-        resource={selectedResource}
-        open={shareDialogOpen}
-        onOpenChange={setShareDialogOpen}
-        onShare={handleShareSubmit}
-      />
-    </div>
+          {/* All Resources Tab */}
+          <TabsContent value="all-resources" className="space-y-6">
+            {/* Filters */}
+            <ResourceFilters
+              availableTags={availableTags}
+              initialFilters={filters}
+              onFiltersChange={setFilters}
+            />
+
+            {/* Resource Grid */}
+            <ResourceGrid
+              resources={resources}
+              viewMode="coach"
+              isLoading={isLoading}
+              emptyStateTitle="No resources yet"
+              emptyStateDescription="Upload your first resource to start building your library"
+              emptyStateAction={
+                <Button onClick={() => setUploadDialogOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Upload Resource
+                </Button>
+              }
+              onView={handleView}
+              onDownload={handleDownload}
+              onShare={handleShare}
+              onDelete={handleDelete}
+            />
+          </TabsContent>
+
+          {/* Collections Tab */}
+          <TabsContent value="collections" className="space-y-6">
+            <div className="text-center py-12">
+              <h3 className="text-lg font-semibold mb-2">Collections</h3>
+              <p className="text-muted-foreground mb-6">
+                Organize your resources into themed collections
+              </p>
+              <Button onClick={() => router.push('/coach/resources/collections')}>
+                Manage Collections
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Upload Dialog */}
+        <ResourceUploadDialog
+          open={uploadDialogOpen}
+          onOpenChange={setUploadDialogOpen}
+          collections={collections}
+          onUpload={handleUpload}
+        />
+
+        {/* Share Dialog */}
+        <ResourceShareDialog
+          resource={selectedResource}
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          onShare={handleShareSubmit}
+        />
+      </div>
+    </ResourceErrorBoundary>
   );
 }

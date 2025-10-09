@@ -23,6 +23,7 @@ import {
   ResourceEmptyState,
   AutoShareSettings,
 } from '@/components/resources';
+import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
 import type { LibraryAnalytics, ResourceLibraryItem } from '@/types/resources';
 
 /**
@@ -74,7 +75,8 @@ export default function ResourceAnalyticsPage() {
   const isLoading = analyticsLoading || resourcesLoading;
 
   return (
-    <div className="container py-8 space-y-8">
+    <ResourceErrorBoundary>
+      <div className="container py-8 space-y-8">
       {/* Header */}
       <div className="space-y-1">
         <Button
@@ -188,6 +190,7 @@ export default function ResourceAnalyticsPage() {
           />
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </ResourceErrorBoundary>
   );
 }

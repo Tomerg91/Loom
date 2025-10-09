@@ -15,7 +15,6 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +22,7 @@ import {
   CollectionDialog,
   ResourceEmptyState,
 } from '@/components/resources';
+import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
 import { useToast } from '@/components/ui/use-toast';
 import type { ResourceCollection } from '@/types/resources';
 
@@ -99,7 +99,6 @@ async function deleteCollection(id: string) {
  * CollectionsPage Component
  */
 export default function CollectionsPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -134,7 +133,7 @@ export default function CollectionsPage() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => updateCollection(id, data),
+    mutationFn: ({ id, data }: { id: string; data: { name?: string; description?: string; icon?: string } }) => updateCollection(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resource-collections'] });
       toast({
@@ -236,55 +235,57 @@ export default function CollectionsPage() {
   }
 
   return (
-    <div className="container py-8 space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Collections</h1>
-          <p className="text-muted-foreground mt-2">
-            Organize your resources into themed collections
-          </p>
+    <ResourceErrorBoundary>
+      <div className="container py-8 space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Collections</h1>
+            <p className="text-muted-foreground mt-2">
+              Organize your resources into themed collections
+            </p>
+          </div>
+
+          <Button onClick={handleCreate}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Collection
+          </Button>
         </div>
 
-        <Button onClick={handleCreate}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Collection
-        </Button>
-      </div>
+        {/* Collections Grid */}
+        {collections.length === 0 ? (
+          <ResourceEmptyState
+            variant="collection-empty"
+            title="No collections yet"
+            description="Create your first collection to organize your resources"
+            action={
+              <Button onClick={handleCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Collection
+              </Button>
+            }
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {collections.map((collection) => (
+              <CollectionCard
+                key={collection.id}
+                collection={collection}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        )}
 
-      {/* Collections Grid */}
-      {collections.length === 0 ? (
-        <ResourceEmptyState
-          variant="collection-empty"
-          title="No collections yet"
-          description="Create your first collection to organize your resources"
-          action={
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Collection
-            </Button>
-          }
+        {/* Collection Dialog */}
+        <CollectionDialog
+          collection={selectedCollection}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onSave={handleSave}
         />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {collections.map((collection) => (
-            <CollectionCard
-              key={collection.id}
-              collection={collection}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Collection Dialog */}
-      <CollectionDialog
-        collection={selectedCollection}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onSave={handleSave}
-      />
-    </div>
+      </div>
+    </ResourceErrorBoundary>
   );
 }

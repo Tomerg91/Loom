@@ -35,6 +35,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { ArrowLeft, Edit, GripVertical, Trash2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ResourceEmptyState, CollectionDialog } from '@/components/resources';
+import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
 import { useToast } from '@/components/ui/use-toast';
 import type { ResourceLibraryItem, ResourceCollection } from '@/types/resources';
 import { cn } from '@/lib/utils';
@@ -228,110 +229,112 @@ export default function CollectionDetailPage({
   }
 
   return (
-    <div className="container py-8 space-y-8">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/coach/resources/collections')}
-            className="mb-2"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Collections
-          </Button>
+    <ResourceErrorBoundary>
+      <div className="container py-8 space-y-8">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/coach/resources/collections')}
+              className="mb-2"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Collections
+            </Button>
 
-          <div className="flex items-center gap-3">
-            <span className="text-4xl">{collection.icon || '📁'}</span>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">{collection.name}</h1>
-              {collection.description && (
-                <p className="text-muted-foreground mt-1">{collection.description}</p>
-              )}
+            <div className="flex items-center gap-3">
+              <span className="text-4xl">{collection.icon || '📁'}</span>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">{collection.name}</h1>
+                {collection.description && (
+                  <p className="text-muted-foreground mt-1">{collection.description}</p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
-            <Edit className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Resources
-          </Button>
-        </div>
-      </div>
-
-      {/* Resources List with Drag-and-Drop */}
-      {localResources.length === 0 ? (
-        <ResourceEmptyState
-          variant="collection-empty"
-          title="No resources in this collection"
-          description="Add resources to organize them in this collection"
-          action={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
               Add Resources
             </Button>
-          }
-        />
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {localResources.length} resource{localResources.length !== 1 ? 's' : ''}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Drag to reorder
-            </p>
           </div>
-
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={localResources.map((r) => r.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2">
-                {localResources.map((resource) => (
-                  <SortableResourceItem
-                    key={resource.id}
-                    resource={resource}
-                    onRemove={() => {
-                      // Remove from collection logic
-                      toast({
-                        title: 'Feature coming soon',
-                        description: 'Resource removal will be implemented in the next update.',
-                      });
-                    }}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
         </div>
-      )}
 
-      {/* Edit Dialog */}
-      <CollectionDialog
-        collection={collection}
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        onSave={async (data) => {
-          // Update collection logic
-          toast({
-            title: 'Feature coming soon',
-            description: 'Collection editing will be fully implemented soon.',
-          });
-          setEditDialogOpen(false);
-        }}
-      />
-    </div>
+        {/* Resources List with Drag-and-Drop */}
+        {localResources.length === 0 ? (
+          <ResourceEmptyState
+            variant="collection-empty"
+            title="No resources in this collection"
+            description="Add resources to organize them in this collection"
+            action={
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Resources
+              </Button>
+            }
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {localResources.length} resource{localResources.length !== 1 ? 's' : ''}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Drag to reorder
+              </p>
+            </div>
+
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={localResources.map((r) => r.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {localResources.map((resource) => (
+                    <SortableResourceItem
+                      key={resource.id}
+                      resource={resource}
+                      onRemove={() => {
+                        // Remove from collection logic
+                        toast({
+                          title: 'Feature coming soon',
+                          description: 'Resource removal will be implemented in the next update.',
+                        });
+                      }}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
+        )}
+
+        {/* Edit Dialog */}
+        <CollectionDialog
+          collection={collection}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSave={async (_data) => {
+            // Update collection logic
+            toast({
+              title: 'Feature coming soon',
+              description: 'Collection editing will be fully implemented soon.',
+            });
+            setEditDialogOpen(false);
+          }}
+        />
+      </div>
+    </ResourceErrorBoundary>
   );
 }
