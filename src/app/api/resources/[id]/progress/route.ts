@@ -7,9 +7,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+import {
+  getResourceById,
+  trackResourceProgress,
+} from '@/lib/database/resources';
 import { createClient } from '@/lib/supabase/server';
-import { trackResourceProgress } from '@/lib/database/resources';
 import { trackProgressSchema, validateData } from '@/lib/validations/resources';
+import type { ResourceLibraryItem } from '@/types/resources';
 
 /**
  * POST /api/resources/[id]/progress
@@ -33,7 +38,10 @@ export async function POST(
   try {
     // Get authenticated user
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
@@ -60,6 +68,27 @@ export async function POST(
     }
 
     const { action } = validation.data;
+
+    // Ensure the user has access to this resource before tracking progress
+    let resource: ResourceLibraryItem | null;
+    try {
+      resource = await getResourceById(resourceId, user.id);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Access denied') {
+        return NextResponse.json(
+          { success: false, error: 'Forbidden' },
+          { status: 403 }
+        );
+      }
+      throw error;
+    }
+
+    if (!resource) {
+      return NextResponse.json(
+        { success: false, error: 'Resource not found' },
+        { status: 404 }
+      );
+    }
 
     // Track progress
     await trackResourceProgress(resourceId, user.id, action);
