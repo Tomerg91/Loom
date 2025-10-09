@@ -48,6 +48,9 @@ async function downloadResource(resource: ResourceLibraryItem) {
   window.open(`/api/files/${resource.id}/download`, '_blank');
 }
 
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
+
 /**
  * CoachResourcesPage Component
  */

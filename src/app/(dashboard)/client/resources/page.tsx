@@ -27,6 +27,9 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import type { ResourceLibraryItem, ResourceListParams } from '@/types/resources';
 
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
+
 /**
  * Client-specific resource type with coach info
  */

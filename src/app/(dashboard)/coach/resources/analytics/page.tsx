@@ -26,6 +26,9 @@ import {
 import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
 import type { LibraryAnalytics, ResourceLibraryItem } from '@/types/resources';
 
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
+
 /**
  * Fetch library analytics
  */
