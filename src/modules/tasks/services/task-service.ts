@@ -411,11 +411,12 @@ export class TaskService {
       payload.dueDate !== undefined || payload.recurrenceRule !== undefined;
 
     if (shouldRebuildInstances) {
-      const effectiveDueDate = payload.dueDate
-        ? new Date(payload.dueDate)
-        : task.due_date
-          ? new Date(task.due_date)
-          : null;
+      let effectiveDueDate: Date | null;
+      if (payload.dueDate !== undefined) {
+        effectiveDueDate = payload.dueDate ? new Date(payload.dueDate) : null;
+      } else {
+        effectiveDueDate = task.due_date ? new Date(task.due_date) : null;
+      }
 
       const plan = effectiveDueDate
         ? planRecurrence(this.recurrenceService, {

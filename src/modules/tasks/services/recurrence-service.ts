@@ -214,7 +214,7 @@ export class RecurrenceService {
     const targetCount = rule.count ? Math.min(rule.count, limit) : limit;
 
     const pushIfValid = (candidate: Date) => {
-      if (candidate < startDate && occurrences.length === 0) {
+      if (candidate < startDate) {
         return;
       }
 

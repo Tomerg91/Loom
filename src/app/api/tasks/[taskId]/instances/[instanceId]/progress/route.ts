@@ -7,7 +7,7 @@ import {
   createSuccessResponse,
   validateRequestBody,
 } from '@/lib/api/utils';
-import { createClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/supabase/server';
 import {
   ProgressService,
   ProgressServiceError,
@@ -44,7 +44,7 @@ async function getAuthenticatedActor(): Promise<
   { actor: AuthActor } | { response: Response }
 > {
   try {
-    const supabase = createClient();
+    const supabase = createServerClient();
     const { data: session, error } = await supabase.auth.getUser();
 
     if (error || !session?.user) {

@@ -165,7 +165,7 @@ export class ProgressService {
       input.attachments ?? []
     );
 
-    const currentStatus = instance.status as TaskStatus;
+    const currentStatus = instance.task.status as TaskStatus;
     const nextStatus = resolveInstanceStatus(percentage, currentStatus);
     const completedAt =
       nextStatus === 'COMPLETED' ? new Date().toISOString() : null;
@@ -187,35 +187,10 @@ export class ProgressService {
       );
     }
 
-    let taskStatus: TaskStatus = nextStatus;
-
-    if (nextStatus !== 'OVERDUE') {
-      const { data: siblingInstances, error: siblingFetchError } = await client
-        .from('task_instances')
-        .select('status')
-        .eq('task_id', instance.task.id);
-
-      if (siblingFetchError || !siblingInstances) {
-        throw new ProgressServiceError(
-          siblingFetchError?.message ?? 'Failed to resolve task status',
-          500,
-          'TASK_STATUS_RESOLUTION_FAILED'
-        );
-      }
-
-      const hasOverdueSibling = siblingInstances.some(
-        sibling => (sibling.status as TaskStatus) === 'OVERDUE'
-      );
-
-      if (hasOverdueSibling) {
-        taskStatus = 'OVERDUE';
-      }
-    }
-
-    if ((instance.task.status as TaskStatus) !== taskStatus) {
+    if ((instance.task.status as TaskStatus) !== nextStatus) {
       const { error: taskUpdateError } = await client
         .from('tasks')
-        .update({ status: taskStatus })
+        .update({ status: nextStatus })
         .eq('id', instance.task.id);
 
       if (taskUpdateError) {
