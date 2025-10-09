@@ -200,12 +200,6 @@ export function ResourceUploadDialog({
   };
 
   // Parse tags from comma-separated string
-  const parseTags = (tagsString: string): string[] => {
-    return tagsString
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0);
-  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
