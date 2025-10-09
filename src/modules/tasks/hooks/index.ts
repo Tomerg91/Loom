@@ -1,6 +1,15 @@
 /**
  * @fileoverview Entry point for task-specific React hooks.
- * Real implementations will be added when data fetching and state
- * management utilities are introduced in subsequent steps.
+ * Exposes typed React Query utilities that power the Action Items & Homework
+ * feature set. Additional hooks should be re-exported here to keep consumer
+ * imports stable across refactors.
  */
-export {};
+export {
+  taskKeys,
+  useCreateProgressUpdate,
+  useCreateTask,
+  useTask,
+  useTaskList,
+  useUpdateTask,
+} from './queries';
+export type { TaskApiError, TaskListFilters } from './queries';

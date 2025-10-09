@@ -12,6 +12,12 @@ This module centralizes task and homework functionality for both coaches and cli
 
 Each subdirectory exposes a local `index.ts` file to aggregate exports. When adding new modules, update the relevant index to maintain a clean public API for the tasks domain.
 
+### Available Client Utilities
+
+- **API Client (`api/client.ts`)** – Typed wrappers for the `/api/tasks` endpoints, including `fetchTaskList`, `fetchTask`, `createTask`, `updateTask`, and `createProgressUpdate`. Errors surface through the `TaskApiError` class so UI layers can present friendly messages.
+- **React Query Hooks (`hooks/queries.ts`)** – Exposes `useTaskList`, `useTask`, `useCreateTask`, `useUpdateTask`, and `useCreateProgressUpdate` along with a shared `taskKeys` helper to keep cache invalidation consistent across components.
+- **Coach UI Components (`components/task-list-view.tsx`)** – Provides a `TaskListView` composed of filter controls, status/priority badges, and a paginated table so coach dashboards can render homework assignments with minimal wiring.
+
 ## Contribution Guidelines
 
 1. Prefer colocating unit tests beside the implementation (e.g., `TaskFormModal.test.tsx`) when practical; otherwise use the existing `tests/` hierarchy for integration and end-to-end coverage.
