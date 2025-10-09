@@ -66,19 +66,7 @@ export function TaskCreateDialog({ onCreated }: TaskCreateDialogProps) {
     {}
   );
 
-  const createTask = useCreateTask({
-    onSuccess: task => {
-      toast.success('Action item assigned');
-      setOpen(false);
-      setForm(INITIAL_FORM_STATE);
-      setErrors({});
-      onCreated?.(task);
-      return task;
-    },
-    onError: error => {
-      toast.error(error.message ?? 'Failed to assign action item');
-    },
-  });
+  const createTask = useCreateTask();
 
   const { data: clientsResult, isLoading: isClientsLoading } = useClients();
   const clients = clientsResult?.success ? clientsResult.data : [];
@@ -158,7 +146,24 @@ export function TaskCreateDialog({ onCreated }: TaskCreateDialogProps) {
     }
 
     const payload = buildPayload();
-    await createTask.mutateAsync(payload);
+
+    try {
+      const task = await createTask.mutateAsync(payload);
+      toast.success('Action item assigned');
+      setOpen(false);
+      setForm(INITIAL_FORM_STATE);
+      setErrors({});
+      onCreated?.(task);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message?: unknown }).message ?? '')
+            : '';
+
+      toast.error(message || 'Failed to assign action item');
+    }
   };
 
   return (
