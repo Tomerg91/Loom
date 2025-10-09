@@ -9,8 +9,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { getResourceLibraryService } from '@/lib/services/resource-library-service';
+import { createClient } from '@/lib/supabase/server';
+import { sanitizeError, unauthorizedError, forbiddenError, notFoundError, validationError } from '@/lib/utils/api-errors';
 import type { UpdateResourceRequest } from '@/types/resources';
 
 /**
@@ -36,10 +38,8 @@ export async function GET(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     const resourceId = params.id;
@@ -49,11 +49,12 @@ export async function GET(
     const result = await service.getResource(resourceId, user.id);
 
     if (!result.success) {
-      const status = result.error === 'Resource not found' ? 404 : 403;
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status }
-      );
+      if (result.error === 'Resource not found') {
+        const { response, statusCode } = notFoundError('Resource');
+        return NextResponse.json(response, { status: statusCode });
+      }
+      const { response, statusCode } = forbiddenError('You do not have access to this resource.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     return NextResponse.json({
@@ -63,14 +64,12 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('GET /api/resources/[id] error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'GET /api/resources/[id]',
+      userMessage: 'Failed to fetch resource. Please try again.',
+      metadata: { resourceId: params.id },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 
@@ -105,19 +104,15 @@ export async function PUT(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only coaches can update resources' },
-        { status: 403 }
-      );
+      const { response, statusCode } = forbiddenError('Only coaches can update resources.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     const resourceId = params.id;
@@ -127,10 +122,8 @@ export async function PUT(
 
     // Validate at least one field to update
     if (!body.filename && !body.description && !body.category && !body.tags) {
-      return NextResponse.json(
-        { success: false, error: 'No fields to update' },
-        { status: 400 }
-      );
+      const { response, statusCode } = validationError('At least one field must be provided to update.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Update resource using service
@@ -138,12 +131,16 @@ export async function PUT(
     const result = await service.updateResource(resourceId, user.id, body);
 
     if (!result.success) {
-      const status = result.error === 'Resource not found' ? 404 :
-                     result.error === 'Access denied' ? 403 : 400;
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status }
-      );
+      if (result.error === 'Resource not found') {
+        const { response, statusCode } = notFoundError('Resource');
+        return NextResponse.json(response, { status: statusCode });
+      }
+      if (result.error === 'Access denied') {
+        const { response, statusCode } = forbiddenError();
+        return NextResponse.json(response, { status: statusCode });
+      }
+      const { response, statusCode } = validationError(result.error);
+      return NextResponse.json(response, { status: statusCode });
     }
 
     return NextResponse.json({
@@ -153,14 +150,12 @@ export async function PUT(
       },
     });
   } catch (error) {
-    console.error('PUT /api/resources/[id] error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'PUT /api/resources/[id]',
+      userMessage: 'Failed to update resource. Please try again.',
+      metadata: { resourceId: params.id },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 
@@ -184,19 +179,15 @@ export async function DELETE(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only coaches can delete resources' },
-        { status: 403 }
-      );
+      const { response, statusCode } = forbiddenError('Only coaches can delete resources.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     const resourceId = params.id;
@@ -206,25 +197,27 @@ export async function DELETE(
     const result = await service.deleteResource(resourceId, user.id);
 
     if (!result.success) {
-      const status = result.error === 'Resource not found' ? 404 :
-                     result.error === 'Access denied' ? 403 : 400;
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status }
-      );
+      if (result.error === 'Resource not found') {
+        const { response, statusCode } = notFoundError('Resource');
+        return NextResponse.json(response, { status: statusCode });
+      }
+      if (result.error === 'Access denied') {
+        const { response, statusCode } = forbiddenError();
+        return NextResponse.json(response, { status: statusCode });
+      }
+      const { response, statusCode } = validationError(result.error);
+      return NextResponse.json(response, { status: statusCode });
     }
 
     return NextResponse.json({
       success: true,
     });
   } catch (error) {
-    console.error('DELETE /api/resources/[id] error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'DELETE /api/resources/[id]',
+      userMessage: 'Failed to delete resource. Please try again.',
+      metadata: { resourceId: params.id },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }

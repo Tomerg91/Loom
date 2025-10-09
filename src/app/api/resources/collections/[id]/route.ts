@@ -9,8 +9,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { getResourceLibraryService } from '@/lib/services/resource-library-service';
+import { createClient } from '@/lib/supabase/server';
+import { sanitizeError, unauthorizedError, forbiddenError, notFoundError, validationError } from '@/lib/utils/api-errors';
 import { updateCollectionSchema, validateData } from '@/lib/validations/resources';
 import type { UpdateCollectionRequest } from '@/types/resources';
 
@@ -37,19 +39,15 @@ export async function GET(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only coaches can access collections' },
-        { status: 403 }
-      );
+      const { response, statusCode } = forbiddenError('Only coaches can access collections.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     const collectionId = params.id;
@@ -59,11 +57,16 @@ export async function GET(
     const result = await service.getCollection(collectionId, user.id);
 
     if (!result.success) {
-      const status = result.error === 'Collection not found' ? 404 : 400;
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status }
-      );
+      if (result.error === 'Collection not found') {
+        const { response, statusCode } = notFoundError('Collection');
+        return NextResponse.json(response, { status: statusCode });
+      }
+      const { response, statusCode } = sanitizeError(new Error(result.error), {
+        context: 'GET /api/resources/collections/[id]',
+        userMessage: 'Failed to fetch collection. Please try again.',
+        metadata: { collectionId, userId: user.id },
+      });
+      return NextResponse.json(response, { status: statusCode });
     }
 
     return NextResponse.json({
@@ -73,14 +76,12 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('GET /api/resources/collections/[id] error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'GET /api/resources/collections/[id]',
+      userMessage: 'Failed to fetch collection. Please try again later.',
+      metadata: { collectionId: params.id },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 
@@ -115,19 +116,15 @@ export async function PUT(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only coaches can update collections' },
-        { status: 403 }
-      );
+      const { response, statusCode } = forbiddenError('Only coaches can update collections.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     const collectionId = params.id;
@@ -137,14 +134,8 @@ export async function PUT(
     const validation = validateData(updateCollectionSchema, body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation failed',
-          details: validation.errors.errors,
-        },
-        { status: 400 }
-      );
+      const { response, statusCode } = validationError('Validation failed. Please check your input.');
+      return NextResponse.json({ ...response, details: validation.errors.errors }, { status: statusCode });
     }
 
     const data = validation.data as UpdateCollectionRequest;
@@ -154,11 +145,16 @@ export async function PUT(
     const result = await service.updateCollection(collectionId, user.id, data);
 
     if (!result.success) {
-      const status = result.error === 'Collection not found' ? 404 : 400;
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status }
-      );
+      if (result.error === 'Collection not found') {
+        const { response, statusCode } = notFoundError('Collection');
+        return NextResponse.json(response, { status: statusCode });
+      }
+      const { response, statusCode } = sanitizeError(new Error(result.error), {
+        context: 'PUT /api/resources/collections/[id]',
+        userMessage: 'Failed to update collection. Please try again.',
+        metadata: { collectionId, userId: user.id },
+      });
+      return NextResponse.json(response, { status: statusCode });
     }
 
     return NextResponse.json({
@@ -168,14 +164,12 @@ export async function PUT(
       },
     });
   } catch (error) {
-    console.error('PUT /api/resources/collections/[id] error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'PUT /api/resources/collections/[id]',
+      userMessage: 'Failed to update collection. Please try again later.',
+      metadata: { collectionId: params.id },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 
@@ -199,19 +193,15 @@ export async function DELETE(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only coaches can delete collections' },
-        { status: 403 }
-      );
+      const { response, statusCode } = forbiddenError('Only coaches can delete collections.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     const collectionId = params.id;
@@ -221,24 +211,27 @@ export async function DELETE(
     const result = await service.deleteCollection(collectionId, user.id);
 
     if (!result.success) {
-      const status = result.error === 'Collection not found' ? 404 : 400;
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status }
-      );
+      if (result.error === 'Collection not found') {
+        const { response, statusCode } = notFoundError('Collection');
+        return NextResponse.json(response, { status: statusCode });
+      }
+      const { response, statusCode } = sanitizeError(new Error(result.error), {
+        context: 'DELETE /api/resources/collections/[id]',
+        userMessage: 'Failed to delete collection. Please try again.',
+        metadata: { collectionId, userId: user.id },
+      });
+      return NextResponse.json(response, { status: statusCode });
     }
 
     return NextResponse.json({
       success: true,
     });
   } catch (error) {
-    console.error('DELETE /api/resources/collections/[id] error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'DELETE /api/resources/collections/[id]',
+      userMessage: 'Failed to delete collection. Please try again later.',
+      metadata: { collectionId: params.id },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }

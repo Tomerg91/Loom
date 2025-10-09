@@ -105,7 +105,8 @@ export const createServerClientWithRequest = (
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (cookies: SupabaseCookie[]) => {
-        cookies.forEach(({ name, value, options }) => {
+        cookies.forEach((cookie: SupabaseCookie) => {
+          const { name, value, options } = cookie;
           try {
             const sameSiteValue =
               options?.sameSite === true
@@ -155,17 +156,19 @@ export const createClient = () => {
     ? {
         getAll: () => {
           try {
-            const existingCookies = cookieStore!.getAll() as {
-              name: string;
-              value: string;
-            }[];
-            return existingCookies.map(({ name, value }) => ({ name, value }));
+            return cookieStore!
+              .getAll()
+              .map(({ name, value }: { name: string; value: string }) => ({
+                name,
+                value,
+              })) as SupabaseCookie[];
           } catch (error) {
             console.warn('Failed to read cookies:', error);
             return [] as SupabaseCookie[];
           }
         },
         setAll: (newCookies: SupabaseCookie[]) => {
+           
           const mutableStore = cookieStore as unknown as {
             set?: (
               name: string,
@@ -174,13 +177,8 @@ export const createClient = () => {
             ) => void;
           };
 
-          if (!mutableStore?.set) {
-            return;
-          }
-
-          const setCookie = mutableStore.set.bind(mutableStore);
-
-          newCookies.forEach(({ name, value, options }) => {
+          newCookies.forEach((cookie: SupabaseCookie) => {
+            const { name, value, options } = cookie;
             try {
               const sameSiteValue =
                 options?.sameSite === true
@@ -189,7 +187,7 @@ export const createClient = () => {
                     ? 'none'
                     : options?.sameSite;
 
-              setCookie(name, value, {
+              mutableStore.set?.(name, value, {
                 ...options,
                 sameSite: sameSiteValue,
               });

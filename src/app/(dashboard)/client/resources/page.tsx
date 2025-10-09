@@ -13,18 +13,18 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle2, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useState, useCallback } from 'react';
+
 import {
   ResourceGrid,
   ResourceFilters,
-  ResourceEmptyState,
 } from '@/components/resources';
-import { Button } from '@/components/ui/button';
+import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { CheckCircle2, Eye } from 'lucide-react';
 import type { ResourceLibraryItem, ResourceListParams } from '@/types/resources';
 
 /**
@@ -113,8 +113,8 @@ export default function ClientResourcesPage() {
 
   // Track progress mutation
   const progressMutation = useMutation({
-    mutationFn: ({ resourceId, action }: { resourceId: string; action: string }) =>
-      trackProgress(resourceId, action as any),
+    mutationFn: ({ resourceId, action }: { resourceId: string; action: 'viewed' | 'completed' | 'accessed' }) =>
+      trackProgress(resourceId, action),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-resources'] });
     },
@@ -131,9 +131,10 @@ export default function ClientResourcesPage() {
 
   // Handlers
   const handleView = useCallback(
-    async (resource: ClientResourceItem) => {
+    async (resource: ResourceLibraryItem) => {
+      const clientResource = resource as ClientResourceItem;
       // Track view
-      if (!resource.hasViewed) {
+      if (!clientResource.hasViewed) {
         progressMutation.mutate({
           resourceId: resource.id,
           action: 'viewed',
@@ -147,9 +148,9 @@ export default function ClientResourcesPage() {
   );
 
   const handleDownload = useCallback(
-    async (resource: ClientResourceItem) => {
+    async (resource: ResourceLibraryItem) => {
       try {
-        await downloadResource(resource);
+        await downloadResource(resource as ClientResourceItem);
 
         toast({
           title: 'Download started',
@@ -166,7 +167,7 @@ export default function ClientResourcesPage() {
     [toast]
   );
 
-  const handleMarkComplete = useCallback(
+  const _handleMarkComplete = useCallback(
     async (resource: ClientResourceItem) => {
       try {
         await progressMutation.mutateAsync({
@@ -190,7 +191,8 @@ export default function ClientResourcesPage() {
   );
 
   return (
-    <div className="container py-8 space-y-8">
+    <ResourceErrorBoundary>
+      <div className="container py-8 space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">My Resources</h1>
@@ -225,8 +227,8 @@ export default function ClientResourcesPage() {
         isLoading={isLoading}
         emptyStateTitle="No resources shared yet"
         emptyStateDescription="Your coach hasn't shared any resources with you yet. Check back later!"
-        onView={handleView as any}
-        onDownload={handleDownload as any}
+        onView={handleView}
+        onDownload={handleDownload}
       />
 
       {/* Stats Summary */}
@@ -267,6 +269,7 @@ export default function ClientResourcesPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </ResourceErrorBoundary>
   );
 }
