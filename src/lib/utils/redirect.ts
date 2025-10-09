@@ -1,5 +1,27 @@
 import { routing } from '@/i18n/routing';
 
+interface ResolveRedirectOptions {
+  allowAuthPaths?: boolean;
+}
+
+function isAuthRoute(path: string): boolean {
+  const sanitized = path.split('?')[0]?.split('#')[0] || '';
+  const segments = sanitized.split('/').filter(Boolean);
+  if (segments.length === 0) {
+    return false;
+  }
+
+  const [firstSegment, ...rest] = segments;
+  const localePrefixed = routing.locales.includes(firstSegment as any);
+  const relevantSegments = localePrefixed ? rest : segments;
+
+  if (relevantSegments.length === 0) {
+    return false;
+  }
+
+  return relevantSegments[0] === 'auth';
+}
+
 /**
  * Safely resolve a post-auth redirect path.
  * - Accepts local paths only (ignores absolute URLs)
@@ -7,8 +29,8 @@ import { routing } from '@/i18n/routing';
  * - Prefixes locale if missing
  * - Defaults to `/<locale>/dashboard`
  */
-export function resolveRedirect(locale: string, redirectTo?: string | null): string {
-  const fallback = `/${routing.defaultLocale}/dashboard`;
+export function resolveRedirect(locale: string, redirectTo?: string | null, options: ResolveRedirectOptions = {}): string {
+  const { allowAuthPaths = false } = options;
   const safeLocale = routing.locales.includes(locale as any) ? locale : routing.defaultLocale;
 
   if (!redirectTo || typeof redirectTo !== 'string') {
@@ -25,13 +47,19 @@ export function resolveRedirect(locale: string, redirectTo?: string | null): str
   let path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
   path = path.replace(/\/+/, '/');
 
-  // If already locale-prefixed, keep as-is
+  // Determine final path with locale prefixing
   const alreadyPrefixed = routing.locales.some(l => path.startsWith(`/${l}/`) || path === `/${l}`);
-  if (alreadyPrefixed) return path;
+  const finalPath = alreadyPrefixed
+    ? path
+    : path === '/'
+      ? `/${safeLocale}/dashboard`
+      : `/${safeLocale}${path}`;
 
-  // Prefix locale
-  if (path === '/') return `/${safeLocale}/dashboard`;
-  return `/${safeLocale}${path}`;
+  if (!allowAuthPaths && isAuthRoute(finalPath)) {
+    return `/${safeLocale}/dashboard`;
+  }
+
+  return finalPath;
 }
 
 /**

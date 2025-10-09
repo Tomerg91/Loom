@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const redirectToRaw = (form?.get('redirectTo') as string) || '/dashboard';
 
     if (!email || !password) {
-      const signinUrl = new URL(resolveRedirect(locale, '/auth/signin'), request.url);
+      const signinUrl = new URL(resolveRedirect(locale, '/auth/signin', { allowAuthPaths: true }), request.url);
       signinUrl.searchParams.set('error', 'missing_credentials');
       if (log) console.info('[RES]', { id: reqId, path: request.nextUrl.pathname, status: 303, durMs: Date.now() - start, reason: 'missing creds' });
       return NextResponse.redirect(signinUrl, { status: 303 });
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await tempClient.auth.signInWithPassword({ email, password });
 
     if (error || !data?.session) {
-      const signinUrl = new URL(resolveRedirect(locale, '/auth/signin'), request.url);
+      const signinUrl = new URL(resolveRedirect(locale, '/auth/signin', { allowAuthPaths: true }), request.url);
       signinUrl.searchParams.set('error', 'invalid_credentials');
       if (log) console.info('[RES]', { id: reqId, path: request.nextUrl.pathname, status: 303, durMs: Date.now() - start, reason: 'invalid creds' });
       return NextResponse.redirect(signinUrl, { status: 303 });
