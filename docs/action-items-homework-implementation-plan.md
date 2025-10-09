@@ -69,6 +69,12 @@
 - Added React Query hooks (`useTaskList`, `useTask`, `useCreateTask`, `useUpdateTask`, `useCreateProgressUpdate`) and cache keys so coach and client experiences can integrate task data with consistent caching and invalidation semantics.
 - Documented the new utilities in `src/modules/tasks/README.md`, ensuring future steps can plug the hooks into UI flows without duplicating fetch logic.
 
+## Step 8 – Coach Assignment Workflow (Completed)
+
+- Delivered a dedicated `TaskCreateDialog` with validation, client selection, priority controls, and due date handling so coaches can assign new homework without leaving the dashboard (`src/modules/tasks/components/task-create-dialog.tsx`).
+- Integrated the dialog into `TaskListView`, surfacing a prominent "Assign action item" call-to-action and resetting pagination after successful submissions to surface fresh entries immediately (`src/modules/tasks/components/task-list-view.tsx`).
+- Re-exported the dialog for broader reuse across coach surfaces as future roadmap items (client detail pages, quick actions) come online (`src/modules/tasks/components/index.ts`).
+
 ## Step Tracking
 
 - [x] Step 1: Audit existing codebase and align prerequisites (this document).
@@ -78,4 +84,5 @@
 - [x] Step 5: Implement task CRUD API route handlers.
 - [x] Step 6: Build recurrence scheduling utilities.
 - [x] Step 7: Ship client API utilities and React Query hooks.
-- [ ] Steps 8-20: Pending as outlined in the implementation roadmap.
+- [x] Step 8: Launch coach assignment workflow entry point.
+- [ ] Steps 9-20: Pending as outlined in the implementation roadmap.

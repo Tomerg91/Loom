@@ -9,3 +9,4 @@ export { TaskListTable } from './task-list-table';
 export { TaskPriorityIndicator } from './task-priority-indicator';
 export { TaskStatusBadge } from './task-status-badge';
 export type { TaskListFilterState } from './task-filters-bar';
+export { TaskCreateDialog } from './task-create-dialog';

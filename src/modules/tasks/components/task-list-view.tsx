@@ -1,24 +1,13 @@
 'use client';
 
-import {
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
-import {
-  type TaskApiError,
-  type TaskListFilters,
-  useTaskList,
-} from '../hooks';
-import {
-  TaskListFilterState,
-  TaskListFiltersBar,
-} from './task-filters-bar';
+import { type TaskApiError, type TaskListFilters, useTaskList } from '../hooks';
+import { TaskListFilterState, TaskListFiltersBar } from './task-filters-bar';
+import { TaskCreateDialog } from './task-create-dialog';
 import { TaskListSkeleton, TaskListTable } from './task-list-table';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -70,16 +59,12 @@ export function TaskListView() {
     [filters, deferredSearch]
   );
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useTaskList(queryFilters, {
-    staleTime: 30_000,
-  });
+  const { data, isLoading, isError, error, refetch, isFetching } = useTaskList(
+    queryFilters,
+    {
+      staleTime: 30_000,
+    }
+  );
 
   const pagination = data?.pagination;
   const totalItems = pagination?.total ?? 0;
@@ -119,15 +104,23 @@ export function TaskListView() {
 
   const taskCountLabel = `${totalItems} task${totalItems === 1 ? '' : 's'}`;
 
+  const handleTaskCreated = () => {
+    setFilters(prev => ({ ...prev, page: 1 }));
+  };
+
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-neutral-900">
-          Action Items & Homework
-        </h1>
-        <p className="text-sm text-neutral-600">
-          Monitor client assignments, track progress, and follow up on overdue work from a single dashboard.
-        </p>
+      <header className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold text-neutral-900">
+            Action Items & Homework
+          </h1>
+          <p className="text-sm text-neutral-600">
+            Monitor client assignments, track progress, and follow up on overdue
+            work from a single dashboard.
+          </p>
+        </div>
+        <TaskCreateDialog onCreated={handleTaskCreated} />
       </header>
 
       <TaskListFiltersBar
