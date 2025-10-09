@@ -24,24 +24,24 @@
  * These align with common coaching use cases
  */
 export type ResourceCategory =
-  | 'onboarding'    // New client orientation materials
-  | 'worksheets'    // Fillable worksheets and exercises
-  | 'assessments'   // Self-assessment tools
-  | 'videos'        // Video content
-  | 'articles'      // Articles and reading materials
-  | 'templates'     // Document templates
-  | 'other';        // Uncategorized
+  | 'worksheet' // Fillable worksheets and exercises
+  | 'video' // Video content
+  | 'audio' // Audio lessons or meditations
+  | 'article' // Articles and reading materials
+  | 'template' // Document templates
+  | 'guide' // Step-by-step guides
+  | 'other'; // Uncategorized
 
 /**
  * Human-readable labels for resource categories
  */
 export const RESOURCE_CATEGORY_LABELS: Record<ResourceCategory, string> = {
-  onboarding: 'Onboarding',
-  worksheets: 'Worksheets',
-  assessments: 'Assessments',
-  videos: 'Videos',
-  articles: 'Articles',
-  templates: 'Templates',
+  worksheet: 'Worksheet',
+  video: 'Video',
+  audio: 'Audio',
+  article: 'Article',
+  template: 'Template',
+  guide: 'Guide',
   other: 'Other',
 };
 
@@ -49,12 +49,12 @@ export const RESOURCE_CATEGORY_LABELS: Record<ResourceCategory, string> = {
  * Icons for resource categories (Lucide React icon names)
  */
 export const RESOURCE_CATEGORY_ICONS: Record<ResourceCategory, string> = {
-  onboarding: 'UserPlus',
-  worksheets: 'FileText',
-  assessments: 'ClipboardList',
-  videos: 'Video',
-  articles: 'BookOpen',
-  templates: 'FileCode',
+  worksheet: 'FileText',
+  video: 'Video',
+  audio: 'Music',
+  article: 'BookOpen',
+  template: 'FileCode',
+  guide: 'Compass',
   other: 'File',
 };
 
@@ -403,7 +403,12 @@ export interface ResourceListParams {
   search?: string;
   limit?: number;
   offset?: number;
-  sortBy?: 'created_at' | 'filename' | 'file_size' | 'view_count' | 'download_count';
+  sortBy?:
+    | 'created_at'
+    | 'filename'
+    | 'file_size'
+    | 'view_count'
+    | 'download_count';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -502,7 +507,13 @@ export interface ResourceFilters {
  * Sort configuration
  */
 export interface ResourceSort {
-  field: 'created_at' | 'filename' | 'file_size' | 'view_count' | 'download_count' | 'completion_count';
+  field:
+    | 'created_at'
+    | 'filename'
+    | 'file_size'
+    | 'view_count'
+    | 'download_count'
+    | 'completion_count';
   order: 'asc' | 'desc';
 }
 

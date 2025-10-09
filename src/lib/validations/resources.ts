@@ -12,12 +12,12 @@ import { z } from 'zod';
  * Valid resource categories
  */
 export const resourceCategorySchema = z.enum([
-  'onboarding',
-  'worksheets',
-  'assessments',
-  'videos',
-  'articles',
-  'templates',
+  'worksheet',
+  'video',
+  'audio',
+  'article',
+  'template',
+  'guide',
   'other',
 ]);
 
