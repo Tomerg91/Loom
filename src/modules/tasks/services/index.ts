@@ -10,3 +10,4 @@ export {
   RecurrenceService,
   RecurrenceServiceError,
 } from './recurrence-service';
+export { ProgressService, ProgressServiceError } from './progress-service';
