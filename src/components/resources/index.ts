@@ -21,3 +21,9 @@ export type { ResourceUploadDialogProps } from './resource-upload-dialog';
 
 export { ResourceShareDialog } from './resource-share-dialog';
 export type { ResourceShareDialogProps } from './resource-share-dialog';
+
+export { CollectionCard } from './collection-card';
+export type { CollectionCardProps } from './collection-card';
+
+export { CollectionDialog } from './collection-dialog';
+export type { CollectionDialogProps } from './collection-dialog';

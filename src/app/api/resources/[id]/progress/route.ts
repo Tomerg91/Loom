@@ -7,8 +7,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { trackResourceProgress } from '@/lib/database/resources';
+import { createClient } from '@/lib/supabase/server';
 import { trackProgressSchema, validateData } from '@/lib/validations/resources';
 
 /**

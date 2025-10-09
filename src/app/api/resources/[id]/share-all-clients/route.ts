@@ -7,8 +7,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { getResourceLibraryService } from '@/lib/services/resource-library-service';
+import { createClient } from '@/lib/supabase/server';
 import type { ShareAllClientsRequest } from '@/types/resources';
 
 /**

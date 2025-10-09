@@ -14,18 +14,19 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, BarChart3 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState, useCallback } from 'react';
+
 import {
   ResourceGrid,
   ResourceFilters,
   ResourceUploadDialog,
   ResourceShareDialog,
 } from '@/components/resources';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import type {
   ResourceLibraryItem,
@@ -357,11 +358,14 @@ export default function CoachResourcesPage() {
 
         {/* Collections Tab */}
         <TabsContent value="collections" className="space-y-6">
-          <div className="text-center py-12 text-muted-foreground">
-            <p>Collections feature coming soon!</p>
-            <p className="text-sm mt-2">
+          <div className="text-center py-12">
+            <h3 className="text-lg font-semibold mb-2">Collections</h3>
+            <p className="text-muted-foreground mb-6">
               Organize your resources into themed collections
             </p>
+            <Button onClick={() => router.push('/coach/resources/collections')}>
+              Manage Collections
+            </Button>
           </div>
         </TabsContent>
       </Tabs>

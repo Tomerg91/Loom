@@ -8,8 +8,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { getResourceLibraryService } from '@/lib/services/resource-library-service';
+import { createClient } from '@/lib/supabase/server';
 import { createCollectionSchema, validateData } from '@/lib/validations/resources';
 import type { CreateCollectionRequest } from '@/types/resources';
 

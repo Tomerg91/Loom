@@ -148,7 +148,7 @@ export async function getClientSharedResources(
   const supabase = await createClient();
 
   // Get file shares for this client
-  let sharesQuery = supabase
+  const sharesQuery = supabase
     .from('file_shares')
     .select(`
       *,

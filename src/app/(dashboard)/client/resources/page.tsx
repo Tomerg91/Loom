@@ -13,18 +13,19 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle2, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useState, useCallback } from 'react';
+
 import {
   ResourceGrid,
   ResourceFilters,
   ResourceEmptyState,
 } from '@/components/resources';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { CheckCircle2, Eye } from 'lucide-react';
 import type { ResourceLibraryItem, ResourceListParams } from '@/types/resources';
 
 /**

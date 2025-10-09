@@ -13,13 +13,15 @@
 
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Grid3x3, List } from 'lucide-react';
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { ResourceLibraryItem } from '@/types/resources';
+
 import { ResourceCard } from './resource-card';
 import { ResourceEmptyState } from './resource-empty-state';
-import type { ResourceLibraryItem } from '@/types/resources';
 
 export interface ResourceGridProps {
   resources: ResourceLibraryItem[];
