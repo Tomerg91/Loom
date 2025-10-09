@@ -7,8 +7,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { getResourceLibraryService } from '@/lib/services/resource-library-service';
+import { createClient } from '@/lib/supabase/server';
+import { sanitizeError, unauthorizedError, forbiddenError, notFoundError } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/resources/analytics
@@ -31,19 +33,15 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only coaches can access analytics' },
-        { status: 403 }
-      );
+      const { response, statusCode } = forbiddenError('Only coaches can access analytics.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -56,11 +54,16 @@ export async function GET(request: NextRequest) {
       const result = await service.getResourceAnalytics(resourceId, user.id);
 
       if (!result.success) {
-        const status = result.error === 'Resource not found' ? 404 : 400;
-        return NextResponse.json(
-          { success: false, error: result.error },
-          { status }
-        );
+        if (result.error === 'Resource not found') {
+          const { response, statusCode } = notFoundError('Resource');
+          return NextResponse.json(response, { status: statusCode });
+        }
+        const { response, statusCode } = sanitizeError(new Error(result.error), {
+          context: 'GET /api/resources/analytics',
+          userMessage: 'Failed to fetch resource analytics. Please try again.',
+          metadata: { resourceId, userId: user.id },
+        });
+        return NextResponse.json(response, { status: statusCode });
       }
 
       return NextResponse.json({
@@ -72,10 +75,12 @@ export async function GET(request: NextRequest) {
       const result = await service.getLibraryAnalytics(user.id);
 
       if (!result.success) {
-        return NextResponse.json(
-          { success: false, error: result.error },
-          { status: 400 }
-        );
+        const { response, statusCode } = sanitizeError(new Error(result.error), {
+          context: 'GET /api/resources/analytics',
+          userMessage: 'Failed to fetch library analytics. Please try again.',
+          metadata: { userId: user.id },
+        });
+        return NextResponse.json(response, { status: statusCode });
       }
 
       return NextResponse.json({
@@ -84,13 +89,11 @@ export async function GET(request: NextRequest) {
       });
     }
   } catch (error) {
-    console.error('GET /api/resources/analytics error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'GET /api/resources/analytics',
+      userMessage: 'Failed to fetch analytics. Please try again later.',
+      metadata: { userId: 'analytics' },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }

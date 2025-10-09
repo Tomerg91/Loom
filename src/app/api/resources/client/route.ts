@@ -7,8 +7,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { getClientSharedResources } from '@/lib/database/resources';
+import { createClient } from '@/lib/supabase/server';
+import { sanitizeError, unauthorizedError, forbiddenError } from '@/lib/utils/api-errors';
 import type { ResourceListParams } from '@/types/resources';
 
 /**
@@ -39,19 +41,15 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Verify user is a client
     const userRole = user.user_metadata?.role;
     if (userRole !== 'client') {
-      return NextResponse.json(
-        { success: false, error: 'Only clients can access shared resources' },
-        { status: 403 }
-      );
+      const { response, statusCode } = forbiddenError('Only clients can access shared resources.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     // Parse query parameters
@@ -80,13 +78,11 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('GET /api/resources/client error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'GET /api/resources/client',
+      userMessage: 'Failed to fetch shared resources. Please try again later.',
+      metadata: { userId: 'client' },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }

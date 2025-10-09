@@ -53,9 +53,12 @@
     "supabase:types": "supabase gen types typescript --local > src/types/supabase.ts",
     "supabase:migration": "supabase migration new",
     "supabase:push": "supabase db push",
-    "db:seed": "supabase seed"
+    "db:seed": "supabase db reset"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.1.1",
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-accordion": "^1.2.11",

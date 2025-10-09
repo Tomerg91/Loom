@@ -14,10 +14,15 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Upload, X, FileText, Loader2 } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +40,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -42,14 +49,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Upload, X, FileText, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useDropzone } from 'react-dropzone';
 import type { ResourceCategory, ResourceCollection } from '@/types/resources';
 
 const CATEGORY_OPTIONS: { value: ResourceCategory; label: string }[] = [

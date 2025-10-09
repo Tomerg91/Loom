@@ -8,11 +8,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import {
-  getResourceById,
-  trackResourceProgress,
-} from '@/lib/database/resources';
+import { trackResourceProgress } from '@/lib/database/resources';
 import { createClient } from '@/lib/supabase/server';
+import { sanitizeError, unauthorizedError, validationError } from '@/lib/utils/api-errors';
 import { trackProgressSchema, validateData } from '@/lib/validations/resources';
 import type { ResourceLibraryItem } from '@/types/resources';
 
@@ -44,10 +42,8 @@ export async function POST(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      const { response, statusCode } = unauthorizedError();
+      return NextResponse.json(response, { status: statusCode });
     }
 
     const resourceId = params.id;
@@ -57,14 +53,8 @@ export async function POST(
     const validation = validateData(trackProgressSchema, body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation failed',
-          details: validation.errors.errors,
-        },
-        { status: 400 }
-      );
+      const { response, statusCode } = validationError('Invalid progress tracking data. Action must be one of: viewed, completed, accessed.');
+      return NextResponse.json(response, { status: statusCode });
     }
 
     const { action } = validation.data;
@@ -97,13 +87,11 @@ export async function POST(
       success: true,
     });
   } catch (error) {
-    console.error('POST /api/resources/[id]/progress error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    const { response, statusCode } = sanitizeError(error, {
+      context: 'POST /api/resources/[id]/progress',
+      userMessage: 'Failed to track progress. Please try again.',
+      metadata: { resourceId: params.id },
+    });
+    return NextResponse.json(response, { status: statusCode });
   }
 }

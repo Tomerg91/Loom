@@ -13,6 +13,7 @@
 'use client';
 
 import { FileText, Search, Inbox, FolderOpen } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 
 export interface ResourceEmptyStateProps {

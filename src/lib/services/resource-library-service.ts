@@ -11,8 +11,9 @@
  * @module lib/services/resource-library-service
  */
 
-import { createClient } from '@/lib/supabase/server';
+import * as db from '@/lib/database/resources';
 import { getFileManagementService } from '@/lib/services/file-management-service';
+import { createClient } from '@/lib/supabase/server';
 import { Result } from '@/lib/types/result';
 import type {
   ResourceLibraryItem,
@@ -29,7 +30,6 @@ import type {
   StorageUsage,
   BulkShareResponse,
 } from '@/types/resources';
-import * as db from '@/lib/database/resources';
 
 /**
  * Resource Library Service Class

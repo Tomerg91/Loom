@@ -13,10 +13,19 @@
 
 'use client';
 
+import { Search, X, Filter, Tag } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -24,16 +33,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Search, X, Filter, Tag } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useDebounce } from '@/lib/hooks/use-debounce';
+import { cn } from '@/lib/utils';
 import type { ResourceCategory, ResourceListParams } from '@/types/resources';
 
 const CATEGORY_OPTIONS: { value: ResourceCategory; label: string }[] = [
