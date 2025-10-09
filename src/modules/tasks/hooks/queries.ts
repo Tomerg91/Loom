@@ -160,10 +160,11 @@ export const useCreateProgressUpdate = (
   options?: TaskMutationOptions<ProgressUpdateDto, ProgressUpdateVariables>
 ) => {
   const queryClient = useQueryClient();
+  const { onSuccess, ...restOptions } = options ?? {};
 
   return useMutation({
     mutationFn: createProgressUpdate,
-    onSuccess: async (progress, variables) => {
+    async onSuccess(progress, variables, context) {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: taskKeys.detail(variables.taskId),
@@ -173,9 +174,11 @@ export const useCreateProgressUpdate = (
         }),
         queryClient.invalidateQueries({ queryKey: taskKeys.lists() }),
       ]);
+
+      await onSuccess?.(progress, variables, context);
       return progress;
     },
-    ...options,
+    ...restOptions,
   });
 };
 
