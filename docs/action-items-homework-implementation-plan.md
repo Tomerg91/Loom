@@ -1,230 +1,74 @@
-# Implementation Plan
+# Action Items & Homework Implementation Plan Notes
 
-## Project Setup & Foundations
+## Step 1 – Platform Audit (Completed)
 
-- [ ] Step 1: Audit existing codebase and align prerequisites
-  - **Task**: Review current Next.js/Supabase configuration, confirm authentication patterns, and catalog reusable components relevant to coaching workflows. Document any gaps that influence upcoming steps.
-  - **Files**:
-    - `README.md`: Add prerequisites checklist for contributors.
-    - `docs/action-items-homework-implementation-plan.md`: Update with findings if adjustments needed.
-  - **Step Dependencies**: None
-  - **User Instructions**: Ensure access to Supabase project credentials and Firebase push notification keys.
+### Next.js & Supabase Configuration Overview
 
-- [ ] Step 2: Establish domain-specific workspace
-  - **Task**: Create `/src/modules/tasks` directory scaffold with subfolders for `api`, `components`, `hooks`, `services`, `types`, and placeholder index files to enforce structure.
-  - **Files**:
-    - `src/modules/tasks/README.md`: Document module purpose and structure.
-    - `src/modules/tasks/api/index.ts`: Placeholder export file.
-    - `src/modules/tasks/components/index.ts`: Placeholder export file.
-    - `src/modules/tasks/hooks/index.ts`: Placeholder export file.
-    - `src/modules/tasks/services/index.ts`: Placeholder export file.
-    - `src/modules/tasks/types/index.ts`: Placeholder export file.
-  - **Step Dependencies**: Step 1
-  - **User Instructions**: None
+- The application runs on **Next.js 15** with the App Router enabled and strict mode active (`next.config.js`). Performance optimizations include optimized package imports and Turbopack rules for SVG assets.
+- Supabase access is centralized in `src/lib/supabase/client.ts` and `src/lib/supabase/server.ts`. Both modules validate `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` at runtime and expose singleton clients to avoid redundant GoTrue sessions.
+- Server-side administration uses `createAdminClient`, which depends on `SUPABASE_SERVICE_ROLE_KEY`. This key is optional in `src/env/index.ts`, so any feature requiring privileged Supabase calls (e.g., background migrations) must verify the variable before use.
+- Environment handling is consolidated through `@t3-oss/env-nextjs` (`src/env/index.ts`). The helper already maps new Supabase environment names (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`) to the expected Next.js variables, reducing friction for local vs. hosted setups.
 
-## Database & Schema
+### Authentication Patterns Confirmed
 
-- [ ] Step 3: Define Prisma schema extensions for tasks domain
-  - **Task**: Extend `prisma/schema.prisma` with entities (`TaskCategory`, `Task`, `TaskInstance`, `ProgressUpdate`, `Attachment`, `NotificationJob`, `ExportLog`) and relationships; add enums for task status and priority. Generate initial migration.
-  - **Files**:
-    - `prisma/schema.prisma`: Add new models and relations.
-    - `prisma/migrations/*`: Auto-generated migration files.
-    - `docs/action-items-homework-implementation-plan.md`: Note migration command and verification steps.
-  - **Step Dependencies**: Step 2
-  - **User Instructions**: Run `npx prisma migrate dev --name init_tasks_domain` after defining schema.
+- Authentication flows rely on `AuthService` (`src/lib/auth/auth.ts`), which constructs either a server or client Supabase instance and caches user profiles fetched through `createUserService`.
+- The service supplements Supabase session data with additional profile metadata (role, onboarding status, MFA flags) and manages session refresh with retry logic and forced sign-out when tokens become invalid.
+- Middleware and client hooks (`src/lib/auth/middleware.ts`, `src/lib/auth/use-auth.ts`) wrap these services to enforce role-based routing. Route handlers and server components should continue to use `AuthService.create(true)` to respect cache invalidation.
 
-- [ ] Step 4: Seed reference data and helper scripts
-  - **Task**: Introduce seed scripts for default task categories and demo data for local environments.
-  - **Files**:
-    - `prisma/seed.ts`: Extend with category/task examples.
-    - `package.json`: Add `prisma db seed` npm script if missing.
-    - `docs/action-items-homework-implementation-plan.md`: Document seeding usage.
-  - **Step Dependencies**: Step 3
-  - **User Instructions**: Execute `npm run db:seed` (or documented command) post-migration.
+### Reusable Coaching Components & Utilities
 
-## Backend APIs & Services
+- Coach-specific UI lives primarily in `src/components/dashboard/coach`, with supporting widgets in `src/components/dashboard/widgets` and shared layout primitives under `src/components/dashboard/shared`.
+- Scheduling and client relationship features already exist in `src/components/sessions` and `src/components/coach`, which will help shape task assignment experiences.
+- Supabase-aware hooks (`src/lib/hooks`), TanStack Query helpers (`src/lib/queries`), and permissions utilities (`src/lib/auth/permissions.ts`) provide a foundation for enforcing access in forthcoming task APIs.
 
-- [ ] Step 5: Implement task CRUD API route handlers
-  - **Task**: Create Next.js route handlers for `/api/tasks` with POST, GET, PATCH methods using Prisma. Validate payloads via Zod and enforce role checks.
-  - **Files**:
-    - `src/app/api/tasks/route.ts`: Implement collection-level handlers.
-    - `src/app/api/tasks/[taskId]/route.ts`: Implement item-level handlers.
-    - `src/modules/tasks/types/task.ts`: Define request/response DTOs.
-    - `src/modules/tasks/services/task-service.ts`: Encapsulate Prisma logic.
-    - `src/lib/auth/permissions.ts`: Add helper for coach role verification (if needed).
-    - `tests/api/tasks.test.ts`: Add integration tests.
-  - **Step Dependencies**: Step 3
-  - **User Instructions**: None
+### Identified Gaps & Considerations for Upcoming Steps
 
-- [ ] Step 6: Build recurrence scheduling utilities
-  - **Task**: Add recurrence parser/generator utilities using `rrule` library, create service to produce `TaskInstance` entries, and integrate with task creation.
-  - **Files**:
-    - `src/modules/tasks/services/recurrence-service.ts`: Implement recurrence expansion.
-    - `src/modules/tasks/types/recurrence.ts`: Define recurrence interfaces.
-    - `package.json`: Add `rrule` dependency.
-    - `src/modules/tasks/services/task-service.ts`: Hook recurrence generation into creation/update flows.
-    - `tests/unit/recurrence-service.test.ts`: Unit tests for recurrence logic.
-  - **Step Dependencies**: Step 5
-  - **User Instructions**: Run `npm install rrule`.
+- **Database schema coverage**: Supabase tables for tasks, instances, progress updates, and notifications are absent; Step 3 must introduce them and regenerate the typed client definitions. Note that Supabase Database typings are currently “loose” in `server.ts`, signalling the need to resync generated types after migrations.
+- **Environment readiness**: Firebase credentials and Redis URL are not yet defined in `src/env/index.ts`. We will extend the schema when notification workers (Step 8) are implemented.
+- **Module scaffold**: There is no `/src/modules/tasks` directory yet. Step 2 will introduce the module structure and documentation to isolate domain logic from existing dashboards.
+- **Notification infrastructure**: While there is an existing notifications directory (`src/components/notifications`), background job orchestration is not configured. Future steps should align with the planned BullMQ worker.
 
-- [ ] Step 7: Create progress update and attachment APIs
-  - **Task**: Implement endpoints for client progress submissions, visibility toggles, and attachment metadata storage using signed URLs.
-  - **Files**:
-    - `src/app/api/tasks/[taskId]/instances/[instanceId]/progress/route.ts`: Handle POST requests.
-    - `src/modules/tasks/types/progress.ts`: Define DTOs.
-    - `src/modules/tasks/services/progress-service.ts`: Encapsulate logic.
-    - `src/app/api/attachments/sign/route.ts`: Provide signed URL endpoints.
-    - `tests/api/progress.test.ts`: Integration tests covering permissions and validation.
-  - **Step Dependencies**: Step 3, Step 5
-  - **User Instructions**: Configure Supabase storage bucket and env vars for signed URL secrets.
+### Recommendations Before Proceeding to Step 2
 
-- [ ] Step 8: Notification scheduling and dispatch service
-  - **Task**: Configure queue worker (e.g., BullMQ) to manage reminder jobs, integrate Firebase push logic, and expose admin/test endpoint.
-  - **Files**:
-    - `src/server/queue/index.ts`: Initialize BullMQ connection.
-    - `src/server/queue/jobs/task-reminders.ts`: Define job processing.
-    - `src/server/services/notification-service.ts`: Wrap Firebase push calls.
-    - `package.json`: Add BullMQ and Firebase Admin dependencies.
-    - `scripts/worker.ts`: Entry script for worker process.
-    - `tests/unit/notification-service.test.ts`: Unit tests using mocks.
-  - **Step Dependencies**: Step 3, Step 5, Step 6
-  - **User Instructions**: Provision Redis instance and set `REDIS_URL`, `FIREBASE_*` env vars.
+- Confirm that contributors possess Supabase service-role access as highlighted in the README checklist to prevent runtime failures in server-side actions.
+- Plan to regenerate Supabase type definitions immediately after Step 3 migrations to bring typings back in sync with the new task domain tables.
 
-- [ ] Step 9: PDF export pipeline
-  - **Task**: Implement export API that enqueues PDF job, render using React-PDF or Puppeteer, and store in Supabase bucket with log entry.
-  - **Files**:
-    - `src/app/api/exports/client/[clientId]/route.ts`: API handler.
-    - `src/server/services/export-service.ts`: Fetch data and trigger job.
-    - `src/server/queue/jobs/export-pdf.ts`: Worker job to render PDF.
-    - `src/modules/tasks/components/export-template.tsx`: React template for PDF rendering.
-    - `tests/api/exports.test.ts`: Integration test for export request lifecycle.
-  - **Step Dependencies**: Step 3, Step 5, Step 8
-  - **User Instructions**: Ensure PDF renderer dependencies installed (e.g., `npm install @react-pdf/renderer` or `puppeteer`).
+## Step 2 – Tasks Module Scaffolding (Completed)
 
-## Frontend Client Experience
+- Created the `src/modules/tasks` workspace with dedicated subdirectories for `api`, `components`, `hooks`, `services`, and `types` so future features can be developed in isolation.
+- Documented module conventions, folder responsibilities, and roadmap alignment in `src/modules/tasks/README.md` to streamline onboarding and code reviews.
+- Added placeholder `index.ts` files in each subdirectory to establish public export hubs that will be expanded as APIs, UI, and services are implemented in later steps.
 
-- [ ] Step 10: Shared UI primitives and design tokens
-  - **Task**: Extend Tailwind config and shared components (buttons, badges, cards) to match design system; document tokens.
-  - **Files**:
-    - `tailwind.config.ts`: Add color palette, typography settings.
-    - `src/components/ui/Button.tsx`: Update variants if needed.
-    - `src/components/ui/Badge.tsx`: Introduce status chips.
-    - `src/components/ui/Card.tsx`: Create/extend card layout.
-    - `docs/design-system.md`: Summarize tokens.
-  - **Step Dependencies**: Step 2
-  - **User Instructions**: Run `npm run lint` to ensure Tailwind classes compiled.
+## Step 3 – Supabase Schema & Migration (Completed)
 
-- [ ] Step 11: Coach task management interface
-  - **Task**: Build coach dashboard page with task list, filters, and create/edit modal using React Hook Form + Zod.
-  - **Files**:
-    - `src/app/(coach)/dashboard/page.tsx`: Page implementation.
-    - `src/modules/tasks/components/TaskList.tsx`: List view component.
-    - `src/modules/tasks/components/TaskFormModal.tsx`: Create/edit modal.
-    - `src/modules/tasks/hooks/useTaskFilters.ts`: Client-side state management.
-    - `src/modules/tasks/api/useTasksQuery.ts`: React Query hooks.
-    - `tests/e2e/coach-dashboard.spec.ts`: Playwright scenario for task creation.
-  - **Step Dependencies**: Step 5, Step 10
-  - **User Instructions**: None
+- Authored `supabase/migrations/20251001000000_add_tasks_domain.sql`, introducing enums for task priority, status, notification job type, and job status alongside normalized tables for categories, tasks, instances, progress updates, attachments, notification jobs, and export logs.
+- Established foreign-key relationships back to the existing `users` table, added timestamp triggers, and created supporting indexes so task queries remain performant for upcoming API work.
+- Documented the migration workflow: `supabase db push` (or `supabase db reset` locally) followed by `npm run supabase:types` to regenerate the typed client definitions that back the Next.js services.
 
-- [ ] Step 12: Client dashboard and progress workflows
-  - **Task**: Implement client task view grouped by status with progress drawer, attachments, and optimistic updates.
-  - **Files**:
-    - `src/app/(client)/dashboard/page.tsx`
-    - `src/modules/tasks/components/ClientTaskCard.tsx`
-    - `src/modules/tasks/components/ProgressDrawer.tsx`
-    - `src/modules/tasks/hooks/useProgressMutations.ts`
-    - `src/modules/tasks/api/useTaskInstancesQuery.ts`
-    - `tests/e2e/client-dashboard.spec.ts`
-  - **Step Dependencies**: Step 7, Step 10
-  - **User Instructions**: None
+## Step 4 – Demo Seed Data (Completed)
 
-- [ ] Step 13: Coach analytics and reporting UI
-  - **Task**: Build analytics widgets (charts, tables) and export trigger UI with proper access control.
-  - **Files**:
-    - `src/app/(coach)/dashboard/analytics.tsx`
-    - `src/modules/tasks/components/CompletionChart.tsx`
-    - `src/modules/tasks/components/OverdueTable.tsx`
-    - `src/modules/tasks/hooks/useAnalyticsData.ts`
-    - `tests/e2e/coach-analytics.spec.ts`
-  - **Step Dependencies**: Step 9, Step 11
-  - **User Instructions**: None
+- Extended `supabase/seed.sql` with deterministic categories, tasks, instances, progress updates, and notification scaffolding so contributors can explore the new domain without manual inserts.
+- Updated the developer workflow to rely on Supabase tooling (`npm run db:seed`) which now proxies to `supabase db reset`, applying migrations and seeding in one step for local environments.
+- Highlighted how the seed data aligns with the implementation roadmap (e.g., one-off vs. recurring tasks) so testers can validate recurrence and filtering behaviour introduced in later steps.
 
-- [ ] Step 14: Notification preferences UI
-  - **Task**: Provide settings screens for clients to manage push notification consent and snooze options.
-  - **Files**:
-    - `src/app/(client)/settings/notifications/page.tsx`
-    - `src/modules/tasks/components/NotificationToggle.tsx`
-    - `src/modules/tasks/hooks/useNotificationPreferences.ts`
-    - `tests/e2e/notification-preferences.spec.ts`
-  - **Step Dependencies**: Step 8, Step 10
-  - **User Instructions**: Verify push token registration flow in staging devices.
+## Step 5 – Task CRUD API (Completed)
 
-## Background Jobs & Operations
+- Implemented collection and item route handlers under `/api/tasks` using shared API utility wrappers to enforce authentication, coach-role authorization, and structured JSON responses.
+- Replaced the prior Prisma-centric service with a Supabase-backed `TaskService` that performs ownership checks, persists task metadata, orchestrates instance creation, and returns DTOs compatible with the frontend plan.
+- Maintained the Zod DTO schemas for payload validation and expanded permissions/tests to confirm the Supabase service paths handle success, validation failures, and authorization errors as expected.
 
-- [ ] Step 15: Deployment-ready worker configuration
-  - **Task**: Add Docker/PM2 scripts for worker deployment, configure environment variables, and document runbooks.
-  - **Files**:
-    - `Dockerfile.worker`: Worker image definition.
-    - `package.json`: Add `worker:start` script.
-    - `docs/runbooks/task-reminder-worker.md`: Operational guide.
-    - `vercel.json` or infra config: Ensure worker excluded from frontend build.
-  - **Step Dependencies**: Step 8, Step 9
-  - **User Instructions**: Provision hosting environment (e.g., Fly.io, Railway) if not on Vercel.
+## Step 6 – Recurrence Scheduling Utilities (Completed)
 
-- [ ] Step 16: Monitoring, logging, and analytics events
-  - **Task**: Integrate Sentry/Logflare logging in new services, emit analytics events for key actions.
-  - **Files**:
-    - `src/lib/analytics/events.ts`: Define event constants.
-    - `src/server/services/task-service.ts`: Emit events upon creation/completion.
-    - `src/server/services/notification-service.ts`: Log delivery outcomes.
-    - `src/server/services/export-service.ts`: Track export usage.
-    - `tests/unit/analytics-events.test.ts`: Ensure events fire correctly.
-  - **Step Dependencies**: Step 5, Step 8, Step 9
-  - **User Instructions**: Configure Sentry DSN and analytics API keys.
+- Added a lightweight `RecurrenceService` that normalizes recurrence metadata and generates deterministic task instance schedules without relying on external runtime dependencies, keeping the feature compatible with constrained environments.
+- Integrated recurrence planning into the Supabase-backed `TaskService` so task creation and updates persist canonical rule metadata, regenerate upcoming instances, and keep the primary instance synchronized with due date changes.
+- Introduced shared recurrence schemas/types and unit coverage for the scheduling service so contributors can extend supported patterns with confidence.
 
-## Testing & Quality Assurance
+## Step Tracking
 
-- [ ] Step 17: Comprehensive automated testing suite
-  - **Task**: Finalize unit, integration, and E2E test coverage for critical paths; set up coverage thresholds.
-  - **Files**:
-    - `vitest.config.ts`: Update coverage settings if needed.
-    - `tests/api/**/*.test.ts`: Ensure CRUD, progress, export tests complete.
-    - `tests/unit/**/*.test.ts`: Validate services/utilities.
-    - `tests/e2e/**/*.spec.ts`: Finalize Playwright flows.
-    - `package.json`: Add combined test script `npm run test:all`.
-  - **Step Dependencies**: Steps 5-14
-  - **User Instructions**: Run `npm run test:all` and review reports.
-
-- [ ] Step 18: Accessibility and performance audits
-  - **Task**: Execute accessibility audits (axe, screen reader) and performance profiling (Lighthouse) on key dashboards; document findings and fixes.
-  - **Files**:
-    - `tests/accessibility/coach-dashboard.spec.ts`: Automated axe checks.
-    - `tests/performance/lighthouse-config.json`: Define audit settings.
-    - `docs/qa/a11y-performance-report.md`: Summarize results and remediation tasks.
-  - **Step Dependencies**: Step 11, Step 12, Step 13
-  - **User Instructions**: Run `npm run test:a11y` and `npm run test:performance` (scripts to be added if absent).
-
-## Deployment & Release
-
-- [ ] Step 19: Update CI/CD pipeline
-  - **Task**: Extend GitHub Actions to include linting, testing, migration checks, worker deployment triggers, and artifact uploads for PDFs.
-  - **Files**:
-    - `.github/workflows/ci.yml`: Modify pipeline steps.
-    - `.github/workflows/worker-deploy.yml`: New workflow for worker.
-    - `docs/deployment/checklist.md`: Document release process.
-  - **Step Dependencies**: Steps 5-17
-  - **User Instructions**: Configure secrets for database, Redis, Firebase, and storage in repository settings.
-
-- [ ] Step 20: Production readiness review
-  - **Task**: Conduct final audit covering environment configs, backup strategies, rollback plan, and stakeholder sign-off.
-  - **Files**:
-    - `docs/production-readiness.md`: Checklist and sign-off log.
-    - `docs/action-items-homework-implementation-plan.md`: Mark plan steps as complete with final notes.
-  - **Step Dependencies**: Steps 1-19
-  - **User Instructions**: Schedule review meeting with coaching team, capture sign-off in documentation.
-
----
-
-## Summary
-
-This implementation plan sequences development from foundational setup through database modeling, backend services, frontend experiences, background processing, and quality assurance. Each step keeps file touch counts manageable and highlights operational considerations like worker deployment, monitoring, and CI/CD enhancements. Completing the steps in order ensures the Action Items & Homework feature set progresses cohesively toward a production-ready release while maintaining documentation for onboarding and audits.
+- [x] Step 1: Audit existing codebase and align prerequisites (this document).
+- [x] Step 2: Establish domain-specific workspace.
+- [x] Step 3: Define Supabase schema extensions for tasks domain.
+- [x] Step 4: Seed reference data and helper scripts.
+- [x] Step 5: Implement task CRUD API route handlers.
+- [x] Step 6: Build recurrence scheduling utilities.
+- [ ] Steps 7-20: Pending as outlined in the implementation roadmap.
