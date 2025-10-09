@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { CoachOrAdminRoute } from '@/components/auth/route-guard';
 import { TaskListView } from '@/modules/tasks/components';
 
