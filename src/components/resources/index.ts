@@ -36,3 +36,5 @@ export type { TopResourcesListProps } from './top-resources-list';
 
 export { AutoShareSettings } from './auto-share-settings';
 export type { AutoShareSettingsProps } from './auto-share-settings';
+
+export { ResourceErrorBoundary } from './resource-error-boundary';
