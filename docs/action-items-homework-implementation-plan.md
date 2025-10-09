@@ -69,12 +69,6 @@
 - Added React Query hooks (`useTaskList`, `useTask`, `useCreateTask`, `useUpdateTask`, `useCreateProgressUpdate`) and cache keys so coach and client experiences can integrate task data with consistent caching and invalidation semantics.
 - Documented the new utilities in `src/modules/tasks/README.md`, ensuring future steps can plug the hooks into UI flows without duplicating fetch logic.
 
-## Step 8 – Coach Task Oversight UI (Completed)
-
-- Shipped the first coach-facing tasks dashboard via `TaskListView`, wiring TanStack Query data into filterable tables with pagination and inline recurrence/status indicators so teams can immediately audit homework assignments.
-- Implemented reusable UI primitives (`TaskStatusBadge`, `TaskPriorityIndicator`, `TaskListFiltersBar`) that normalize status/priority labeling, multi-select dropdowns, and archived toggles to keep future task surfaces visually consistent.
-- Added protected coach routes (`/coach/tasks`, `/[locale]/coach/tasks`) that render the new experience inside the existing `CoachOrAdminRoute`, ensuring role checks stay intact while exposing the consolidated homework workspace.
-
 ## Step Tracking
 
 - [x] Step 1: Audit existing codebase and align prerequisites (this document).
@@ -84,5 +78,4 @@
 - [x] Step 5: Implement task CRUD API route handlers.
 - [x] Step 6: Build recurrence scheduling utilities.
 - [x] Step 7: Ship client API utilities and React Query hooks.
-- [x] Step 8: Launch coach task oversight UI.
 - [ ] Steps 8-20: Pending as outlined in the implementation roadmap.

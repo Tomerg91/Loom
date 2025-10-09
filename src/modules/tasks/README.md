@@ -16,7 +16,6 @@ Each subdirectory exposes a local `index.ts` file to aggregate exports. When add
 
 - **API Client (`api/client.ts`)** – Typed wrappers for the `/api/tasks` endpoints, including `fetchTaskList`, `fetchTask`, `createTask`, `updateTask`, and `createProgressUpdate`. Errors surface through the `TaskApiError` class so UI layers can present friendly messages.
 - **React Query Hooks (`hooks/queries.ts`)** – Exposes `useTaskList`, `useTask`, `useCreateTask`, `useUpdateTask`, and `useCreateProgressUpdate` along with a shared `taskKeys` helper to keep cache invalidation consistent across components.
-- **Coach UI Components (`components/task-list-view.tsx`)** – Provides a `TaskListView` composed of filter controls, status/priority badges, and a paginated table so coach dashboards can render homework assignments with minimal wiring.
 
 ## Contribution Guidelines
 

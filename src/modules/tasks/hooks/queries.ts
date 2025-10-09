@@ -28,7 +28,6 @@ import type {
   UpdateTaskInput,
 } from '../types/task';
 
-
 type TaskDetailQueryOptions = Omit<
   UseQueryOptions<TaskDto, TaskApiError>,
   'queryKey' | 'queryFn'
@@ -172,6 +171,7 @@ export const useCreateProgressUpdate = (
         queryClient.invalidateQueries({
           queryKey: taskKeys.progress(variables.taskId, variables.instanceId),
         }),
+        queryClient.invalidateQueries({ queryKey: taskKeys.lists() }),
       ]);
       return progress;
     },
