@@ -10,7 +10,7 @@ import {
   validateRequestBody,
 } from '@/lib/api/utils';
 import { config } from '@/lib/config';
-import { createAdminClient, createServerClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 const signRequestSchema = z.object({
   fileName: z
@@ -90,7 +90,7 @@ async function getAuthenticatedActor(): Promise<
   { actor: AuthActor } | { response: Response }
 > {
   try {
-    const supabase = createServerClient();
+    const supabase = await createClient();
     const { data: session, error } = await supabase.auth.getUser();
 
     if (error || !session?.user) {
