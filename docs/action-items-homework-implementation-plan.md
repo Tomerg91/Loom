@@ -75,6 +75,16 @@
 - Integrated the dialog into `TaskListView`, surfacing a prominent "Assign action item" call-to-action and resetting pagination after successful submissions to surface fresh entries immediately (`src/modules/tasks/components/task-list-view.tsx`).
 - Re-exported the dialog for broader reuse across coach surfaces as future roadmap items (client detail pages, quick actions) come online (`src/modules/tasks/components/index.ts`).
 
+## Step 9 – Client Homework Hub (Completed)
+
+- Introduced dedicated client task surfaces at `/client/tasks` and `/[locale]/client/tasks`, wrapping `ClientTaskBoard` with the existing `ClientOnly` and `ClientOrAdminRoute` helpers so progress data respects authentication and locale-aware routing (`src/app/client/tasks/page.tsx`, `src/app/[locale]/client/tasks/page.tsx`).
+- Ensured the standalone homework experience inherits loading fallbacks consistent with the rest of the dashboard while preserving suspense boundaries for React Query driven data fetching.
+
+## Step 10 – Navigation & Localization (Completed)
+
+- Added role-aware navigation shortcuts for Action Items so coaches and clients can jump directly into the homework workspace from the global top navigation (`src/components/navigation/nav-menu.tsx`).
+- Localized the new entry by extending both English and Hebrew message catalogs with a dedicated `navigation.tasks` key to keep parity across supported languages (`src/messages/en.json`, `src/messages/he.json`).
+
 ## Step Tracking
 
 - [x] Step 1: Audit existing codebase and align prerequisites (this document).
@@ -85,4 +95,6 @@
 - [x] Step 6: Build recurrence scheduling utilities.
 - [x] Step 7: Ship client API utilities and React Query hooks.
 - [x] Step 8: Launch coach assignment workflow entry point.
-- [ ] Steps 9-20: Pending as outlined in the implementation roadmap.
+- [x] Step 9: Launch the client homework hub and guard it behind role-aware routing.
+- [x] Step 10: Surface Action Items in navigation with localized labels.
+- [ ] Steps 11-20: Pending as outlined in the implementation roadmap.
