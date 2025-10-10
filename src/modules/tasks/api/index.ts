@@ -9,3 +9,14 @@ export {
   updateTaskSchema,
   taskListQuerySchema,
 } from '../types/task';
+
+export {
+  TaskApiError,
+  buildTaskListQuery,
+  createProgressUpdate,
+  createTask,
+  fetchTask,
+  fetchTaskList,
+  updateTask,
+} from './client';
+export type { TaskListFilters } from './client';

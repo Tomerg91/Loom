@@ -138,10 +138,6 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const category = formData.get('category') as string;
-    errorMetadata = {
-      category: category || undefined,
-      hasFile: !!file,
-    };
     const tagsString = formData.get('tags') as string;
     const description = formData.get('description') as string | null;
     const addToCollection = formData.get('addToCollection') as string | null;
@@ -207,7 +203,7 @@ export async function POST(request: NextRequest) {
     const { response, statusCode } = sanitizeError(error, {
       context: 'POST /api/resources',
       userMessage: 'Failed to upload resource. Please try again.',
-      metadata: errorMetadata,
+      metadata: { category, hasFile: !!file },
     });
     return NextResponse.json(response, { status: statusCode });
   }
