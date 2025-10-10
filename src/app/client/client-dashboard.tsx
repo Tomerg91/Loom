@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import { LazyProgressChart, LazyGoalChart, LazySessionChart } from '@/components/charts/lazy-chart';
+import { ClientTaskBoard } from '@/modules/tasks/components';
 import type { Session, User as UserType } from '@/types';
 
 // Types for API responses
@@ -306,7 +307,7 @@ export function ClientDashboard() {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
-          <TabsTrigger value="progress">Progress</TabsTrigger>
+          <TabsTrigger value="progress">Action Items</TabsTrigger>
           <TabsTrigger value="resources">Resources</TabsTrigger>
         </TabsList>
 
@@ -541,24 +542,7 @@ export function ClientDashboard() {
         </TabsContent>
 
         <TabsContent value="progress" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Progress Analytics</CardTitle>
-              <CardDescription>Detailed insights into your coaching progress</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <BarChart3 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Advanced Analytics</h3>
-                <p className="text-muted-foreground mb-6">
-                  Comprehensive progress tracking and analytics coming soon.
-                </p>
-                <Button onClick={() => router.push(withLocale('/client/progress'))}>
-                  View Progress Details
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ClientTaskBoard />
         </TabsContent>
 
         <TabsContent value="resources" className="space-y-6">

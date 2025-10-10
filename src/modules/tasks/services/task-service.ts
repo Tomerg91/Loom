@@ -354,6 +354,92 @@ export class TaskService {
     };
   }
 
+  public async listTasksForClient(
+    actor: TaskActor,
+    filters: TaskListQueryInput
+  ): Promise<TaskListResponse> {
+    if (actor.role !== 'client' && actor.role !== 'admin') {
+      throw accessDenied();
+    }
+
+    const client = this.getClient();
+
+    const effectiveClientId =
+      actor.role === 'client' ? actor.id : filters.clientId ?? actor.id;
+
+    const page = filters.page ?? 1;
+    const pageSize = filters.pageSize ?? 20;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = client
+      .from('tasks')
+      .select(TASK_SELECT, { count: 'exact' })
+      .eq('client_id', effectiveClientId);
+
+    if (filters.coachId) {
+      query = query.eq('coach_id', filters.coachId);
+    }
+
+    if (filters.categoryId) {
+      query = query.eq('category_id', filters.categoryId);
+    }
+
+    if (filters.priority && filters.priority.length > 0) {
+      query = query.in('priority', filters.priority as TaskPriority[]);
+    }
+
+    if (filters.status && filters.status.length > 0) {
+      query = query.in('status', filters.status as TaskStatus[]);
+    }
+
+    if (!filters.includeArchived) {
+      query = query.is('archived_at', null);
+    }
+
+    if (filters.search) {
+      query = query.ilike('title', `%${filters.search}%`);
+    }
+
+    if (filters.dueDateFrom) {
+      query = query.gte('due_date', filters.dueDateFrom);
+    }
+
+    if (filters.dueDateTo) {
+      query = query.lte('due_date', filters.dueDateTo);
+    }
+
+    const ascending = filters.sortOrder !== 'desc';
+
+    if (filters.sort === 'createdAt') {
+      query = query.order('created_at', { ascending });
+    } else {
+      query = query
+        .order('due_date', { ascending, nullsFirst: true })
+        .order('created_at', { ascending: false });
+    }
+
+    const { data, error, count } = await query.range(from, to);
+
+    if (error) {
+      throw new TaskServiceError(error.message, 500, 'TASK_LIST_FAILED');
+    }
+
+    const rows = (data ?? []) as TaskRecord[];
+    const tasks = rows.map(serializeTask);
+    const total = count ?? tasks.length;
+
+    return {
+      data: tasks,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    };
+  }
+
   public async getTaskById(taskId: string, actor: TaskActor): Promise<TaskDto> {
     const task = await this.fetchTaskRecord(taskId);
     ensureActorCanViewTask(task, actor);
