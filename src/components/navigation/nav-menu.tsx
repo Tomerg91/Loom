@@ -19,14 +19,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { StableImage } from '@/components/layout/layout-stabilizer';
-import { 
+import {
   ClipboardList,
   Home,
-  Calendar, 
-  Users, 
-  MessageSquare, 
-  BarChart3, 
-  Settings, 
+  Calendar,
+  Users,
+  MessageSquare,
+  BarChart3,
+  Settings,
   User,
   LogOut,
   Shield,
@@ -35,7 +35,8 @@ import {
   FileText,
   TrendingUp,
   Menu,
-  X
+  X,
+  FolderOpen
 } from 'lucide-react';
 import { createClientAuthService } from '@/lib/auth/client-auth';
 import { NotificationCenter } from '@/components/notifications/notification-center';
@@ -90,6 +91,7 @@ export function NavMenu() {
 
   const coachItems: NavItem[] = [
     { label: t('clients'), href: '/coach/clients', icon: Users },
+    { label: t('resources'), href: '/coach/resources', icon: FolderOpen },
     { label: t('notes'), href: '/coach/notes', icon: FileText },
     { label: t('availability'), href: '/coach/availability', icon: Clock },
     { label: t('insights'), href: '/coach/insights', icon: TrendingUp },
@@ -97,6 +99,7 @@ export function NavMenu() {
 
   const clientItems: NavItem[] = [
     { label: t('coaches'), href: '/client/coaches', icon: Users },
+    { label: t('resources'), href: '/client/resources', icon: FolderOpen },
     { label: t('reflections'), href: '/client/reflections', icon: BookOpen },
     { label: t('progress'), href: '/client/progress', icon: TrendingUp },
     { label: t('book'), href: '/client/book', icon: Calendar },
