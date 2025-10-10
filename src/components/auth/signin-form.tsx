@@ -39,10 +39,17 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
 
       if (result.error) {
         setError(result.error);
+        setIsLoading(false);
         return;
       }
 
+      console.log('✅ Sign-in successful:', {
+        userId: result.user?.id,
+        mfaEnabled: result.user?.mfaEnabled
+      });
+
       const targetPath = resolveRedirect(locale, redirectTo || '/dashboard');
+      console.log('🎯 Target path resolved:', targetPath, { locale, redirectTo });
 
       // Check if MFA is required
       if (result.user?.mfaEnabled) {
@@ -51,14 +58,41 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
           redirectTo: targetPath,
         });
         const mfaPath = resolveAuthPath(locale, `/auth/mfa-verify?${query.toString()}`);
-        router.push(mfaPath);
+        console.log('🔐 MFA required, navigating to:', mfaPath);
+
+        // Await navigation with timeout fallback
+        try {
+          await Promise.race([
+            router.push(mfaPath),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Navigation timeout')), 5000)
+            )
+          ]);
+          console.log('✅ MFA navigation initiated');
+        } catch (navError) {
+          console.error('❌ Navigation failed, using fallback:', navError);
+          window.location.href = mfaPath;
+        }
       } else {
-        // Auth state is now updated, safe to redirect
-        router.push(targetPath);
+        console.log('➡️ Navigating to dashboard');
+
+        // Await navigation with timeout fallback
+        try {
+          await Promise.race([
+            router.push(targetPath),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Navigation timeout')), 5000)
+            )
+          ]);
+          console.log('✅ Navigation initiated');
+        } catch (navError) {
+          console.error('❌ Navigation failed, using fallback:', navError);
+          window.location.href = targetPath;
+        }
       }
+      // Loading state stays true during navigation
     } catch (err) {
       setError(err instanceof Error ? err.message : t('signin.error'));
-    } finally {
       setIsLoading(false);
     }
   };

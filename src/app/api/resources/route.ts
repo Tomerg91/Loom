@@ -113,6 +113,10 @@ export async function GET(request: NextRequest) {
  * }
  */
 export async function POST(request: NextRequest) {
+  let errorMetadata: { category?: string; hasFile: boolean } = {
+    hasFile: false,
+  };
+
   try {
     // Get authenticated user
     const supabase = await createClient();
