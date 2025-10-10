@@ -6,6 +6,7 @@
  */
 export {
   taskKeys,
+  useClientTaskList,
   useCreateProgressUpdate,
   useCreateTask,
   useTask,

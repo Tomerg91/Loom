@@ -182,6 +182,14 @@ export const fetchTaskList = async (
   return taskRequest<TaskListResponse>(url);
 };
 
+export const fetchClientTaskList = async (
+  filters: TaskListFilters = {}
+): Promise<TaskListResponse> => {
+  const query = buildTaskListQuery(filters);
+  const url = query ? `/api/client/tasks?${query}` : '/api/client/tasks';
+  return taskRequest<TaskListResponse>(url);
+};
+
 export const fetchTask = async (taskId: string): Promise<TaskDto> => {
   if (!taskId) {
     throw new TaskApiError('Task ID is required', 400, 'TASK_ID_REQUIRED');

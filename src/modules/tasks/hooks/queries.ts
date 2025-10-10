@@ -11,6 +11,7 @@ import {
 import {
   createProgressUpdate,
   createTask,
+  fetchClientTaskList,
   fetchTask,
   fetchTaskList,
   updateTask,
@@ -86,6 +87,10 @@ export const taskKeys = {
   lists: () => [...taskKeys.all, 'list'] as const,
   list: (filters: NormalizedTaskListFilters) =>
     [...taskKeys.lists(), { filters }] as const,
+  client: () => [...taskKeys.all, 'client'] as const,
+  clientLists: () => [...taskKeys.client(), 'list'] as const,
+  clientList: (filters: NormalizedTaskListFilters) =>
+    [...taskKeys.clientLists(), { filters }] as const,
   details: () => [...taskKeys.all, 'detail'] as const,
   detail: (taskId: string) => [...taskKeys.details(), taskId] as const,
   instances: (taskId: string) =>
@@ -103,6 +108,25 @@ export const useTaskList = (
   return useQuery({
     queryKey: taskKeys.list(normalized),
     queryFn: () => fetchTaskList(filters),
+    staleTime: 60 * 1000,
+    ...options,
+  });
+};
+
+export const useClientTaskList = (
+  filters: TaskListFilters = {},
+  options?: TaskListQueryOptions
+) => {
+  const normalized = normalizeFilters(filters);
+
+  return useQuery({
+    queryKey: taskKeys.clientList(normalized),
+    queryFn: () => {
+      if (typeof fetchClientTaskList !== 'function') {
+        throw new Error('fetchClientTaskList is not defined or not a function. Please ensure it is correctly exported from ../api.');
+      }
+      return fetchClientTaskList(filters);
+    },
     staleTime: 60 * 1000,
     ...options,
   });
@@ -173,6 +197,7 @@ export const useCreateProgressUpdate = (
           queryKey: taskKeys.progress(variables.taskId, variables.instanceId),
         }),
         queryClient.invalidateQueries({ queryKey: taskKeys.lists() }),
+        queryClient.invalidateQueries({ queryKey: taskKeys.clientLists() }),
       ]);
 
       await onSuccess?.(progress, variables, context);
