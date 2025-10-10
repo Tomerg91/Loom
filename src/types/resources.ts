@@ -20,17 +20,106 @@
 // ============================================================================
 
 /**
+ * Canonical resource category values used throughout the application
+ */
+export const RESOURCE_CATEGORY_VALUES = [
+  'worksheet',
+  'video',
+  'audio',
+  'article',
+  'template',
+  'guide',
+  'other',
+] as const;
+
+/**
  * Categories for organizing library resources
  * These align with common coaching use cases
  */
-export type ResourceCategory =
-  | 'worksheet' // Fillable worksheets and exercises
-  | 'video' // Video content
-  | 'audio' // Audio lessons or meditations
-  | 'article' // Articles and reading materials
-  | 'template' // Document templates
-  | 'guide' // Step-by-step guides
-  | 'other'; // Uncategorized
+export type ResourceCategory = (typeof RESOURCE_CATEGORY_VALUES)[number];
+
+/**
+ * Legacy category values that were previously stored in the database
+ * These map to the canonical singular values defined above.
+ */
+export const LEGACY_RESOURCE_CATEGORY_VALUES = [
+  'worksheets',
+  'videos',
+  'audios',
+  'articles',
+  'templates',
+  'guides',
+  'resources',
+  'others',
+] as const;
+
+export type LegacyResourceCategory =
+  (typeof LEGACY_RESOURCE_CATEGORY_VALUES)[number];
+
+export const LEGACY_RESOURCE_CATEGORY_MAP: Record<
+  LegacyResourceCategory,
+  ResourceCategory
+> = {
+  worksheets: 'worksheet',
+  videos: 'video',
+  audios: 'audio',
+  articles: 'article',
+  templates: 'template',
+  guides: 'guide',
+  resources: 'other',
+  others: 'other',
+};
+
+/**
+ * Determine if a string is one of the canonical resource categories.
+ */
+export function isResourceCategory(value: string): value is ResourceCategory {
+  return RESOURCE_CATEGORY_VALUES.includes(value as ResourceCategory);
+}
+
+/**
+ * Determine if a string is one of the legacy resource categories.
+ */
+export function isLegacyResourceCategory(
+  value: string
+): value is LegacyResourceCategory {
+  return (LEGACY_RESOURCE_CATEGORY_VALUES as readonly string[]).includes(value);
+}
+
+/**
+ * Normalize a raw category string (from the database or user input) to a
+ * canonical `ResourceCategory` value. Unknown values are coerced to `other`.
+ */
+export function normalizeResourceCategory(category: string): ResourceCategory {
+  if (isResourceCategory(category)) {
+    return category as ResourceCategory;
+  }
+
+  if (isLegacyResourceCategory(category)) {
+    const legacyCategory = LEGACY_RESOURCE_CATEGORY_MAP[category];
+    return legacyCategory;
+  }
+
+  return 'other';
+}
+
+/**
+ * Get all known synonyms (legacy + canonical) for a category. Useful for
+ * database queries that still store legacy values.
+ */
+export function getResourceCategorySynonyms(
+  category: ResourceCategory
+): string[] {
+  const synonyms: string[] = [category];
+
+  for (const legacy of LEGACY_RESOURCE_CATEGORY_VALUES) {
+    if (LEGACY_RESOURCE_CATEGORY_MAP[legacy] === category) {
+      synonyms.push(legacy);
+    }
+  }
+
+  return synonyms;
+}
 
 /**
  * Human-readable labels for resource categories
