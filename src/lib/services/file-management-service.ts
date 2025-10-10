@@ -705,11 +705,10 @@ class FileManagementService {
       // Update share access count if applicable
       await supabase
         .from('file_shares')
-        .update({
-          last_accessed_at: new Date().toISOString(),
-          access_count: share.access_count + 1,
-          access_count: share.access_count + 1
-        })
+          .update({
+            last_accessed_at: new Date().toISOString(),
+            access_count: share.access_count + 1,
+          })
         .eq('file_id', fileId)
         .eq('shared_with', userId);
     }
@@ -785,9 +784,8 @@ class FileManagementService {
       downloadCount: row.download_count,
       createdAt: row.created_at || new Date().toISOString(),
       updatedAt: row.updated_at || new Date().toISOString(),
-      storageUrl: publicUrl.data.publicUrl,
-      storageUrl: publicUrl.data.publicUrl
-    };
+        storageUrl: publicUrl.data.publicUrl,
+      };
   };
 
   private mapFileUploadRowWithJoins = async (

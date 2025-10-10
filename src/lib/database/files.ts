@@ -1,4 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
+import {
+  getResourceCategorySynonyms,
+  isLegacyResourceCategory,
+  isResourceCategory,
+  normalizeResourceCategory,
+} from '@/types/resources';
 import type { Database } from '@/types/supabase';
 
 type FileUpload = Database['public']['Tables']['file_uploads']['Row'];
@@ -119,7 +125,16 @@ class FileDatabase {
     }
 
     if (filters.category) {
-      query = query.eq('file_category', filters.category);
+      if (
+        isResourceCategory(filters.category) ||
+        isLegacyResourceCategory(filters.category)
+      ) {
+        const normalizedCategory = normalizeResourceCategory(filters.category);
+        const synonyms = getResourceCategorySynonyms(normalizedCategory);
+        query = query.in('file_category', synonyms);
+      } else {
+        query = query.eq('file_category', filters.category);
+      }
     }
 
     if (filters.isShared !== undefined) {
@@ -351,10 +366,20 @@ class FileDatabase {
       throw new Error(`Failed to get user storage usage: ${error.message}`);
     }
 
+    const usage = (data || {
+      total_files: 0,
+      total_size_bytes: 0,
+      total_size_mb: 0,
+    }) as {
+      total_files: number;
+      total_size_bytes: number;
+      total_size_mb: number;
+    };
+
     return {
-      totalFiles: data.total_files,
-      totalSizeBytes: data.total_size_bytes,
-      totalSizeMB: data.total_size_mb,
+      totalFiles: usage.total_files,
+      totalSizeBytes: usage.total_size_bytes,
+      totalSizeMB: usage.total_size_mb,
     };
   }
 

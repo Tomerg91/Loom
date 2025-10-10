@@ -20,14 +20,16 @@ import type {
   ResourceCollection,
   ResourceCollectionItem,
   ResourceLibrarySettings,
-  ResourceClientProgress,
   ResourceAnalytics,
   LibraryAnalytics,
   ResourceListParams,
   ResourceShare,
   ClientResourceItem,
   StorageUsage,
-  ResourceCategory,
+} from '@/types/resources';
+import {
+  getResourceCategorySynonyms,
+  normalizeResourceCategory,
 } from '@/types/resources';
 
 // ============================================================================
@@ -55,7 +57,9 @@ export async function getCoachLibraryResources(
 
   // Apply category filter
   if (filters?.category) {
-    query = query.eq('file_category', filters.category);
+    const normalizedCategory = normalizeResourceCategory(filters.category);
+    const synonyms = getResourceCategorySynonyms(normalizedCategory);
+    query = query.in('file_category', synonyms);
   }
 
   // Apply tags filter (overlaps = has any of the specified tags)
@@ -150,13 +154,15 @@ export async function getClientSharedResources(
   // Get file shares for this client
   const sharesQuery = supabase
     .from('file_shares')
-    .select(`
+    .select(
+      `
       *,
       file_uploads!file_shares_file_id_fkey(
         *,
         users!file_uploads_user_id_fkey(first_name, last_name, user_metadata)
       )
-    `)
+    `
+    )
     .eq('shared_with', clientId)
     .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString());
 
@@ -178,13 +184,13 @@ export async function getClientSharedResources(
     .eq('client_id', clientId)
     .in('file_id', resourceIds);
 
-  const progressMap = new Map(
-    progressData?.map(p => [p.file_id, p]) || []
-  );
+  const progressMap = new Map(progressData?.map(p => [p.file_id, p]) || []);
 
   // Map to ClientResourceItem
   let resources: ClientResourceItem[] = shares
-    .filter(share => share.file_uploads && share.file_uploads.is_library_resource)
+    .filter(
+      share => share.file_uploads && share.file_uploads.is_library_resource
+    )
     .map(share => {
       const file = share.file_uploads;
       const user = file.users;
@@ -194,23 +200,28 @@ export async function getClientSharedResources(
         ...mapFileUploadToResource(file),
         sharedBy: {
           id: file.user_id,
-          name: user ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Coach',
+          name: user
+            ? `${user.first_name} ${user.last_name || ''}`.trim()
+            : 'Coach',
           role: user?.user_metadata?.role || 'coach',
         },
         permission: share.permission_type,
         expiresAt: share.expires_at,
-        progress: progress ? {
-          viewed: !!progress.viewed_at,
-          completed: !!progress.completed_at,
-          viewedAt: progress.viewed_at,
-          completedAt: progress.completed_at,
-        } : undefined,
+        progress: progress
+          ? {
+              viewed: !!progress.viewed_at,
+              completed: !!progress.completed_at,
+              viewedAt: progress.viewed_at,
+              completedAt: progress.completed_at,
+            }
+          : undefined,
       };
     });
 
   // Apply filters
   if (filters?.category) {
-    resources = resources.filter(r => r.category === filters.category);
+    const normalizedCategory = normalizeResourceCategory(filters.category);
+    resources = resources.filter(r => r.category === normalizedCategory);
   }
 
   if (filters?.tags && filters.tags.length > 0) {
@@ -221,9 +232,10 @@ export async function getClientSharedResources(
 
   if (filters?.search) {
     const searchLower = filters.search.toLowerCase();
-    resources = resources.filter(r =>
-      r.filename.toLowerCase().includes(searchLower) ||
-      r.description?.toLowerCase().includes(searchLower)
+    resources = resources.filter(
+      r =>
+        r.filename.toLowerCase().includes(searchLower) ||
+        r.description?.toLowerCase().includes(searchLower)
     );
   }
 
@@ -231,8 +243,22 @@ export async function getClientSharedResources(
   const sortBy = filters?.sortBy || 'created_at';
   const sortOrder = filters?.sortOrder || 'desc';
   resources.sort((a, b) => {
-    const aVal = a[sortBy as keyof ClientResourceItem];
-    const bVal = b[sortBy as keyof ClientResourceItem];
+    const key = sortBy as keyof ClientResourceItem;
+    const aVal = a[key];
+    const bVal = b[key];
+
+    if (aVal == null && bVal == null) {
+      return 0;
+    }
+
+    if (aVal == null) {
+      return sortOrder === 'asc' ? 1 : -1;
+    }
+
+    if (bVal == null) {
+      return sortOrder === 'asc' ? -1 : 1;
+    }
+
     const comparison = aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
     return sortOrder === 'asc' ? comparison : -comparison;
   });
@@ -272,7 +298,9 @@ export async function shareResourceWithAllClients(
     return [];
   }
 
-  const uniqueClientIds = [...new Set(sessions.map(s => s.client_id).filter(Boolean))];
+  const uniqueClientIds = [
+    ...new Set(sessions.map(s => s.client_id).filter(Boolean)),
+  ];
 
   // Create share records for each client
   const shares = uniqueClientIds.map(clientId => ({
@@ -299,7 +327,7 @@ export async function shareResourceWithAllClients(
     .from('file_uploads')
     .update({
       shared_with_all_clients: true,
-      is_shared: true
+      is_shared: true,
     })
     .eq('id', resourceId);
 
@@ -312,15 +340,19 @@ export async function shareResourceWithAllClients(
  * @param resourceId - Resource ID
  * @returns Array of shares
  */
-export async function getResourceShares(resourceId: string): Promise<ResourceShare[]> {
+export async function getResourceShares(
+  resourceId: string
+): Promise<ResourceShare[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('file_shares')
-    .select(`
+    .select(
+      `
       *,
       users!file_shares_shared_with_fkey(id, first_name, last_name, email)
-    `)
+    `
+    )
     .eq('file_id', resourceId)
     .order('created_at', { ascending: false });
 
@@ -338,11 +370,13 @@ export async function getResourceShares(resourceId: string): Promise<ResourceSha
     accessCount: share.access_count,
     lastAccessedAt: share.last_accessed_at,
     createdAt: share.created_at,
-    sharedWithUser: share.users ? {
-      id: share.users.id,
-      name: `${share.users.first_name} ${share.users.last_name || ''}`.trim(),
-      email: share.users.email,
-    } : undefined,
+    sharedWithUser: share.users
+      ? {
+          id: share.users.id,
+          name: `${share.users.first_name} ${share.users.last_name || ''}`.trim(),
+          email: share.users.email,
+        }
+      : undefined,
   }));
 }
 
@@ -365,10 +399,12 @@ export async function getCoachCollections(
 
   let query = supabase
     .from('resource_collections')
-    .select(`
+    .select(
+      `
       *,
       resource_collection_items(count)
-    `)
+    `
+    )
     .eq('coach_id', coachId);
 
   if (!includeArchived) {
@@ -425,10 +461,12 @@ export async function getCollectionWithResources(
   // Get collection items with file details
   const { data: items, error: itemsError } = await supabase
     .from('resource_collection_items')
-    .select(`
+    .select(
+      `
       *,
       file_uploads!resource_collection_items_file_id_fkey(*)
-    `)
+    `
+    )
     .eq('collection_id', collectionId)
     .order('sort_order', { ascending: true });
 
@@ -436,9 +474,10 @@ export async function getCollectionWithResources(
     throw new Error(`Failed to fetch collection items: ${itemsError.message}`);
   }
 
-  const resources = items
-    ?.filter(item => item.file_uploads)
-    .map(item => mapFileUploadToResource(item.file_uploads)) || [];
+  const resources =
+    items
+      ?.filter(item => item.file_uploads)
+      .map(item => mapFileUploadToResource(item.file_uploads)) || [];
 
   return {
     id: collection.id,
@@ -480,9 +519,8 @@ export async function createCollection(
     .order('sort_order', { ascending: false })
     .limit(1);
 
-  const nextSortOrder = existing && existing.length > 0
-    ? existing[0].sort_order + 1
-    : 0;
+  const nextSortOrder =
+    existing && existing.length > 0 ? existing[0].sort_order + 1 : 0;
 
   const { data, error } = await supabase
     .from('resource_collections')
@@ -535,9 +573,8 @@ export async function addResourcesToCollection(
     .order('sort_order', { ascending: false })
     .limit(1);
 
-  let nextSortOrder = existing && existing.length > 0
-    ? existing[0].sort_order + 1
-    : 0;
+  let nextSortOrder =
+    existing && existing.length > 0 ? existing[0].sort_order + 1 : 0;
 
   const items = resourceIds.map(fileId => ({
     collection_id: collectionId,
@@ -582,7 +619,11 @@ export async function trackResourceProgress(
   const supabase = await createClient();
 
   const now = new Date().toISOString();
-  const updates: any = {
+  const updates: {
+    last_accessed_at: string;
+    viewed_at?: string;
+    completed_at?: string;
+  } = {
     last_accessed_at: now,
   };
 
@@ -593,17 +634,18 @@ export async function trackResourceProgress(
   }
 
   // Upsert progress record
-  const { error } = await supabase
-    .from('resource_client_progress')
-    .upsert({
+  const { error } = await supabase.from('resource_client_progress').upsert(
+    {
       file_id: resourceId,
       client_id: clientId,
       ...updates,
       access_count: 1, // Will be incremented by trigger
-    }, {
+    },
+    {
       onConflict: 'file_id,client_id',
       ignoreDuplicates: false,
-    });
+    }
+  );
 
   if (error) {
     throw new Error(`Failed to track progress: ${error.message}`);
@@ -650,10 +692,12 @@ export async function getResourceAnalytics(
   // Get progress data for all clients
   const { data: progressData } = await supabase
     .from('resource_client_progress')
-    .select(`
+    .select(
+      `
       *,
       users!resource_client_progress_client_id_fkey(id, first_name, last_name, email)
-    `)
+    `
+    )
     .eq('file_id', resourceId);
 
   // Get share data
@@ -666,10 +710,10 @@ export async function getResourceAnalytics(
   const uniqueViewers = new Set(
     progressData?.filter(p => p.viewed_at).map(p => p.client_id) || []
   ).size;
-  const totalCompletions = progressData?.filter(p => p.completed_at).length || 0;
-  const completionRate = totalShares > 0
-    ? Math.round((totalCompletions / totalShares) * 100)
-    : 0;
+  const totalCompletions =
+    progressData?.filter(p => p.completed_at).length || 0;
+  const completionRate =
+    totalShares > 0 ? Math.round((totalCompletions / totalShares) * 100) : 0;
 
   return {
     resourceId: resource.id,
@@ -701,7 +745,9 @@ export async function getResourceAnalytics(
  * @param coachId - Coach ID
  * @returns Library-wide analytics
  */
-export async function getLibraryAnalytics(coachId: string): Promise<LibraryAnalytics> {
+export async function getLibraryAnalytics(
+  coachId: string
+): Promise<LibraryAnalytics> {
   const supabase = await createClient();
 
   // Get all library resources
@@ -725,8 +771,14 @@ export async function getLibraryAnalytics(coachId: string): Promise<LibraryAnaly
   }
 
   const totalViews = resources.reduce((sum, r) => sum + (r.view_count || 0), 0);
-  const totalDownloads = resources.reduce((sum, r) => sum + (r.download_count || 0), 0);
-  const totalCompletions = resources.reduce((sum, r) => sum + (r.completion_count || 0), 0);
+  const totalDownloads = resources.reduce(
+    (sum, r) => sum + (r.download_count || 0),
+    0
+  );
+  const totalCompletions = resources.reduce(
+    (sum, r) => sum + (r.completion_count || 0),
+    0
+  );
 
   // Get active clients (those with progress records)
   const resourceIds = resources.map(r => r.id);
@@ -738,15 +790,16 @@ export async function getLibraryAnalytics(coachId: string): Promise<LibraryAnaly
   const activeClients = new Set(progressData?.map(p => p.client_id) || []).size;
 
   // Calculate average completion rate
-  const avgCompletionRate = resources.length > 0
-    ? Math.round(
-        resources.reduce((sum, r) => {
-          const shares = r.share_count || 0;
-          const completions = r.completion_count || 0;
-          return sum + (shares > 0 ? (completions / shares) * 100 : 0);
-        }, 0) / resources.length
-      )
-    : 0;
+  const avgCompletionRate =
+    resources.length > 0
+      ? Math.round(
+          resources.reduce((sum, r) => {
+            const shares = r.share_count || 0;
+            const completions = r.completion_count || 0;
+            return sum + (shares > 0 ? (completions / shares) * 100 : 0);
+          }, 0) / resources.length
+        )
+      : 0;
 
   // Top resources
   const topResources = [...resources]
@@ -755,7 +808,7 @@ export async function getLibraryAnalytics(coachId: string): Promise<LibraryAnaly
     .map(r => ({
       id: r.id,
       filename: r.filename,
-      category: r.file_category as ResourceCategory,
+      category: normalizeResourceCategory(r.file_category),
       viewCount: r.view_count || 0,
       downloadCount: r.download_count || 0,
       completionCount: r.completion_count || 0,
@@ -791,11 +844,13 @@ export async function getOrCreateLibrarySettings(
   const supabase = await createClient();
 
   // Try to get existing settings
-  let { data: settings, error } = await supabase
+  const { data: initialSettings, error } = await supabase
     .from('resource_library_settings')
     .select('*')
     .eq('coach_id', coachId)
     .single();
+
+  let settings = initialSettings;
 
   // Create default settings if none exist
   if (error || !settings) {
@@ -812,7 +867,9 @@ export async function getOrCreateLibrarySettings(
       .single();
 
     if (createError) {
-      throw new Error(`Failed to create library settings: ${createError.message}`);
+      throw new Error(
+        `Failed to create library settings: ${createError.message}`
+      );
     }
 
     settings = newSettings;
@@ -835,7 +892,9 @@ export async function getOrCreateLibrarySettings(
  * @param coachId - Coach ID
  * @returns Storage usage summary
  */
-export async function getCoachStorageUsage(coachId: string): Promise<StorageUsage> {
+export async function getCoachStorageUsage(
+  coachId: string
+): Promise<StorageUsage> {
   const supabase = await createClient();
 
   const { data } = await supabase.rpc('get_user_storage_usage', {
@@ -861,10 +920,32 @@ export async function getCoachStorageUsage(coachId: string): Promise<StorageUsag
 // Helper Functions
 // ============================================================================
 
+type FileUploadRow = {
+  id: string;
+  user_id: string;
+  filename: string;
+  original_filename: string;
+  file_type: string;
+  file_size: number;
+  storage_path: string;
+  bucket_name: string;
+  is_library_resource: boolean;
+  is_public?: boolean | null;
+  shared_with_all_clients?: boolean | null;
+  file_category: string;
+  tags?: string[] | null;
+  description?: string | null;
+  view_count?: number | null;
+  download_count?: number | null;
+  completion_count?: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
 /**
  * Map database file_uploads row to ResourceLibraryItem
  */
-function mapFileUploadToResource(file: any): ResourceLibraryItem {
+function mapFileUploadToResource(file: FileUploadRow): ResourceLibraryItem {
   return {
     id: file.id,
     userId: file.user_id,
@@ -877,9 +958,9 @@ function mapFileUploadToResource(file: any): ResourceLibraryItem {
     isLibraryResource: file.is_library_resource,
     isPublic: file.is_public || false,
     sharedWithAllClients: file.shared_with_all_clients || false,
-    category: file.file_category as ResourceCategory,
+    category: normalizeResourceCategory(file.file_category),
     tags: file.tags || [],
-    description: file.description,
+    description: file.description ?? null,
     viewCount: file.view_count || 0,
     downloadCount: file.download_count || 0,
     completionCount: file.completion_count || 0,
@@ -891,6 +972,8 @@ function mapFileUploadToResource(file: any): ResourceLibraryItem {
 /**
  * Map array of file_uploads to ResourceLibraryItem array
  */
-function mapFileUploadsToResources(files: any[]): ResourceLibraryItem[] {
+function mapFileUploadsToResources(
+  files: FileUploadRow[]
+): ResourceLibraryItem[] {
   return files.map(mapFileUploadToResource);
 }

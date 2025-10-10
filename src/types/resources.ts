@@ -20,28 +20,117 @@
 // ============================================================================
 
 /**
+ * Canonical resource category values used throughout the application
+ */
+export const RESOURCE_CATEGORY_VALUES = [
+  'worksheet',
+  'video',
+  'audio',
+  'article',
+  'template',
+  'guide',
+  'other',
+] as const;
+
+/**
  * Categories for organizing library resources
  * These align with common coaching use cases
  */
-export type ResourceCategory =
-  | 'onboarding'    // New client orientation materials
-  | 'worksheets'    // Fillable worksheets and exercises
-  | 'assessments'   // Self-assessment tools
-  | 'videos'        // Video content
-  | 'articles'      // Articles and reading materials
-  | 'templates'     // Document templates
-  | 'other';        // Uncategorized
+export type ResourceCategory = (typeof RESOURCE_CATEGORY_VALUES)[number];
+
+/**
+ * Legacy category values that were previously stored in the database
+ * These map to the canonical singular values defined above.
+ */
+export const LEGACY_RESOURCE_CATEGORY_VALUES = [
+  'worksheets',
+  'videos',
+  'audios',
+  'articles',
+  'templates',
+  'guides',
+  'resources',
+  'others',
+] as const;
+
+export type LegacyResourceCategory =
+  (typeof LEGACY_RESOURCE_CATEGORY_VALUES)[number];
+
+export const LEGACY_RESOURCE_CATEGORY_MAP: Record<
+  LegacyResourceCategory,
+  ResourceCategory
+> = {
+  worksheets: 'worksheet',
+  videos: 'video',
+  audios: 'audio',
+  articles: 'article',
+  templates: 'template',
+  guides: 'guide',
+  resources: 'other',
+  others: 'other',
+};
+
+/**
+ * Determine if a string is one of the canonical resource categories.
+ */
+export function isResourceCategory(value: string): value is ResourceCategory {
+  return RESOURCE_CATEGORY_VALUES.includes(value as ResourceCategory);
+}
+
+/**
+ * Determine if a string is one of the legacy resource categories.
+ */
+export function isLegacyResourceCategory(
+  value: string
+): value is LegacyResourceCategory {
+  return (LEGACY_RESOURCE_CATEGORY_VALUES as readonly string[]).includes(value);
+}
+
+/**
+ * Normalize a raw category string (from the database or user input) to a
+ * canonical `ResourceCategory` value. Unknown values are coerced to `other`.
+ */
+export function normalizeResourceCategory(category: string): ResourceCategory {
+  if (isResourceCategory(category)) {
+    return category as ResourceCategory;
+  }
+
+  if (isLegacyResourceCategory(category)) {
+    const legacyCategory = LEGACY_RESOURCE_CATEGORY_MAP[category];
+    return legacyCategory;
+  }
+
+  return 'other';
+}
+
+/**
+ * Get all known synonyms (legacy + canonical) for a category. Useful for
+ * database queries that still store legacy values.
+ */
+export function getResourceCategorySynonyms(
+  category: ResourceCategory
+): string[] {
+  const synonyms: string[] = [category];
+
+  for (const legacy of LEGACY_RESOURCE_CATEGORY_VALUES) {
+    if (LEGACY_RESOURCE_CATEGORY_MAP[legacy] === category) {
+      synonyms.push(legacy);
+    }
+  }
+
+  return synonyms;
+}
 
 /**
  * Human-readable labels for resource categories
  */
 export const RESOURCE_CATEGORY_LABELS: Record<ResourceCategory, string> = {
-  onboarding: 'Onboarding',
-  worksheets: 'Worksheets',
-  assessments: 'Assessments',
-  videos: 'Videos',
-  articles: 'Articles',
-  templates: 'Templates',
+  worksheet: 'Worksheet',
+  video: 'Video',
+  audio: 'Audio',
+  article: 'Article',
+  template: 'Template',
+  guide: 'Guide',
   other: 'Other',
 };
 
@@ -49,12 +138,12 @@ export const RESOURCE_CATEGORY_LABELS: Record<ResourceCategory, string> = {
  * Icons for resource categories (Lucide React icon names)
  */
 export const RESOURCE_CATEGORY_ICONS: Record<ResourceCategory, string> = {
-  onboarding: 'UserPlus',
-  worksheets: 'FileText',
-  assessments: 'ClipboardList',
-  videos: 'Video',
-  articles: 'BookOpen',
-  templates: 'FileCode',
+  worksheet: 'FileText',
+  video: 'Video',
+  audio: 'Music',
+  article: 'BookOpen',
+  template: 'FileCode',
+  guide: 'Compass',
   other: 'File',
 };
 
@@ -403,7 +492,12 @@ export interface ResourceListParams {
   search?: string;
   limit?: number;
   offset?: number;
-  sortBy?: 'created_at' | 'filename' | 'file_size' | 'view_count' | 'download_count';
+  sortBy?:
+    | 'created_at'
+    | 'filename'
+    | 'file_size'
+    | 'view_count'
+    | 'download_count';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -502,7 +596,13 @@ export interface ResourceFilters {
  * Sort configuration
  */
 export interface ResourceSort {
-  field: 'created_at' | 'filename' | 'file_size' | 'view_count' | 'download_count' | 'completion_count';
+  field:
+    | 'created_at'
+    | 'filename'
+    | 'file_size'
+    | 'view_count'
+    | 'download_count'
+    | 'completion_count';
   order: 'asc' | 'desc';
 }
 

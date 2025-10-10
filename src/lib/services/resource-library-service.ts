@@ -30,6 +30,7 @@ import type {
   StorageUsage,
   BulkShareResponse,
 } from '@/types/resources';
+import { normalizeResourceCategory } from '@/types/resources';
 
 /**
  * Resource Library Service Class
@@ -203,7 +204,7 @@ class ResourceLibraryService {
       }
 
       if (updates.category) {
-        updateData.file_category = updates.category;
+        updateData.file_category = normalizeResourceCategory(updates.category);
       }
 
       if (updates.tags) {
