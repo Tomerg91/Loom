@@ -117,9 +117,11 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
         setUser(result.user);
       }
       return result;
-    } finally {
+    } catch (error) {
       setLoading(false);
+      throw error;
     }
+    // Don't reset loading here - let the component control it after navigation
   }, [authService, setUser, setLoading]);
 
   const signUp = useCallback(async (data: {
