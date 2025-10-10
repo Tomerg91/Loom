@@ -9,7 +9,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getResourceById, trackResourceProgress } from '@/lib/database/resources';
-import { trackResourceProgress } from '@/lib/database/resources';
 import { createClient } from '@/lib/supabase/server';
 import { sanitizeError, unauthorizedError, validationError } from '@/lib/utils/api-errors';
 import { trackProgressSchema, validateData } from '@/lib/validations/resources';
