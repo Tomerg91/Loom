@@ -1,17 +1,12 @@
-'use client';
-
+// Server redirect to localized route to ensure proper providers
 export const dynamic = 'force-dynamic';
+export const revalidate = false;
 
-import { ClientOnly } from '@/components/wrappers/client-only';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { ClientTaskBoard } from '@/modules/tasks/components';
+import { redirect } from 'next/navigation';
+
+import { routing } from '@/i18n/routing';
 
 export default function ClientTasksPage() {
-  return (
-    <ClientOnly fallback={<LoadingSpinner />}>
-      <div className="space-y-6 py-6">
-        <ClientTaskBoard />
-      </div>
-    </ClientOnly>
-  );
+  const locale = routing.defaultLocale;
+  redirect(`/${locale}/client/tasks`);
 }
