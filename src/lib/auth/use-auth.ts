@@ -115,6 +115,8 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
       const result = await authService.signIn({ email, password });
       if (result.user) {
         setUser(result.user);
+      } else if (result.error) {
+        setLoading(false);
       }
       return result;
     } catch (error) {

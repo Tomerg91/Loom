@@ -113,6 +113,10 @@ export async function GET(request: NextRequest) {
  * }
  */
 export async function POST(request: NextRequest) {
+  let errorMetadata: { category?: string; hasFile: boolean } = {
+    hasFile: false,
+  };
+
   try {
     // Get authenticated user
     const supabase = await createClient();
@@ -134,6 +138,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const category = formData.get('category') as string;
+    errorMetadata = {
+      category: category || undefined,
+      hasFile: !!file,
+    };
     const tagsString = formData.get('tags') as string;
     const description = formData.get('description') as string | null;
     const addToCollection = formData.get('addToCollection') as string | null;
@@ -199,7 +207,7 @@ export async function POST(request: NextRequest) {
     const { response, statusCode } = sanitizeError(error, {
       context: 'POST /api/resources',
       userMessage: 'Failed to upload resource. Please try again.',
-      metadata: { category, hasFile: !!file },
+      metadata: errorMetadata,
     });
     return NextResponse.json(response, { status: statusCode });
   }
