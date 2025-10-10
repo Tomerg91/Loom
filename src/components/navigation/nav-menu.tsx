@@ -36,7 +36,8 @@ import {
   TrendingUp,
   Menu,
   X,
-  FolderOpen
+  FolderOpen,
+  CheckSquare
 } from 'lucide-react';
 import { createClientAuthService } from '@/lib/auth/client-auth';
 import { NotificationCenter } from '@/components/notifications/notification-center';
@@ -91,6 +92,7 @@ export function NavMenu() {
 
   const coachItems: NavItem[] = [
     { label: t('clients'), href: '/coach/clients', icon: Users },
+    { label: t('tasks'), href: '/coach/tasks', icon: CheckSquare },
     { label: t('resources'), href: '/coach/resources', icon: FolderOpen },
     { label: t('notes'), href: '/coach/notes', icon: FileText },
     { label: t('availability'), href: '/coach/availability', icon: Clock },
@@ -101,6 +103,7 @@ export function NavMenu() {
     { label: t('coaches'), href: '/client/coaches', icon: Users },
     { label: t('resources'), href: '/client/resources', icon: FolderOpen },
     { label: t('reflections'), href: '/client/reflections', icon: BookOpen },
+    { label: t('tasks'), href: '/client/tasks', icon: CheckSquare },
     { label: t('progress'), href: '/client/progress', icon: TrendingUp },
     { label: t('book'), href: '/client/book', icon: Calendar },
   ];
