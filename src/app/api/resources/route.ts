@@ -11,9 +11,19 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getResourceLibraryService } from '@/lib/services/resource-library-service';
 import { createClient } from '@/lib/supabase/server';
-import { sanitizeError, unauthorizedError, forbiddenError, validationError } from '@/lib/utils/api-errors';
+import {
+  sanitizeError,
+  unauthorizedError,
+  forbiddenError,
+  validationError,
+} from '@/lib/utils/api-errors';
 import { validateUploadedFile } from '@/lib/utils/file-validation';
 import type { ResourceListParams } from '@/types/resources';
+import {
+  isLegacyResourceCategory,
+  isResourceCategory,
+  normalizeResourceCategory,
+} from '@/types/resources';
 
 /**
  * GET /api/resources
@@ -42,7 +52,10 @@ export async function GET(request: NextRequest) {
   try {
     // Get authenticated user
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const { response, statusCode } = unauthorizedError();
@@ -52,20 +65,47 @@ export async function GET(request: NextRequest) {
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      const { response, statusCode } = forbiddenError('Only coaches can access the resource library.');
+      const { response, statusCode } = forbiddenError(
+        'Only coaches can access the resource library.'
+      );
       return NextResponse.json(response, { status: statusCode });
     }
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
+    const rawCategory = searchParams.get('category');
+    const category = rawCategory
+      ? isResourceCategory(rawCategory) || isLegacyResourceCategory(rawCategory)
+        ? normalizeResourceCategory(rawCategory)
+        : undefined
+      : undefined;
+
+    const rawSortBy = searchParams.get('sortBy');
+    const sortBy: ResourceListParams['sortBy'] =
+      rawSortBy === 'created_at' ||
+      rawSortBy === 'filename' ||
+      rawSortBy === 'file_size' ||
+      rawSortBy === 'view_count' ||
+      rawSortBy === 'download_count'
+        ? rawSortBy
+        : 'created_at';
+
+    const rawSortOrder = searchParams.get('sortOrder');
+    const sortOrder: ResourceListParams['sortOrder'] =
+      rawSortOrder === 'asc' || rawSortOrder === 'desc' ? rawSortOrder : 'desc';
+
     const filters: ResourceListParams = {
-      category: searchParams.get('category') as any || undefined,
+      category,
       tags: searchParams.get('tags')?.split(',').filter(Boolean) || undefined,
       search: searchParams.get('search') || undefined,
-      sortBy: (searchParams.get('sortBy') as any) || 'created_at',
-      sortOrder: (searchParams.get('sortOrder') as any) || 'desc',
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
-      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined,
+      sortBy,
+      sortOrder,
+      limit: searchParams.get('limit')
+        ? parseInt(searchParams.get('limit')!, 10)
+        : undefined,
+      offset: searchParams.get('offset')
+        ? parseInt(searchParams.get('offset')!, 10)
+        : undefined,
     };
 
     // Get resources using service
@@ -120,7 +160,10 @@ export async function POST(request: NextRequest) {
   try {
     // Get authenticated user
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const { response, statusCode } = unauthorizedError();
@@ -130,7 +173,9 @@ export async function POST(request: NextRequest) {
     // Verify user is a coach
     const userRole = user.user_metadata?.role;
     if (userRole !== 'coach' && userRole !== 'admin') {
-      const { response, statusCode } = forbiddenError('Only coaches can upload resources.');
+      const { response, statusCode } = forbiddenError(
+        'Only coaches can upload resources.'
+      );
       return NextResponse.json(response, { status: statusCode });
     }
 
@@ -138,6 +183,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const category = formData.get('category') as string;
+    errorMetadata = {
+      category: category || undefined,
+      hasFile: !!file,
+    };
     const tagsString = formData.get('tags') as string;
     const description = formData.get('description') as string | null;
     const addToCollection = formData.get('addToCollection') as string | null;
@@ -156,7 +205,9 @@ export async function POST(request: NextRequest) {
     // Validate file (MIME type, size, extension, sanitize filename)
     const fileValidation = validateUploadedFile(file);
     if (!fileValidation.valid) {
-      const { response, statusCode } = validationError(fileValidation.error || 'Invalid file');
+      const { response, statusCode } = validationError(
+        fileValidation.error || 'Invalid file'
+      );
       return NextResponse.json(response, { status: statusCode });
     }
 
@@ -169,7 +220,9 @@ export async function POST(request: NextRequest) {
           throw new Error('Tags must be an array');
         }
       } catch {
-        const { response, statusCode } = validationError('Invalid tags format. Tags must be a JSON array.');
+        const { response, statusCode } = validationError(
+          'Invalid tags format. Tags must be a JSON array.'
+        );
         return NextResponse.json(response, { status: statusCode });
       }
     }
@@ -203,7 +256,7 @@ export async function POST(request: NextRequest) {
     const { response, statusCode } = sanitizeError(error, {
       context: 'POST /api/resources',
       userMessage: 'Failed to upload resource. Please try again.',
-      metadata: { category, hasFile: !!file },
+      metadata: errorMetadata,
     });
     return NextResponse.json(response, { status: statusCode });
   }

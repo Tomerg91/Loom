@@ -32,11 +32,19 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
 
   // Immediately hydrate store with SSR user if available
   useMemo(() => {
-    if (initialUser && !user) {
+    if (initialUser) {
+      // Always use fresh server user over potentially stale localStorage data
       setUser(initialUser);
       setLoading(false);
+    } else if (user) {
+      // We have a persisted user but no initialUser from server
+      // The useEffect below will validate the session
+      setLoading(true);
+    } else {
+      // No user at all - will be handled by useEffect
+      setLoading(true);
     }
-  }, [initialUser, user, setUser, setLoading]);
+  }, [initialUser, setUser, setLoading, user]);
 
   // Session hydration + auth state subscription
   useEffect(() => {
@@ -164,7 +172,7 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
 
   const updateProfile = useCallback(async (updates: Partial<AuthUser>) => {
     try {
-      const result = await authService.updateProfile(updates as any);
+      const result = await authService.updateProfile(updates);
       if (result.user) {
         setUser(result.user);
       }

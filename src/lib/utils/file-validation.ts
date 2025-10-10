@@ -17,11 +17,17 @@ const ALLOWED_MIME_TYPES = {
   // Documents
   'application/pdf': ['.pdf'],
   'application/msword': ['.doc'],
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [
+    '.docx',
+  ],
   'application/vnd.ms-excel': ['.xls'],
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [
+    '.xlsx',
+  ],
   'application/vnd.ms-powerpoint': ['.ppt'],
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': [
+    '.pptx',
+  ],
   'text/plain': ['.txt'],
   'text/markdown': ['.md'],
   'text/csv': ['.csv'],
@@ -49,7 +55,7 @@ const ALLOWED_MIME_TYPES = {
   'application/zip': ['.zip'],
   'application/x-rar-compressed': ['.rar'],
   'application/x-7z-compressed': ['.7z'],
-} as const;
+} as const satisfies Record<string, readonly string[]>;
 
 /**
  * Maximum file size in bytes (100MB)
@@ -60,9 +66,27 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
  * Dangerous file extensions that should never be allowed
  */
 const DANGEROUS_EXTENSIONS = [
-  '.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js', '.jar',
-  '.app', '.deb', '.rpm', '.dmg', '.pkg', '.sh', '.bash', '.ps1',
-  '.msi', '.dll', '.so', '.dylib',
+  '.exe',
+  '.bat',
+  '.cmd',
+  '.com',
+  '.pif',
+  '.scr',
+  '.vbs',
+  '.js',
+  '.jar',
+  '.app',
+  '.deb',
+  '.rpm',
+  '.dmg',
+  '.pkg',
+  '.sh',
+  '.bash',
+  '.ps1',
+  '.msi',
+  '.dll',
+  '.so',
+  '.dylib',
 ];
 
 /**
@@ -104,7 +128,7 @@ export function validateUploadedFile(file: File): FileValidationResult {
     const sizeMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
     return {
       valid: false,
-      error: `File size exceeds maximum allowed size of ${sizeMB}MB`
+      error: `File size exceeds maximum allowed size of ${sizeMB}MB`,
     };
   }
 
@@ -117,7 +141,7 @@ export function validateUploadedFile(file: File): FileValidationResult {
   if (!(mimeType in ALLOWED_MIME_TYPES)) {
     return {
       valid: false,
-      error: `File type "${mimeType}" is not allowed. Please upload a supported file type.`
+      error: `File type "${mimeType}" is not allowed. Please upload a supported file type.`,
     };
   }
 
@@ -133,16 +157,18 @@ export function validateUploadedFile(file: File): FileValidationResult {
   if (DANGEROUS_EXTENSIONS.includes(fileExtension.toLowerCase())) {
     return {
       valid: false,
-      error: 'File type is not allowed for security reasons'
+      error: 'File type is not allowed for security reasons',
     };
   }
 
   // Validate extension matches MIME type
-  const allowedExtensions = ALLOWED_MIME_TYPES[mimeType as keyof typeof ALLOWED_MIME_TYPES];
+  const allowedExtensions = ALLOWED_MIME_TYPES[
+    mimeType as keyof typeof ALLOWED_MIME_TYPES
+  ] as readonly string[];
   if (!allowedExtensions.includes(fileExtension.toLowerCase())) {
     return {
       valid: false,
-      error: `File extension "${fileExtension}" does not match the file type "${mimeType}"`
+      error: `File extension "${fileExtension}" does not match the file type "${mimeType}"`,
     };
   }
 
@@ -261,7 +287,7 @@ export function isExtensionAllowed(extension: string): boolean {
 
   // Check if extension is in allowed MIME types
   return Object.values(ALLOWED_MIME_TYPES).some(exts =>
-    exts.includes(extLower)
+    (exts as readonly string[]).includes(extLower)
   );
 }
 
@@ -271,7 +297,9 @@ export function isExtensionAllowed(extension: string): boolean {
  * @returns Comma-separated list of allowed extensions
  */
 export function getAllowedFileTypes(): string {
-  const allExtensions = Object.values(ALLOWED_MIME_TYPES).flat();
+  const allExtensions = Object.values(ALLOWED_MIME_TYPES).flatMap(exts => [
+    ...(exts as readonly string[]),
+  ]);
   return allExtensions.join(',');
 }
 
