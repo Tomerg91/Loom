@@ -63,7 +63,7 @@ export function RouteGuard({
     // Batch all redirect logic to reduce effect runs
     const checkAuthAndRedirect = () => {
       const buildLoginRedirect = () => {
-        const baseLoginPath = resolveRedirect(locale, redirectTo || '/auth/signin');
+        const baseLoginPath = resolveRedirect(locale, redirectTo || '/auth/signin', { allowAuthPaths: true });
 
         // Only attach the return destination when we're heading to an auth route
         if (typeof window === 'undefined' || !baseLoginPath.includes('/auth/')) {

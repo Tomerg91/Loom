@@ -8,18 +8,22 @@
 
 import { z } from 'zod';
 
+import {
+  LEGACY_RESOURCE_CATEGORY_VALUES,
+  RESOURCE_CATEGORY_VALUES,
+  normalizeResourceCategory,
+} from '@/types/resources';
+
 /**
  * Valid resource categories
  */
-export const resourceCategorySchema = z.enum([
-  'worksheet',
-  'video',
-  'audio',
-  'article',
-  'template',
-  'guide',
-  'other',
-]);
+const canonicalCategorySchema = z.enum(RESOURCE_CATEGORY_VALUES);
+const legacyCategorySchema = z.enum(LEGACY_RESOURCE_CATEGORY_VALUES);
+
+export const resourceCategorySchema = z
+  .union([canonicalCategorySchema, legacyCategorySchema])
+  .transform(category => normalizeResourceCategory(category))
+  .pipe(canonicalCategorySchema);
 
 /**
  * Valid permission types

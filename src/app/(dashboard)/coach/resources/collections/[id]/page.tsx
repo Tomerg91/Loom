@@ -12,7 +12,7 @@
 
 'use client';
 
-import { use, useState, useCallback } from 'react';
+import { use, useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import {
@@ -145,10 +145,14 @@ export default function CollectionDetailPage({
   const { data: collection, isLoading } = useQuery({
     queryKey: ['resource-collection', resolvedParams.id],
     queryFn: () => fetchCollection(resolvedParams.id),
-    onSuccess: (data) => {
-      setLocalResources(data.resources || []);
-    },
   });
+
+  // Update local resources when collection data changes
+  useEffect(() => {
+    if (collection?.resources) {
+      setLocalResources(collection.resources);
+    }
+  }, [collection]);
 
   // Update order mutation
   const updateOrderMutation = useMutation({
@@ -170,7 +174,7 @@ export default function CollectionDetailPage({
     },
   });
 
-  // Sensors for drag-and-drop
+  // Sensors for drag-and-drop (useSensors handles memoization internally)
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {

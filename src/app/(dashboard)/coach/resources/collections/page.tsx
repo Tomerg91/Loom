@@ -26,6 +26,9 @@ import { ResourceErrorBoundary } from '@/components/resources/resource-error-bou
 import { useToast } from '@/components/ui/use-toast';
 import type { ResourceCollection } from '@/types/resources';
 
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
+
 /**
  * Fetch collections from API
  */

@@ -21,7 +21,6 @@ import { useDropzone } from 'react-dropzone';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -200,12 +199,6 @@ export function ResourceUploadDialog({
   };
 
   // Parse tags from comma-separated string
-  const parseTags = (tagsString: string): string[] => {
-    return tagsString
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0);
-  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

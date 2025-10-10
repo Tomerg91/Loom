@@ -26,7 +26,10 @@ import type {
   ResourceShare,
   ClientResourceItem,
   StorageUsage,
-  ResourceCategory,
+} from '@/types/resources';
+import {
+  getResourceCategorySynonyms,
+  normalizeResourceCategory,
 } from '@/types/resources';
 
 // ============================================================================
@@ -54,7 +57,9 @@ export async function getCoachLibraryResources(
 
   // Apply category filter
   if (filters?.category) {
-    query = query.eq('file_category', filters.category);
+    const normalizedCategory = normalizeResourceCategory(filters.category);
+    const synonyms = getResourceCategorySynonyms(normalizedCategory);
+    query = query.in('file_category', synonyms);
   }
 
   // Apply tags filter (overlaps = has any of the specified tags)
@@ -215,7 +220,8 @@ export async function getClientSharedResources(
 
   // Apply filters
   if (filters?.category) {
-    resources = resources.filter(r => r.category === filters.category);
+    const normalizedCategory = normalizeResourceCategory(filters.category);
+    resources = resources.filter(r => r.category === normalizedCategory);
   }
 
   if (filters?.tags && filters.tags.length > 0) {
@@ -802,7 +808,7 @@ export async function getLibraryAnalytics(
     .map(r => ({
       id: r.id,
       filename: r.filename,
-      category: r.file_category as ResourceCategory,
+      category: normalizeResourceCategory(r.file_category),
       viewCount: r.view_count || 0,
       downloadCount: r.download_count || 0,
       completionCount: r.completion_count || 0,
@@ -952,7 +958,7 @@ function mapFileUploadToResource(file: FileUploadRow): ResourceLibraryItem {
     isLibraryResource: file.is_library_resource,
     isPublic: file.is_public || false,
     sharedWithAllClients: file.shared_with_all_clients || false,
-    category: file.file_category as ResourceCategory,
+    category: normalizeResourceCategory(file.file_category),
     tags: file.tags || [],
     description: file.description ?? null,
     viewCount: file.view_count || 0,
