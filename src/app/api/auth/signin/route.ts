@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import {
@@ -226,22 +226,17 @@ export const POST = withErrorHandling(
         ip: request.headers.get('x-forwarded-for') || 'unknown'
       });
 
-      // Return sanitized user data (complete signin)
-      const response = createSuccessResponse({
-        user: sanitizedUser,
-        session: session
-          ? {
-              accessToken: session.accessToken,
-              refreshToken: session.refreshToken,
-              expiresAt: session.expiresAt ?? null,
-            }
-          : null,
-        message: 'Successfully signed in'
-      }, 'Authentication successful');
+      let sessionPayload: {
+        accessToken: string;
+        refreshToken: string;
+        expiresAt: number | null;
+      } | null = null;
+      let cookieResponse: NextResponse | null = null;
 
       if (session?.accessToken && session?.refreshToken) {
-        const supabase = createServerClientWithRequest(request, response);
-        const { error: sessionError } = await supabase.auth.setSession({
+        cookieResponse = NextResponse.next();
+        const supabase = createServerClientWithRequest(request, cookieResponse);
+        const { data: setSessionData, error: sessionError } = await supabase.auth.setSession({
           access_token: session.accessToken,
           refresh_token: session.refreshToken,
         });
@@ -254,9 +249,45 @@ export const POST = withErrorHandling(
           );
           return applyCorsHeaders(errorResponse, request);
         }
+
+        const rotatedSession = setSessionData?.session;
+        if (rotatedSession) {
+          sessionPayload = {
+            accessToken: rotatedSession.access_token,
+            refreshToken: rotatedSession.refresh_token,
+            expiresAt: rotatedSession.expires_at ?? null,
+          };
+        } else {
+          console.warn('Supabase session rotation returned no session payload', {
+            userId: user.id,
+          });
+        }
       } else {
         console.warn('Sign-in succeeded but no session tokens were returned for user', {
           userId: user.id,
+        });
+      }
+
+      const response = createSuccessResponse({
+        user: sanitizedUser,
+        session: sessionPayload,
+        message: 'Successfully signed in'
+      }, 'Authentication successful');
+
+      if (cookieResponse) {
+        cookieResponse.cookies.getAll().forEach(cookie => {
+          response.cookies.set({
+            name: cookie.name,
+            value: cookie.value,
+            domain: cookie.domain,
+            path: cookie.path,
+            expires: cookie.expires,
+            httpOnly: cookie.httpOnly,
+            maxAge: cookie.maxAge,
+            sameSite: cookie.sameSite,
+            secure: cookie.secure,
+            priority: cookie.priority,
+          });
         });
       }
 
