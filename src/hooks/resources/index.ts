@@ -18,6 +18,9 @@ export {
   useUploadResource,
   useDeleteResource,
   useShareResource,
+  useTrackResourceProgress,
+  type ResourceProgressAction,
+  type TrackResourceProgressInput,
 } from './use-resource-mutations';
 
 // Collection hooks

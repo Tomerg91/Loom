@@ -8,7 +8,11 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import type { ResourceLibraryItem, ResourceListParams } from '@/types/resources';
+
+import type {
+  ResourceLibraryItem,
+  ResourceListParams,
+} from '@/types/resources';
 
 /**
  * Fetch resources from API
@@ -64,6 +68,9 @@ async function fetchClientResources(filters: Partial<ResourceListParams>) {
   if (filters.category) params.set('category', filters.category);
   if (filters.tags?.length) params.set('tags', filters.tags.join(','));
   if (filters.search) params.set('search', filters.search);
+  if (filters.sortBy) params.set('sortBy', filters.sortBy);
+  if (filters.sortOrder) params.set('sortOrder', filters.sortOrder);
+  if (filters.coachId) params.set('coach', filters.coachId);
 
   const res = await fetch(`/api/resources/client?${params.toString()}`);
 
@@ -104,5 +111,5 @@ export function useClientResources(filters: Partial<ResourceListParams> = {}) {
  * @returns Sorted array of unique tags
  */
 export function extractUniqueTags(resources: ResourceLibraryItem[]): string[] {
-  return Array.from(new Set(resources.flatMap((r) => r.tags))).sort();
+  return Array.from(new Set(resources.flatMap(r => r.tags))).sort();
 }

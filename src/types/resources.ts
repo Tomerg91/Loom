@@ -445,6 +445,8 @@ export interface LibraryAnalytics {
   totalCompletions: number;
   avgCompletionRate: number;
   activeClients: number;
+  sharedResources?: number;
+  uniqueViewers?: number;
 
   // Top performing resources
   topResources: ResourcePerformanceSummary[];
@@ -499,6 +501,8 @@ export interface ResourceListParams {
     | 'view_count'
     | 'download_count';
   sortOrder?: 'asc' | 'desc';
+  /** Optional coach filter when fetching client-shared resources */
+  coachId?: string;
 }
 
 /**
