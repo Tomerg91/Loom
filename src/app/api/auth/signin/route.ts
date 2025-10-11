@@ -1,17 +1,19 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  HTTP_STATUS,
+  rateLimit,
+  validateRequestBody,
+  withErrorHandling,
+  withRequestLogging,
+} from '@/lib/api/utils';
 import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { basicPasswordSchema } from '@/lib/security/password';
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
-  withErrorHandling,
-  validateRequestBody,
-  rateLimit,
-  HTTP_STATUS,
-  withRequestLogging
-} from '@/lib/api/utils';
-import { z } from 'zod';
+import { createServerClientWithRequest } from '@/lib/supabase/server';
 
 // Enhanced signin schema with security validations
 const signInSchema = z.object({
@@ -132,7 +134,7 @@ export const POST = withErrorHandling(
 
       // Create auth service and attempt signin
       const authService = await createAuthService(true);
-      const { user, error } = await authService.signIn({ email, password });
+      const { user, error, session } = await authService.signIn({ email, password, rememberMe });
 
       if (error || !user) {
         // Record failed attempt for this email
@@ -178,6 +180,22 @@ export const POST = withErrorHandling(
       const mfaService = createMFAService(true);
       const requiresMFA = await mfaService.requiresMFA(user.id);
 
+      const sanitizedUser = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarUrl: user.avatarUrl,
+        language: user.language,
+        status: user.status,
+        lastSeenAt: user.lastSeenAt,
+        onboardingStatus: user.onboardingStatus,
+        onboardingStep: user.onboardingStep,
+        onboardingCompletedAt: user.onboardingCompletedAt,
+        mfaEnabled: user.mfaEnabled ?? false,
+      } as const;
+
       if (requiresMFA) {
         // Log MFA required for auditing
         console.info('User signin - MFA required:', {
@@ -190,8 +208,7 @@ export const POST = withErrorHandling(
         // Return MFA challenge response (don't complete signin yet)
         const response = createSuccessResponse({
           requiresMFA: true,
-          userId: user.id,
-          email: user.email,
+          user: { ...sanitizedUser, mfaEnabled: true },
           message: 'MFA verification required to complete signin'
         }, 'MFA verification required');
 
@@ -209,22 +226,70 @@ export const POST = withErrorHandling(
         ip: request.headers.get('x-forwarded-for') || 'unknown'
       });
 
-      // Return sanitized user data (complete signin)
+      let sessionPayload: {
+        accessToken: string;
+        refreshToken: string;
+        expiresAt: number | null;
+      } | null = null;
+      let cookieResponse: NextResponse | null = null;
+
+      if (session?.accessToken && session?.refreshToken) {
+        cookieResponse = NextResponse.next();
+        const supabase = createServerClientWithRequest(request, cookieResponse);
+        const { data: setSessionData, error: sessionError } = await supabase.auth.setSession({
+          access_token: session.accessToken,
+          refresh_token: session.refreshToken,
+        });
+
+        if (sessionError) {
+          console.error('Failed to set Supabase session cookies:', sessionError);
+          const errorResponse = createErrorResponse(
+            'Failed to establish session',
+            HTTP_STATUS.INTERNAL_SERVER_ERROR
+          );
+          return applyCorsHeaders(errorResponse, request);
+        }
+
+        const rotatedSession = setSessionData?.session;
+        if (rotatedSession) {
+          sessionPayload = {
+            accessToken: rotatedSession.access_token,
+            refreshToken: rotatedSession.refresh_token,
+            expiresAt: rotatedSession.expires_at ?? null,
+          };
+        } else {
+          console.warn('Supabase session rotation returned no session payload', {
+            userId: user.id,
+          });
+        }
+      } else {
+        console.warn('Sign-in succeeded but no session tokens were returned for user', {
+          userId: user.id,
+        });
+      }
+
       const response = createSuccessResponse({
-        user: {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          avatarUrl: user.avatarUrl,
-          language: user.language,
-          status: user.status,
-          lastSeenAt: user.lastSeenAt,
-          mfaEnabled: false
-        },
+        user: sanitizedUser,
+        session: sessionPayload,
         message: 'Successfully signed in'
       }, 'Authentication successful');
+
+      if (cookieResponse) {
+        cookieResponse.cookies.getAll().forEach(cookie => {
+          response.cookies.set({
+            name: cookie.name,
+            value: cookie.value,
+            domain: cookie.domain,
+            path: cookie.path,
+            expires: cookie.expires,
+            httpOnly: cookie.httpOnly,
+            maxAge: cookie.maxAge,
+            sameSite: cookie.sameSite,
+            secure: cookie.secure,
+            priority: cookie.priority,
+          });
+        });
+      }
 
       return applyCorsHeaders(response, request);
       

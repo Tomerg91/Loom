@@ -1,6 +1,8 @@
 import { supabase as clientSupabase } from '@/lib/supabase/client';
-import type { AuthUser, SignUpData, SignInData } from './auth';
 
+import type { AuthUser, SignInData, SignUpData } from './auth';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Client-side only auth service - no server dependencies
  * Uses Supabase auth directly and fetches user profiles via API
@@ -72,62 +74,69 @@ export class ClientAuthService {
   /**
    * Sign in an existing user
    */
-  async signIn(data: SignInData): Promise<{ user: AuthUser | null; error: string | null }> {
+  async signIn(data: SignInData): Promise<{ user: AuthUser | null; error: string | null; requiresMFA?: boolean }> {
     try {
-      const { data: authData, error: authError } = await this.supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          rememberMe: data.rememberMe ?? false,
+        }),
       });
 
-      if (authError) {
-        return { user: null, error: authError.message };
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.success) {
+        const errorMessage = payload?.error || 'Invalid email or password';
+        return { user: null, error: errorMessage };
       }
 
-      if (!authData.user) {
-        return { user: null, error: 'Failed to sign in' };
-      }
+      const resultData = payload.data || {};
 
-      // Establish server-side session cookies so SSR/middleware can see auth
-      try {
-        // Prefer tokens returned from signIn for immediacy; fallback to getSession
-        let accessToken: string | null = authData.session?.access_token ?? null;
-        let refreshToken: string | null = authData.session?.refresh_token ?? null;
-        if (!accessToken || !refreshToken) {
-          const { data: sess } = await this.supabase.auth.getSession();
-          accessToken = accessToken ?? sess?.session?.access_token ?? null;
-          refreshToken = refreshToken ?? sess?.session?.refresh_token ?? null;
+      if (resultData.requiresMFA) {
+        const mfaUser = resultData.user as AuthUser | undefined;
+        if (mfaUser) {
+          // Ensure MFA flag is set so the UI can route appropriately
+          return {
+            user: { ...mfaUser, mfaEnabled: true },
+            error: null,
+            requiresMFA: true,
+          };
         }
-        if (accessToken && refreshToken) {
-          // Ensure server HTTP-only cookies are set before navigating
-          const resp = await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ access_token: accessToken, refresh_token: refreshToken }),
-          });
-          if (!resp.ok) {
-            console.warn('Establishing server session failed with status', resp.status);
-          }
-        }
-      } catch (sessionError) {
-        console.warn('Failed to establish server session:', sessionError);
-        // Continue with client-only auth for now
+
+        return {
+          user: null,
+          error: 'Multi-factor authentication required',
+          requiresMFA: true,
+        };
       }
 
-      // Return minimal user immediately for faster redirect
-      const u = authData.user;
+      const user = resultData.user as AuthUser | undefined;
+      const session = resultData.session as
+        | { accessToken?: string | null; refreshToken?: string | null }
+        | undefined;
+
+      if (session?.accessToken && session?.refreshToken) {
+        const { error: sessionError } = await this.supabase.auth.setSession({
+          access_token: session.accessToken,
+          refresh_token: session.refreshToken,
+        });
+
+        if (sessionError) {
+          console.warn('[ClientAuthService] Failed to hydrate Supabase session:', sessionError);
+        }
+      }
+
+      if (user) {
+        // Cache for subsequent getCurrentUser calls
+        this.cacheUserProfile(user.id, user, 120000);
+      }
+
       return {
-        user: {
-          id: u.id,
-          email: u.email || data.email,
-          role: (u.user_metadata?.role as any) || 'client',
-          firstName: u.user_metadata?.first_name,
-          lastName: u.user_metadata?.last_name,
-          language: (u.user_metadata?.language as any) || 'en',
-          status: 'active',
-          createdAt: u.created_at ?? new Date().toISOString(),
-          updatedAt: u.updated_at ?? u.created_at ?? new Date().toISOString(),
-          mfaEnabled: !!u.user_metadata?.mfaEnabled,
-        },
+        user: user ?? null,
         error: null,
       };
     } catch (error) {

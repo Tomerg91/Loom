@@ -1,8 +1,10 @@
-import { createClient } from '@/lib/supabase/server';
-import { supabase as clientSupabase } from '@/lib/supabase/client';
-import { createUserService } from '@/lib/database';
-import type { User, UserRole, UserStatus, Language } from '@/types';
 import { config } from '@/lib/config';
+import { createUserService } from '@/lib/database';
+import { supabase as clientSupabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
+import type { Language, User, UserRole, UserStatus } from '@/types';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface AuthUser {
   id: string;
@@ -62,6 +64,13 @@ export interface SignUpData {
 export interface SignInData {
   email: string;
   password: string;
+  rememberMe?: boolean;
+}
+
+export interface AuthSessionTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt?: number | null;
 }
 
 // Singleton instances to prevent multiple service creation
@@ -273,7 +282,7 @@ export class AuthService {
   /**
    * Sign in an existing user
    */
-  async signIn(data: SignInData): Promise<{ user: AuthUser | null; error: string | null }> {
+  async signIn(data: SignInData): Promise<{ user: AuthUser | null; error: string | null; session: AuthSessionTokens | null }> {
     try {
       const { data: authData, error: authError } = await this.supabase.auth.signInWithPassword({
         email: data.email,
@@ -281,12 +290,20 @@ export class AuthService {
       });
 
       if (authError) {
-        return { user: null, error: authError.message };
+        return { user: null, error: authError.message, session: null };
       }
 
       if (!authData.user) {
-        return { user: null, error: 'Failed to sign in' };
+        return { user: null, error: 'Failed to sign in', session: null };
       }
+
+      const sessionTokens: AuthSessionTokens | null = authData.session
+        ? {
+            accessToken: authData.session.access_token,
+            refreshToken: authData.session.refresh_token,
+            expiresAt: authData.session.expires_at ?? null,
+          }
+        : null;
 
       // Update last seen timestamp
       await this.userService.updateLastSeen(authData.user.id);
@@ -318,12 +335,13 @@ export class AuthService {
             rememberDeviceEnabled: userProfile.rememberDeviceEnabled,
           },
           error: null,
+          session: sessionTokens,
         };
       }
 
-      return { user: null, error: userProfileResult.error || 'User profile not found' };
+      return { user: null, error: userProfileResult.error || 'User profile not found', session: sessionTokens };
     } catch (error) {
-      return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
+      return { user: null, error: error instanceof Error ? error.message : 'Unknown error', session: null };
     }
   }
 
