@@ -14,7 +14,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,156 +22,31 @@ import {
   ResourceEmptyState,
 } from '@/components/resources';
 import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
-import { useToast } from '@/components/ui/use-toast';
 import type { ResourceCollection } from '@/types/resources';
+import {
+  useCollections,
+  useCreateCollection,
+  useUpdateCollection,
+  useDeleteCollection,
+} from '@/hooks/resources';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
 
 /**
- * Fetch collections from API
- */
-async function fetchCollections() {
-  const res = await fetch('/api/resources/collections');
-
-  if (!res.ok) {
-    throw new Error('Failed to fetch collections');
-  }
-
-  const data = await res.json();
-  return data.data.collections as ResourceCollection[];
-}
-
-/**
- * Create collection
- */
-async function createCollection(data: { name: string; description?: string; icon?: string }) {
-  const res = await fetch('/api/resources/collections', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to create collection');
-  }
-
-  return res.json();
-}
-
-/**
- * Update collection
- */
-async function updateCollection(
-  id: string,
-  data: { name?: string; description?: string; icon?: string }
-) {
-  const res = await fetch(`/api/resources/collections/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to update collection');
-  }
-
-  return res.json();
-}
-
-/**
- * Delete collection
- */
-async function deleteCollection(id: string) {
-  const res = await fetch(`/api/resources/collections/${id}`, {
-    method: 'DELETE',
-  });
-
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to delete collection');
-  }
-
-  return res.json();
-}
-
-/**
  * CollectionsPage Component
  */
 export default function CollectionsPage() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<ResourceCollection | null>(null);
 
   // Fetch collections
-  const { data: collections = [], isLoading } = useQuery({
-    queryKey: ['resource-collections'],
-    queryFn: fetchCollections,
-  });
+  const { data: collections = [], isLoading } = useCollections();
 
-  // Create mutation
-  const createMutation = useMutation({
-    mutationFn: createCollection,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['resource-collections'] });
-      toast({
-        title: 'Collection created',
-        description: 'Your collection has been created successfully.',
-      });
-      setDialogOpen(false);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Failed to create collection',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { name?: string; description?: string; icon?: string } }) => updateCollection(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['resource-collections'] });
-      toast({
-        title: 'Collection updated',
-        description: 'Your collection has been updated successfully.',
-      });
-      setDialogOpen(false);
-      setSelectedCollection(null);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Failed to update collection',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: deleteCollection,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['resource-collections'] });
-      toast({
-        title: 'Collection deleted',
-        description: 'The collection has been deleted. Resources remain in your library.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Failed to delete collection',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
+  // Mutations
+  const createMutation = useCreateCollection();
+  const updateMutation = useUpdateCollection();
+  const deleteMutation = useDeleteCollection();
 
   // Handlers
   const handleCreate = useCallback(() => {
@@ -195,14 +69,15 @@ export default function CollectionsPage() {
   const handleSave = useCallback(
     async (data: { name: string; description?: string; icon?: string }) => {
       if (selectedCollection) {
-        // Update existing
         await updateMutation.mutateAsync({
           id: selectedCollection.id,
           data,
         });
+        setDialogOpen(false);
+        setSelectedCollection(null);
       } else {
-        // Create new
         await createMutation.mutateAsync(data);
+        setDialogOpen(false);
       }
     },
     [selectedCollection, updateMutation, createMutation]
@@ -227,10 +102,7 @@ export default function CollectionsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-48 rounded-lg border bg-card animate-pulse"
-            />
+            <div key={i} className="h-48 rounded-lg border bg-card animate-pulse" />
           ))}
         </div>
       </div>
