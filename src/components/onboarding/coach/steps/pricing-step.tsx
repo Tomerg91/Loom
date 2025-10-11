@@ -1,9 +1,11 @@
 'use client';
 
-import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,14 +17,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { PricingStepData, Currency, SpokenLanguage } from '@/lib/types/onboarding';
-import { X } from 'lucide-react';
+import type {
+  PricingStepData,
+  Currency,
+  SpokenLanguage,
+} from '@/lib/types/onboarding';
 import { cn } from '@/lib/utils';
 
+const LANGUAGE_VALUES = [
+  'en',
+  'he',
+  'es',
+  'fr',
+  'de',
+  'ar',
+  'ru',
+  'pt',
+] as const satisfies readonly SpokenLanguage[];
+
 const pricingSchema = z.object({
-  sessionRate: z.number().min(1, 'Session rate must be at least 1').max(10000, 'Session rate seems too high'),
+  sessionRate: z
+    .number()
+    .min(1, 'Session rate must be at least 1')
+    .max(10000, 'Session rate seems too high'),
   currency: z.enum(['USD', 'EUR', 'ILS', 'GBP']),
-  languages: z.array(z.string()).min(1, 'Please select at least one language'),
+  languages: z
+    .array(z.enum(LANGUAGE_VALUES))
+    .min(1, 'Please select at least one language'),
   timezone: z.string().min(1, 'Please select your timezone'),
 });
 
@@ -39,7 +60,11 @@ const CURRENCY_SYMBOLS: Record<Currency, string> = {
   GBP: '£',
 };
 
-const LANGUAGE_OPTIONS: { value: SpokenLanguage; labelKey: string; flag: string }[] = [
+const LANGUAGE_OPTIONS: {
+  value: SpokenLanguage;
+  labelKey: string;
+  flag: string;
+}[] = [
   { value: 'en', labelKey: 'english', flag: '🇬🇧' },
   { value: 'he', labelKey: 'hebrew', flag: '🇮🇱' },
   { value: 'es', labelKey: 'spanish', flag: '🇪🇸' },
@@ -52,9 +77,23 @@ const LANGUAGE_OPTIONS: { value: SpokenLanguage; labelKey: string; flag: string 
 
 // Common timezones grouped by region
 const TIMEZONE_OPTIONS = [
-  { group: 'America', zones: ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles'] },
-  { group: 'Europe', zones: ['Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Athens'] },
-  { group: 'Asia', zones: ['Asia/Jerusalem', 'Asia/Dubai', 'Asia/Tokyo', 'Asia/Singapore'] },
+  {
+    group: 'America',
+    zones: [
+      'America/New_York',
+      'America/Chicago',
+      'America/Denver',
+      'America/Los_Angeles',
+    ],
+  },
+  {
+    group: 'Europe',
+    zones: ['Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Athens'],
+  },
+  {
+    group: 'Asia',
+    zones: ['Asia/Jerusalem', 'Asia/Dubai', 'Asia/Tokyo', 'Asia/Singapore'],
+  },
   { group: 'Australia', zones: ['Australia/Sydney', 'Australia/Melbourne'] },
 ];
 
@@ -75,7 +114,8 @@ export function PricingStep({ data, onNext, onBack }: PricingStepProps) {
       sessionRate: data.sessionRate || 100,
       currency: data.currency || 'USD',
       languages: data.languages || [],
-      timezone: data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone:
+        data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
     },
   });
 
@@ -83,11 +123,11 @@ export function PricingStep({ data, onNext, onBack }: PricingStepProps) {
   const watchedCurrency = watch('currency');
 
   const toggleLanguage = (lang: SpokenLanguage) => {
-    const current = watchedLanguages as string[];
+    const current = watchedLanguages;
     if (current.includes(lang)) {
       setValue(
         'languages',
-        current.filter((l) => l !== lang)
+        current.filter(l => l !== lang)
       );
     } else {
       setValue('languages', [...current, lang]);
@@ -169,8 +209,8 @@ export function PricingStep({ data, onNext, onBack }: PricingStepProps) {
         <p className="text-sm text-sand-500">{t('languagesHelper')}</p>
 
         <div className="flex flex-wrap gap-2">
-          {LANGUAGE_OPTIONS.map((option) => {
-            const isSelected = (watchedLanguages as string[]).includes(option.value);
+          {LANGUAGE_OPTIONS.map(option => {
+            const isSelected = watchedLanguages.includes(option.value);
             return (
               <Badge
                 key={option.value}
@@ -185,7 +225,7 @@ export function PricingStep({ data, onNext, onBack }: PricingStepProps) {
                 role="checkbox"
                 aria-checked={isSelected}
                 tabIndex={0}
-                onKeyDown={(e) => {
+                onKeyDown={e => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     toggleLanguage(option.value);
@@ -221,12 +261,12 @@ export function PricingStep({ data, onNext, onBack }: PricingStepProps) {
                 <SelectValue placeholder={t('selectTimezone')} />
               </SelectTrigger>
               <SelectContent>
-                {TIMEZONE_OPTIONS.map((group) => (
+                {TIMEZONE_OPTIONS.map(group => (
                   <div key={group.group}>
                     <div className="px-2 py-1.5 text-sm font-semibold text-sand-700">
                       {group.group}
                     </div>
-                    {group.zones.map((zone) => (
+                    {group.zones.map(zone => (
                       <SelectItem key={zone} value={zone}>
                         {zone.replace(/_/g, ' ')}
                       </SelectItem>

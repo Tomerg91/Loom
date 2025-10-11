@@ -1191,6 +1191,7 @@
       "wizard": {
         "title": "Coach Onboarding",
         "subtitle": "Complete your profile to start coaching on Loom",
+        "greeting": "Welcome back, {name}!",
         "step": "Step",
         "of": "of",
         "helpText": "Need help?",
