@@ -1,15 +1,19 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useCallback } from 'react';
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ProfileStep } from './steps/profile-step';
-import { PricingStep } from './steps/pricing-step';
-import { AvailabilityStep } from './steps/availability-step';
-import { ReviewStep } from './steps/review-step';
 import type {
   CoachOnboardingData,
   PartialOnboardingData,
@@ -18,19 +22,33 @@ import type {
   AvailabilityStepData,
   OnboardingSubmitResponse,
 } from '@/lib/types/onboarding';
-import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+import { AvailabilityStep } from './steps/availability-step';
+import { PricingStep } from './steps/pricing-step';
+import { ProfileStep } from './steps/profile-step';
+import { ReviewStep } from './steps/review-step';
+
+
+
 
 interface CoachOnboardingWizardProps {
   userId: string;
   redirectTo?: string;
+  userEmail?: string;
+  userName?: string;
 }
 
 type WizardStep = 0 | 1 | 2 | 3;
 
 const TOTAL_STEPS = 4;
 
-export function CoachOnboardingWizard({ userId, redirectTo = '/dashboard' }: CoachOnboardingWizardProps) {
+export function CoachOnboardingWizard({
+  userId,
+  redirectTo = '/dashboard',
+  userEmail,
+  userName,
+}: CoachOnboardingWizardProps) {
   const t = useTranslations('onboarding.coach');
   const router = useRouter();
 
@@ -39,6 +57,8 @@ export function CoachOnboardingWizard({ userId, redirectTo = '/dashboard' }: Coa
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+
+  const greetingName = userName?.trim() || userEmail?.trim() || '';
 
   // Calculate progress percentage
   const progressPercentage = ((currentStep + 1) / TOTAL_STEPS) * 100;
@@ -60,12 +80,15 @@ export function CoachOnboardingWizard({ userId, redirectTo = '/dashboard' }: Coa
   ];
 
   // Navigation handlers
-  const handleNext = useCallback((step: WizardStep, data: Partial<CoachOnboardingData>) => {
-    setFormData((prev) => ({ ...prev, ...data }));
-    if (step < 3) {
-      setCurrentStep((step + 1) as WizardStep);
-    }
-  }, []);
+  const handleNext = useCallback(
+    (step: WizardStep, data: Partial<CoachOnboardingData>) => {
+      setFormData(prev => ({ ...prev, ...data }));
+      if (step < 3) {
+        setCurrentStep((step + 1) as WizardStep);
+      }
+    },
+    []
+  );
 
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
@@ -149,7 +172,9 @@ export function CoachOnboardingWizard({ userId, redirectTo = '/dashboard' }: Coa
       }
     } catch (error) {
       console.error('Onboarding submission error:', error);
-      setSubmitError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      setSubmitError(
+        error instanceof Error ? error.message : 'An unexpected error occurred'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -168,12 +193,16 @@ export function CoachOnboardingWizard({ userId, redirectTo = '/dashboard' }: Coa
                 </div>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-sand-900">{t('success.title')}</h2>
+                <h2 className="text-2xl font-bold text-sand-900">
+                  {t('success.title')}
+                </h2>
                 <p className="text-sand-600 mt-2">{t('success.message')}</p>
               </div>
               <div className="pt-2">
                 <Progress value={100} className="h-2" />
-                <p className="text-sm text-sand-500 mt-2">{t('success.redirecting')}</p>
+                <p className="text-sm text-sand-500 mt-2">
+                  {t('success.redirecting')}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -187,17 +216,27 @@ export function CoachOnboardingWizard({ userId, redirectTo = '/dashboard' }: Coa
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-sand-900 mb-2">{t('wizard.title')}</h1>
+          <h1 className="text-4xl font-bold text-sand-900 mb-2">
+            {t('wizard.title')}
+          </h1>
           <p className="text-sand-600">{t('wizard.subtitle')}</p>
+          {greetingName && (
+            <p className="text-sm text-sand-500 mt-2">
+              {t('wizard.greeting', { name: greetingName })}
+            </p>
+          )}
         </div>
 
         {/* Progress Indicator */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-3">
             <span className="text-sm font-medium text-sand-700">
-              {t('wizard.step')} {currentStep + 1} {t('wizard.of')} {TOTAL_STEPS}
+              {t('wizard.step')} {currentStep + 1} {t('wizard.of')}{' '}
+              {TOTAL_STEPS}
             </span>
-            <span className="text-sm font-medium text-teal-600">{Math.round(progressPercentage)}%</span>
+            <span className="text-sm font-medium text-teal-600">
+              {Math.round(progressPercentage)}%
+            </span>
           </div>
           <Progress value={progressPercentage} className="h-3" />
 
@@ -217,16 +256,22 @@ export function CoachOnboardingWizard({ userId, redirectTo = '/dashboard' }: Coa
                     index < currentStep
                       ? 'bg-teal-400 text-white'
                       : index === currentStep
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-sand-200 text-sand-500'
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-sand-200 text-sand-500'
                   )}
                 >
-                  {index < currentStep ? <CheckCircle2 className="h-5 w-5" /> : index + 1}
+                  {index < currentStep ? (
+                    <CheckCircle2 className="h-5 w-5" />
+                  ) : (
+                    index + 1
+                  )}
                 </div>
                 <span
                   className={cn(
                     'text-xs text-center hidden sm:block',
-                    index === currentStep ? 'text-sand-900 font-semibold' : 'text-sand-600'
+                    index === currentStep
+                      ? 'text-sand-900 font-semibold'
+                      : 'text-sand-600'
                   )}
                 >
                   {title}
@@ -239,15 +284,19 @@ export function CoachOnboardingWizard({ userId, redirectTo = '/dashboard' }: Coa
         {/* Main Card */}
         <Card className="shadow-xl">
           <CardHeader>
-            <CardTitle className="text-2xl">{stepTitles[currentStep]}</CardTitle>
-            <CardDescription className="text-base">{stepDescriptions[currentStep]}</CardDescription>
+            <CardTitle className="text-2xl">
+              {stepTitles[currentStep]}
+            </CardTitle>
+            <CardDescription className="text-base">
+              {stepDescriptions[currentStep]}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {/* Step 0: Profile */}
             {currentStep === 0 && (
               <ProfileStep
                 data={formData.profile || {}}
-                onNext={(data) => handleNext(0, { profile: data })}
+                onNext={data => handleNext(0, { profile: data })}
               />
             )}
 
@@ -255,7 +304,7 @@ export function CoachOnboardingWizard({ userId, redirectTo = '/dashboard' }: Coa
             {currentStep === 1 && (
               <PricingStep
                 data={formData.pricing || {}}
-                onNext={(data) => handleNext(1, { pricing: data })}
+                onNext={data => handleNext(1, { pricing: data })}
                 onBack={handleBack}
               />
             )}
@@ -264,7 +313,7 @@ export function CoachOnboardingWizard({ userId, redirectTo = '/dashboard' }: Coa
             {currentStep === 2 && (
               <AvailabilityStep
                 data={formData.availability || {}}
-                onNext={(data) => handleNext(2, { availability: data })}
+                onNext={data => handleNext(2, { availability: data })}
                 onBack={handleBack}
               />
             )}
@@ -287,9 +336,9 @@ export function CoachOnboardingWizard({ userId, redirectTo = '/dashboard' }: Coa
         <div className="mt-6 text-center">
           <p className="text-sm text-sand-600">
             {t('wizard.helpText')}{' '}
-            <a href="/support" className="text-teal-600 hover:underline">
+            <Link href="/support" className="text-teal-600 hover:underline">
               {t('wizard.contactSupport')}
-            </a>
+            </Link>
           </p>
         </div>
       </div>

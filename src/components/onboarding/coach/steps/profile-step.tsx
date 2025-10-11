@@ -1,23 +1,45 @@
 'use client';
 
-import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { AvatarUpload } from '@/components/ui/file-upload';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import type { ProfileStepData, Specialization } from '@/lib/types/onboarding';
-import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const SPECIALIZATION_VALUES = [
+  'life_coaching',
+  'career_coaching',
+  'health_wellness',
+  'business_coaching',
+  'relationship_coaching',
+  'executive_coaching',
+  'spiritual_coaching',
+  'performance_coaching',
+  'mindfulness_coaching',
+  'other',
+] as const satisfies readonly Specialization[];
+
 const profileSchema = z.object({
-  bio: z.string().min(50, 'Bio must be at least 50 characters').max(500, 'Bio must not exceed 500 characters'),
-  yearsOfExperience: z.number().min(0, 'Years of experience cannot be negative').max(50, 'Years of experience seems too high'),
-  specializations: z.array(z.string()).min(1, 'Please select at least one specialization'),
+  bio: z
+    .string()
+    .min(50, 'Bio must be at least 50 characters')
+    .max(500, 'Bio must not exceed 500 characters'),
+  yearsOfExperience: z
+    .number()
+    .min(0, 'Years of experience cannot be negative')
+    .max(50, 'Years of experience seems too high'),
+  specializations: z
+    .array(z.enum(SPECIALIZATION_VALUES))
+    .min(1, 'Please select at least one specialization'),
   profilePicture: z.instanceof(File).nullable().optional(),
   profilePictureUrl: z.string().nullable().optional(),
 });
@@ -68,11 +90,11 @@ export function ProfileStep({ data, onNext, onBack }: ProfileStepProps) {
   const profilePictureUrl = watch('profilePictureUrl');
 
   const toggleSpecialization = (spec: Specialization) => {
-    const current = watchedSpecializations as string[];
+    const current = watchedSpecializations;
     if (current.includes(spec)) {
       setValue(
         'specializations',
-        current.filter((s) => s !== spec)
+        current.filter(s => s !== spec)
       );
     } else {
       setValue('specializations', [...current, spec]);
@@ -94,7 +116,7 @@ export function ProfileStep({ data, onNext, onBack }: ProfileStepProps) {
           name="profilePicture"
           render={({ field }) => (
             <AvatarUpload
-              onFileSelect={(file) => {
+              onFileSelect={file => {
                 field.onChange(file);
                 setValue('profilePictureUrl', URL.createObjectURL(file));
               }}
@@ -157,8 +179,8 @@ export function ProfileStep({ data, onNext, onBack }: ProfileStepProps) {
         <p className="text-sm text-sand-500">{t('specializationsHelper')}</p>
 
         <div className="flex flex-wrap gap-2">
-          {SPECIALIZATION_OPTIONS.map((option) => {
-            const isSelected = (watchedSpecializations as string[]).includes(option.value);
+          {SPECIALIZATION_OPTIONS.map(option => {
+            const isSelected = watchedSpecializations.includes(option.value);
             return (
               <Badge
                 key={option.value}
@@ -173,7 +195,7 @@ export function ProfileStep({ data, onNext, onBack }: ProfileStepProps) {
                 role="checkbox"
                 aria-checked={isSelected}
                 tabIndex={0}
-                onKeyDown={(e) => {
+                onKeyDown={e => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     toggleSpecialization(option.value);
