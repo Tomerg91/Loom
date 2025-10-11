@@ -10,8 +10,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getClientSharedResources } from '@/lib/database/resources';
 import { createClient } from '@/lib/supabase/server';
-import { sanitizeError, unauthorizedError, forbiddenError } from '@/lib/utils/api-errors';
-import type { ResourceListParams } from '@/types/resources';
+import {
+  sanitizeError,
+  unauthorizedError,
+  forbiddenError,
+} from '@/lib/utils/api-errors';
+import { isResourceCategory, type ResourceListParams } from '@/types/resources';
 
 /**
  * GET /api/resources/client
@@ -38,7 +42,10 @@ export async function GET(request: NextRequest) {
   try {
     // Get authenticated user
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const { response, statusCode } = unauthorizedError();
@@ -48,25 +55,51 @@ export async function GET(request: NextRequest) {
     // Verify user is a client
     const userRole = user.user_metadata?.role;
     if (userRole !== 'client') {
-      const { response, statusCode } = forbiddenError('Only clients can access shared resources.');
+      const { response, statusCode } = forbiddenError(
+        'Only clients can access shared resources.'
+      );
       return NextResponse.json(response, { status: statusCode });
     }
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
+    const rawCategory = searchParams.get('category');
+    const rawSortBy = searchParams.get('sortBy');
+    const rawSortOrder = searchParams.get('sortOrder');
+    const rawCoach = searchParams.get('coach');
+
+    const sortByOptions: ResourceListParams['sortBy'][] = [
+      'created_at',
+      'filename',
+      'file_size',
+      'view_count',
+      'download_count',
+    ];
+
     const filters: ResourceListParams = {
-      category: searchParams.get('category') as any || undefined,
+      category:
+        rawCategory && isResourceCategory(rawCategory)
+          ? rawCategory
+          : undefined,
       tags: searchParams.get('tags')?.split(',').filter(Boolean) || undefined,
       search: searchParams.get('search') || undefined,
-      sortBy: (searchParams.get('sortBy') as any) || 'created_at',
-      sortOrder: (searchParams.get('sortOrder') as any) || 'desc',
+      sortBy:
+        rawSortBy &&
+        sortByOptions.includes(rawSortBy as ResourceListParams['sortBy'])
+          ? (rawSortBy as ResourceListParams['sortBy'])
+          : 'created_at',
+      sortOrder:
+        rawSortOrder === 'asc' || rawSortOrder === 'desc'
+          ? rawSortOrder
+          : 'desc',
+      coachId: rawCoach || undefined,
     };
 
     // Get shared resources
     const resources = await getClientSharedResources(user.id, filters);
 
     // Filter by coach if specified
-    const coachId = searchParams.get('coach');
+    const coachId = filters.coachId;
     const filteredResources = coachId
       ? resources.filter(r => r.sharedBy.id === coachId)
       : resources;

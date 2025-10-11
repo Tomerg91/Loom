@@ -8,6 +8,8 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { QueryKey } from '@tanstack/react-query';
+
 import { useToast } from '@/components/ui/use-toast';
 import type { ResourceLibraryItem } from '@/types/resources';
 
@@ -22,6 +24,19 @@ interface UploadMetadata {
 }
 
 /**
+ * Supported resource progress tracking actions
+ */
+export type ResourceProgressAction = 'viewed' | 'completed' | 'accessed';
+
+/**
+ * Variables for tracking resource progress mutations
+ */
+export interface TrackResourceProgressInput {
+  resourceId: string;
+  action: ResourceProgressAction;
+}
+
+/**
  * Upload resource to API
  */
 async function uploadResource(file: File, metadata: UploadMetadata) {
@@ -30,7 +45,10 @@ async function uploadResource(file: File, metadata: UploadMetadata) {
   formData.append('category', metadata.category);
 
   if (metadata.tags) {
-    const tags = metadata.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+    const tags = metadata.tags
+      .split(',')
+      .map((t: string) => t.trim())
+      .filter(Boolean);
     formData.append('tags', JSON.stringify(tags));
   }
 
@@ -74,8 +92,13 @@ export function useUploadResource() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ file, metadata }: { file: File; metadata: UploadMetadata }) =>
-      uploadResource(file, metadata),
+    mutationFn: ({
+      file,
+      metadata,
+    }: {
+      file: File;
+      metadata: UploadMetadata;
+    }) => uploadResource(file, metadata),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       toast({
@@ -104,6 +127,27 @@ async function deleteResource(resourceId: string) {
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error.error || 'Failed to delete resource');
+  }
+
+  return res.json();
+}
+
+/**
+ * Track client progress for a resource
+ */
+async function trackResourceProgress(
+  resourceId: string,
+  action: ResourceProgressAction
+) {
+  const res = await fetch(`/api/resources/${resourceId}/progress`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to track resource progress');
   }
 
   return res.json();
@@ -141,7 +185,7 @@ export function useDeleteResource() {
       queryClient.setQueriesData(
         { queryKey: ['resources'] },
         (old: ResourceLibraryItem[] | undefined) =>
-          old?.filter((r) => r.id !== resourceId) ?? []
+          old?.filter(r => r.id !== resourceId) ?? []
       );
 
       return { previousResources };
@@ -182,7 +226,10 @@ interface ShareData {
 /**
  * Share resource with all clients
  */
-async function shareResourceWithAllClients(resourceId: string, data: ShareData) {
+async function shareResourceWithAllClients(
+  resourceId: string,
+  data: ShareData
+) {
   const res = await fetch(`/api/resources/${resourceId}/share-all-clients`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -220,8 +267,13 @@ export function useShareResource() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ resourceId, data }: { resourceId: string; data: ShareData }) =>
-      shareResourceWithAllClients(resourceId, data),
+    mutationFn: ({
+      resourceId,
+      data,
+    }: {
+      resourceId: string;
+      data: ShareData;
+    }) => shareResourceWithAllClients(resourceId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       toast({
@@ -235,6 +287,21 @@ export function useShareResource() {
         description: error.message,
         variant: 'destructive',
       });
+    },
+  });
+}
+
+/**
+ * Hook for tracking client resource progress with cache invalidation
+ */
+export function useTrackResourceProgress(queryKey: QueryKey = ['resources']) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ resourceId, action }: TrackResourceProgressInput) =>
+      trackResourceProgress(resourceId, action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
     },
   });
 }
