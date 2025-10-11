@@ -16,6 +16,7 @@ import type {
   CreateTaskInput,
   TaskDto,
   TaskInstanceDto,
+  TaskClientDto,
   TaskListQueryInput,
   TaskListResponse,
   TaskPriority,
@@ -35,11 +36,15 @@ type SupabaseClient = ReturnType<typeof createAdminClient>;
 type TaskRow = Database['public']['Tables']['tasks']['Row'];
 type TaskCategoryRow = Database['public']['Tables']['task_categories']['Row'];
 type TaskInstanceRow = Database['public']['Tables']['task_instances']['Row'];
+type UserRow = Database['public']['Tables']['users']['Row'];
 
 type TaskRecord = TaskRow & {
   category?: (TaskCategoryRow | null) & { color_hex?: string | null };
   instances?: TaskInstanceRow[] | null;
+  client?: UserRow | null;
 };
+
+export type TaskRecordWithRelations = TaskRecord;
 
 const TASK_SELECT = `
   *,
@@ -47,6 +52,12 @@ const TASK_SELECT = `
     id,
     label,
     color_hex
+  ),
+  client:users!tasks_client_id_fkey(
+    id,
+    first_name,
+    last_name,
+    email
   ),
   instances:task_instances(*)
 `;
@@ -73,7 +84,20 @@ const serializeInstance = (instance: TaskInstanceRow): TaskInstanceDto => ({
   updatedAt: new Date(instance.updated_at).toISOString(),
 });
 
-const serializeTask = (task: TaskRecord): TaskDto => {
+const buildTaskClient = (task: TaskRecord): TaskClientDto | null => {
+  if (!task.client) {
+    return null;
+  }
+
+  return {
+    id: task.client.id,
+    firstName: task.client.first_name,
+    lastName: task.client.last_name,
+    email: task.client.email,
+  };
+};
+
+export const serializeTaskRecord = (task: TaskRecord): TaskDto => {
   const instances = [...(task.instances ?? [])]
     .map(serializeInstance)
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
@@ -90,6 +114,7 @@ const serializeTask = (task: TaskRecord): TaskDto => {
     id: task.id,
     coachId: task.coach_id,
     clientId: task.client_id,
+    client: buildTaskClient(task),
     category,
     title: task.title,
     description: task.description,
@@ -340,7 +365,7 @@ export class TaskService {
     }
 
     const rows = (data ?? []) as TaskRecord[];
-    const tasks = rows.map(serializeTask);
+    const tasks = rows.map(serializeTaskRecord);
     const total = count ?? tasks.length;
 
     return {
@@ -426,7 +451,7 @@ export class TaskService {
     }
 
     const rows = (data ?? []) as TaskRecord[];
-    const tasks = rows.map(serializeTask);
+    const tasks = rows.map(serializeTaskRecord);
     const total = count ?? tasks.length;
 
     return {
@@ -443,7 +468,7 @@ export class TaskService {
   public async getTaskById(taskId: string, actor: TaskActor): Promise<TaskDto> {
     const task = await this.fetchTaskRecord(taskId);
     ensureActorCanViewTask(task, actor);
-    return serializeTask(task as TaskRecord);
+    return serializeTaskRecord(task as TaskRecord);
   }
 
   public async updateTask(

@@ -39,6 +39,33 @@ const formatDescription = (description?: string | null) => {
   return `${description.slice(0, 120)}…`;
 };
 
+const getClientDisplay = (task: TaskDto) => {
+  const name = task.client
+    ? [task.client.firstName, task.client.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim()
+    : '';
+
+  const hasClientRecord = Boolean(task.client);
+  const truncatedId = `${task.clientId.slice(0, 8)}…`;
+  const primary =
+    name.length > 0 ? name : (task.client?.email ?? `Client ${truncatedId}`);
+
+  const secondary =
+    name.length > 0 && task.client?.email
+      ? task.client.email
+      : !hasClientRecord
+        ? truncatedId
+        : undefined;
+
+  return {
+    primary,
+    secondary,
+    isSecondaryMonospace: !hasClientRecord,
+  };
+};
+
 export interface TaskListTableProps {
   tasks: TaskDto[];
 }
@@ -49,96 +76,116 @@ export function TaskListTable({ tasks }: TaskListTableProps) {
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[30%]">Task</TableHead>
-          <TableHead>Client</TableHead>
-          <TableHead>Category</TableHead>
-          <TableHead>Due</TableHead>
-          <TableHead>Progress</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Priority</TableHead>
-          <TableHead className="text-right">Updated</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {tasks.map(task => {
-          const instance = getDisplayInstance(task);
-          const dueDate = instance?.dueDate ?? task.dueDate;
-          const completion = instance?.completionPercentage ?? 0;
-          const status = instance?.status ?? 'PENDING';
-          const description = formatDescription(task.description);
+    <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white shadow-sm">
+      <Table className="min-w-[960px]">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[30%]">Task</TableHead>
+            <TableHead>Client</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Due</TableHead>
+            <TableHead>Progress</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Priority</TableHead>
+            <TableHead className="text-right">Updated</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {tasks.map(task => {
+            const instance = getDisplayInstance(task);
+            const dueDate = instance?.dueDate ?? task.dueDate;
+            const completion = instance?.completionPercentage ?? 0;
+            const status = instance?.status ?? 'PENDING';
+            const description = formatDescription(task.description);
+            const clientDisplay = getClientDisplay(task);
 
-          return (
-            <TableRow key={task.id}>
-              <TableCell>
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-neutral-900">{task.title}</span>
-                    {task.recurrenceRule ? (
-                      <Badge variant="outline" className="text-xs">
-                        Recurring
-                      </Badge>
+            return (
+              <TableRow key={task.id}>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-neutral-900">
+                        {task.title}
+                      </span>
+                      {task.recurrenceRule ? (
+                        <Badge variant="outline" className="text-xs">
+                          Recurring
+                        </Badge>
+                      ) : null}
+                    </div>
+                    {description ? (
+                      <p className="text-sm text-neutral-500">{description}</p>
                     ) : null}
                   </div>
-                  {description ? (
-                    <p className="text-sm text-neutral-500">
-                      {description}
-                    </p>
-                  ) : null}
-                </div>
-              </TableCell>
-              <TableCell>
-                <span className="font-mono text-xs text-neutral-500">
-                  {task.clientId.slice(0, 8)}…
-                </span>
-              </TableCell>
-              <TableCell>
-                {task.category ? (
-                  <span className="inline-flex items-center gap-2 text-sm text-neutral-700">
-                    <span
-                      aria-hidden
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: task.category.colorHex }}
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-neutral-800">
+                      {clientDisplay.primary}
+                    </span>
+                    {clientDisplay.secondary ? (
+                      <span
+                        className={`text-xs text-neutral-500 ${clientDisplay.isSecondaryMonospace ? 'font-mono' : ''}`}
+                      >
+                        {clientDisplay.secondary}
+                      </span>
+                    ) : null}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {task.category ? (
+                    <span className="inline-flex items-center gap-2 text-sm text-neutral-700">
+                      <span
+                        aria-hidden
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: task.category.colorHex }}
+                      />
+                      {task.category.label}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-neutral-400">
+                      Uncategorized
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {dueDate ? (
+                    <span className="text-sm text-neutral-700">
+                      {formatDate(dueDate)}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-neutral-400">
+                      No due date
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Progress
+                      value={completion}
+                      className="h-2 w-24"
+                      aria-label="Task completion"
                     />
-                    {task.category.label}
-                  </span>
-                ) : (
-                  <span className="text-sm text-neutral-400">Uncategorized</span>
-                )}
-              </TableCell>
-              <TableCell>
-                {dueDate ? (
-                  <span className="text-sm text-neutral-700">
-                    {formatDate(dueDate)}
-                  </span>
-                ) : (
-                  <span className="text-sm text-neutral-400">No due date</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Progress value={completion} className="h-2 w-24" aria-label="Task completion" />
-                  <span className="text-sm font-medium text-neutral-700">
-                    {Math.round(completion)}%
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <TaskStatusBadge status={status} />
-              </TableCell>
-              <TableCell>
-                <TaskPriorityIndicator priority={task.priority} />
-              </TableCell>
-              <TableCell className="text-right text-sm text-neutral-500">
-                {formatDate(task.updatedAt)}
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+                    <span className="text-sm font-medium text-neutral-700">
+                      {Math.round(completion)}%
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <TaskStatusBadge status={status} />
+                </TableCell>
+                <TableCell>
+                  <TaskPriorityIndicator priority={task.priority} />
+                </TableCell>
+                <TableCell className="text-right text-sm text-neutral-500">
+                  {formatDate(task.updatedAt)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
@@ -149,7 +196,8 @@ export function TaskListEmptyState() {
         No tasks match these filters yet
       </p>
       <p className="max-w-md text-sm text-neutral-500">
-        Try adjusting the filters above or assigning a new action item to your client. Fresh assignments will appear here instantly once created.
+        Try adjusting the filters above or assigning a new action item to your
+        client. Fresh assignments will appear here instantly once created.
       </p>
     </div>
   );

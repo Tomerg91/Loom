@@ -6,7 +6,7 @@ import {
   TaskService,
   TaskServiceError,
 } from '@/modules/tasks/services/task-service';
-import { taskListQuerySchema } from '@/modules/tasks/types/task';
+import { parseTaskListQueryParams } from '@/modules/tasks/api/query-helpers';
 
 const taskService = new TaskService();
 
@@ -26,27 +26,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       );
     }
 
-    const searchParams = request.nextUrl.searchParams;
-    const statusParams = searchParams.getAll('status').filter(Boolean);
-    const priorityParams = searchParams.getAll('priority').filter(Boolean);
-
-    const rawQuery = {
-      coachId: searchParams.get('coachId') || undefined,
-      clientId: searchParams.get('clientId') || undefined,
-      categoryId: searchParams.get('categoryId') || undefined,
-      status: statusParams.length ? statusParams : undefined,
-      priority: priorityParams.length ? priorityParams : undefined,
-      includeArchived: searchParams.get('includeArchived') || undefined,
-      search: searchParams.get('search') || undefined,
-      dueDateFrom: searchParams.get('dueDateFrom') || undefined,
-      dueDateTo: searchParams.get('dueDateTo') || undefined,
-      sort: searchParams.get('sort') || undefined,
-      sortOrder: searchParams.get('sortOrder') || undefined,
-      page: searchParams.get('page') || undefined,
-      pageSize: searchParams.get('pageSize') || undefined,
-    } as Record<string, unknown>;
-
-    const parsed = taskListQuerySchema.safeParse(rawQuery);
+    const parsed = parseTaskListQueryParams(request.nextUrl.searchParams);
 
     if (!parsed.success) {
       return ApiResponseHelper.badRequest(
