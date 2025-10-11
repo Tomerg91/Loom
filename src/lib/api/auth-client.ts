@@ -1,5 +1,5 @@
-import type { UserRole, Language } from '@/types';
 import { config } from '@/lib/config';
+import type { Language, UserRole } from '@/types';
 
 export interface AuthUser {
   id: string;
@@ -24,6 +24,7 @@ export interface SignUpData {
 export interface SignInData {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface UpdateProfileData {
