@@ -120,7 +120,13 @@ export const PATCH = async (request: NextRequest, context: RouteContext) => {
   }
 
   const { taskId } = paramsSchema.parse(await context.params);
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch (error) {
+    console.warn('Failed to parse task update payload:', error);
+    return createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
+  }
   const parsed = validateRequestBody(updateTaskSchema, body);
 
   if (!parsed.success) {

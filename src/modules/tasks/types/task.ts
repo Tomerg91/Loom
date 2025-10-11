@@ -140,6 +140,7 @@ export interface TaskDto {
   id: string;
   coachId: string;
   clientId: string;
+  client: TaskClientDto | null;
   category?: {
     id: string;
     label: string;
@@ -155,6 +156,13 @@ export interface TaskDto {
   createdAt: string;
   updatedAt: string;
   instances: TaskInstanceDto[];
+}
+
+export interface TaskClientDto {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
 }
 
 /**

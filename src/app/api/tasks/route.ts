@@ -11,9 +11,9 @@ import {
   TaskService,
   TaskServiceError,
 } from '@/modules/tasks/services/task-service';
+import { parseTaskListQueryParams } from '@/modules/tasks/api/query-helpers';
 import {
   createTaskSchema,
-  taskListQuerySchema,
   type TaskListQueryInput,
 } from '@/modules/tasks/types/task';
 
@@ -81,27 +81,7 @@ export const GET = async (request: NextRequest) => {
     );
   }
 
-  const searchParams = request.nextUrl.searchParams;
-  const statusParams = searchParams.getAll('status').filter(Boolean);
-  const priorityParams = searchParams.getAll('priority').filter(Boolean);
-
-  const rawQuery = {
-    coachId: searchParams.get('coachId') || undefined,
-    clientId: searchParams.get('clientId') || undefined,
-    categoryId: searchParams.get('categoryId') || undefined,
-    status: statusParams.length ? statusParams : undefined,
-    priority: priorityParams.length ? priorityParams : undefined,
-    includeArchived: searchParams.get('includeArchived') || undefined,
-    search: searchParams.get('search') || undefined,
-    dueDateFrom: searchParams.get('dueDateFrom') || undefined,
-    dueDateTo: searchParams.get('dueDateTo') || undefined,
-    sort: searchParams.get('sort') || undefined,
-    sortOrder: searchParams.get('sortOrder') || undefined,
-    page: searchParams.get('page') || undefined,
-    pageSize: searchParams.get('pageSize') || undefined,
-  };
-
-  const parsedQuery = taskListQuerySchema.safeParse(rawQuery);
+  const parsedQuery = parseTaskListQueryParams(request.nextUrl.searchParams);
 
   if (!parsedQuery.success) {
     return createErrorResponse('Validation failed', HTTP_STATUS.BAD_REQUEST);
@@ -146,7 +126,13 @@ export const POST = async (request: NextRequest) => {
     );
   }
 
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch (error) {
+    console.warn('Failed to parse task creation payload:', error);
+    return createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
+  }
   const parsed = validateRequestBody(createTaskSchema, body);
 
   if (!parsed.success) {
