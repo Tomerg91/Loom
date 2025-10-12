@@ -8,6 +8,9 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useQuery } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -25,6 +28,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Calendar, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { format, addDays } from 'date-fns';
 
 interface AddSessionModalProps {
   open: boolean;
@@ -89,6 +95,7 @@ export function AddSessionModal({ open, onOpenChange, coachId, onSuccess }: AddS
       }
 
       // Refresh dashboard data
+      // Refresh dashboard data in parent context
       onSuccess?.();
 
       const client = clients?.find((c) => c.id === formData.clientId);

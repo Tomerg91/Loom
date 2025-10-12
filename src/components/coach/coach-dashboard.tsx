@@ -11,6 +11,8 @@ import {
   TrendingUp,
   UserPlus,
   Users,
+  ArrowUpRight,
+  UserPlus,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -180,6 +182,16 @@ export function CoachDashboard() {
     queryClient.invalidateQueries({ queryKey: ['coach-clients'] });
     queryClient.invalidateQueries({ queryKey: ['coach-clients-list'] });
   }, [queryClient]);
+    const userId = user?.id;
+    if (!userId) return;
+
+    queryClient.invalidateQueries({ queryKey: ['coach-stats', userId] });
+    queryClient.invalidateQueries({ queryKey: ['upcoming-sessions', userId] });
+    queryClient.invalidateQueries({ queryKey: ['recent-clients', userId] });
+    queryClient.invalidateQueries({ queryKey: ['recent-activity', userId] });
+    queryClient.invalidateQueries({ queryKey: ['coach-clients', userId] });
+    queryClient.invalidateQueries({ queryKey: ['coach-clients-list', userId] });
+  }, [queryClient, user?.id]);
 
   const safeStats: DashboardStats = stats ?? {
     totalSessions: 0,

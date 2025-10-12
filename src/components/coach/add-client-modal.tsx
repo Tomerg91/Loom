@@ -51,6 +51,7 @@ export function AddClientModal({ open, onOpenChange, onSuccess }: AddClientModal
       }
 
       // Refresh dashboard level data if provided
+      // Refresh dashboard data in parent context
       onSuccess?.();
 
       toast.success(t('success', { name: `${formData.firstName} ${formData.lastName}` }));
