@@ -132,7 +132,7 @@ export class AuthService {
       return AuthService.create({ isServer: options });
     }
 
-    const { isServer = true, supabaseClient } = options;
+    const { isServer = true } = options;
 
     if (isServer) {
       const supabase = createClient();
