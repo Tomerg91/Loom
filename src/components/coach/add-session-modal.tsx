@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calendar, Loader2, Clock } from 'lucide-react';
+import { Calendar, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 
@@ -29,6 +29,7 @@ interface AddSessionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   coachId?: string;
+  onSuccess?: () => void;
 }
 
 interface Client {
@@ -37,9 +38,8 @@ interface Client {
   lastName: string;
 }
 
-export function AddSessionModal({ open, onOpenChange, coachId }: AddSessionModalProps) {
+export function AddSessionModal({ open, onOpenChange, coachId, onSuccess }: AddSessionModalProps) {
   const t = useTranslations('coach.addSession');
-  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -87,10 +87,8 @@ export function AddSessionModal({ open, onOpenChange, coachId }: AddSessionModal
         throw new Error(error.message || 'Failed to create session');
       }
 
-      // Refresh dashboard data
-      queryClient.invalidateQueries({ queryKey: ['coach-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['recent-activity'] });
+      // Refresh dashboard data in parent context
+      onSuccess?.();
 
       const client = clients?.find((c) => c.id === formData.clientId);
       toast.success(t('success', { client: `${client?.firstName} ${client?.lastName}` }));

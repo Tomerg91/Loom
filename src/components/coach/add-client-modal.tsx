@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -20,11 +19,11 @@ import { toast } from 'sonner';
 interface AddClientModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export function AddClientModal({ open, onOpenChange }: AddClientModalProps) {
+export function AddClientModal({ open, onOpenChange, onSuccess }: AddClientModalProps) {
   const t = useTranslations('coach.addClient');
-  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -50,10 +49,8 @@ export function AddClientModal({ open, onOpenChange }: AddClientModalProps) {
         throw new Error(error.message || 'Failed to add client');
       }
 
-      // Refresh dashboard data
-      queryClient.invalidateQueries({ queryKey: ['coach-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['recent-clients'] });
-      queryClient.invalidateQueries({ queryKey: ['coach-clients'] });
+      // Refresh dashboard data in parent context
+      onSuccess?.();
 
       toast.success(t('success', { name: `${formData.firstName} ${formData.lastName}` }));
 
