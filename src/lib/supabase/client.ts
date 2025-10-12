@@ -1,6 +1,7 @@
 import { createBrowserClient } from '@supabase/ssr';
-import { Database } from '@/types/supabase';
+
 import { env } from '@/env';
+import { Database } from '@/types/supabase';
 
 // Direct access to client-safe environment variables
 // Note: Only NEXT_PUBLIC_ prefixed variables are available on the client
@@ -24,72 +25,86 @@ function validateClientEnv() {
   if (typeof window !== 'undefined') {
     // Check for missing environment variables
     if (!NEXT_PUBLIC_SUPABASE_URL) {
-      const errorMsg = 'Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL. ' +
+      const errorMsg =
+        'Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL. ' +
         'Please set this variable in your deployment environment (Vercel dashboard, .env.local, etc.).';
       console.error(errorMsg);
       throw new Error(errorMsg);
     }
-    
+
     if (!NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      const errorMsg = 'Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY. ' +
+      const errorMsg =
+        'Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY. ' +
         'Please set this variable in your deployment environment (Vercel dashboard, .env.local, etc.).';
       console.error(errorMsg);
       throw new Error(errorMsg);
     }
-    
+
     // Check for placeholder values that indicate environment variables weren't properly set
     const placeholderPatterns = [
       'MISSING_',
       'INVALID_',
       'your-project-id',
       'your-supabase',
-      'localhost:54321' // Common local dev URL
+      'localhost:54321', // Common local dev URL
     ];
-    
-    if (placeholderPatterns.some(pattern => NEXT_PUBLIC_SUPABASE_URL.includes(pattern))) {
-      const errorMsg = `Invalid Supabase URL configuration: "${NEXT_PUBLIC_SUPABASE_URL}". ` +
+
+    if (
+      placeholderPatterns.some(pattern =>
+        NEXT_PUBLIC_SUPABASE_URL.includes(pattern)
+      )
+    ) {
+      const errorMsg =
+        `Invalid Supabase URL configuration: "${NEXT_PUBLIC_SUPABASE_URL}". ` +
         'This appears to be a placeholder value. Please set the correct Supabase URL ' +
         'in your environment variables. Expected format: https://your-project-ref.supabase.co';
       console.error(errorMsg);
       throw new Error(errorMsg);
     }
-    
+
     // Validate URL format
     try {
       const url = new URL(NEXT_PUBLIC_SUPABASE_URL);
-      
+
       // Check for valid Supabase hostname patterns
       const validPatterns = [
         'supabase.co',
         'supabase.com',
-        'localhost' // Allow localhost for development
+        'localhost', // Allow localhost for development
       ];
-      
-      const isValidPattern = validPatterns.some(pattern => url.hostname.includes(pattern));
+
+      const isValidPattern = validPatterns.some(pattern =>
+        url.hostname.includes(pattern)
+      );
       if (!isValidPattern) {
-        console.warn(`Warning: Supabase URL "${NEXT_PUBLIC_SUPABASE_URL}" does not match expected patterns.`);
+        console.warn(
+          `Warning: Supabase URL "${NEXT_PUBLIC_SUPABASE_URL}" does not match expected patterns.`
+        );
       }
-    } catch (error) {
-      const errorMsg = `Invalid Supabase URL format: "${NEXT_PUBLIC_SUPABASE_URL}". ` +
+    } catch (_error) {
+      const errorMsg =
+        `Invalid Supabase URL format: "${NEXT_PUBLIC_SUPABASE_URL}". ` +
         'Expected a valid URL like: https://your-project-ref.supabase.co';
       console.error(errorMsg);
       throw new Error(errorMsg);
     }
-    
+
     // Validate publishable key format: allow legacy JWT (eyJ...) and new keys (sb_...)
     const looksLegacyJwt = NEXT_PUBLIC_SUPABASE_ANON_KEY.startsWith('eyJ');
     const looksNewKey = NEXT_PUBLIC_SUPABASE_ANON_KEY.startsWith('sb_');
     if (!looksLegacyJwt && !looksNewKey) {
       const prefix = NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 8);
-      const errorMsg = `Invalid Supabase publishable/anon key prefix: "${prefix}...". ` +
+      const errorMsg =
+        `Invalid Supabase publishable/anon key prefix: "${prefix}...". ` +
         'Expected a legacy JWT (eyJ...) or a new publishable key (sb_...).';
       console.error(errorMsg);
       throw new Error(errorMsg);
     }
-    
+
     // Additional placeholder detection
     if (NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('your-supabase')) {
-      const errorMsg = 'Invalid Supabase key: appears to be a placeholder value. ' +
+      const errorMsg =
+        'Invalid Supabase key: appears to be a placeholder value. ' +
         'Please set the correct publishable key from your Supabase dashboard.';
       console.error(errorMsg);
       throw new Error(errorMsg);
@@ -127,13 +142,16 @@ async function handleInvalidToken(client: SBClient) {
         localStorage.removeItem('loom-auth');
         localStorage.removeItem('loom-auth-token');
         sessionStorage.removeItem('loom-auth');
-      } catch (e) {
+      } catch (_error) {
         // Storage might be unavailable
       }
     }
 
     // Redirect to sign-in page
-    if (typeof window !== 'undefined' && !window.location.pathname.includes('/signin')) {
+    if (
+      typeof window !== 'undefined' &&
+      !window.location.pathname.includes('/signin')
+    ) {
       window.location.href = '/signin?expired=true';
     }
   } catch (error) {
@@ -167,7 +185,9 @@ async function retryTokenRefresh(client: SBClient): Promise<boolean> {
 
       // Wait before retrying (exponential backoff)
       if (attempt < MAX_REFRESH_RETRIES - 1) {
-        await new Promise(resolve => setTimeout(resolve, REFRESH_RETRY_DELAY * Math.pow(2, attempt)));
+        await new Promise(resolve =>
+          setTimeout(resolve, REFRESH_RETRY_DELAY * Math.pow(2, attempt))
+        );
       }
     }
   }
@@ -227,7 +247,13 @@ export const createClient = () => {
 
           default:
             // Check if session is still valid
-            if (!session && event !== 'SIGNED_OUT' && event !== 'INITIAL_SESSION') {
+            const eventName = event as string;
+
+            if (
+              !session &&
+              eventName !== 'SIGNED_OUT' &&
+              eventName !== 'INITIAL_SESSION'
+            ) {
               // Session is invalid, try to refresh
               if (tokenRefreshRetries < MAX_REFRESH_RETRIES) {
                 tokenRefreshRetries++;
@@ -252,16 +278,20 @@ export const createClient = () => {
           const response = await originalFetch(...args);
 
           // Check for auth errors in responses
-          if (response.status === 401 && args[0]?.toString().includes('supabase')) {
+          if (
+            response.status === 401 &&
+            args[0]?.toString().includes('supabase')
+          ) {
             const clonedResponse = response.clone();
             try {
               const data = await clonedResponse.json();
 
               // Check for specific auth errors
-              if (data.message?.includes('Invalid Refresh Token') ||
-                  data.message?.includes('Refresh Token Not Found') ||
-                  data.message?.includes('JWT expired')) {
-
+              if (
+                data.message?.includes('Invalid Refresh Token') ||
+                data.message?.includes('Refresh Token Not Found') ||
+                data.message?.includes('JWT expired')
+              ) {
                 // Try to refresh the token
                 if (tokenRefreshRetries < MAX_REFRESH_RETRIES) {
                   tokenRefreshRetries++;
@@ -274,7 +304,7 @@ export const createClient = () => {
                   await handleInvalidToken(clientInstance!);
                 }
               }
-            } catch (e) {
+            } catch (_error) {
               // Response might not be JSON
             }
           }
@@ -298,8 +328,8 @@ export const createClient = () => {
     // Re-throw with more context
     throw new Error(
       `Failed to initialize Supabase client. This typically indicates missing or invalid environment variables. ` +
-      `Please ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are properly set. ` +
-      `Original error: ${error instanceof Error ? error.message : String(error)}`
+        `Please ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are properly set. ` +
+        `Original error: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 };
@@ -307,11 +337,14 @@ export const createClient = () => {
 // Lazy singleton client for client-side usage - only created when first accessed
 let _lazyClient: ReturnType<typeof createBrowserClient<Database>> | null = null;
 
-export const supabase = new Proxy({} as ReturnType<typeof createBrowserClient<Database>>, {
-  get(target, prop) {
-    if (!_lazyClient) {
-      _lazyClient = createClient();
-    }
-    return _lazyClient[prop as keyof typeof _lazyClient];
+export const supabase = new Proxy(
+  {} as ReturnType<typeof createBrowserClient<Database>>,
+  {
+    get(target, prop) {
+      if (!_lazyClient) {
+        _lazyClient = createClient();
+      }
+      return _lazyClient[prop as keyof typeof _lazyClient];
+    },
   }
-});
+);
