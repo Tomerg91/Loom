@@ -9,7 +9,7 @@ import { createAuthService } from '@/lib/auth/auth';
 export async function GET(request: NextRequest) {
   try {
     // Authenticate user
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     const user = await authService.getCurrentUser();
     if (!user) {
       return NextResponse.json(
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Authenticate user
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     const user = await authService.getCurrentUser();
     if (!user) {
       return NextResponse.json(

@@ -26,7 +26,7 @@ const clientOnboardingSchema = z.object({
 const rateLimitedHandler = rateLimit(10, 60_000);
 
 export const GET = withErrorHandling(async () => {
-  const authService = await createAuthService(true);
+  const authService = createAuthService(true);
   const user = await authService.getCurrentUser();
 
   if (!user) {
@@ -71,7 +71,7 @@ export const GET = withErrorHandling(async () => {
 
 export const PUT = withErrorHandling(
   rateLimitedHandler(async (request: NextRequest) => {
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     const user = await authService.getCurrentUser();
 
     if (!user) {

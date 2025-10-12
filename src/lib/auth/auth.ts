@@ -93,10 +93,17 @@ export interface AuthSessionTokens {
 // Singleton instance on the client to avoid duplicate GoTrue clients in the browser
 let clientAuthServiceInstance: AuthService | null = null;
 
+type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+export type CreateAuthServiceOptions =
+  | boolean
+  | {
+      isServer?: boolean;
+      supabaseClient?: ServerSupabaseClient;
+    };
+
 export class AuthService {
-  private supabase:
-    | Awaited<ReturnType<typeof createClient>>
-    | typeof clientSupabase;
+  private supabase: ServerSupabaseClient | typeof clientSupabase;
   private userService: ReturnType<ReturnType<typeof getCreateUserService>>;
   private userProfileCache = new Map<
     string,
@@ -107,10 +114,7 @@ export class AuthService {
     return `user_profile_${userId}`;
   }
 
-  private constructor(
-    isServer = true,
-    supabase?: Awaited<ReturnType<typeof createClient>>
-  ) {
+  private constructor(isServer = true, supabase?: ServerSupabaseClient) {
     // Use the request-scoped server client when provided or fall back to the shared browser client
     this.supabase = isServer && supabase ? supabase : clientSupabase;
 
@@ -121,7 +125,15 @@ export class AuthService {
     });
   }
 
-  public static async create(isServer = true): Promise<AuthService> {
+  public static create(
+    options: CreateAuthServiceOptions = { isServer: true }
+  ): AuthService {
+    if (typeof options === 'boolean') {
+      return AuthService.create({ isServer: options });
+    }
+
+    const { isServer = true } = options;
+
     if (isServer) {
       const supabase = createClient();
       return new AuthService(true, supabase);
@@ -781,13 +793,15 @@ export class AuthService {
 }
 
 // Convenience factory functions with singleton pattern
-export const createAuthService = (isServer = true) => {
-  return AuthService.create(isServer);
+export const createAuthService = (
+  options: CreateAuthServiceOptions = { isServer: true }
+) => {
+  return AuthService.create(options);
 };
 
 // Server-side auth helpers
 export const getServerUser = async (): Promise<AuthUser | null> => {
-  const authService = await createAuthService(true);
+  const authService = createAuthService(true);
   return authService.getCurrentUser();
 };
 

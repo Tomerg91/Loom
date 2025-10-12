@@ -13,7 +13,7 @@ import { createAuthService } from '@/lib/auth/auth';
 export async function GET(request: NextRequest) {
   try {
     // Get authenticated user
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     const user = await authService.getCurrentUser();
 
     if (!user) {
