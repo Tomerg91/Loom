@@ -1294,6 +1294,7 @@ export type Database = {
         Row: {
           auto_version_on_update: boolean | null;
           bucket_name: string;
+          completion_count: number;
           created_at: string | null;
           current_version: number | null;
           description: string | null;
@@ -1303,16 +1304,20 @@ export type Database = {
           file_type: string;
           filename: string;
           id: string;
+          is_library_resource: boolean;
+          is_public: boolean;
           is_shared: boolean;
           max_versions: number | null;
           original_filename: string;
           session_id: string | null;
+          shared_with_all_clients: boolean;
           storage_path: string;
           tags: string[] | null;
           updated_at: string | null;
           user_id: string;
           version_count: number | null;
           versioning_enabled: boolean | null;
+          view_count: number;
         };
         Insert: {
           auto_version_on_update?: boolean | null;
@@ -1321,19 +1326,24 @@ export type Database = {
           current_version?: number | null;
           description?: string | null;
           download_count?: number;
+          completion_count?: number;
           file_category?: Database['public']['Enums']['file_category'];
           file_size: number;
           file_type: string;
           filename: string;
           id?: string;
+          is_library_resource?: boolean;
+          is_public?: boolean;
           is_shared?: boolean;
           max_versions?: number | null;
           original_filename: string;
           session_id?: string | null;
+          shared_with_all_clients?: boolean;
           storage_path: string;
           tags?: string[] | null;
           updated_at?: string | null;
           user_id: string;
+          view_count?: number;
           version_count?: number | null;
           versioning_enabled?: boolean | null;
         };
@@ -1344,19 +1354,24 @@ export type Database = {
           current_version?: number | null;
           description?: string | null;
           download_count?: number;
+          completion_count?: number;
           file_category?: Database['public']['Enums']['file_category'];
           file_size?: number;
           file_type?: string;
           filename?: string;
           id?: string;
+          is_library_resource?: boolean;
+          is_public?: boolean;
           is_shared?: boolean;
           max_versions?: number | null;
           original_filename?: string;
           session_id?: string | null;
+          shared_with_all_clients?: boolean;
           storage_path?: string;
           tags?: string[] | null;
           updated_at?: string | null;
           user_id?: string;
+          view_count?: number;
           version_count?: number | null;
           versioning_enabled?: boolean | null;
         };
@@ -3709,6 +3724,175 @@ export type Database = {
             columns: ['session_id'];
             isOneToOne: false;
             referencedRelation: 'sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      resource_client_progress: {
+        Row: {
+          access_count: number;
+          client_id: string;
+          completed_at: string | null;
+          created_at: string | null;
+          file_id: string;
+          id: string;
+          last_accessed_at: string | null;
+          viewed_at: string | null;
+        };
+        Insert: {
+          access_count?: number;
+          client_id: string;
+          completed_at?: string | null;
+          created_at?: string | null;
+          file_id: string;
+          id?: string;
+          last_accessed_at?: string | null;
+          viewed_at?: string | null;
+        };
+        Update: {
+          access_count?: number;
+          client_id?: string;
+          completed_at?: string | null;
+          created_at?: string | null;
+          file_id?: string;
+          id?: string;
+          last_accessed_at?: string | null;
+          viewed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'resource_client_progress_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'resource_client_progress_file_id_fkey';
+            columns: ['file_id'];
+            isOneToOne: false;
+            referencedRelation: 'file_uploads';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      resource_collection_items: {
+        Row: {
+          collection_id: string;
+          created_at: string | null;
+          file_id: string;
+          id: string;
+          sort_order: number;
+        };
+        Insert: {
+          collection_id: string;
+          created_at?: string | null;
+          file_id: string;
+          id?: string;
+          sort_order?: number;
+        };
+        Update: {
+          collection_id?: string;
+          created_at?: string | null;
+          file_id?: string;
+          id?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'resource_collection_items_collection_id_fkey';
+            columns: ['collection_id'];
+            isOneToOne: false;
+            referencedRelation: 'resource_collections';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'resource_collection_items_file_id_fkey';
+            columns: ['file_id'];
+            isOneToOne: false;
+            referencedRelation: 'file_uploads';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      resource_collections: {
+        Row: {
+          coach_id: string;
+          created_at: string | null;
+          description: string | null;
+          icon: string | null;
+          id: string;
+          is_archived: boolean;
+          name: string;
+          sort_order: number;
+          updated_at: string | null;
+        };
+        Insert: {
+          coach_id: string;
+          created_at?: string | null;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          is_archived?: boolean;
+          name: string;
+          sort_order?: number;
+          updated_at?: string | null;
+        };
+        Update: {
+          coach_id?: string;
+          created_at?: string | null;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          is_archived?: boolean;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'resource_collections_coach_id_fkey';
+            columns: ['coach_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      resource_library_settings: {
+        Row: {
+          allow_client_requests: boolean;
+          auto_share_new_clients: boolean;
+          coach_id: string;
+          created_at: string | null;
+          default_permission: Database['public']['Enums']['file_permission_type'];
+          storage_limit_mb: number;
+          updated_at: string | null;
+        };
+        Insert: {
+          allow_client_requests?: boolean;
+          auto_share_new_clients?: boolean;
+          coach_id: string;
+          created_at?: string | null;
+          default_permission?: Database['public']['Enums']['file_permission_type'];
+          storage_limit_mb?: number;
+          updated_at?: string | null;
+        };
+        Update: {
+          allow_client_requests?: boolean;
+          auto_share_new_clients?: boolean;
+          coach_id?: string;
+          created_at?: string | null;
+          default_permission?: Database['public']['Enums']['file_permission_type'];
+          storage_limit_mb?: number;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'resource_library_settings_coach_id_fkey';
+            columns: ['coach_id'];
+            isOneToOne: true;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
