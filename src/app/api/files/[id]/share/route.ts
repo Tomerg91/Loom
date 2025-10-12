@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const paramsData = await params;
     
     // Authenticate user
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     const user = await authService.getCurrentUser();
     if (!user) {
       return NextResponse.json(
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     // Authenticate user
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     const user = await authService.getCurrentUser();
     if (!user) {
       return NextResponse.json(
@@ -158,7 +158,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     // Authenticate user
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     const user = await authService.getCurrentUser();
     if (!user) {
       return NextResponse.json(

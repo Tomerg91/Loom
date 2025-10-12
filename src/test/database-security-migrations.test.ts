@@ -217,7 +217,7 @@ describe('Database Security Migration Tests', () => {
       const initialLastSeen = initialProfile?.last_seen_at;
 
       // Sign in user (should trigger last seen update)
-      const authService = await createAuthService(false);
+      const authService = createAuthService(false);
       await authService.signIn({
         email: TEST_EMAIL,
         password: TEST_PASSWORD

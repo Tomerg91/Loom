@@ -1,11 +1,13 @@
 import { config } from '@/lib/config';
+import type { UserServiceOptions } from '@/lib/database/users';
 import { supabase as clientSupabase } from '@/lib/supabase/client';
 import { createClient } from '@/lib/supabase/server';
+import { routing } from '@/i18n/routing';
 import type { Language, User, UserRole, UserStatus } from '@/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
 
-type CreateUserServiceFactory = (isServer?: boolean) => any;
+type CreateUserServiceFactory = (options?: boolean | UserServiceOptions) => any;
 
 const getCreateUserService = (): CreateUserServiceFactory => {
   const databaseModule = require('@/lib/database') as {
@@ -91,10 +93,17 @@ export interface AuthSessionTokens {
 // Singleton instance on the client to avoid duplicate GoTrue clients in the browser
 let clientAuthServiceInstance: AuthService | null = null;
 
+type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+export type CreateAuthServiceOptions =
+  | boolean
+  | {
+      isServer?: boolean;
+      supabaseClient?: ServerSupabaseClient;
+    };
+
 export class AuthService {
-  private supabase:
-    | Awaited<ReturnType<typeof createClient>>
-    | typeof clientSupabase;
+  private supabase: ServerSupabaseClient | typeof clientSupabase;
   private userService: ReturnType<ReturnType<typeof getCreateUserService>>;
   private userProfileCache = new Map<
     string,
@@ -105,19 +114,28 @@ export class AuthService {
     return `user_profile_${userId}`;
   }
 
-  private constructor(
-    isServer = true,
-    supabase?: Awaited<ReturnType<typeof createClient>>
-  ) {
+  private constructor(isServer = true, supabase?: ServerSupabaseClient) {
     // Use the request-scoped server client when provided or fall back to the shared browser client
     this.supabase = isServer && supabase ? supabase : clientSupabase;
-    this.userService = getCreateUserService()(isServer);
+
+    const createUserService = getCreateUserService();
+    this.userService = createUserService({
+      isServer,
+      supabaseClient: this.supabase,
+    });
   }
 
-  public static async create(isServer = true): Promise<AuthService> {
+  public static create(
+    options: CreateAuthServiceOptions = { isServer: true }
+  ): AuthService {
+    if (typeof options === 'boolean') {
+      return AuthService.create({ isServer: options });
+    }
+
+    const { isServer = true, supabaseClient } = options;
+
     if (isServer) {
-      const supabase = await createClient();
-      return new AuthService(true, supabase);
+      return new AuthService(true, supabaseClient ?? createClient());
     }
 
     if (!clientAuthServiceInstance) {
@@ -311,7 +329,10 @@ export class AuthService {
           role: (authData.user.user_metadata?.role as any) || 'client',
           firstName: authData.user.user_metadata?.first_name,
           lastName: authData.user.user_metadata?.last_name,
-          language: (authData.user.user_metadata?.language as any) || 'he',
+          language:
+            (authData.user.user_metadata?.language as any) ||
+            data.language ||
+            (routing.defaultLocale as Language),
           status: 'active',
           createdAt: authData.user.created_at ?? new Date().toISOString(),
           updatedAt:
@@ -771,13 +792,15 @@ export class AuthService {
 }
 
 // Convenience factory functions with singleton pattern
-export const createAuthService = (isServer = true) => {
-  return AuthService.create(isServer);
+export const createAuthService = (
+  options: CreateAuthServiceOptions = { isServer: true }
+) => {
+  return AuthService.create(options);
 };
 
 // Server-side auth helpers
 export const getServerUser = async (): Promise<AuthUser | null> => {
-  const authService = await createAuthService(true);
+  const authService = createAuthService(true);
   return authService.getCurrentUser();
 };
 

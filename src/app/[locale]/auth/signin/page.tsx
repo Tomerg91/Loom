@@ -59,9 +59,9 @@ export default async function SigninPage({ params, searchParams }: SigninPagePro
 
           {expired && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              <p className="font-medium">Session Expired</p>
+              <p className="font-medium">{t('signin.sessionExpired.title')}</p>
               <p className="mt-1 text-amber-700">
-                Your session has expired. Please sign in again to continue.
+                {t('signin.sessionExpired.description')}
               </p>
             </div>
           )}

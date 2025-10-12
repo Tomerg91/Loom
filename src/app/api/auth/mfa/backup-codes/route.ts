@@ -23,7 +23,7 @@ const regenerateRequestSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     // Get authenticated user
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     const user = await authService.getCurrentUser();
 
     if (!user) {
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Get authenticated user
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     const user = await authService.getCurrentUser();
 
     if (!user) {

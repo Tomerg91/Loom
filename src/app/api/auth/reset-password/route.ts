@@ -61,7 +61,7 @@ export const POST = withErrorHandling(
         userAgent: request.headers.get('user-agent')
       });
 
-      const authService = await createAuthService(true);
+      const authService = createAuthService(true);
       const { error } = await authService.resetPassword(email);
 
       if (error) {

@@ -8,7 +8,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { strongPasswordSchema } from '@/lib/security/password';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,7 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Link } from '@/i18n/routing';
+import { Link, routing } from '@/i18n/routing';
+import { strongPasswordSchema } from '@/lib/security/password';
 import type { Language } from '@/types';
 
 const signupSchema = z
@@ -52,11 +52,18 @@ const signupSchema = z
 
 type SignupFormData = z.infer<typeof signupSchema>;
 
+const SUPPORTED_LANGUAGES = ['en', 'he'] as const satisfies readonly Language[];
+const FALLBACK_LANGUAGE = (SUPPORTED_LANGUAGES as readonly string[]).includes(
+  routing.defaultLocale
+)
+  ? (routing.defaultLocale as Language)
+  : SUPPORTED_LANGUAGES[0];
+
 interface SignupFormProps {
   redirectTo?: string;
 }
 
-export function SignupForm({}: SignupFormProps) {
+export function SignupForm({ redirectTo }: SignupFormProps) {
   const t = useTranslations('auth');
   const router = useRouter();
   const locale = useLocale();
@@ -68,6 +75,12 @@ export function SignupForm({}: SignupFormProps) {
   const [successEmail, setSuccessEmail] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const initialLanguage = (SUPPORTED_LANGUAGES as readonly string[]).includes(
+    locale
+  )
+    ? (locale as Language)
+    : FALLBACK_LANGUAGE;
+
   const {
     register,
     handleSubmit,
@@ -78,7 +91,7 @@ export function SignupForm({}: SignupFormProps) {
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      language: 'he',
+      language: initialLanguage,
       role: 'client',
       acceptedTerms: false,
     },
@@ -113,14 +126,17 @@ export function SignupForm({}: SignupFormProps) {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        setError(result.error || result?.message || 'An unexpected error occurred');
+        setError(
+          result.error || result?.message || 'An unexpected error occurred'
+        );
         return;
       }
 
       const responseData = result.data ?? {};
       const sessionActive = Boolean(responseData.sessionActive);
       const apiMessage = responseData.message ?? result.message;
-      const emailForMessage = (responseData.user?.email as string | undefined) || data.email;
+      const emailForMessage =
+        (responseData.user?.email as string | undefined) || data.email;
 
       if (sessionActive) {
         const safeRedirectTo =
@@ -331,8 +347,11 @@ export function SignupForm({}: SignupFormProps) {
                   <SelectValue placeholder={t('selectLanguage')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">{t('languages.en')}</SelectItem>
-                  <SelectItem value="he">{t('languages.he')}</SelectItem>
+                  {SUPPORTED_LANGUAGES.map(languageOption => (
+                    <SelectItem key={languageOption} value={languageOption}>
+                      {t(`languages.${languageOption}`)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {errors.language && (
