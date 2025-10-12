@@ -23,7 +23,7 @@ class AuthService {
 
   async getSession(): Promise<Session | null> {
     try {
-      const authLib = this.getAuthLib();
+      const authLib = await this.getAuthLib();
       const user = await authLib.getCurrentUser();
       if (!user) return null;
 
@@ -46,7 +46,7 @@ class AuthService {
 
   async updateUser(userId: string, updates: Record<string, unknown>) {
     try {
-      const authLib = this.getAuthLib();
+      const authLib = await this.getAuthLib();
       return await authLib.updateUser(userId, updates);
     } catch (error) {
       console.error('Error updating user:', error);
@@ -56,7 +56,7 @@ class AuthService {
 
   async getCurrentUser() {
     try {
-      const authLib = this.getAuthLib();
+      const authLib = await this.getAuthLib();
       return await authLib.getCurrentUser();
     } catch (error) {
       console.error('Error getting current user:', error);
@@ -66,7 +66,7 @@ class AuthService {
 
   async updatePasswordWithToken(token: string, password: string) {
     try {
-      const authLib = this.getAuthLib();
+      const authLib = await this.getAuthLib();
       return await authLib.updatePasswordWithToken(token, password);
     } catch (error) {
       console.error('Error updating password with token:', error);

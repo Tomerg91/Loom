@@ -9,7 +9,7 @@ export type RouteHandler = (req: NextRequest) => Promise<Response> | Response;
 
 export function withAuth(handler: RouteHandler): RouteHandler {
   return async req => {
-    const auth = createAuthService(true);
+    const auth = await createAuthService(true);
     const user = await auth.getCurrentUser();
     if (!user) {
       return applySecurityHeaders(
@@ -24,7 +24,7 @@ export function withAuth(handler: RouteHandler): RouteHandler {
 export function withRole(roles: string[]) {
   return (handler: RouteHandler): RouteHandler =>
     async req => {
-      const auth = createAuthService(true);
+      const auth = await createAuthService(true);
       const user = await auth.getCurrentUser();
       if (!user || !roles.includes(user.role)) {
         return applySecurityHeaders(
