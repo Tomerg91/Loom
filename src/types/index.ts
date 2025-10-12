@@ -7,7 +7,10 @@ export type Language = 'en' | 'he';
 
 // MFA types
 export type MfaMethod = 'totp' | 'backup_code';
-export type MfaSessionStatus = 'password_verified' | 'mfa_required' | 'fully_authenticated';
+export type MfaSessionStatus =
+  | 'password_verified'
+  | 'mfa_required'
+  | 'fully_authenticated';
 
 export interface MfaSession {
   id: string;
@@ -59,6 +62,10 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   lastSeenAt?: string;
+  onboardingStatus?: 'pending' | 'in_progress' | 'completed';
+  onboardingStep?: number;
+  onboardingCompletedAt?: string;
+  onboardingData?: Record<string, unknown>;
   // MFA fields
   mfaEnabled?: boolean;
   mfaSetupCompleted?: boolean;
@@ -81,7 +88,12 @@ export interface User {
 }
 
 // Session types
-export type SessionStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
+export type SessionStatus =
+  | 'scheduled'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled'
+  | 'no_show';
 export type SessionType = 'video' | 'phone' | 'in-person';
 export type SessionSortBy = 'date' | 'duration' | 'coach' | 'status' | 'title';
 export type SortOrder = 'asc' | 'desc';
@@ -232,7 +244,11 @@ export interface Reflection {
 }
 
 // Notification types
-export type NotificationType = 'session_reminder' | 'new_message' | 'session_confirmation' | 'system_update';
+export type NotificationType =
+  | 'session_reminder'
+  | 'new_message'
+  | 'session_confirmation'
+  | 'system_update';
 export type NotificationChannel = 'email' | 'push' | 'inapp';
 export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent';
 
@@ -468,7 +484,10 @@ declare global {
       config?: Record<string, unknown>
     ) => void;
     posthog?: {
-      capture: (eventName: string, properties?: Record<string, unknown>) => void;
+      capture: (
+        eventName: string,
+        properties?: Record<string, unknown>
+      ) => void;
       identify: (userId: string, properties?: Record<string, unknown>) => void;
     };
   }
