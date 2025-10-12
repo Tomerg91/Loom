@@ -16,10 +16,8 @@ import {
   TrendingUp,
   CheckCircle,
   MessageSquare,
-  Star,
   ArrowUpRight,
   UserPlus,
-  DollarSign
 } from 'lucide-react';
 import { SessionList } from '@/components/sessions/session-list';
 import { SessionCalendar } from '@/components/sessions/session-calendar';
@@ -156,12 +154,16 @@ export function CoachDashboard() {
 
   // Callback to refresh data when actions are taken
   const refreshDashboardData = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['coach-stats'] });
-    queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
-    queryClient.invalidateQueries({ queryKey: ['recent-clients'] });
-    queryClient.invalidateQueries({ queryKey: ['recent-activity'] });
-    queryClient.invalidateQueries({ queryKey: ['coach-clients'] });
-  }, [queryClient]);
+    const userId = user?.id;
+    if (!userId) return;
+
+    queryClient.invalidateQueries({ queryKey: ['coach-stats', userId] });
+    queryClient.invalidateQueries({ queryKey: ['upcoming-sessions', userId] });
+    queryClient.invalidateQueries({ queryKey: ['recent-clients', userId] });
+    queryClient.invalidateQueries({ queryKey: ['recent-activity', userId] });
+    queryClient.invalidateQueries({ queryKey: ['coach-clients', userId] });
+    queryClient.invalidateQueries({ queryKey: ['coach-clients-list', userId] });
+  }, [queryClient, user?.id]);
 
   // Memoize expensive calculations
   const thisWeekSessions = useMemo(() => {
@@ -468,11 +470,13 @@ export function CoachDashboard() {
       <AddClientModal
         open={showAddClientModal}
         onOpenChange={setShowAddClientModal}
+        onSuccess={refreshDashboardData}
       />
       <AddSessionModal
         open={showAddSessionModal}
         onOpenChange={setShowAddSessionModal}
         coachId={user?.id}
+        onSuccess={refreshDashboardData}
       />
     </div>
   );
