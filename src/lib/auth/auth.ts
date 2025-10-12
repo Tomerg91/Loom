@@ -1,10 +1,27 @@
 import { config } from '@/lib/config';
-import { createUserService } from '@/lib/database';
+import type { UserServiceOptions } from '@/lib/database/users';
 import { supabase as clientSupabase } from '@/lib/supabase/client';
 import { createClient } from '@/lib/supabase/server';
+import { routing } from '@/i18n/routing';
 import type { Language, User, UserRole, UserStatus } from '@/types';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
+
+type CreateUserServiceFactory = (options?: boolean | UserServiceOptions) => any;
+
+const getCreateUserService = (): CreateUserServiceFactory => {
+  const databaseModule = require('@/lib/database') as {
+    createUserService?: CreateUserServiceFactory;
+  };
+
+  if (typeof databaseModule.createUserService !== 'function') {
+    throw new Error(
+      'createUserService is not available from the database module'
+    );
+  }
+
+  return databaseModule.createUserService;
+};
 
 export interface AuthUser {
   id: string;
@@ -73,38 +90,48 @@ export interface AuthSessionTokens {
   expiresAt?: number | null;
 }
 
-// Singleton instances to prevent multiple service creation
-let serverAuthServiceInstance: AuthService | null = null;
+// Singleton instance on the client to avoid duplicate GoTrue clients in the browser
 let clientAuthServiceInstance: AuthService | null = null;
 
 export class AuthService {
-  private supabase: Awaited<ReturnType<typeof createClient>> | typeof clientSupabase;
-  private userService: ReturnType<typeof createUserService>;
-  private userProfileCache = new Map<string, { data: AuthUser; expires: number }>();
+  private supabase:
+    | Awaited<ReturnType<typeof createClient>>
+    | typeof clientSupabase;
+  private userService: ReturnType<ReturnType<typeof getCreateUserService>>;
+  private userProfileCache = new Map<
+    string,
+    { data: AuthUser; expires: number }
+  >();
 
   private getUserProfileCacheKey(userId: string): string {
     return `user_profile_${userId}`;
   }
 
-  private constructor(isServer = true, supabase?: Awaited<ReturnType<typeof createClient>>) {
-    // Use singleton clients to prevent multiple GoTrueClient instances
+  private constructor(
+    isServer = true,
+    supabase?: Awaited<ReturnType<typeof createClient>>
+  ) {
+    // Use the request-scoped server client when provided or fall back to the shared browser client
     this.supabase = isServer && supabase ? supabase : clientSupabase;
-    this.userService = createUserService(isServer);
+
+    const createUserService = getCreateUserService();
+    this.userService = createUserService({
+      isServer,
+      supabaseClient: this.supabase,
+    });
   }
 
   public static async create(isServer = true): Promise<AuthService> {
     if (isServer) {
-      if (!serverAuthServiceInstance) {
-        const supabase = await createClient();
-        serverAuthServiceInstance = new AuthService(true, supabase);
-      }
-      return serverAuthServiceInstance;
-    } else {
-      if (!clientAuthServiceInstance) {
-        clientAuthServiceInstance = new AuthService(false);
-      }
-      return clientAuthServiceInstance;
+      const supabase = createClient();
+      return new AuthService(true, supabase);
     }
+
+    if (!clientAuthServiceInstance) {
+      clientAuthServiceInstance = new AuthService(false);
+    }
+
+    return clientAuthServiceInstance;
   }
 
   private getCachedUserProfile(cacheKey: string): AuthUser | null {
@@ -115,10 +142,14 @@ export class AuthService {
     return null;
   }
 
-  private cacheUserProfile(cacheKey: string, user: AuthUser, ttlMs: number): void {
+  private cacheUserProfile(
+    cacheKey: string,
+    user: AuthUser,
+    ttlMs: number
+  ): void {
     this.userProfileCache.set(cacheKey, {
       data: user,
-      expires: Date.now() + ttlMs
+      expires: Date.now() + ttlMs,
     });
   }
 
@@ -155,33 +186,45 @@ export class AuthService {
   /**
    * Sign up a new user
    */
-  async signUp(data: SignUpData): Promise<{ user: AuthUser | null; error: string | null; sessionActive: boolean }> {
+  async signUp(
+    data: SignUpData
+  ): Promise<{
+    user: AuthUser | null;
+    error: string | null;
+    sessionActive: boolean;
+  }> {
     try {
       // Determine email verification redirect URL
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
       const emailRedirectTo = `${siteUrl}/api/auth/verify`;
 
-      const { data: authData, error: authError } = await this.supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo,
-          data: {
-            first_name: data.firstName,
-            last_name: data.lastName,
-            role: data.role,
-            phone: data.phone,
-            language: data.language,
+      const { data: authData, error: authError } =
+        await this.supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            emailRedirectTo,
+            data: {
+              first_name: data.firstName,
+              last_name: data.lastName,
+              role: data.role,
+              phone: data.phone,
+              language: data.language,
+            },
           },
-        },
-      });
+        });
 
       if (authError) {
         return { user: null, error: authError.message, sessionActive: false };
       }
 
       if (!authData.user) {
-        return { user: null, error: 'Failed to create user', sessionActive: false };
+        return {
+          user: null,
+          error: 'Failed to create user',
+          sessionActive: false,
+        };
       }
 
       const sessionActive = Boolean(authData.session);
@@ -190,7 +233,7 @@ export class AuthService {
       try {
         const { createAdminClient } = await import('@/lib/supabase/server');
         const admin = createAdminClient();
-        
+
         // Ensure a profile row exists (trigger should create it, but upsert defensively)
         const upsertPayload: any = {
           id: authData.user.id,
@@ -201,25 +244,30 @@ export class AuthService {
           language: data.language,
           phone: data.phone || null,
         };
-        
+
         await admin.from('users').upsert(upsertPayload, { onConflict: 'id' });
 
         // If role is coach, create coach_profiles record with default values
         if (data.role === 'coach') {
-          await admin.from('coach_profiles').upsert({
-            coach_id: authData.user.id,
-            session_rate: 75.00,
-            currency: 'USD',
-            languages: [data.language],
-            timezone: 'UTC',
-            is_active: true,
-            onboarding_completed_at: null, // Will be set after onboarding wizard
-          }, { onConflict: 'coach_id' });
+          await admin.from('coach_profiles').upsert(
+            {
+              coach_id: authData.user.id,
+              session_rate: 75.0,
+              currency: 'USD',
+              languages: [data.language],
+              timezone: 'UTC',
+              is_active: true,
+              onboarding_completed_at: null, // Will be set after onboarding wizard
+            },
+            { onConflict: 'coach_id' }
+          );
         }
 
         const { data: profile, error: profileError } = await admin
           .from('users')
-          .select('id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data')
+          .select(
+            'id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data'
+          )
           .eq('id', authData.user.id)
           .single();
 
@@ -240,10 +288,15 @@ export class AuthService {
               updatedAt: profile.updated_at,
               lastSeenAt: profile.last_seen_at || undefined,
               onboardingStatus:
-                (profile.onboarding_status as 'pending' | 'in_progress' | 'completed') || 'pending',
+                (profile.onboarding_status as
+                  | 'pending'
+                  | 'in_progress'
+                  | 'completed') || 'pending',
               onboardingStep: profile.onboarding_step ?? 0,
-              onboardingCompletedAt: profile.onboarding_completed_at || undefined,
-              onboardingData: (profile.onboarding_data as Record<string, unknown>) || {},
+              onboardingCompletedAt:
+                profile.onboarding_completed_at || undefined,
+              onboardingData:
+                (profile.onboarding_data as Record<string, unknown>) || {},
             },
             error: null,
             sessionActive,
@@ -251,7 +304,10 @@ export class AuthService {
         }
       } catch (adminError) {
         // Non-fatal: fallback below
-        console.warn('Admin profile fetch/upsert failed after signup:', adminError);
+        console.warn(
+          'Admin profile fetch/upsert failed after signup:',
+          adminError
+        );
       }
 
       // Fallback: return minimal user data from auth payload
@@ -262,10 +318,16 @@ export class AuthService {
           role: (authData.user.user_metadata?.role as any) || 'client',
           firstName: authData.user.user_metadata?.first_name,
           lastName: authData.user.user_metadata?.last_name,
-          language: (authData.user.user_metadata?.language as any) || 'he',
+          language:
+            (authData.user.user_metadata?.language as any) ||
+            data.language ||
+            (routing.defaultLocale as Language),
           status: 'active',
           createdAt: authData.user.created_at ?? new Date().toISOString(),
-          updatedAt: authData.user.updated_at ?? authData.user.created_at ?? new Date().toISOString(),
+          updatedAt:
+            authData.user.updated_at ??
+            authData.user.created_at ??
+            new Date().toISOString(),
           onboardingStatus: 'pending',
           onboardingStep: 0,
           onboardingCompletedAt: undefined,
@@ -275,19 +337,30 @@ export class AuthService {
         sessionActive,
       };
     } catch (error) {
-      return { user: null, error: error instanceof Error ? error.message : 'Unknown error', sessionActive: false };
+      return {
+        user: null,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        sessionActive: false,
+      };
     }
   }
 
   /**
    * Sign in an existing user
    */
-  async signIn(data: SignInData): Promise<{ user: AuthUser | null; error: string | null; session: AuthSessionTokens | null }> {
+  async signIn(
+    data: SignInData
+  ): Promise<{
+    user: AuthUser | null;
+    error: string | null;
+    session: AuthSessionTokens | null;
+  }> {
     try {
-      const { data: authData, error: authError } = await this.supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+      const { data: authData, error: authError } =
+        await this.supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
 
       if (authError) {
         return { user: null, error: authError.message, session: null };
@@ -309,7 +382,9 @@ export class AuthService {
       await this.userService.updateLastSeen(authData.user.id);
 
       // Get user profile
-      const userProfileResult = await this.userService.getUserProfile(authData.user.id);
+      const userProfileResult = await this.userService.getUserProfile(
+        authData.user.id
+      );
 
       if (userProfileResult.success) {
         const userProfile = userProfileResult.data;
@@ -339,9 +414,17 @@ export class AuthService {
         };
       }
 
-      return { user: null, error: userProfileResult.error || 'User profile not found', session: sessionTokens };
+      return {
+        user: null,
+        error: userProfileResult.error || 'User profile not found',
+        session: sessionTokens,
+      };
     } catch (error) {
-      return { user: null, error: error instanceof Error ? error.message : 'Unknown error', session: null };
+      return {
+        user: null,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        session: null,
+      };
     }
   }
 
@@ -353,16 +436,22 @@ export class AuthService {
       const { error } = await this.supabase.auth.signOut();
       return { error: error?.message || null };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
   /**
    * Get the current user with caching for TTFB optimization
    */
-  async getCurrentUser(options?: { forceRefresh?: boolean }): Promise<AuthUser | null> {
+  async getCurrentUser(options?: {
+    forceRefresh?: boolean;
+  }): Promise<AuthUser | null> {
     try {
-      const { data: { user } } = await this.supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await this.supabase.auth.getUser();
 
       if (!user) {
         return null;
@@ -402,7 +491,9 @@ export class AuthService {
    */
   async getSession() {
     try {
-      const { data: { session } } = await this.supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await this.supabase.auth.getSession();
       return session;
     } catch (error) {
       console.error('Error getting session:', error);
@@ -423,21 +514,26 @@ export class AuthService {
       });
       return { error: error?.message || null };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
   /**
    * Resend email confirmation
    */
-  async resendConfirmationEmail(email: string, redirectTo?: string): Promise<{ data: any; error: string | null }> {
+  async resendConfirmationEmail(
+    email: string,
+    redirectTo?: string
+  ): Promise<{ data: any; error: string | null }> {
     try {
       const { data, error } = await this.supabase.auth.resend({
         type: 'signup',
         email: email,
         options: {
           emailRedirectTo: redirectTo,
-        }
+        },
       });
 
       if (error) {
@@ -446,7 +542,10 @@ export class AuthService {
 
       return { data, error: null };
     } catch (error) {
-      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -460,38 +559,54 @@ export class AuthService {
       });
       return { error: error?.message || null };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
   /**
    * Update password with reset token
    */
-  async updatePasswordWithToken(token: string, password: string): Promise<{ error: string | null }> {
+  async updatePasswordWithToken(
+    token: string,
+    password: string
+  ): Promise<{ error: string | null }> {
     try {
       // Verify the reset token and update password
       const { error } = await this.supabase.auth.updateUser({
-        password
+        password,
       });
-      
+
       if (error) {
         return { error: error.message };
       }
 
       return { error: null };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Failed to update password with token' };
+      return {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update password with token',
+      };
     }
   }
 
   /**
    * Update user by ID (admin function)
    */
-  async updateUser(userId: string, updates: Record<string, unknown>): Promise<AuthUser | null> {
+  async updateUser(
+    userId: string,
+    updates: Record<string, unknown>
+  ): Promise<AuthUser | null> {
     try {
       // Update user profile in database
-      const updateResult = await this.userService.updateUserProfile(userId, updates);
-      
+      const updateResult = await this.userService.updateUserProfile(
+        userId,
+        updates
+      );
+
       if (updateResult.success) {
         const updatedProfile = updateResult.data;
         return {
@@ -519,7 +634,7 @@ export class AuthService {
           rememberDeviceEnabled: updatedProfile.rememberDeviceEnabled,
         };
       }
-      
+
       return null;
     } catch (error) {
       console.error('Error updating user:', error);
@@ -530,10 +645,14 @@ export class AuthService {
   /**
    * Update user profile
    */
-  async updateProfile(updates: Partial<User>): Promise<{ user: AuthUser | null; error: string | null }> {
+  async updateProfile(
+    updates: Partial<User>
+  ): Promise<{ user: AuthUser | null; error: string | null }> {
     try {
-      const { data: { user } } = await this.supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await this.supabase.auth.getUser();
+
       if (!user) {
         return { user: null, error: 'Not authenticated' };
       }
@@ -543,20 +662,30 @@ export class AuthService {
       if (updates.firstName || updates.lastName) {
         authUpdates.data = {
           ...user.user_metadata,
-          first_name: updates.firstName || user.user_metadata.firstName || user.user_metadata.first_name,
-          last_name: updates.lastName || user.user_metadata.lastName || user.user_metadata.last_name,
+          first_name:
+            updates.firstName ||
+            user.user_metadata.firstName ||
+            user.user_metadata.first_name,
+          last_name:
+            updates.lastName ||
+            user.user_metadata.lastName ||
+            user.user_metadata.last_name,
         };
       }
 
       if (Object.keys(authUpdates).length > 0) {
-        const { error: authError } = await this.supabase.auth.updateUser(authUpdates);
+        const { error: authError } =
+          await this.supabase.auth.updateUser(authUpdates);
         if (authError) {
           return { user: null, error: authError.message };
         }
       }
 
       // Update user profile in database
-      const updateResult = await this.userService.updateUserProfile(user.id, updates);
+      const updateResult = await this.userService.updateUserProfile(
+        user.id,
+        updates
+      );
 
       if (updateResult.success) {
         const updatedProfile = updateResult.data;
@@ -589,9 +718,15 @@ export class AuthService {
         };
       }
 
-      return { user: null, error: updateResult.error || 'Failed to update profile' };
+      return {
+        user: null,
+        error: updateResult.error || 'Failed to update profile',
+      };
     } catch (error) {
-      return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        user: null,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -614,10 +749,19 @@ export class AuthService {
   /**
    * Verify OTP token
    */
-  public async verifyOtp(params: { token_hash: string; type: 'signup' | 'invite' | 'magiclink' | 'recovery' | 'email_change' | 'email' }) {
+  public async verifyOtp(params: {
+    token_hash: string;
+    type:
+      | 'signup'
+      | 'invite'
+      | 'magiclink'
+      | 'recovery'
+      | 'email_change'
+      | 'email';
+  }) {
     return this.supabase.auth.verifyOtp({
       token_hash: params.token_hash,
-      type: params.type as any // Type assertion to handle Supabase auth type compatibility
+      type: params.type as any, // Type assertion to handle Supabase auth type compatibility
     });
   }
 

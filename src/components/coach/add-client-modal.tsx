@@ -2,10 +2,6 @@
 
 import { UserPlus, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
-import { toast } from 'sonner';
-
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -50,7 +46,7 @@ export function AddClientModal({ open, onOpenChange, onSuccess }: AddClientModal
         throw new Error(error.message || 'Failed to add client');
       }
 
-      // Refresh dashboard level data if provided
+      // Refresh dashboard data in parent context
       onSuccess?.();
 
       toast.success(t('success', { name: `${formData.firstName} ${formData.lastName}` }));
