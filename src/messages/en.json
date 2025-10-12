@@ -631,14 +631,18 @@
     }
   },
   "auth": {
-    "signin": {
-      "title": "Sign In",
-      "description": "Enter your credentials to access your account",
-      "button": "Sign In",
-      "link": "Sign in here",
-      "loading": "Signing in...",
-      "error": "An error occurred during sign in. Please try again."
-    },
+  "signin": {
+    "title": "Sign In",
+    "description": "Enter your credentials to access your account",
+    "button": "Sign In",
+    "link": "Sign in here",
+    "loading": "Signing in...",
+    "error": "An error occurred during sign in. Please try again.",
+    "sessionExpired": {
+      "title": "Session Expired",
+      "description": "Your session has expired. Please sign in again to continue."
+    }
+  },
     "signup": {
       "title": "Sign Up",
       "description": "Create your account to get started",

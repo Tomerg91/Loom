@@ -22,11 +22,27 @@ interface GetUsersCountOptions {
   status?: string;
 }
 
+export interface UserServiceOptions {
+  isServer?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabaseClient?: any;
+}
+
 export class UserService {
   private supabase: any;
 
-  constructor(isServer = true) {
-    this.supabase = isServer ? createServerClient() : createClient();
+  constructor(optionsOrIsServer: boolean | UserServiceOptions = { isServer: true }) {
+    if (typeof optionsOrIsServer === 'boolean') {
+      this.supabase = optionsOrIsServer ? createServerClient() : createClient();
+      return;
+    }
+
+    const { isServer = true, supabaseClient } = optionsOrIsServer;
+    this.supabase = supabaseClient
+      ? supabaseClient
+      : isServer
+        ? createServerClient()
+        : createClient();
   }
 
   /**

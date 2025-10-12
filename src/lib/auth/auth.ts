@@ -1,11 +1,13 @@
 import { config } from '@/lib/config';
+import type { UserServiceOptions } from '@/lib/database/users';
 import { supabase as clientSupabase } from '@/lib/supabase/client';
 import { createClient } from '@/lib/supabase/server';
+import { routing } from '@/i18n/routing';
 import type { Language, User, UserRole, UserStatus } from '@/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
 
-type CreateUserServiceFactory = (isServer?: boolean) => any;
+type CreateUserServiceFactory = (options?: boolean | UserServiceOptions) => any;
 
 const getCreateUserService = (): CreateUserServiceFactory => {
   const databaseModule = require('@/lib/database') as {
@@ -111,12 +113,17 @@ export class AuthService {
   ) {
     // Use the request-scoped server client when provided or fall back to the shared browser client
     this.supabase = isServer && supabase ? supabase : clientSupabase;
-    this.userService = getCreateUserService()(isServer);
+
+    const createUserService = getCreateUserService();
+    this.userService = createUserService({
+      isServer,
+      supabaseClient: this.supabase,
+    });
   }
 
   public static async create(isServer = true): Promise<AuthService> {
     if (isServer) {
-      const supabase = await createClient();
+      const supabase = createClient();
       return new AuthService(true, supabase);
     }
 
@@ -311,7 +318,10 @@ export class AuthService {
           role: (authData.user.user_metadata?.role as any) || 'client',
           firstName: authData.user.user_metadata?.first_name,
           lastName: authData.user.user_metadata?.last_name,
-          language: (authData.user.user_metadata?.language as any) || 'he',
+          language:
+            (authData.user.user_metadata?.language as any) ||
+            data.language ||
+            (routing.defaultLocale as Language),
           status: 'active',
           createdAt: authData.user.created_at ?? new Date().toISOString(),
           updatedAt:
