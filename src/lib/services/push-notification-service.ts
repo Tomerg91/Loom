@@ -36,19 +36,20 @@ interface WebPushConfig {
   vapidSubject: string;
 }
 
+type ServerClientFactory = typeof import('@/lib/supabase/server').createServerClient;
+type BrowserClientFactory = typeof import('@/lib/supabase/client').createClient;
+
 export class PushNotificationService {
-  private supabase:
-    | ReturnType<typeof createServerClient>
-    | ReturnType<typeof createClient>;
+  private supabase: ReturnType<ServerClientFactory> | ReturnType<BrowserClientFactory>;
   private config: WebPushConfig | null = null;
 
   constructor(isServer = true) {
     if (isServer) {
       const { createServerClient } = require('@/lib/supabase/server');
-      this.supabase = createServerClient();
+      this.supabase = (createServerClient as ServerClientFactory)();
     } else {
       const { createClient } = require('@/lib/supabase/client');
-      this.supabase = createClient();
+      this.supabase = (createClient as BrowserClientFactory)();
     }
     this.initializeConfig();
   }

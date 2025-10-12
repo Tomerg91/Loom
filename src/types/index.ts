@@ -123,6 +123,7 @@ export interface Session {
   rescheduledFromId?: string;
   rescheduledToId?: string;
   timezone?: string;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   coach: {

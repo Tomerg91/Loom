@@ -13,7 +13,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import type { Client } from '@/types';
+
+interface CoachClient {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
 
 const bookingSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
@@ -25,7 +30,7 @@ const bookingSchema = z.object({
 
 type BookingFormData = z.infer<typeof bookingSchema>;
 
-async function fetchClients(): Promise<Client[]> {
+async function fetchClients(): Promise<CoachClient[]> {
   const response = await fetch('/api/coach/clients', { cache: 'no-store' });
   if (!response.ok) {
     throw new Error('Failed to fetch clients');
