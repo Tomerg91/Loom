@@ -31,20 +31,17 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
   const authService = useMemo(() => createClientAuthService(), []);
 
   // Immediately hydrate store with SSR user if available
-  useMemo(() => {
+  useEffect(() => {
     if (initialUser) {
       // Always use fresh server user over potentially stale localStorage data
       setUser(initialUser);
       setLoading(false);
-    } else if (user) {
-      // We have a persisted user but no initialUser from server
-      // The useEffect below will validate the session
-      setLoading(true);
-    } else {
-      // No user at all - will be handled by useEffect
-      setLoading(true);
+      return;
     }
-  }, [initialUser, setUser, setLoading, user]);
+
+    // No server-provided user; ensure loading state reflects pending validation
+    setLoading(true);
+  }, [initialUser, setUser, setLoading]);
 
   // Session hydration + auth state subscription
   useEffect(() => {
