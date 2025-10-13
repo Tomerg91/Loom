@@ -34,7 +34,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { FileMetadata } from '@/lib/services/file-management-service';
 
 interface ShareDialogProps {
@@ -67,6 +67,7 @@ const permissionLabels = {
 };
 
 export function ShareDialog({ file, open, onClose }: ShareDialogProps) {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'share' | 'link'>('share');
   const [userEmail, setUserEmail] = useState('');
   const [selectedPermission, setSelectedPermission] = useState<'view' | 'download' | 'edit'>('view');

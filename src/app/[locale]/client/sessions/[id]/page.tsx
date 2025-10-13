@@ -3,9 +3,9 @@ import { SessionDetailView } from '@/components/client/session-detail-view';
 import { ClientOrAdminRoute } from '@/components/auth/route-guard';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function SessionDetailPage({ params }: PageProps) {

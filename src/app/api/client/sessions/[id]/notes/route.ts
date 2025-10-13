@@ -16,8 +16,10 @@ interface SessionNotes {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ): Promise<Response> {
+  const params = await context.params;
+
   try {
     // Verify authentication and get user
     const session = await authService.getSession();

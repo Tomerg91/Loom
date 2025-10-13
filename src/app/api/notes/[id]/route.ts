@@ -13,9 +13,9 @@ const updateNoteSchema = z.object({
 });
 
 interface RouteContext {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 const baseNoteSelectFields = [
@@ -37,7 +37,8 @@ const buildNoteSelect = (includeClientId: boolean) =>
     .filter((field): field is string => Boolean(field))
     .join(',');
 
-export async function GET(request: NextRequest, { params }: RouteContext) {
+export async function GET(request: NextRequest, context: RouteContext) {
+  const params = await context.params;
   try {
     const { id } = params;
     const supabase = createServerClient();
@@ -98,7 +99,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: RouteContext) {
+export async function PUT(request: NextRequest, context: RouteContext) {
+  const params = await context.params;
   try {
     const { id } = params;
     const supabase = createServerClient();
@@ -204,7 +206,8 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteContext) {
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  const params = await context.params;
   try {
     const { id } = params;
     const supabase = createServerClient();

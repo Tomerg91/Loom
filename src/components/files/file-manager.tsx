@@ -43,7 +43,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 import { FileUpload } from '@/components/ui/file-upload';
 import { FileList } from './file-list';
@@ -75,6 +75,8 @@ export function FileManager({
   compactMode = false,
   className
 }: FileManagerProps) {
+  const { toast } = useToast();
+
   // State management
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(initialFolderId || null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');

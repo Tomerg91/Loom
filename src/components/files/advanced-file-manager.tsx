@@ -32,7 +32,6 @@ import {
   StarOff,
   Link,
   Calendar,
-  FileSize,
   Tag,
   ExternalLink,
 } from 'lucide-react';
@@ -79,7 +78,7 @@ import { FileUploadZone } from './file-upload-zone';
 import { FilePreview } from './file-preview';
 import { FileSharingDialog } from './file-sharing-dialog';
 import { FileVersionHistory } from './file-version-history';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 export interface FileItem {
   id: string;
@@ -140,6 +139,7 @@ export function AdvancedFileManager({
   onFilesChange,
 }: FileManagerProps) {
   const t = useTranslations('files');
+  const { toast } = useToast();
 
   // State management
   const [files, setFiles] = useState<FileItem[]>(initialFiles);

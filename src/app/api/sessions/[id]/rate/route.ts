@@ -19,8 +19,10 @@ const rateSessionSchema = z.object({
 // POST /api/sessions/[id]/rate - Rate a completed session
 export const POST = withErrorHandling(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) => {
+  const params = await context.params;
+
   const supabase = createServerClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -157,8 +159,10 @@ export const POST = withErrorHandling(async (
 // GET /api/sessions/[id]/rate - Get rating for a session
 export const GET = withErrorHandling(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) => {
+  const params = await context.params;
+
   const supabase = createServerClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 

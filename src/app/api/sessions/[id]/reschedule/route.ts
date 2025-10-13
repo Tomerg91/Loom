@@ -22,8 +22,10 @@ const rescheduleSessionSchema = z.object({
 // POST /api/sessions/[id]/reschedule - Reschedule a session
 export const POST = withErrorHandling(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) => {
+  const params = await context.params;
+
   const supabase = createServerClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
