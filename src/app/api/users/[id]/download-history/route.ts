@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
 import { z } from 'zod';
+
+import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
+import { createClient } from '@/lib/supabase/server';
 
 // Validation schema
 const historyQuerySchema = z.object({

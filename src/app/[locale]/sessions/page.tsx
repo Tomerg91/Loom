@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+
 import { SessionsPageClient } from './sessions-page-client';
 
 interface SessionsPageProps {

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createAuthService } from '@/lib/auth/auth';
-import { strongPasswordSchema } from '@/lib/security/password';
+import { z } from 'zod';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -10,8 +10,10 @@ import {
   HTTP_STATUS,
   withRequestLogging
 } from '@/lib/api/utils';
+import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
-import { z } from 'zod';
+import { strongPasswordSchema } from '@/lib/security/password';
+
 
 // Enhanced signup schema with comprehensive security validations
 const signUpSchema = z.object({

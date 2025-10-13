@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fileManagementService } from '@/lib/services/file-management-service';
+
 import { createAuthService } from '@/lib/auth/auth';
+import { fileManagementService } from '@/lib/services/file-management-service';
 
 /**
  * GET /api/folders - Get folder structure and contents

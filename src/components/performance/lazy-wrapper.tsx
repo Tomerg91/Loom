@@ -1,6 +1,7 @@
 'use client';
 
 import { lazy, Suspense, ComponentType, ReactNode, useState, useEffect, useRef } from 'react';
+
 import { LayoutStabilizer, CardSkeleton } from '@/components/layout/layout-stabilizer';
 
 interface LazyWrapperProps {

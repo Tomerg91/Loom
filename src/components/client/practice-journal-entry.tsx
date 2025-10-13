@@ -1,12 +1,14 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2, Share2, Lock, Heart, Zap } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { Edit2, Trash2, Share2, Lock, Heart, Zap } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+
 import type { JournalEntry } from './practice-journal';
 
 interface PracticeJournalEntryProps {

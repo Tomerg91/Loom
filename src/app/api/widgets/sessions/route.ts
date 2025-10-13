@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerUser } from '@/lib/auth/auth';
-import { createClient } from '@/lib/supabase/server';
+
 import { ApiResponse } from '@/lib/api/types';
+import { getServerUser } from '@/lib/auth/auth';
 import { getCachedData, CacheKeys, CacheTTL } from '@/lib/performance/cache';
+import { createClient } from '@/lib/supabase/server';
 
 export interface SessionWidget {
   id: string;

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { routing } from '@/i18n/routing';
 
 // Mock Next.js modules for routing integration test

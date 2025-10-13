@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { 
   Star, 
@@ -15,17 +14,8 @@ import {
   Calendar,
   Tag
 } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import React, { useState } from 'react';
+
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -36,8 +26,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Note } from '@/lib/queries/notes';
+import { cn } from '@/lib/utils';
 
 interface NoteCardProps {
   note: Note;

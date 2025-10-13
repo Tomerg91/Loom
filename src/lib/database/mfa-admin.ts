@@ -1,6 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
-import type { Database } from '@/types/supabase';
 import { Result, type Result as ResultType } from '@/lib/types/result';
+import type { Database } from '@/types/supabase';
 
 // Types for MFA admin operations
 export interface UserMfaStatus {

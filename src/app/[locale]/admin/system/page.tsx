@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+
 import { AdminSystemPage } from '@/components/admin/system-page';
 import { AdminRoute } from '@/components/auth/route-guard';
 

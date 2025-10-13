@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import { useMemo } from 'react';
+
 import { MfaVerificationForm } from '@/components/auth/mfa-verification-form';
 
 export default function MfaVerifyPage() {

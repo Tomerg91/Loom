@@ -1,4 +1,6 @@
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -9,7 +11,6 @@ import {
 } from '@/lib/api/utils';
 import { NotificationService } from '@/lib/database/notifications';
 import { rateLimit } from '@/lib/security/rate-limit';
-import { z } from 'zod';
 
 const BulkActionSchema = z.object({
   action: z.enum(['mark_read', 'delete', 'archive']),

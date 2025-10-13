@@ -1,17 +1,5 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { FileSharingDialog } from '@/components/files/file-sharing-dialog';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/toast-provider';
 import { 
   FileIcon, 
   FolderIcon, 
@@ -29,6 +17,20 @@ import {
   UsersIcon,
   CalendarIcon,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useState, useEffect, useMemo } from 'react';
+
+import { FileSharingDialog } from '@/components/files/file-sharing-dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/toast-provider';
+
 
 interface FileItem {
   id: string;

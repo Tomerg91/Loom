@@ -1,8 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
-import { createAuthService } from '@/lib/auth/auth';
-import { createAdminClient } from '@/lib/supabase/server';
 import {
   createErrorResponse,
   createSuccessResponse,
@@ -11,6 +9,8 @@ import {
   validateRequestBody,
   withErrorHandling,
 } from '@/lib/api/utils';
+import { createAuthService } from '@/lib/auth/auth';
+import { createAdminClient } from '@/lib/supabase/server';
 
 const clientOnboardingSchema = z.object({
   step: z.number().int().min(1).max(3),

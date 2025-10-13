@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { screen } from '@testing-library/react';
-import { renderWithProviders, mockUseQuery, mockUseMutation, createMockQueryResult, createMockMutationResult } from '@/test/utils';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
+
+import { renderWithProviders, mockUseQuery, mockUseMutation, createMockQueryResult, createMockMutationResult } from '@/test/utils';
+
 
 // Simple test component that uses React Query
 function TestComponent() {

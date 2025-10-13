@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+
 import { createAuthService } from '@/lib/auth/auth';
 import { applySecurityHeaders } from '@/lib/security/headers';
 import { rateLimitAPI } from '@/lib/security/rate-limit';

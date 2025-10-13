@@ -1,5 +1,5 @@
-import type { UserRole, Language } from '@/types';
 import { config } from '@/lib/config';
+import type { UserRole, Language } from '@/types';
 
 export interface AuthUser {
   id: string;

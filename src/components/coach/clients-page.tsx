@@ -1,13 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { 
+  Users, 
+  Plus, 
+  Search, 
+  Calendar, 
+  MessageSquare,
+  Clock,
+  Star,
+  MoreHorizontal,
+  Mail,
+  FileText,
+  Video,
+  AlertCircle,
+  CheckCircle
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useState, useEffect } from 'react';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -24,21 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
-  Users, 
-  Plus, 
-  Search, 
-  Calendar, 
-  MessageSquare,
-  Clock,
-  Star,
-  MoreHorizontal,
-  Mail,
-  FileText,
-  Video,
-  AlertCircle,
-  CheckCircle
-} from 'lucide-react';
+
 
 interface Client {
   id: string;

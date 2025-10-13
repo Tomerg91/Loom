@@ -1,6 +1,8 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Calendar, Check } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+
 import { Coach } from '../shared/types';
 
 interface BookingConfirmationProps {

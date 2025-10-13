@@ -12,10 +12,11 @@
 
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Eye, Download, CheckCircle2, TrendingUp } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { ResourceLibraryItem } from '@/types/resources';
 

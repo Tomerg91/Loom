@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { fileService } from '@/lib/services/file-service';
 
 // Mock the Supabase client

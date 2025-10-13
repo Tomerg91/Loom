@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useCallback } from 'react';
-import { createClientAuthService } from '@/lib/auth/client-auth';
+
 import type { AuthUser } from '@/lib/auth/auth';
+import { createClientAuthService } from '@/lib/auth/client-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useNotificationStore } from '@/lib/store/notification-store';
 import { useSessionStore } from '@/lib/store/session-store';

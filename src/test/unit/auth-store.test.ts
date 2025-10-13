@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { useAuthStore } from '@/lib/store/auth-store';
 
 describe('Zustand auth store', () => {

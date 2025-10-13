@@ -1,11 +1,16 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { 
+  format, 
+  parseISO, 
+  isThisYear, 
+  isThisMonth, 
+  isThisWeek, 
+  startOfWeek, 
+  endOfWeek,
+  differenceInDays,
+  isSameMonth
+} from 'date-fns';
 import { 
   Calendar, 
   Clock, 
@@ -23,17 +28,13 @@ import {
   TrendingUp,
   Award
 } from 'lucide-react';
-import { 
-  format, 
-  parseISO, 
-  isThisYear, 
-  isThisMonth, 
-  isThisWeek, 
-  startOfWeek, 
-  endOfWeek,
-  differenceInDays,
-  isSameMonth
-} from 'date-fns';
+import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
+
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Session, SessionStatus, SessionType } from '@/types';
 
 interface SessionTimelineViewProps {

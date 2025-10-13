@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { headers } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
+import { createClient } from '@/lib/supabase/server';
 
 // GET /api/share/[token] - Access shared file (API endpoint for programmatic access)
 export async function GET(

@@ -1,4 +1,5 @@
 import React from 'react';
+
 import messages from '@/messages/en.json';
 
 type Messages = typeof messages;

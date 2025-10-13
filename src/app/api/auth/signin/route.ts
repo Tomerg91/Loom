@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createAuthService } from '@/lib/auth/auth';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
-import { basicPasswordSchema } from '@/lib/security/password';
+import { z } from 'zod';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -11,7 +10,9 @@ import {
   HTTP_STATUS,
   withRequestLogging
 } from '@/lib/api/utils';
-import { z } from 'zod';
+import { createAuthService } from '@/lib/auth/auth';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { basicPasswordSchema } from '@/lib/security/password';
 
 // Enhanced signin schema with security validations
 const signInSchema = z.object({

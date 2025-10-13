@@ -1,9 +1,11 @@
 'use client';
 
-import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +18,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { PricingStepData, Currency, SpokenLanguage } from '@/lib/types/onboarding';
-import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const pricingSchema = z.object({

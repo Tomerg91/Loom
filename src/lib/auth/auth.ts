@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server';
-import { supabase as clientSupabase } from '@/lib/supabase/client';
-import { createUserService } from '@/lib/database';
-import type { User, UserRole, UserStatus, Language } from '@/types';
 import { config } from '@/lib/config';
+import { createUserService } from '@/lib/database';
+import { supabase as clientSupabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
+import type { User, UserRole, UserStatus, Language } from '@/types';
 
 export interface AuthUser {
   id: string;

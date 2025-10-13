@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+import { ApiResponse } from '@/lib/api/types';
 import { getServerUser } from '@/lib/auth/auth';
 import { createClient } from '@/lib/supabase/server';
-import { ApiResponse } from '@/lib/api/types';
 
 export interface FeedbackWidget {
   clientName: string;
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     const limit = parseInt(searchParams.get('limit') || '10');
 
     let feedback: FeedbackWidget[] = [];
-    let allRatings: number[] = [];
+    const allRatings: number[] = [];
 
     if (user.role === 'coach') {
       // Get feedback for this coach from client reflections and session data

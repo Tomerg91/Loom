@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Tag, Folder, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { 
   Select, 
   SelectContent, 
@@ -20,9 +22,8 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { cn } from '@/lib/utils';
 import { Note, CreateNoteData, UpdateNoteData, useAutosaveNote } from '@/lib/queries/notes';
+import { cn } from '@/lib/utils';
 
 interface NoteEditorModalProps {
   isOpen: boolean;

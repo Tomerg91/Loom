@@ -1,16 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/toast-provider';
 import { 
   Users, 
   Plus, 
   Shield,
   UserCheck
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
 import { 
   DashboardHeader,
   LoadingState,
@@ -25,6 +24,9 @@ import {
   USER_ROLE_OPTIONS,
   USER_STATUS_OPTIONS
 } from '@/components/dashboard';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast-provider';
+
 
 // User interface is now imported from dashboard components
 

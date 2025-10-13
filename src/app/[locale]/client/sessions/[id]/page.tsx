@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { SessionDetailView } from '@/components/client/session-detail-view';
+
 import { ClientOrAdminRoute } from '@/components/auth/route-guard';
+import { SessionDetailView } from '@/components/client/session-detail-view';
 
 interface PageProps {
   params: {

@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { CoachClientDetailPage } from '@/components/coach/client-detail-page';
+
 import { CoachOrAdminRoute } from '@/components/auth/route-guard';
+import { CoachClientDetailPage } from '@/components/coach/client-detail-page';
 
 interface CoachClientDetailPageRouteProps {
   params: Promise<{ id: string }>;

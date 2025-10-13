@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -16,9 +17,9 @@ import {
   getSessionsCount,
   createSession
 } from '@/lib/database/sessions';
-import { rateLimit } from '@/lib/security/rate-limit';
-import { getCachedData, CacheKeys, CacheTTL, CacheInvalidation } from '@/lib/performance/cache';
 import { withApiOptimization, createStreamingResponse, optimizeQuery } from '@/lib/performance/api-optimization';
+import { getCachedData, CacheKeys, CacheTTL, CacheInvalidation } from '@/lib/performance/cache';
+import { rateLimit } from '@/lib/security/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 
 // GET /api/sessions - Optimized list sessions with caching and streaming

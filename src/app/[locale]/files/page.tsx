@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { FileManagementPage } from '@/components/files/file-management-page';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+import { FileManagementPage } from '@/components/files/file-management-page';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { createClient } from '@/lib/supabase/client';
 
 interface User {
   id: string;

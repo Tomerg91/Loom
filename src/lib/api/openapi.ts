@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
-import { join } from 'path';
 import * as yaml from 'js-yaml';
+import { join } from 'path';
 
 // OpenAPI 3.0 specification for the Loom Coaching Platform API
 // Dynamically loads from the comprehensive openapi.yaml file

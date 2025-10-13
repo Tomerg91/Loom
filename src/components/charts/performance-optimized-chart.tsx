@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Zap } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 // Performance optimization wrapper for large datasets
 interface PerformanceOptimizedChartProps {

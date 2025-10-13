@@ -1,4 +1,6 @@
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -7,9 +9,8 @@ import {
 } from '@/lib/api/utils';
 import { uuidSchema } from '@/lib/api/validation';
 import { getCoachAvailability, setCoachAvailability } from '@/lib/database/availability';
-import { createServerClient } from '@/lib/supabase/server';
-import { z } from 'zod';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createServerClient } from '@/lib/supabase/server';
 
 const availabilitySlotSchema = z.object({
   dayOfWeek: z.number().min(0).max(6),

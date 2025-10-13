@@ -7,8 +7,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createMfaService } from '@/lib/services/mfa-service';
+
 import { createAuthService } from '@/lib/auth/auth';
+import { createMfaService } from '@/lib/services/mfa-service';
 
 export async function GET(request: NextRequest) {
   try {

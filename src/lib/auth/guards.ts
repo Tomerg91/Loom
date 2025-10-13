@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
-import { requireAuth, requireRole, requireAnyRole } from './auth';
+
 import type { UserRole } from '@/types';
+
+import { requireAuth, requireRole, requireAnyRole } from './auth';
 
 /**
  * Page-level auth guard for server components.

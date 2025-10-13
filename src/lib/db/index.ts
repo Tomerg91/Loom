@@ -1,7 +1,8 @@
 // Supabase database implementation
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/supabase';
-import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface DatabaseError extends Error {
   code?: string;

@@ -1,15 +1,13 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useState, useCallback } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ProfileStep } from './steps/profile-step';
-import { PricingStep } from './steps/pricing-step';
-import { AvailabilityStep } from './steps/availability-step';
-import { ReviewStep } from './steps/review-step';
 import type {
   CoachOnboardingData,
   PartialOnboardingData,
@@ -18,8 +16,13 @@ import type {
   AvailabilityStepData,
   OnboardingSubmitResponse,
 } from '@/lib/types/onboarding';
-import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+import { AvailabilityStep } from './steps/availability-step';
+import { PricingStep } from './steps/pricing-step';
+import { ProfileStep } from './steps/profile-step';
+import { ReviewStep } from './steps/review-step';
+
 
 interface CoachOnboardingWizardProps {
   userId: string;

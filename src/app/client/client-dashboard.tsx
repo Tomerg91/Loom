@@ -1,14 +1,7 @@
 'use client';
 
-import { useState, useMemo, useCallback, Suspense, memo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import { useUser } from '@/lib/auth/use-user';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import { 
   Calendar, 
   Clock, 
@@ -30,8 +23,16 @@ import {
   Zap,
   AlertCircle
 } from 'lucide-react';
-import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { useState, useMemo, useCallback, Suspense, memo, useEffect } from 'react';
+
 import { LazyProgressChart, LazyGoalChart, LazySessionChart } from '@/components/charts/lazy-chart';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useUser } from '@/lib/auth/use-user';
 import type { Session, User as UserType } from '@/types';
 
 // Types for API responses

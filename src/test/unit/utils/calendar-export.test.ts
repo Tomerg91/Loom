@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { generateICS, generateGoogleCalendarURL } from '@/lib/utils/calendar-export';
 import type { Session } from '@/types';
 

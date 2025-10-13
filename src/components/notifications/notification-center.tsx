@@ -1,16 +1,7 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslations, useLocale } from 'next-intl';
-import { useUser } from '@/lib/auth/use-user';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRealtimeNotifications } from '@/lib/realtime/hooks';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
+
 import { 
   Bell, 
   BellRing, 
@@ -81,9 +72,19 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { format, parseISO, isToday, isYesterday, formatDistanceToNow, startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
+import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
+import { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/toast-provider';
-import { useOfflineNotificationQueue } from '@/lib/notifications/offline-queue';
+import { useUser } from '@/lib/auth/use-user';
 import { useDebounce } from '@/lib/hooks/use-debounce';
+import { useOfflineNotificationQueue } from '@/lib/notifications/offline-queue';
+import { useRealtimeNotifications } from '@/lib/realtime/hooks';
 import type { Notification, NotificationType } from '@/types';
 
 interface NotificationsResponse {

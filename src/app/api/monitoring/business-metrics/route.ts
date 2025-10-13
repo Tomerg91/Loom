@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { rateLimit } from '@/lib/security/rate-limit';
+
 import { trackBusinessMetric } from '@/lib/monitoring/sentry';
+import { rateLimit } from '@/lib/security/rate-limit';
+import { createClient } from '@/lib/supabase/server';
 
 // Business metrics collection endpoint
 const rateLimitedMetrics = rateLimit(100, 60000)( // 100 requests per minute

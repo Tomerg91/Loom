@@ -8,9 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
-import { createAuthService } from '@/lib/auth/auth';
 import { z } from 'zod';
+
+import { createAuthService } from '@/lib/auth/auth';
+import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
 
 // Request validation schema for POST (regenerate codes)
 const regenerateRequestSchema = z.object({

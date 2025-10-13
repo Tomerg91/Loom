@@ -1,4 +1,6 @@
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -8,7 +10,6 @@ import {
 } from '@/lib/api/utils';
 import { uuidSchema } from '@/lib/api/validation';
 import { getSessionById, markNoShow } from '@/lib/database/sessions';
-import { z } from 'zod';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 interface RouteParams {

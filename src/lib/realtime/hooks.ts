@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { useUser } from '@/lib/auth/use-user';
-import { useQueryClient } from '@tanstack/react-query';
-import { realtimeClient } from './realtime-client';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+
+import { useUser } from '@/lib/auth/use-user';
+
+import { realtimeClient } from './realtime-client';
+
 
 // Debounce utility for subscription management
 function useDebounce<T extends any[]>(callback: (...args: T) => void, delay: number) {

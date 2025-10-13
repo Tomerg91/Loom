@@ -1,24 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { Link } from '@/i18n/routing';
-import { usePathname } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/auth/use-user';
-import { AdminOnly, CoachOnly, ClientOnly } from '@/components/ui/conditional-render';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { StableImage } from '@/components/layout/layout-stabilizer';
 import {
   ClipboardList,
   Home,
@@ -38,9 +19,29 @@ import {
   X,
   FolderOpen
 } from 'lucide-react';
-import { createClientAuthService } from '@/lib/auth/client-auth';
+import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+import { StableImage } from '@/components/layout/layout-stabilizer';
 import { NotificationCenter } from '@/components/notifications/notification-center';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { AdminOnly, CoachOnly, ClientOnly } from '@/components/ui/conditional-render';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { CompactLanguageSwitcher } from '@/components/ui/language-switcher';
+import { Link } from '@/i18n/routing';
+import { createClientAuthService } from '@/lib/auth/client-auth';
+import { useUser } from '@/lib/auth/use-user';
 
 interface NavItem {
   label: string;

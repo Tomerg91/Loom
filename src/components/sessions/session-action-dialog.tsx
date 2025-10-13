@@ -1,25 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { useRescheduleSession, useCancelSessionWithPolicy, useAddProgressNote } from '@/lib/queries/sessions';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { format, addDays, parseISO, isBefore, isToday } from 'date-fns';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -28,7 +9,27 @@ import {
   X,
   Info
 } from 'lucide-react';
-import { format, addDays, parseISO, isBefore, isToday } from 'date-fns';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRescheduleSession, useCancelSessionWithPolicy, useAddProgressNote } from '@/lib/queries/sessions';
 import type { Session, SessionRescheduleRequest, SessionCancellation } from '@/types';
 
 interface SessionActionDialogProps {

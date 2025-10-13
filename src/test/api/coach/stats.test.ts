@@ -5,10 +5,10 @@
  * Tests: Coach Authentication, Statistics Calculation, Data Aggregation, Performance
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { GET } from '@/app/api/coach/stats/route';
-import { mockUser, mockCoachUser, mockAdminUser, mockSupabaseClient } from '@/test/utils';
 
 // Mock all dependencies
 vi.mock('@/lib/services/auth-service', () => ({
@@ -67,11 +67,12 @@ vi.mock('@/lib/config/analytics-constants', () => ({
 }));
 
 // Import mocked functions
-import { authService } from '@/lib/services/auth-service';
-import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
-import { createServerClient } from '@/lib/supabase/server';
+import { ApiResponseHelper } from '@/lib/api/types';
 import { getSessionRate, getDefaultCoachRating } from '@/lib/config/analytics-constants';
+import { authService } from '@/lib/services/auth-service';
+import { createServerClient } from '@/lib/supabase/server';
+import { mockUser, mockCoachUser, mockAdminUser, mockSupabaseClient } from '@/test/utils';
 
 const mockAuthService = vi.mocked(authService);
 const mockApiResponseHelper = vi.mocked(ApiResponseHelper);

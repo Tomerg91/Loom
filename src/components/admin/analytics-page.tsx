@@ -1,18 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { 
   BarChart3,
   Users,
@@ -24,19 +12,17 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
+import { useState } from 'react';
+
 import { UserGrowthChart, SessionMetricsChart } from '@/components/charts/chart-components';
 import { EnhancedUserGrowthChart, EnhancedSessionMetricsChart } from '@/components/charts/enhanced-chart-components';
-import { ANALYTICS_CONFIG, getGrowthRateOrDefault } from '@/lib/config/analytics-constants';
 import { AnalyticsErrorBoundary, AnalyticsCardWrapper, ChartErrorFallback } from '@/components/error/analytics-error-boundary';
-import { analyticsExportService, type ExportFormat } from '@/lib/services/analytics-export-service';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Dialog,
   DialogContent,
@@ -45,6 +31,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ANALYTICS_CONFIG, getGrowthRateOrDefault } from '@/lib/config/analytics-constants';
+import { analyticsExportService, type ExportFormat } from '@/lib/services/analytics-export-service';
+
 import { SystemHealthDisplay } from './system-health-display';
 
 interface AnalyticsData {

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { FolderMetadata } from '@/lib/services/file-management-service';
+
 import { toast } from '@/hooks/use-toast';
+import { FolderMetadata } from '@/lib/services/file-management-service';
 
 interface UseFoldersParams {
   ownerId: string;

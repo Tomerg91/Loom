@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
 import { 
   Upload, 
   Download, 
@@ -36,26 +34,9 @@ import {
   Tag,
   ExternalLink,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Select,
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { useTranslations } from 'next-intl';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -66,20 +47,42 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { 
+  Select,
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileUploadZone } from './file-upload-zone';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/components/ui/use-toast';
+
 import { FilePreview } from './file-preview';
 import { FileSharingDialog } from './file-sharing-dialog';
+import { FileUploadZone } from './file-upload-zone';
 import { FileVersionHistory } from './file-version-history';
-import { toast } from '@/components/ui/use-toast';
+
 
 export interface FileItem {
   id: string;

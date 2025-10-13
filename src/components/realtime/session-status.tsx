@@ -1,10 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRealtimeSessions } from '@/lib/realtime/hooks';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { format, parseISO } from 'date-fns';
 import { 
   Calendar, 
   Clock, 
@@ -17,7 +13,12 @@ import {
   Wifi,
   WifiOff
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { useEffect, useState } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRealtimeSessions } from '@/lib/realtime/hooks';
 import type { Session, SessionStatus } from '@/types';
 
 interface SessionStatusProps {

@@ -1,10 +1,11 @@
 'use client';
 
+import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { LucideIcon } from 'lucide-react';
 
 interface EmptyStateProps {
   icon: LucideIcon;

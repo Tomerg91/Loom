@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAuthService } from '@/lib/auth/auth';
 import { z } from 'zod';
+
+import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 const updateProfileSchema = z.object({

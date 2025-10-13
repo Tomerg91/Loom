@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/server';
-import { createSuccessResponse, createErrorResponse, HTTP_STATUS, withRequestLogging, withErrorHandling } from '@/lib/api/utils';
+
 import { compose, withAuth, withRole, withRateLimit } from '@/lib/api';
+import { createSuccessResponse, createErrorResponse, HTTP_STATUS, withRequestLogging, withErrorHandling } from '@/lib/api/utils';
+import { createAdminClient } from '@/lib/supabase/server';
 
 // GET /api/admin/system/db-checks
 export const GET = compose(

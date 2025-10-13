@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { useRouter, usePathname } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { useLanguageSwitcher } from '@/hooks/use-language-switcher';
-import { routing } from '@/i18n/routing';
 import { defaultLocale, locales } from '@/i18n/config';
+import { useRouter, usePathname } from '@/i18n/routing';
+import { routing } from '@/i18n/routing';
 
 // Mock next-intl
 vi.mock('next-intl', () => ({

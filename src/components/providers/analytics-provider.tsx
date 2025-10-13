@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
+
 // Use the app's active AuthProvider hook to avoid context mismatch
 import { useUser } from '@/lib/auth/use-user';
 import { 

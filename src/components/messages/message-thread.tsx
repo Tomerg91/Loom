@@ -1,16 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { useUser } from '@/lib/auth/use-user';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRealtimeMessages, useTypingIndicators } from '@/lib/realtime/hooks';
-import { OptimizedThumbnailImage } from '@/components/ui/optimized-image';
-import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import { 
   MessageCircle, 
   File, 
@@ -21,15 +12,26 @@ import {
   CheckCheck,
   Download
 } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
-import { MessageReactions } from './message-reactions';
+import { OptimizedThumbnailImage } from '@/components/ui/optimized-image';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useUser } from '@/lib/auth/use-user';
+import { useRealtimeMessages, useTypingIndicators } from '@/lib/realtime/hooks';
+import { cn } from '@/lib/utils';
 import type { Message, MessageReaction } from '@/types';
+
+import { MessageReactions } from './message-reactions';
 
 interface MessageThreadProps {
   conversationId: string;

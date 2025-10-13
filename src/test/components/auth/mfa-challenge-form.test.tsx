@@ -1,8 +1,9 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders } from '@/test/utils';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { MfaChallengeForm, type MfaChallengeFormProps, type MfaChallengeData } from '@/components/auth/mfa/mfa-challenge-form';
+import { renderWithProviders } from '@/test/utils';
 
 // Mock MFA verification input component
 vi.mock('@/components/auth/mfa/mfa-verification-input', () => ({

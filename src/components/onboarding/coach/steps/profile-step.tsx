@@ -1,17 +1,18 @@
 'use client';
 
-import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { AvatarUpload } from '@/components/ui/file-upload';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import type { ProfileStepData, Specialization } from '@/lib/types/onboarding';
-import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const profileSchema = z.object({

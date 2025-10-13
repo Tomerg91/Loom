@@ -1,11 +1,11 @@
 import type { Session, SessionStatus } from '@/types';
 
 // Import specialized services
-import { SessionCrudService } from './services/session-crud';
-import { SessionSchedulingService } from './services/session-scheduling';
-import { SessionParticipantsService } from './services/session-participants';
-import { SessionWorkflowService } from './services/session-workflow';
 import { SessionAnalyticsService } from './services/session-analytics';
+import { SessionCrudService } from './services/session-crud';
+import { SessionParticipantsService } from './services/session-participants';
+import { SessionSchedulingService } from './services/session-scheduling';
+import { SessionWorkflowService } from './services/session-workflow';
 
 // Re-export interfaces for backward compatibility
 export type {

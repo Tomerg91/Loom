@@ -1,8 +1,3 @@
-import { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
 import { 
   Calendar,
   Clock,
@@ -10,7 +5,14 @@ import {
   Phone,
   MapPin,
 } from 'lucide-react';
+import { useMemo } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { Session } from '@/types';
+
 import { formatDateTime } from '../shared/utils';
 
 interface SessionInfoProps {

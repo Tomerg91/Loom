@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
-import NextImage from 'next/image';
 import { Upload, X, Image, File, AlertCircle } from 'lucide-react';
+import NextImage from 'next/image';
+import { useState, useRef, useCallback } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { cn } from '@/lib/utils';
 import { config } from '@/lib/config';
+import { cn } from '@/lib/utils';
 import { validationUtils } from '@/lib/validation/common';
 
 export interface FileUploadProps {

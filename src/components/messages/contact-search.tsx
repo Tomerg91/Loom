@@ -1,9 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useUser } from '@/lib/auth/use-user';
-import { cn } from '@/lib/utils';
+import { 
+  Search, 
+  Users, 
+  MessageCircle,
+  X
+} from 'lucide-react';
+import { useState, useEffect } from 'react';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   Dialog,
   DialogContent,
@@ -11,17 +19,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  Search, 
-  Users, 
-  MessageCircle,
-  X
-} from 'lucide-react';
+import { useUser } from '@/lib/auth/use-user';
+import { cn } from '@/lib/utils';
 import type { User } from '@/types';
 
 interface ContactSearchProps {

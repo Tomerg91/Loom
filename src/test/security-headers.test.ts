@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
+import { describe, it, expect } from 'vitest';
+
 import { applySecurityHeaders } from '@/lib/security/headers';
 
 describe('Security Headers - Snapshot Tests', () => {

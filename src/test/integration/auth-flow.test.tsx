@@ -1,12 +1,12 @@
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
 
-import { SigninForm } from '@/components/auth/signin-form';
-import { RouteGuard } from '@/components/auth/route-guard';
 import { AuthProvider, useAuth } from '@/components/auth/auth-provider';
-import { renderWithProviders, mockUser, mockFetch } from '@/test/utils';
+import { RouteGuard } from '@/components/auth/route-guard';
+import { SigninForm } from '@/components/auth/signin-form';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { renderWithProviders, mockUser, mockFetch } from '@/test/utils';
 
 type AuthStateChangeHandler = (user: any) => Promise<void> | void;
 

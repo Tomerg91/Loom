@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { CoachDashboard } from '@/components/coach/coach-dashboard';
+
 import { CoachOrAdminRoute } from '@/components/auth/route-guard';
+import { CoachDashboard } from '@/components/coach/coach-dashboard';
 
 export default function CoachPage() {
   return (

@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { Edit2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import NextImage from 'next/image';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { CoachOnboardingData, Currency, DayOfWeek } from '@/lib/types/onboarding';
-import { Edit2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import NextImage from 'next/image';
+
 
 interface ReviewStepProps {
   data: CoachOnboardingData;

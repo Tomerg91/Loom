@@ -8,9 +8,8 @@
  */
 
 import { NextRequest } from 'next/server';
-import { createAuthService } from '@/lib/auth/auth';
-import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { z } from 'zod';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -19,7 +18,9 @@ import {
   rateLimit,
   HTTP_STATUS
 } from '@/lib/api/utils';
-import { z } from 'zod';
+import { createAuthService } from '@/lib/auth/auth';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
 
 // MFA signin completion schema
 const mfaSignInSchema = z.object({
@@ -227,7 +228,7 @@ export const POST = withErrorHandling(
       });
 
       // Prepare response with warnings if needed
-      let warnings: string[] = [];
+      const warnings: string[] = [];
       if (method === 'backup_code' && mfaStatus.backupCodesRemaining === 0) {
         warnings.push('This was your last backup code. Generate new backup codes immediately.');
       } else if (method === 'backup_code' && mfaStatus.backupCodesRemaining <= 2) {

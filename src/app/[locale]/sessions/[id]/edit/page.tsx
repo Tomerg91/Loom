@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { SessionEditPage } from '@/components/sessions/session-edit-page';
+
 import { RouteGuard } from '@/components/auth/route-guard';
+import { SessionEditPage } from '@/components/sessions/session-edit-page';
 
 interface SessionEditPageProps {
   params: Promise<{ id: string; locale: string }>;

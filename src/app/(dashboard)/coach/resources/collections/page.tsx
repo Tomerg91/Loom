@@ -13,16 +13,17 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useCallback } from 'react';
+
 import {
   CollectionCard,
   CollectionDialog,
   ResourceEmptyState,
 } from '@/components/resources';
 import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import type { ResourceCollection } from '@/types/resources';
 

@@ -1,11 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { fileManagementService } from '@/lib/services/file-management-service';
-import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
-import { fileDownloadRateLimit } from '@/lib/security/file-rate-limit';
-import { getCorsHeadersForPublicEndpoint } from '@/lib/security/cors';
 import { headers } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+
+import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
+import { getCorsHeadersForPublicEndpoint } from '@/lib/security/cors';
+import { fileDownloadRateLimit } from '@/lib/security/file-rate-limit';
+import { fileManagementService } from '@/lib/services/file-management-service';
+import { createClient } from '@/lib/supabase/server';
+
 
 // Validation schema for download options
 const downloadOptionsSchema = z.object({

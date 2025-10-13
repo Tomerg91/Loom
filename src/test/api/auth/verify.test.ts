@@ -5,8 +5,9 @@
  * Tests: Email Verification, Token Validation, Security, Error Handling
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { POST, GET, OPTIONS } from '@/app/api/auth/verify/route';
 import { mockUser } from '@/test/utils';
 

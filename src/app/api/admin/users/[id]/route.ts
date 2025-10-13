@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
+
+import { ApiError } from '@/lib/api/errors';
+import { ApiResponseHelper } from '@/lib/api/types';
 import { authService } from '@/lib/services/auth-service';
 import { UserService } from '@/lib/services/user-service';
-import { ApiResponseHelper } from '@/lib/api/types';
-import { ApiError } from '@/lib/api/errors';
-import { z } from 'zod';
 import { commonValidators } from '@/lib/validation/common';
 
 const updateUserSchema = z.object({

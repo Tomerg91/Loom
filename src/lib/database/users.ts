@@ -1,9 +1,9 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { config } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
+import { createServerClient } from '@/lib/supabase/server';
+import { Result, type Result as ResultType } from '@/lib/types/result';
 import type { User, UserRole, UserStatus } from '@/types';
 import type { Database } from '@/types/supabase';
-import { Result, type Result as ResultType } from '@/lib/types/result';
-import { config } from '@/lib/config';
 
 // API-specific interfaces
 interface GetUsersOptions {

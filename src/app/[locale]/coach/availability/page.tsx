@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { AvailabilityManager } from '@/components/coach/availability-manager';
+
 import { CoachOrAdminRoute } from '@/components/auth/route-guard';
+import { AvailabilityManager } from '@/components/coach/availability-manager';
 
 export default function CoachAvailabilityPage() {
   return (

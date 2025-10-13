@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAuthService } from '@/lib/auth/auth';
+
 import { handlePreflight } from '@/lib/api/utils';
+import { createAuthService } from '@/lib/auth/auth';
 
 export async function POST(_request: NextRequest) {
   try {

@@ -1,16 +1,18 @@
 import type { Metadata } from 'next';
 import { Assistant, Inter } from 'next/font/google';
-import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { Providers } from '@/components/providers/providers';
-import { getServerUser } from '@/lib/auth/auth';
-import { routing } from '@/i18n/routing';
-import { PerformanceMonitorComponent } from '@/components/monitoring/performance-monitor';
-import { SkipLink } from '@/components/ui/skip-link';
+import { getMessages } from 'next-intl/server';
+import { Toaster } from 'sonner';
+
 import { EnvironmentCheck } from '@/components/environment-check';
 import { AppFooter } from '@/components/layout/app-footer';
+import { PerformanceMonitorComponent } from '@/components/monitoring/performance-monitor';
+import { Providers } from '@/components/providers/providers';
 import { PwaBootstrap } from '@/components/pwa/pwa-bootstrap';
-import { Toaster } from 'sonner';
+import { SkipLink } from '@/components/ui/skip-link';
+import { routing } from '@/i18n/routing';
+import { getServerUser } from '@/lib/auth/auth';
+
 import '../globals.css';
 
 // Optimize for faster initial loads - reduce server work

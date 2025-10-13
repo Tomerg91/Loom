@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -7,8 +8,8 @@ import {
   HTTP_STATUS,
   handlePreflight
 } from '@/lib/api/utils';
-import { PushNotificationService } from '@/lib/services/push-notification-service';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { PushNotificationService } from '@/lib/services/push-notification-service';
 
 // POST /api/notifications/push/unsubscribe - Unsubscribe from push notifications
 export const POST = withErrorHandling(

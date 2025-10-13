@@ -3,15 +3,7 @@
 // Extracted client page content to run under [locale] Providers
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
-import { useUser } from '@/lib/auth/use-user';
 import { useQuery } from '@tanstack/react-query';
-import { useRealtimeConversations } from '@/lib/realtime/hooks';
-import { useSearchParams } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Search, 
   MessageCircle, 
@@ -23,16 +15,27 @@ import {
   MoreVertical,
   ArrowLeft
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+
+import { ContactSearch } from '@/components/messages/contact-search';
+import { ConversationList } from '@/components/messages/conversation-list';
+import { MessageComposer } from '@/components/messages/message-composer';
+import { MessageThread } from '@/components/messages/message-thread';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { useUser } from '@/lib/auth/use-user';
+import { useRealtimeConversations } from '@/lib/realtime/hooks';
+
+
+import { Input } from '@/components/ui/input';
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ConversationList } from '@/components/messages/conversation-list';
-import { MessageThread } from '@/components/messages/message-thread';
-import { MessageComposer } from '@/components/messages/message-composer';
-import { ContactSearch } from '@/components/messages/contact-search';
 import type { Conversation } from '@/types';
 
 export default function MessagesClientPage() {

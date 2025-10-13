@@ -1,11 +1,14 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useTranslations } from 'next-intl';
+
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -14,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
 import type {
   AvailabilityStepData,
   DayAvailability,
@@ -23,7 +25,6 @@ import type {
   BufferTime,
   TimeSlot,
 } from '@/lib/types/onboarding';
-import { Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const timeSlotSchema = z.object({

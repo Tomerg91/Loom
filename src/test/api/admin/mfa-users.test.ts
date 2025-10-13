@@ -5,10 +5,10 @@
  * Tests: Admin Authentication, Role Authorization, Input Validation, Data Security
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { GET } from '@/app/api/admin/mfa/users/route';
-import { mockUser, mockAdminUser, mockCoachUser } from '@/test/utils';
 
 // Mock all dependencies
 vi.mock('@/lib/services/auth-service', () => ({
@@ -75,11 +75,12 @@ vi.mock('@/lib/security/rate-limit', () => ({
 }));
 
 // Import mocked functions
-import { authService } from '@/lib/services/auth-service';
-import { getMfaUserStatuses, getMfaStatistics } from '@/lib/database/mfa-admin';
-import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { getMfaUserStatuses, getMfaStatistics } from '@/lib/database/mfa-admin';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { authService } from '@/lib/services/auth-service';
+import { mockUser, mockAdminUser, mockCoachUser } from '@/test/utils';
 
 const mockAuthService = vi.mocked(authService);
 const mockGetMfaUserStatuses = vi.mocked(getMfaUserStatuses);

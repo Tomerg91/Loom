@@ -1,19 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Calendar,
   Users,
@@ -26,9 +13,26 @@ import {
   ArrowUpDown,
   Eye
 } from 'lucide-react';
-import { DashboardHeader, LoadingState, ErrorState } from '@/components/dashboard';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
+import { useState } from 'react';
+
+import { DashboardHeader, LoadingState, ErrorState } from '@/components/dashboard';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+
+
 
 interface Session {
   id: string;

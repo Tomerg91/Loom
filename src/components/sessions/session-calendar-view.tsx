@@ -1,12 +1,5 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, ChevronLeft, ChevronRight, Clock, User, Video, Phone, MapPin } from 'lucide-react';
 import { 
   format, 
   startOfMonth, 
@@ -21,6 +14,14 @@ import {
   startOfWeek,
   endOfWeek
 } from 'date-fns';
+import { Calendar, ChevronLeft, ChevronRight, Clock, User, Video, Phone, MapPin } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useState, useMemo } from 'react';
+
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Session, SessionStatus, SessionType } from '@/types';
 
 interface SessionCalendarViewProps {

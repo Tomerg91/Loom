@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { CoachInsightsPage } from '@/components/coach/insights-page';
+
 import { CoachOrAdminRoute } from '@/components/auth/route-guard';
+import { CoachInsightsPage } from '@/components/coach/insights-page';
 
 export default function CoachInsightsPageRoute() {
   return (

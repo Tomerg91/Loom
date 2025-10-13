@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -7,8 +8,8 @@ import {
 } from '@/lib/api/utils';
 import { uuidSchema } from '@/lib/api/validation';
 import { getCoachSchedule } from '@/lib/database/availability';
-import { createServerClient } from '@/lib/supabase/server';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createServerClient } from '@/lib/supabase/server';
 
 interface RouteParams {
   params: Promise<{ id: string }>;

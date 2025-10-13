@@ -1,15 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from '@/i18n/routing';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
 import { 
   Bell,
   User,
@@ -22,11 +12,24 @@ import {
   Monitor,
   ArrowRight
 } from 'lucide-react';
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LanguageSwitcher } from '@/components/ui/language-switcher';
+import { 
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import { useRouter } from '@/i18n/routing';
+
 import { NotificationSettingsCard } from './notification-settings-card';
+import { PreferencesSettingsCard } from './preferences-settings-card';
 import { ProfileSettingsCard } from './profile-settings-card';
 import { SecuritySettingsCard } from './security-settings-card';
-import { PreferencesSettingsCard } from './preferences-settings-card';
-import { LanguageSwitcher } from '@/components/ui/language-switcher';
+
 
 export function SettingsPage() {
   const router = useRouter();

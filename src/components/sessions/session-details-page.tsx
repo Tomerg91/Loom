@@ -1,24 +1,27 @@
 'use client';
 
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { AlertTriangle, ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/lib/auth/use-user';
-import { SessionCancellationDialog } from './session-cancellation-dialog';
-import { SessionHeader } from './display/session-header';
-import { SessionInfo } from './display/session-info';
-import { SessionGoalsDisplay } from './display/session-goals-display';
-import { SessionNotesDisplay } from './display/session-notes-display';
+import { Session } from '@/types';
+
 import { SessionActionItems } from './display/session-action-items';
-import { SessionParticipants } from './display/session-participants';
-import { SessionRating } from './display/session-rating';
 import { SessionActions } from './display/session-actions';
 import { SessionDialogs } from './display/session-dialogs';
+import { SessionGoalsDisplay } from './display/session-goals-display';
+import { SessionHeader } from './display/session-header';
+import { SessionInfo } from './display/session-info';
+import { SessionNotesDisplay } from './display/session-notes-display';
+import { SessionParticipants } from './display/session-participants';
+import { SessionRating } from './display/session-rating';
+import { SessionCancellationDialog } from './session-cancellation-dialog';
 import { SessionFileManager } from './session-file-manager';
-import { Session } from '@/types';
+
 
 interface SessionDetailsPageProps {
   sessionId: string;

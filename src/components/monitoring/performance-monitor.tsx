@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { collectWebVitals, PerformanceMonitor, checkPerformanceBudget } from '@/lib/performance/web-vitals';
-import { monitorMemoryUsage } from '@/lib/performance/optimization';
+
 import { trackPerformance } from '@/lib/monitoring/analytics';
+import { monitorMemoryUsage } from '@/lib/performance/optimization';
+import { collectWebVitals, PerformanceMonitor, checkPerformanceBudget } from '@/lib/performance/web-vitals';
 
 interface MemoryUsage {
   usedJSHeapSize: number;

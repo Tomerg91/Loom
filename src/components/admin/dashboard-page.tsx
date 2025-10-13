@@ -1,13 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Users,
   Calendar,
@@ -25,7 +18,15 @@ import {
   ArrowRight,
   RefreshCw
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
 import { StatsCard, LoadingState, ErrorState } from '@/components/dashboard';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface DashboardData {
   overview: {

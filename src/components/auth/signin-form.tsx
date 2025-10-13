@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
+import { useState, FormEvent } from 'react';
+
+import { useAuth } from '@/components/auth/auth-provider';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/components/auth/auth-provider';
-import { Loader2 } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 import { resolveAuthPath, resolveRedirect } from '@/lib/utils/redirect';
 
 interface SigninFormProps {

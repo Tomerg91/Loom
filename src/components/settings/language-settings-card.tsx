@@ -1,9 +1,17 @@
 'use client';
 
-import { useTranslations, useLocale } from 'next-intl';
+import { 
+  Globe,
+  Languages,
+  CheckCircle,
+  Info
+} from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations, useLocale } from 'next-intl';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { 
   Select,
@@ -12,13 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Globe,
-  Languages,
-  CheckCircle,
-  Info
-} from 'lucide-react';
 import { routing } from '@/i18n/routing';
 
 interface LanguageOption {

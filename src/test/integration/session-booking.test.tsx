@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { renderWithProviders, mockUser, mockCoachUser, createMockSession, mockFetch } from '@/test/utils';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { SessionBookingForm } from '@/components/sessions/booking';
 import { SessionList } from '@/components/sessions/session-list';
+import { renderWithProviders, mockUser, mockCoachUser, createMockSession, mockFetch } from '@/test/utils';
 
 // Mock auth store
 vi.mock('@/lib/store/auth-store', () => ({

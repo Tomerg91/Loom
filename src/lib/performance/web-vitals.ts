@@ -1,4 +1,5 @@
 import { onCLS, onINP, onFCP, onLCP, onTTFB, type Metric } from 'web-vitals';
+
 import { trackWebVitals } from '@/lib/monitoring/analytics';
 
 // Web Vitals thresholds

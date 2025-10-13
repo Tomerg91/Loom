@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+
 import type { Session, SessionStatus } from '@/types';
 
 interface SessionState {

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { useEffect, useRef } from 'react';
+
+import { createClient } from '@/lib/supabase/client';
 
 interface AuthMonitorOptions {
   onSessionExpired?: () => void;

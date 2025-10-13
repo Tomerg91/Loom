@@ -1,8 +1,8 @@
-import { getTranslations } from 'next-intl/server';
 import { Facebook, Instagram, Linkedin, Youtube, ExternalLink } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-import { Link } from '@/i18n/routing';
 import { CompactLanguageSwitcher } from '@/components/ui/language-switcher';
+import { Link } from '@/i18n/routing';
 
 interface FooterLink {
   label: string;

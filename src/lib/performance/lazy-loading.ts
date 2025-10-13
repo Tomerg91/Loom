@@ -1,5 +1,5 @@
-import { ComponentType } from 'react';
 import dynamic from 'next/dynamic';
+import { ComponentType } from 'react';
 
 // Default loading component
 const DefaultLoadingComponent = () => {

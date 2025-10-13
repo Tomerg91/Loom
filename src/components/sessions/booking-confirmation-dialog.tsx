@@ -1,8 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { format, parseISO } from 'date-fns';
+import { CheckCircle, Calendar, Clock, User, FileText, Mail } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   Dialog, 
   DialogContent, 
@@ -11,11 +16,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, Calendar, Clock, User, FileText, Mail } from 'lucide-react';
 import type { Session } from '@/types';
 
 interface BookingConfirmationDialogProps {

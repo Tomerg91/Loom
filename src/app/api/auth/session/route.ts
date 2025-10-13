@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClientWithRequest } from '@/lib/supabase/server';
+
 import { createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
+import { createServerClientWithRequest } from '@/lib/supabase/server';
 
 // POST /api/auth/session
 // Body: { access_token: string, refresh_token: string }

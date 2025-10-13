@@ -1,4 +1,5 @@
 import { supabase as clientSupabase } from '@/lib/supabase/client';
+
 import type { AuthUser, SignUpData, SignInData } from './auth';
 
 /**

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import createMiddleware from 'next-intl/middleware';
+
+import { createServerClientWithRequest } from '@/lib/supabase/server';
+
 import { routing } from './i18n/routing';
 import { applySecurityHeaders } from './lib/security/headers';
 import { validateUserAgent } from './lib/security/validation';
-import createMiddleware from 'next-intl/middleware';
-import { createServerClientWithRequest } from '@/lib/supabase/server';
 
 // Create next-intl middleware
 const intlMiddleware = createMiddleware(routing);

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { fileManagementService } from '@/lib/services/file-management-service';
-import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { z } from 'zod';
+
+import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
+import { fileManagementService } from '@/lib/services/file-management-service';
+import { createClient } from '@/lib/supabase/server';
+
 
 // Validation schemas
 const bulkShareSchema = z.object({

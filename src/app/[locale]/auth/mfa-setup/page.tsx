@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Loader2, Shield } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { createClientAuthService } from '@/lib/auth/client-auth';
+import { useEffect, useState } from 'react';
+
 import { MfaSetupForm } from '@/components/auth/mfa-setup-form';
-import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { createClientAuthService } from '@/lib/auth/client-auth';
+
 
 export default function MfaSetupPage() {
   const t = useTranslations('auth.mfa');

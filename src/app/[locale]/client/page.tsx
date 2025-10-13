@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { ClientDashboard } from '@/components/client/client-dashboard';
+
 import { ClientOrAdminRoute } from '@/components/auth/route-guard';
+import { ClientDashboard } from '@/components/client/client-dashboard';
 
 export default function ClientPage() {
   return (

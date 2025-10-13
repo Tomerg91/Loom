@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-import Image from 'next/image';
 import { 
   X, 
   Download, 
@@ -15,8 +13,11 @@ import {
   Video,
   Music
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import Image from 'next/image';
+import React from 'react';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
