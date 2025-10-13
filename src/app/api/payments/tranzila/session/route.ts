@@ -68,7 +68,7 @@ async function handler(req: NextRequest): Promise<NextResponse> {
     const { amount, description, currency, successUrl, cancelUrl, locale, idempotencyKey } = parsed.data;
 
     // Create pending payment record
-    const auth = await createAuthService(true);
+    const auth = createAuthService(true);
     const user = await auth.getCurrentUser();
     const paymentSvc = createPaymentService();
     await paymentSvc.createPending({

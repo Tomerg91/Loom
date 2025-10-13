@@ -3,7 +3,11 @@
  * This script can be used to test all aspects of the notification system
  */
 
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+
 import { realtimeClient } from './realtime-client';
+
+type NotificationPayload = RealtimePostgresChangesPayload<{ user_id: string } & Record<string, unknown>>;
 
 interface TestResult {
   test: string;
@@ -124,7 +128,7 @@ export class NotificationSystemVerifier {
       // Test subscription
       const channelName = realtimeClient.subscribeToNotifications(
         this.userId,
-        (payload) => {
+        (payload: NotificationPayload) => {
           console.log('Test notification received:', payload);
         }
       );
@@ -164,7 +168,7 @@ export class NotificationSystemVerifier {
 
       const channelName = realtimeClient.subscribeToNotifications(
         this.userId,
-        (payload) => {
+        (payload: NotificationPayload) => {
           payloadProcessed = true;
           // The enhanced client should filter out notifications for other users
           if (payload.new && payload.new.user_id === this.userId) {
@@ -268,7 +272,7 @@ export class NotificationSystemVerifier {
       for (let i = 0; i < 5; i++) {
         const channelName = realtimeClient.subscribeToNotifications(
           testUserId,
-          () => {}
+          (_payload: NotificationPayload) => {}
         );
         realtimeClient.unsubscribe(channelName);
       }
@@ -303,7 +307,7 @@ export class NotificationSystemVerifier {
       for (let i = 0; i < 3; i++) {
         realtimeClient.subscribeToNotifications(
           `${testUserId}-${i}`,
-          () => {}
+          (_payload: NotificationPayload) => {}
         );
       }
       

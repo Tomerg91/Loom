@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     
     // For email verification, we'll use Supabase's built-in verification
     // This endpoint serves as a webhook/callback processor

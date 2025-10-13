@@ -364,7 +364,8 @@ export function advancedThrottle<T extends (...args: any[]) => any>(
   let previous = 0;
   let result: ReturnType<T>;
 
-  return function executedFunction(...args: Parameters<T>) {
+  return function executedFunction(this: ThisParameterType<T>, ...args: Parameters<T>) {
+    const context = this;
     const now = Date.now();
 
     if (!previous && !leading) previous = now;
@@ -378,12 +379,12 @@ export function advancedThrottle<T extends (...args: any[]) => any>(
       }
 
       previous = now;
-      result = func.apply(this, args);
+      result = func.apply(context, args);
     } else if (!timeout && trailing) {
       timeout = setTimeout(() => {
         previous = leading ? Date.now() : 0;
         timeout = null;
-        result = func.apply(this, args);
+        result = func.apply(context, args);
       }, remaining);
     }
 

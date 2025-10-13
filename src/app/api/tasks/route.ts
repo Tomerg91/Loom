@@ -14,6 +14,7 @@ import {
 import { parseTaskListQueryParams } from '@/modules/tasks/api/query-helpers';
 import {
   createTaskSchema,
+  type CreateTaskInput,
   type TaskListQueryInput,
 } from '@/modules/tasks/types/task';
 
@@ -139,9 +140,11 @@ export const POST = async (request: NextRequest) => {
     return createErrorResponse(parsed.error, HTTP_STATUS.BAD_REQUEST);
   }
 
-  const payload = {
-    ...parsed.data,
-    coachId: actor.role === 'coach' ? actor.id : parsed.data.coachId,
+  const createPayload = parsed.data as CreateTaskInput;
+
+  const payload: CreateTaskInput = {
+    ...createPayload,
+    coachId: actor.role === 'coach' ? actor.id : createPayload.coachId,
   };
 
   try {

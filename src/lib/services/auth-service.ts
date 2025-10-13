@@ -17,11 +17,13 @@ export interface Session {
 
 // This service wraps the auth library for consistent API access
 class AuthService {
-  private authLibPromise = createAuthService(true);
+  private getAuthLib() {
+    return createAuthService(true);
+  }
 
   async getSession(): Promise<Session | null> {
     try {
-      const authLib = await this.authLibPromise;
+      const authLib = await this.getAuthLib();
       const user = await authLib.getCurrentUser();
       if (!user) return null;
 
@@ -44,7 +46,7 @@ class AuthService {
 
   async updateUser(userId: string, updates: Record<string, unknown>) {
     try {
-      const authLib = await this.authLibPromise;
+      const authLib = await this.getAuthLib();
       return await authLib.updateUser(userId, updates);
     } catch (error) {
       console.error('Error updating user:', error);
@@ -54,7 +56,7 @@ class AuthService {
 
   async getCurrentUser() {
     try {
-      const authLib = await this.authLibPromise;
+      const authLib = await this.getAuthLib();
       return await authLib.getCurrentUser();
     } catch (error) {
       console.error('Error getting current user:', error);
@@ -64,7 +66,7 @@ class AuthService {
 
   async updatePasswordWithToken(token: string, password: string) {
     try {
-      const authLib = await this.authLibPromise;
+      const authLib = await this.getAuthLib();
       return await authLib.updatePasswordWithToken(token, password);
     } catch (error) {
       console.error('Error updating password with token:', error);

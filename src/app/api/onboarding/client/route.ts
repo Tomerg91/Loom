@@ -26,7 +26,7 @@ const clientOnboardingSchema = z.object({
 const rateLimitedHandler = rateLimit(10, 60_000);
 
 export const GET = withErrorHandling(async () => {
-  const authService = await createAuthService(true);
+  const authService = createAuthService(true);
   const user = await authService.getCurrentUser();
 
   if (!user) {
@@ -71,7 +71,7 @@ export const GET = withErrorHandling(async () => {
 
 export const PUT = withErrorHandling(
   rateLimitedHandler(async (request: NextRequest) => {
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     const user = await authService.getCurrentUser();
 
     if (!user) {
@@ -133,7 +133,10 @@ export const PUT = withErrorHandling(
     return createSuccessResponse(
       {
         user: {
-          onboardingStatus: (refreshedUser?.onboardingStatus ?? 'completed') as const,
+          onboardingStatus: (refreshedUser?.onboardingStatus ?? 'completed') as
+            | 'pending'
+            | 'in_progress'
+            | 'completed',
           onboardingStep: refreshedUser?.onboardingStep ?? nextStep,
           onboardingCompletedAt: refreshedUser?.onboardingCompletedAt ?? completedAt,
           timezone: refreshedUser?.timezone ?? data.timezone ?? user.timezone ?? 'UTC',
