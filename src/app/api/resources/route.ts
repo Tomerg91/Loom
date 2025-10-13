@@ -58,12 +58,26 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
+
+    // Helper to validate sortBy parameter
+    const sortByParam = searchParams.get('sortBy');
+    const validSortFields = ['created_at', 'filename', 'file_size', 'view_count', 'download_count'] as const;
+    const sortBy = sortByParam && validSortFields.includes(sortByParam as typeof validSortFields[number])
+      ? (sortByParam as ResourceListParams['sortBy'])
+      : 'created_at';
+
+    // Helper to validate sortOrder parameter
+    const sortOrderParam = searchParams.get('sortOrder');
+    const sortOrder = sortOrderParam === 'asc' || sortOrderParam === 'desc'
+      ? sortOrderParam
+      : 'desc';
+
     const filters: ResourceListParams = {
-      category: searchParams.get('category') as any || undefined,
+      category: searchParams.get('category') as ResourceListParams['category'] | null || undefined,
       tags: searchParams.get('tags')?.split(',').filter(Boolean) || undefined,
       search: searchParams.get('search') || undefined,
-      sortBy: (searchParams.get('sortBy') as any) || 'created_at',
-      sortOrder: (searchParams.get('sortOrder') as any) || 'desc',
+      sortBy,
+      sortOrder,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
       offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined,
     };
