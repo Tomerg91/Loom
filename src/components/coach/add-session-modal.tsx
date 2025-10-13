@@ -1,8 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { format, addDays } from 'date-fns';
+import { Calendar, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -21,14 +25,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calendar, Loader2, Clock } from 'lucide-react';
-import { toast } from 'sonner';
-import { format, addDays } from 'date-fns';
 
 interface AddSessionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   coachId?: string;
+  onSuccess?: () => void;
 }
 
 interface Client {
@@ -37,9 +39,8 @@ interface Client {
   lastName: string;
 }
 
-export function AddSessionModal({ open, onOpenChange, coachId }: AddSessionModalProps) {
+export function AddSessionModal({ open, onOpenChange, coachId, onSuccess }: AddSessionModalProps) {
   const t = useTranslations('coach.addSession');
-  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -88,9 +89,7 @@ export function AddSessionModal({ open, onOpenChange, coachId }: AddSessionModal
       }
 
       // Refresh dashboard data
-      queryClient.invalidateQueries({ queryKey: ['coach-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['recent-activity'] });
+      onSuccess?.();
 
       const client = clients?.find((c) => c.id === formData.clientId);
       toast.success(t('success', { client: `${client?.firstName} ${client?.lastName}` }));
