@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   LineChart,
   Line,
@@ -58,6 +58,10 @@ interface EnhancedBaseChartProps {
   ariaLabel?: string;
   onDataPointClick?: (data: any, index: number) => void;
 }
+
+type ChartStateWithActiveTooltip = {
+  activeTooltipIndex?: number | string | null;
+};
 
 // Custom tooltip with enhanced styling and accessibility
 const EnhancedTooltip = ({ active, payload, label, formatter }: any) => {
@@ -144,8 +148,72 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
   onDataPointClick,
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<'both' | 'newUsers' | 'activeUsers'>('both');
+  const [zoomDomain, setZoomDomain] = useState<[string, string] | undefined>(() =>
+    data.length > 0 ? [data[0].date, data[data.length - 1].date] : undefined
+  );
   const chartRef = useRef<HTMLDivElement | null>(null);
   const { exportChart } = useChartExport();
+
+  const handleChartClick = useCallback(
+    (chartState: ChartStateWithActiveTooltip | undefined) => {
+      if (!onDataPointClick || !chartState) {
+        return;
+      }
+
+      const activeIndex = chartState.activeTooltipIndex;
+
+      if (typeof activeIndex === 'number' && activeIndex >= 0) {
+        const point = data[activeIndex];
+
+        if (point) {
+          onDataPointClick(point, activeIndex);
+          return;
+        }
+      }
+
+      if (typeof activeIndex === 'string') {
+        const derivedIndex = data.findIndex(item => item.date === activeIndex);
+
+        if (derivedIndex >= 0) {
+          onDataPointClick(data[derivedIndex], derivedIndex);
+        }
+      }
+    },
+    [data, onDataPointClick]
+  );
+
+  useEffect(() => {
+    if (data.length > 0) {
+      setZoomDomain([data[0].date, data[data.length - 1].date]);
+    } else {
+      setZoomDomain(undefined);
+    }
+  }, [data]);
+
+  const handleBrushChange = useCallback(
+    (range: { startIndex?: number | null; endIndex?: number | null } | undefined) => {
+      if (
+        range &&
+        typeof range.startIndex === 'number' &&
+        typeof range.endIndex === 'number'
+      ) {
+        const startPoint = data[range.startIndex];
+        const endPoint = data[range.endIndex];
+
+        if (startPoint && endPoint) {
+          setZoomDomain([startPoint.date, endPoint.date]);
+          return;
+        }
+      }
+
+      if (data.length > 0) {
+        setZoomDomain([data[0].date, data[data.length - 1].date]);
+      } else {
+        setZoomDomain(undefined);
+      }
+    },
+    [data]
+  );
 
   // Calculate trends
   const calculateTrend = (data: number[]) => {
@@ -227,11 +295,11 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
           className="focus:outline-none focus:ring-2 focus:ring-primary rounded"
         >
           <ResponsiveContainer width="100%" height={height}>
-            <ComposedChart
-              data={data}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              onClick={(data, index) => onDataPointClick?.(data, index)}
-            >
+              <ComposedChart
+                data={data}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                onClick={(chartState) => handleChartClick(chartState)}
+              >
               <defs>
                 <linearGradient id="primaryGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={ENHANCED_CHART_COLORS.primary} stopOpacity={0.8}/>
@@ -244,11 +312,11 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
               </defs>
               
               <CartesianGrid strokeDasharray="3 3" stroke={ENHANCED_CHART_COLORS.muted} opacity={0.3} />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 stroke={ENHANCED_CHART_COLORS.muted}
                 tick={{ fontSize: 12 }}
-                domain={zoomDomain}
+                domain={zoomDomain ?? ['auto', 'auto']}
               />
               <YAxis stroke={ENHANCED_CHART_COLORS.muted} tick={{ fontSize: 12 }} />
               <Tooltip content={<EnhancedTooltip />} />
@@ -286,11 +354,11 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
               )}
 
               {enableBrush && (
-                <Brush 
-                  dataKey="date" 
-                  height={30} 
+                <Brush
+                  dataKey="date"
+                  height={30}
                   stroke={ENHANCED_CHART_COLORS.primary}
-                  onChange={setZoomDomain}
+                  onChange={handleBrushChange}
                 />
               )}
             </ComposedChart>
@@ -347,6 +415,34 @@ export const EnhancedSessionMetricsChart: React.FC<EnhancedSessionMetricsChartPr
   const handleExport = (format: 'png' | 'svg' | 'pdf') => {
     exportChart(chartRef, 'session-metrics-chart', format);
   };
+
+  const handleChartClick = useCallback(
+    (chartState: ChartStateWithActiveTooltip | undefined) => {
+      if (!onDataPointClick || !chartState) {
+        return;
+      }
+
+      const activeIndex = chartState.activeTooltipIndex;
+
+      if (typeof activeIndex === 'number' && activeIndex >= 0) {
+        const point = transformedData[activeIndex];
+
+        if (point) {
+          onDataPointClick(point, activeIndex);
+          return;
+        }
+      }
+
+      if (typeof activeIndex === 'string') {
+        const derivedIndex = transformedData.findIndex(item => item.date === activeIndex);
+
+        if (derivedIndex >= 0) {
+          onDataPointClick(transformedData[derivedIndex], derivedIndex);
+        }
+      }
+    },
+    [onDataPointClick, transformedData]
+  );
 
   if (loading) {
     return (
@@ -413,11 +509,11 @@ export const EnhancedSessionMetricsChart: React.FC<EnhancedSessionMetricsChartPr
           className="focus:outline-none focus:ring-2 focus:ring-primary rounded"
         >
           <ResponsiveContainer width="100%" height={height}>
-            <BarChart
-              data={transformedData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              onClick={(data, index) => onDataPointClick?.(data, index)}
-            >
+              <BarChart
+                data={transformedData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                onClick={(chartState) => handleChartClick(chartState)}
+              >
               <CartesianGrid strokeDasharray="3 3" stroke={ENHANCED_CHART_COLORS.muted} opacity={0.3} />
               <XAxis 
                 dataKey="date" 
