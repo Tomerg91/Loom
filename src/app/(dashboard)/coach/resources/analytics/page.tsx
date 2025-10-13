@@ -142,26 +142,40 @@ export default function ResourceAnalyticsPage() {
 
         {/* Category Breakdown Tab */}
         <TabsContent value="category-breakdown" className="space-y-6">
-          {analytics && analytics.byCategory ? (
+          {analytics && analytics.categoryBreakdown.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {Object.entries(analytics.byCategory).map(([category, stats]) => (
+              {analytics.categoryBreakdown.map(categoryStats => (
                 <div
-                  key={category}
+                  key={categoryStats.category}
                   className="rounded-lg border bg-card p-6 space-y-2"
                 >
-                  <h3 className="font-semibold capitalize">{category}</h3>
+                  <h3 className="font-semibold capitalize">
+                    {categoryStats.category.replace('-', ' ')}
+                  </h3>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Resources:</span>
-                      <span className="font-medium">{stats.count}</span>
+                      <span className="font-medium">
+                        {categoryStats.resourceCount}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Views:</span>
-                      <span className="font-medium">{stats.views}</span>
+                      <span className="font-medium">
+                        {categoryStats.totalViews}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Downloads:</span>
-                      <span className="font-medium">{stats.downloads}</span>
+                      <span className="font-medium">
+                        {categoryStats.totalDownloads}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Completions:</span>
+                      <span className="font-medium">
+                        {categoryStats.totalCompletions}
+                      </span>
                     </div>
                   </div>
                 </div>

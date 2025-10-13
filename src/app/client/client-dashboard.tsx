@@ -271,6 +271,22 @@ export function ClientDashboard() {
     );
   }
 
+  const progressChartData = useMemo(
+    () => [
+      {
+        name: 'Completed',
+        mood: stats?.averageMoodRating ?? 0,
+        sessions: stats?.completedSessions ?? 0,
+      },
+      {
+        name: 'Upcoming',
+        mood: stats?.averageMoodRating ?? 0,
+        sessions: stats?.upcomingSessions ?? 0,
+      },
+    ],
+    [stats?.averageMoodRating, stats?.completedSessions, stats?.upcomingSessions]
+  );
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -477,10 +493,7 @@ export function ClientDashboard() {
                   </div>
                   <div className="pt-4">
                     <Suspense fallback={<div className="h-32 bg-muted rounded animate-pulse"></div>}>
-                      <LazyProgressChart data={[
-                        { name: 'Completed', value: stats?.completedSessions || 0, color: CHART_COLORS[0] },
-                        { name: 'Upcoming', value: stats?.upcomingSessions || 0, color: CHART_COLORS[1] },
-                      ]} />
+                      <LazyProgressChart data={progressChartData} />
                     </Suspense>
                   </div>
                 </div>

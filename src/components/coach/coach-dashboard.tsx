@@ -8,9 +8,8 @@ import {
   CheckCircle,
   Clock,
   MessageSquare,
-  TrendingUp,
+  ArrowUpRight,
   UserPlus,
-  Users,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -183,42 +182,6 @@ export function CoachDashboard() {
     queryClient.invalidateQueries({ queryKey: ['coach-clients', userId] });
     queryClient.invalidateQueries({ queryKey: ['coach-clients-list', userId] });
   }, [queryClient, user?.id]);
-
-  const safeStats: DashboardStats = stats ?? {
-    totalSessions: 0,
-    completedSessions: 0,
-    upcomingSessions: 0,
-    totalClients: 0,
-    activeClients: 0,
-    thisWeekSessions: 0,
-    averageRating: 0,
-    totalRevenue: 0,
-  };
-
-  const hasAnyDashboardError =
-    statsError || upcomingSessionsError || recentClientsError || recentActivityError;
-
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'production') return;
-
-    if (statsErrorDetails) {
-      console.error('Failed to load coach statistics', statsErrorDetails);
-    }
-    if (upcomingSessionsErrorDetails) {
-      console.error('Failed to load upcoming sessions', upcomingSessionsErrorDetails);
-    }
-    if (recentClientsErrorDetails) {
-      console.error('Failed to load recent clients', recentClientsErrorDetails);
-    }
-    if (recentActivityErrorDetails) {
-      console.error('Failed to load recent activity', recentActivityErrorDetails);
-    }
-  }, [
-    statsErrorDetails,
-    upcomingSessionsErrorDetails,
-    recentClientsErrorDetails,
-    recentActivityErrorDetails,
-  ]);
 
   // Memoize expensive calculations
   const thisWeekSessions = useMemo(() => {

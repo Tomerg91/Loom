@@ -4,7 +4,6 @@ import type {
   AdminAnalyticsOverview,
   UserGrowthData,
   SessionMetricsData,
-  CoachPerformanceData,
   CoachPerformanceData
 } from '@/lib/database/admin-analytics';
 

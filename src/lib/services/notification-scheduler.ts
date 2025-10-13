@@ -1,4 +1,5 @@
 import type { NotificationType } from '@/types';
+import { createServerClient } from '@/lib/supabase/server';
 
 import { EmailNotificationService } from './email-notification-service';
 import { PushNotificationService } from './push-notification-service';

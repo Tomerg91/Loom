@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useCallback } from 'react';
-import { createClientAuthService } from '@/lib/auth/client-auth';
+
 import type { AuthUser } from '@/lib/auth/auth';
+import { createClientAuthService } from '@/lib/auth/client-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useNotificationStore } from '@/lib/store/notification-store';
 import { useSessionStore } from '@/lib/store/session-store';
+import type { Language } from '@/types';
 
 interface UseUnifiedAuthOptions {
   initialUser?: AuthUser | null;
@@ -18,33 +20,30 @@ interface UseUnifiedAuthOptions {
 export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
   const { initialUser = null } = options;
 
-  const user = useAuthStore((s) => s.user);
-  const isLoading = useAuthStore((s) => s.isLoading);
-  const setUser = useAuthStore((s) => s.setUser);
-  const setLoading = useAuthStore((s) => s.setLoading);
-  const setError = useAuthStore((s) => s.setError);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const user = useAuthStore(s => s.user);
+  const isLoading = useAuthStore(s => s.isLoading);
+  const setUser = useAuthStore(s => s.setUser);
+  const setLoading = useAuthStore(s => s.setLoading);
+  const setError = useAuthStore(s => s.setError);
+  const clearAuth = useAuthStore(s => s.clearAuth);
 
-  const clearSessions = useSessionStore((s) => s.clearSessions);
-  const clearNotifications = useNotificationStore((s) => s.clearNotifications);
+  const clearSessions = useSessionStore(s => s.clearSessions);
+  const clearNotifications = useNotificationStore(s => s.clearNotifications);
 
   const authService = useMemo(() => createClientAuthService(), []);
 
   // Immediately hydrate store with SSR user if available
-  useMemo(() => {
+  useEffect(() => {
     if (initialUser) {
       // Always use fresh server user over potentially stale localStorage data
       setUser(initialUser);
       setLoading(false);
-    } else if (user) {
-      // We have a persisted user but no initialUser from server
-      // The useEffect below will validate the session
-      setLoading(true);
-    } else {
-      // No user at all - will be handled by useEffect
-      setLoading(true);
+      return;
     }
-  }, [initialUser, setUser, setLoading, user]);
+
+    // No server-provided user; ensure loading state reflects pending validation
+    setLoading(true);
+  }, [initialUser, setUser, setLoading]);
 
   // Session hydration + auth state subscription
   useEffect(() => {
@@ -57,7 +56,7 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
         if (initialUser) {
           const session = await authService.getSession();
           if (!isMounted) return;
-          
+
           if (!session?.user) {
             // SSR user but no valid client session - session expired
             clearAuth();
@@ -88,16 +87,20 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
         }
       } catch (err) {
         if (!isMounted) return;
-        setError(err instanceof Error ? err.message : 'Failed to hydrate session');
+        setError(
+          err instanceof Error ? err.message : 'Failed to hydrate session'
+        );
         clearAuth();
         setLoading(false);
       }
     })();
 
     // Subscribe to Supabase auth state changes and keep store in sync
-    const { data: { subscription } } = authService.onAuthStateChange(async (u) => {
+    const {
+      data: { subscription },
+    } = authService.onAuthStateChange(async u => {
       if (!isMounted) return;
-      
+
       if (u) {
         // User signed in
         setUser(u);
@@ -115,47 +118,62 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
       isMounted = false;
       subscription?.unsubscribe();
     };
-  }, [authService, initialUser, setUser, setLoading, setError, clearAuth, clearSessions, clearNotifications]);
+  }, [
+    authService,
+    initialUser,
+    setUser,
+    setLoading,
+    setError,
+    clearAuth,
+    clearSessions,
+    clearNotifications,
+  ]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const result = await authService.signIn({ email, password });
-      if (result.user) {
-        setUser(result.user);
-      } else if (result.error) {
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      setLoading(true);
+      try {
+        const result = await authService.signIn({ email, password });
+        if (result.user) {
+          setUser(result.user);
+        } else if (result.error) {
+          setLoading(false);
+        }
+        return result;
+      } catch (error) {
+        setLoading(false);
+        throw error;
+      }
+      // Don't reset loading here - let the component control it after navigation
+    },
+    [authService, setUser, setLoading]
+  );
+
+  const signUp = useCallback(
+    async (data: {
+      email: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+      role: 'client' | 'coach';
+      phone?: string;
+      language: Language;
+    }) => {
+      setLoading(true);
+      try {
+        const result = await authService.signUp(data);
+        if (result.user && result.sessionActive) {
+          setUser(result.user);
+        } else if (!result.sessionActive) {
+          clearAuth();
+        }
+        return result;
+      } finally {
         setLoading(false);
       }
-      return result;
-    } catch (error) {
-      setLoading(false);
-      throw error;
-    }
-    // Don't reset loading here - let the component control it after navigation
-  }, [authService, setUser, setLoading]);
-
-  const signUp = useCallback(async (data: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    role: 'client' | 'coach';
-    phone?: string;
-    language: 'en' | 'he';
-  }) => {
-    setLoading(true);
-    try {
-      const result = await authService.signUp(data);
-      if (result.user && result.sessionActive) {
-        setUser(result.user);
-      } else if (!result.sessionActive) {
-        clearAuth();
-      }
-      return result;
-    } finally {
-      setLoading(false);
-    }
-  }, [authService, setUser, setLoading, clearAuth]);
+    },
+    [authService, setUser, setLoading, clearAuth]
+  );
 
   const signOut = useCallback(async () => {
     setLoading(true);
@@ -170,17 +188,23 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
     }
   }, [authService, clearAuth, clearSessions, clearNotifications, setLoading]);
 
-  const updateProfile = useCallback(async (updates: Partial<AuthUser>) => {
-    try {
-      const result = await authService.updateProfile(updates);
-      if (result.user) {
-        setUser(result.user);
+  const updateProfile = useCallback(
+    async (updates: Partial<AuthUser>) => {
+      try {
+        const result = await authService.updateProfile(updates);
+        if (result.user) {
+          setUser(result.user);
+        }
+        return result;
+      } catch (error) {
+        return {
+          user: null,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
       }
-      return result;
-    } catch (error) {
-      return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-  }, [authService, setUser]);
+    },
+    [authService, setUser]
+  );
 
   return {
     user,
@@ -191,4 +215,3 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
     updateProfile,
   };
 }
-

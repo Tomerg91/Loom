@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   LineChart,
   Line,
@@ -17,27 +17,17 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Brush,
-  ZoomableLineChart,
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
-  Download, 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw,
-  Maximize2,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-} from 'lucide-react';
+import { Download, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Theme colors for consistent styling
@@ -63,12 +53,15 @@ interface EnhancedBaseChartProps {
   height?: number;
   loading?: boolean;
   enableExport?: boolean;
-  enableZoom?: boolean;
   enableBrush?: boolean;
   showTrends?: boolean;
   ariaLabel?: string;
   onDataPointClick?: (data: any, index: number) => void;
 }
+
+type ChartStateWithActiveTooltip = {
+  activeTooltipIndex?: number | string | null;
+};
 
 // Custom tooltip with enhanced styling and accessibility
 const EnhancedTooltip = ({ active, payload, label, formatter }: any) => {
@@ -96,7 +89,11 @@ const EnhancedTooltip = ({ active, payload, label, formatter }: any) => {
 
 // Export functionality for charts
 const useChartExport = () => {
-  const exportChart = (chartRef: React.RefObject<HTMLDivElement>, filename: string, format: 'png' | 'svg' | 'pdf') => {
+  const exportChart = (
+    chartRef: React.RefObject<HTMLDivElement | null>,
+    filename: string,
+    format: 'png' | 'svg' | 'pdf'
+  ) => {
     if (!chartRef.current) return;
 
     try {
@@ -144,17 +141,79 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
   className,
   height = 300,
   loading = false,
-  enableExport = true,
-  enableZoom = true,
-  enableBrush = true,
+    enableExport = true,
+    enableBrush = true,
   showTrends = true,
   ariaLabel = "User growth chart showing new and active users over time",
   onDataPointClick,
 }) => {
-  const [zoomDomain, setZoomDomain] = useState<any>(null);
   const [selectedMetric, setSelectedMetric] = useState<'both' | 'newUsers' | 'activeUsers'>('both');
-  const chartRef = useRef<HTMLDivElement>(null);
+  const [zoomDomain, setZoomDomain] = useState<[string, string] | undefined>(() =>
+    data.length > 0 ? [data[0].date, data[data.length - 1].date] : undefined
+  );
+  const chartRef = useRef<HTMLDivElement | null>(null);
   const { exportChart } = useChartExport();
+
+  const handleChartClick = useCallback(
+    (chartState: ChartStateWithActiveTooltip | undefined) => {
+      if (!onDataPointClick || !chartState) {
+        return;
+      }
+
+      const activeIndex = chartState.activeTooltipIndex;
+
+      if (typeof activeIndex === 'number' && activeIndex >= 0) {
+        const point = data[activeIndex];
+
+        if (point) {
+          onDataPointClick(point, activeIndex);
+          return;
+        }
+      }
+
+      if (typeof activeIndex === 'string') {
+        const derivedIndex = data.findIndex(item => item.date === activeIndex);
+
+        if (derivedIndex >= 0) {
+          onDataPointClick(data[derivedIndex], derivedIndex);
+        }
+      }
+    },
+    [data, onDataPointClick]
+  );
+
+  useEffect(() => {
+    if (data.length > 0) {
+      setZoomDomain([data[0].date, data[data.length - 1].date]);
+    } else {
+      setZoomDomain(undefined);
+    }
+  }, [data]);
+
+  const handleBrushChange = useCallback(
+    (range: { startIndex?: number | null; endIndex?: number | null } | undefined) => {
+      if (
+        range &&
+        typeof range.startIndex === 'number' &&
+        typeof range.endIndex === 'number'
+      ) {
+        const startPoint = data[range.startIndex];
+        const endPoint = data[range.endIndex];
+
+        if (startPoint && endPoint) {
+          setZoomDomain([startPoint.date, endPoint.date]);
+          return;
+        }
+      }
+
+      if (data.length > 0) {
+        setZoomDomain([data[0].date, data[data.length - 1].date]);
+      } else {
+        setZoomDomain(undefined);
+      }
+    },
+    [data]
+  );
 
   // Calculate trends
   const calculateTrend = (data: number[]) => {
@@ -166,10 +225,6 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
 
   const newUsersTrend = showTrends ? calculateTrend(data.map(d => d.newUsers)) : 0;
   const activeUsersTrend = showTrends ? calculateTrend(data.map(d => d.activeUsers)) : 0;
-
-  const handleZoomReset = () => {
-    setZoomDomain(null);
-  };
 
   const handleExport = (format: 'png' | 'svg' | 'pdf') => {
     exportChart(chartRef, 'user-growth-chart', format);
@@ -212,11 +267,6 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
             <CardDescription>{description}</CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            {enableZoom && zoomDomain && (
-              <Button onClick={handleZoomReset} variant="outline" size="sm">
-                <RotateCcw className="w-4 h-4" />
-              </Button>
-            )}
             {enableExport && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -245,11 +295,11 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
           className="focus:outline-none focus:ring-2 focus:ring-primary rounded"
         >
           <ResponsiveContainer width="100%" height={height}>
-            <ComposedChart
-              data={data}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              onClick={(data, index) => onDataPointClick?.(data, index)}
-            >
+              <ComposedChart
+                data={data}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                onClick={(chartState) => handleChartClick(chartState)}
+              >
               <defs>
                 <linearGradient id="primaryGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={ENHANCED_CHART_COLORS.primary} stopOpacity={0.8}/>
@@ -262,11 +312,11 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
               </defs>
               
               <CartesianGrid strokeDasharray="3 3" stroke={ENHANCED_CHART_COLORS.muted} opacity={0.3} />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 stroke={ENHANCED_CHART_COLORS.muted}
                 tick={{ fontSize: 12 }}
-                domain={zoomDomain}
+                domain={zoomDomain ?? ['auto', 'auto']}
               />
               <YAxis stroke={ENHANCED_CHART_COLORS.muted} tick={{ fontSize: 12 }} />
               <Tooltip content={<EnhancedTooltip />} />
@@ -304,11 +354,11 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
               )}
 
               {enableBrush && (
-                <Brush 
-                  dataKey="date" 
-                  height={30} 
+                <Brush
+                  dataKey="date"
+                  height={30}
                   stroke={ENHANCED_CHART_COLORS.primary}
-                  onChange={setZoomDomain}
+                  onChange={handleBrushChange}
                 />
               )}
             </ComposedChart>
@@ -338,15 +388,14 @@ export const EnhancedSessionMetricsChart: React.FC<EnhancedSessionMetricsChartPr
   className,
   height = 300,
   loading = false,
-  enableExport = true,
-  enableZoom = true,
-  enableBrush = true,
+    enableExport = true,
+    enableBrush = true,
   showTrends = true,
   ariaLabel = "Session metrics chart showing completed, cancelled, and scheduled sessions over time",
   onDataPointClick,
 }) => {
   const [viewMode, setViewMode] = useState<'absolute' | 'percentage'>('absolute');
-  const chartRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<HTMLDivElement | null>(null);
   const { exportChart } = useChartExport();
 
   // Transform data for percentage view
@@ -366,6 +415,34 @@ export const EnhancedSessionMetricsChart: React.FC<EnhancedSessionMetricsChartPr
   const handleExport = (format: 'png' | 'svg' | 'pdf') => {
     exportChart(chartRef, 'session-metrics-chart', format);
   };
+
+  const handleChartClick = useCallback(
+    (chartState: ChartStateWithActiveTooltip | undefined) => {
+      if (!onDataPointClick || !chartState) {
+        return;
+      }
+
+      const activeIndex = chartState.activeTooltipIndex;
+
+      if (typeof activeIndex === 'number' && activeIndex >= 0) {
+        const point = transformedData[activeIndex];
+
+        if (point) {
+          onDataPointClick(point, activeIndex);
+          return;
+        }
+      }
+
+      if (typeof activeIndex === 'string') {
+        const derivedIndex = transformedData.findIndex(item => item.date === activeIndex);
+
+        if (derivedIndex >= 0) {
+          onDataPointClick(transformedData[derivedIndex], derivedIndex);
+        }
+      }
+    },
+    [onDataPointClick, transformedData]
+  );
 
   if (loading) {
     return (
@@ -432,11 +509,11 @@ export const EnhancedSessionMetricsChart: React.FC<EnhancedSessionMetricsChartPr
           className="focus:outline-none focus:ring-2 focus:ring-primary rounded"
         >
           <ResponsiveContainer width="100%" height={height}>
-            <BarChart
-              data={transformedData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              onClick={(data, index) => onDataPointClick?.(data, index)}
-            >
+              <BarChart
+                data={transformedData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                onClick={(chartState) => handleChartClick(chartState)}
+              >
               <CartesianGrid strokeDasharray="3 3" stroke={ENHANCED_CHART_COLORS.muted} opacity={0.3} />
               <XAxis 
                 dataKey="date" 

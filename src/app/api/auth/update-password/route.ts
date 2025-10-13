@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const authService = await createAuthService(true);
+    const authService = createAuthService(true);
     
     // Handle token-based password reset vs authenticated password update
     if (validation.data.token) {

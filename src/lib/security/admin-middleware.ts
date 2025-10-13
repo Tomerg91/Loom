@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authService } from '@/lib/services/auth-service';
+import { authService, type Session } from '@/lib/services/auth-service';
 import { adminSystemService } from '@/lib/database/admin-system';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { applyRateLimit } from '@/lib/security/rate-limit';
@@ -18,10 +18,23 @@ export interface AdminMiddlewareOptions {
 /**
  * Enhanced middleware for admin-only routes with comprehensive security features
  */
+interface AdminSecurityFailure {
+  success: false;
+  response: NextResponse;
+}
+
+interface AdminSecuritySuccess {
+  success: true;
+  user: Session['user'];
+  headers: Record<string, string>;
+}
+
+type AdminSecurityResult = AdminSecurityFailure | AdminSecuritySuccess;
+
 export async function adminSecurityMiddleware(
   request: NextRequest,
   options: AdminMiddlewareOptions = {}
-) {
+): Promise<AdminSecurityResult> {
   try {
     // 1. Authentication check
     const session = await authService.getSession();
@@ -200,10 +213,14 @@ export async function adminSecurityMiddleware(
       );
     }
 
+    const rateLimitHeaders = options.rateLimit
+      ? applyRateLimit(request, 'api', session.user.id).headers
+      : undefined;
+
     return {
       success: true,
       user: session.user,
-      headers: options.rateLimit ? (applyRateLimit(request, 'api', session.user.id).headers || {}) : {}
+      headers: rateLimitHeaders ?? {}
     };
 
   } catch (error) {
@@ -224,15 +241,15 @@ export function withAdminSecurity<T extends any[]>(
 ) {
   return async function(request: NextRequest, ...args: T): Promise<NextResponse> {
     const middlewareResult = await adminSecurityMiddleware(request, options);
-    
+
     if (!middlewareResult.success) {
-      return middlewareResult.response!;
+      return middlewareResult.response;
     }
-    
+
     // Add security headers to response
     const response = await handler(request, {
-      user: middlewareResult.user!,
-      headers: middlewareResult.headers || {}
+      user: middlewareResult.user,
+      headers: middlewareResult.headers
     }, ...args);
     
     // Add security headers
@@ -244,9 +261,9 @@ export function withAdminSecurity<T extends any[]>(
     headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     
     // Add rate limit headers if provided
-    Object.entries(middlewareResult.headers || {}).forEach(([key, value]) => {
-      headers.set(key, value);
-    });
+      Object.entries(middlewareResult.headers).forEach(([key, value]) => {
+        headers.set(key, value);
+      });
     
     return NextResponse.json(
       await response.json(),

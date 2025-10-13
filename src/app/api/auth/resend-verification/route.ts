@@ -51,7 +51,7 @@ export const POST = withErrorHandling(
         }
 
         const { email } = validation.data;
-        const authService = await createAuthService(true);
+        const authService = createAuthService(true);
 
         // Determine email verification redirect URL
         const siteUrl =

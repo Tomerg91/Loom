@@ -22,6 +22,7 @@ import type {
   ResourceLibrarySettings,
   ResourceAnalytics,
   LibraryAnalytics,
+  ResourceCategory,
   ResourceListParams,
   ResourceShare,
   ClientResourceItem,
@@ -765,6 +766,8 @@ export async function getLibraryAnalytics(
       totalCompletions: 0,
       avgCompletionRate: 0,
       activeClients: 0,
+      sharedResources: 0,
+      uniqueViewers: 0,
       topResources: [],
       categoryBreakdown: [],
     };
@@ -780,6 +783,10 @@ export async function getLibraryAnalytics(
     0
   );
 
+  const sharedResources = resources.filter(
+    resource => resource.is_shared || resource.shared_with_all_clients
+  ).length;
+
   // Get active clients (those with progress records)
   const resourceIds = resources.map(r => r.id);
   const { data: progressData } = await supabase
@@ -787,7 +794,23 @@ export async function getLibraryAnalytics(
     .select('client_id')
     .in('file_id', resourceIds);
 
-  const activeClients = new Set(progressData?.map(p => p.client_id) || []).size;
+  const progressClientIds = progressData?.map(p => p.client_id) || [];
+  const activeClients = new Set(progressClientIds).size;
+  const uniqueViewers = activeClients;
+
+  // Fetch share counts for resources
+  const { data: shareRows } = await supabase
+    .from('file_shares')
+    .select('file_id')
+    .in('file_id', resourceIds);
+
+  const shareCountByResource = new Map<string, number>();
+  for (const row of shareRows || []) {
+    shareCountByResource.set(
+      row.file_id,
+      (shareCountByResource.get(row.file_id) || 0) + 1
+    );
+  }
 
   // Calculate average completion rate
   const avgCompletionRate =
@@ -812,9 +835,54 @@ export async function getLibraryAnalytics(
       viewCount: r.view_count || 0,
       downloadCount: r.download_count || 0,
       completionCount: r.completion_count || 0,
-      completionRate: 0, // TODO: Calculate
-      shareCount: 0, // TODO: Get from shares
+      completionRate:
+        r.view_count && r.view_count > 0
+          ? Math.round(((r.completion_count || 0) / r.view_count) * 100)
+          : 0,
+      shareCount: shareCountByResource.get(r.id) || 0,
     }));
+
+  const categoryAccumulator = new Map<
+    ResourceCategory,
+    {
+      resourceCount: number;
+      totalViews: number;
+      totalDownloads: number;
+      totalCompletions: number;
+    }
+  >();
+
+  for (const resource of resources) {
+    const category = normalizeResourceCategory(resource.file_category);
+    const stats =
+      categoryAccumulator.get(category) || {
+        resourceCount: 0,
+        totalViews: 0,
+        totalDownloads: 0,
+        totalCompletions: 0,
+      };
+
+    stats.resourceCount += 1;
+    stats.totalViews += resource.view_count || 0;
+    stats.totalDownloads += resource.download_count || 0;
+    stats.totalCompletions += resource.completion_count || 0;
+
+    categoryAccumulator.set(category, stats);
+  }
+
+  const categoryBreakdown = Array.from(categoryAccumulator.entries())
+    .map(([category, stats]) => ({
+      category,
+      resourceCount: stats.resourceCount,
+      totalViews: stats.totalViews,
+      totalDownloads: stats.totalDownloads,
+      totalCompletions: stats.totalCompletions,
+      avgCompletionRate:
+        stats.totalViews > 0
+          ? Math.round((stats.totalCompletions / stats.totalViews) * 100)
+          : 0,
+    }))
+    .sort((a, b) => b.totalViews - a.totalViews);
 
   return {
     totalResources: resources.length,
@@ -823,8 +891,10 @@ export async function getLibraryAnalytics(
     totalCompletions,
     avgCompletionRate,
     activeClients,
+    sharedResources,
+    uniqueViewers,
     topResources,
-    categoryBreakdown: [], // TODO: Implement category grouping
+    categoryBreakdown,
   };
 }
 

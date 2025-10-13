@@ -223,7 +223,7 @@ describe('/api/coach/stats', () => {
       });
 
       it('should calculate basic session statistics correctly', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -251,7 +251,7 @@ describe('/api/coach/stats', () => {
       });
 
       it('should calculate client statistics correctly', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -292,7 +292,7 @@ describe('/api/coach/stats', () => {
           },
         ];
 
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -311,7 +311,7 @@ describe('/api/coach/stats', () => {
       });
 
       it('should calculate revenue correctly', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -332,7 +332,7 @@ describe('/api/coach/stats', () => {
       });
 
       it('should calculate average rating from reflections', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -359,7 +359,7 @@ describe('/api/coach/stats', () => {
       });
 
       it('should use default rating when no reflections exist', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -393,7 +393,7 @@ describe('/api/coach/stats', () => {
           { session_id: 'session-6', mood_rating: 9 },
         ];
 
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -428,7 +428,7 @@ describe('/api/coach/stats', () => {
       });
 
       it('should handle coach with no sessions', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -454,7 +454,7 @@ describe('/api/coach/stats', () => {
       });
 
       it('should handle null session data from database', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -496,7 +496,7 @@ describe('/api/coach/stats', () => {
           },
         ];
 
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -525,7 +525,7 @@ describe('/api/coach/stats', () => {
           { id: '5', status: 'rescheduled', scheduled_at: '2024-01-13T10:00:00Z', client_id: 'c5' },
         ];
 
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -572,7 +572,7 @@ describe('/api/coach/stats', () => {
           },
         ];
 
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -617,7 +617,7 @@ describe('/api/coach/stats', () => {
       });
 
       it('should query reflections for completed sessions only', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -667,7 +667,7 @@ describe('/api/coach/stats', () => {
       });
 
       it('should handle reflections query failure gracefully', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -705,7 +705,7 @@ describe('/api/coach/stats', () => {
       it('should use configured session rate for revenue calculation', async () => {
         mockGetSessionRate.mockReturnValue(150); // Custom rate
 
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -732,7 +732,7 @@ describe('/api/coach/stats', () => {
       it('should use configured default rating when appropriate', async () => {
         mockGetDefaultCoachRating.mockReturnValue(3.8); // Custom default
 
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -769,7 +769,7 @@ describe('/api/coach/stats', () => {
           client_id: `client-${i % 50}`, // 50 unique clients
         }));
 
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -864,7 +864,7 @@ describe('/api/coach/stats', () => {
           throw new Error('Config service error');
         });
 
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -899,7 +899,7 @@ describe('/api/coach/stats', () => {
           { session_id: 'session-3', mood_rating: 9.15 },
         ];
 
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -932,7 +932,7 @@ describe('/api/coach/stats', () => {
       });
 
       it('should return integer values for counts', async () => {
-        mockSupabaseClient.from.mockImplementation((table) => {
+        mockSupabaseClient.from.mockImplementation((table: string) => {
           if (table === 'sessions') {
             return {
               select: vi.fn().mockReturnThis(),

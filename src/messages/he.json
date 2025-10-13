@@ -871,7 +871,11 @@
       "button": "התחבר",
       "link": "התחבר כאן",
       "loading": "מתחבר...",
-      "error": "אירעה שגיאה במהלך ההתחברות. אנא נסה שוב."
+      "error": "אירעה שגיאה במהלך ההתחברות. אנא נסה שוב.",
+      "sessionExpired": {
+        "title": "תוקף ההתחברות פג",
+        "description": "תוקף ההתחברות שלך פג. אנא התחברו מחדש כדי להמשיך."
+      }
     },
     "signup": {
       "title": "הרשמה",
@@ -1283,26 +1287,6 @@
     "monthly": "חודשי",
     "reminder": "תזכורת",
     "location": "מיקום"
-  },
-  "dashboard": {
-    "title": "לוח בקרה",
-    "description": "סקירה כללית של פלטפורמת הקואצ'ינג",
-    "dashboard": "לוח בקרה",
-    "overview": "סקירה כללית",
-    "recentActivity": "פעילות אחרונה",
-    "quickActions": "פעולות מהירות",
-    "statistics": "סטטיסטיקות",
-    "totalSessions": "סך הכל פגישות",
-    "completedSessions": "פגישות שהושלמו",
-    "upcomingSessions": "פגישות קרובות",
-    "totalClients": "סך הכל לקוחות",
-    "activeClients": "לקוחות פעילים",
-    "thisWeek": "השבוע",
-    "thisMonth": "החודש",
-    "lastMonth": "החודש שעבר",
-    "growth": "צמיחה",
-    "revenue": "הכנסות",
-    "performance": "ביצועים"
   },
   "settings": {
     "settings": "הגדרות",
