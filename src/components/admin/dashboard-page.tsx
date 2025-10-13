@@ -152,13 +152,19 @@ export function AdminDashboardPage() {
           title="Total Users"
           value={dashboardData?.userAnalytics?.totalUsers || 0}
           icon={Users}
-          change={dashboardData?.userAnalytics?.newUsersThisMonth ? `+${dashboardData.userAnalytics.newUsersThisMonth} this month` : undefined}
+          trend={dashboardData?.userAnalytics?.newUsersThisMonth ? {
+            value: `+${dashboardData.userAnalytics.newUsersThisMonth} this month`,
+            isPositive: true,
+          } : undefined}
         />
         <StatsCard
           title="Active Users"
           value={dashboardData?.userAnalytics?.activeUsers || 0}
           icon={UserCheck}
-          change={dashboardData?.userAnalytics?.newUsersThisWeek ? `+${dashboardData.userAnalytics.newUsersThisWeek} this week` : undefined}
+          trend={dashboardData?.userAnalytics?.newUsersThisWeek ? {
+            value: `+${dashboardData.userAnalytics.newUsersThisWeek} this week`,
+            isPositive: true,
+          } : undefined}
         />
         <StatsCard
           title="Total Sessions"

@@ -194,11 +194,18 @@ export function NotificationAnalyticsDashboard() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     },
-    onSuccess: (_, format) => {
-      toast.toast.success(`Analytics exported as ${format.toUpperCase()}`);
+    onSuccess: (_data, format) => {
+      toast.toast({
+        title: `Analytics exported as ${format.toUpperCase()}`,
+        variant: 'success',
+      });
     },
     onError: (error) => {
-      toast.toast.error(`Failed to export analytics: ${error.message}`);
+      toast.toast({
+        title: 'Export failed',
+        description: `Failed to export analytics: ${error.message}`,
+        variant: 'destructive',
+      });
     },
   });
 
@@ -217,7 +224,12 @@ export function NotificationAnalyticsDashboard() {
   const channelData = analytics ? [
     { name: 'Email', sent: analytics.byChannel.email.sent, delivered: analytics.byChannel.email.delivered, color: COLORS.email },
     { name: 'Push', sent: analytics.byChannel.push.sent, delivered: analytics.byChannel.push.delivered, color: COLORS.push },
-    { name: 'In-App', sent: analytics.byChannel.inapp.sent, delivered: analytics.byChannel.inapp.sent, color: COLORS.inapp },
+    {
+      name: 'In-App',
+      sent: analytics.byChannel.inapp.sent,
+      delivered: analytics.byChannel.inapp.delivered ?? analytics.byChannel.inapp.sent,
+      color: COLORS.inapp,
+    },
   ] : [];
 
   const deliveryStatusData = analytics ? [
@@ -528,7 +540,7 @@ export function NotificationAnalyticsDashboard() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent = 0 }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"

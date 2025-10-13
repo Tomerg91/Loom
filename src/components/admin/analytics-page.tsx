@@ -67,19 +67,25 @@ interface AnalyticsData {
     date: string;
     newUsers: number;
     activeUsers: number;
+    totalUsers?: number;
   }>;
   sessionMetrics: Array<{
     date: string;
     totalSessions: number;
     completedSessions: number;
     cancelledSessions: number;
+    scheduledSessions?: number;
+    completionRate?: number;
   }>;
   coachPerformance: Array<{
     coachId: string;
     coachName: string;
     totalSessions: number;
+    completedSessions?: number;
     averageRating: number;
     revenue: number;
+    activeClients?: number;
+    completionRate?: number;
   }>;
 }
 
@@ -125,10 +131,78 @@ export function AdminAnalyticsPage() {
     return rate >= 0 ? 'text-green-600' : 'text-red-600';
   };
 
+  const buildExportPayload = (startDate: Date, endDate: Date) => {
+    if (!analytics) {
+      throw new Error('No analytics data available for export');
+    }
+
+    const overview = analytics.overview;
+    const totalUsers = overview.totalUsers;
+    const previousTotals = overview.previousMonth?.totalUsers ?? 0;
+    const totalCoaches = analytics.coachPerformance.length;
+    const totalClients = Math.max(totalUsers - totalCoaches, 0);
+    const newUsersThisMonth = Math.max(totalUsers - previousTotals, 0);
+    const completionRate = overview.totalSessions
+      ? Math.round((overview.completedSessions / Math.max(overview.totalSessions, 1)) * 100)
+      : 0;
+
+    return {
+      overview: {
+        totalUsers,
+        activeUsers: overview.activeUsers,
+        totalSessions: overview.totalSessions,
+        completedSessions: overview.completedSessions,
+        revenue: overview.revenue,
+        averageRating: overview.averageRating,
+        newUsersThisMonth,
+        completionRate,
+        totalCoaches,
+        totalClients,
+        activeCoaches: analytics.coachPerformance.filter(coach => (coach.totalSessions ?? 0) > 0).length,
+        averageSessionsPerUser: totalUsers
+          ? Number((overview.totalSessions / totalUsers).toFixed(2))
+          : 0,
+      },
+      userGrowth: analytics.userGrowth.map(row => ({
+        date: row.date,
+        newUsers: row.newUsers,
+        activeUsers: row.activeUsers,
+        totalUsers: row.totalUsers ?? row.activeUsers + row.newUsers,
+      })),
+      sessionMetrics: analytics.sessionMetrics.map(row => ({
+        date: row.date,
+        totalSessions: row.totalSessions,
+        completedSessions: row.completedSessions,
+        cancelledSessions: row.cancelledSessions,
+        scheduledSessions: row.scheduledSessions ?? Math.max(row.totalSessions - row.cancelledSessions, 0),
+        completionRate: row.completionRate ?? (row.totalSessions
+          ? Math.round((row.completedSessions / row.totalSessions) * 100)
+          : 0),
+      })),
+      coachPerformance: analytics.coachPerformance.map(row => ({
+        coachId: row.coachId,
+        coachName: row.coachName,
+        totalSessions: row.totalSessions,
+        completedSessions: row.completedSessions ?? row.totalSessions,
+        averageRating: row.averageRating,
+        revenue: row.revenue,
+        activeClients: row.activeClients ?? 0,
+        completionRate: row.completionRate ?? (row.totalSessions
+          ? Math.round(((row.completedSessions ?? row.totalSessions) / row.totalSessions) * 100)
+          : 0),
+      })),
+      generatedAt: new Date().toISOString(),
+      dateRange: {
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+      },
+    };
+  };
+
   // Export handler
   const handleExport = async (format: ExportFormat) => {
     if (isExporting) return;
-    
+
     setIsExporting(true);
     try {
       // Calculate date range based on timeRange
@@ -152,7 +226,23 @@ export function AdminAnalyticsPage() {
           startDate.setDate(endDate.getDate() - 30);
       }
 
-      const { blob, filename } = await analyticsExportService.exportData(startDate, endDate, format);
+      if (!analytics) {
+        throw new Error('No analytics data available for export');
+      }
+
+      const overview = analytics.overview;
+      const totalUsers = overview.totalUsers;
+      const previousTotals = overview.previousMonth?.totalUsers ?? 0;
+      const totalCoaches = analytics.coachPerformance.length;
+      const totalClients = Math.max(totalUsers - totalCoaches, 0);
+      const newUsersThisMonth = Math.max(totalUsers - previousTotals, 0);
+      const completionRate = totalUsers
+        ? Math.round((overview.completedSessions / Math.max(overview.totalSessions, 1)) * 100)
+        : 0;
+
+      const exportPayload = buildExportPayload(startDate, endDate);
+
+      const { blob, filename } = await analyticsExportService.exportData(exportPayload, format);
       analyticsExportService.downloadFile(blob, filename);
       
       // Show success message (you could add a toast notification here)
@@ -199,7 +289,8 @@ export function AdminAnalyticsPage() {
       const formats: ExportFormat[] = ['json', 'csv', 'excel', 'pdf'];
       
       for (const format of formats) {
-        const { blob, filename } = await analyticsExportService.exportData(startDate, endDate, format);
+        const payload = buildExportPayload(startDate, endDate);
+        const { blob, filename } = await analyticsExportService.exportData(payload, format);
         analyticsExportService.downloadFile(blob, filename);
         // Add small delay between downloads to prevent browser blocking
         await new Promise(resolve => setTimeout(resolve, 500));

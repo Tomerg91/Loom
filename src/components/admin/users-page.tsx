@@ -183,13 +183,19 @@ export function AdminUsersPage() {
           title="Total Users"
           value={userAnalytics?.totalUsers || users?.length || 0}
           icon={Users}
-          change={userAnalytics?.newUsersThisMonth ? `+${userAnalytics.newUsersThisMonth} this month` : undefined}
+          trend={userAnalytics?.newUsersThisMonth ? {
+            value: `+${userAnalytics.newUsersThisMonth} this month`,
+            isPositive: true,
+          } : undefined}
         />
         <StatsCard
           title="Active Users"
           value={userAnalytics?.activeUsers || users?.filter((u: User) => u.status === 'active').length || 0}
           icon={UserCheck}
-          change={userAnalytics?.newUsersThisWeek ? `+${userAnalytics.newUsersThisWeek} this week` : undefined}
+          trend={userAnalytics?.newUsersThisWeek ? {
+            value: `+${userAnalytics.newUsersThisWeek} this week`,
+            isPositive: true,
+          } : undefined}
         />
         <StatsCard
           title="Coaches"

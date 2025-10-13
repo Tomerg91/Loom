@@ -445,8 +445,8 @@ export interface LibraryAnalytics {
   totalCompletions: number;
   avgCompletionRate: number;
   activeClients: number;
-  sharedResources?: number;
-  uniqueViewers?: number;
+  sharedResources: number;
+  uniqueViewers: number;
 
   // Top performing resources
   topResources: ResourcePerformanceSummary[];

@@ -1,12 +1,15 @@
-import { ComponentType } from 'react';
+import { ComponentType, createElement, type ReactElement } from 'react';
 import dynamic from 'next/dynamic';
 
 // Default loading component
-const DefaultLoadingComponent = () => {
-  return {
-    __html: '<div class="flex items-center justify-center p-8"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>'
-  };
-};
+const DefaultLoadingComponent = (): ReactElement =>
+  createElement(
+    'div',
+    { className: 'flex items-center justify-center p-8' },
+    createElement('div', {
+      className: 'h-6 w-6 animate-spin rounded-full border-b-2 border-primary'
+    })
+  );
 
 // Higher-order component for lazy loading with loading state
 export function withLazyLoading<T extends Record<string, unknown>>(
@@ -17,12 +20,10 @@ export function withLazyLoading<T extends Record<string, unknown>>(
     ssr?: boolean;
   }
 ) {
-  const LazyComponent = dynamic(componentLoader, {
-    loading: options?.loading,
+  return dynamic(componentLoader, {
+    loading: options?.loading ?? DefaultLoadingComponent,
     ssr: options?.ssr ?? true,
   });
-
-  return LazyComponent;
 }
 
 // Preload component for performance
@@ -39,49 +40,49 @@ export function preloadComponent<T extends Record<string, unknown>>(
 export const LazyComponents = {
   // Admin components
   AdminAnalyticsPage: withLazyLoading(
-    () => import('@/components/admin/analytics-page'),
+    () => import('@/components/admin/analytics-page').then(mod => ({ default: mod.default })),
     { ssr: false }
   ),
   AdminSystemPage: withLazyLoading(
-    () => import('@/components/admin/system-page'),
+    () => import('@/components/admin/system-page').then(mod => ({ default: mod.default })),
     { ssr: false }
   ),
   AdminUsersPage: withLazyLoading(
-    () => import('@/components/admin/users-page'),
+    () => import('@/components/admin/users-page').then(mod => ({ default: mod.default })),
     { ssr: false }
   ),
 
   // Dashboard components
   DashboardCharts: withLazyLoading(
-    () => import('@/components/charts/dashboard-charts'),
+    () => import('@/components/charts/dashboard-charts').then(mod => ({ default: mod.default })),
     { ssr: false }
   ),
 
   // Coach components
   CoachDashboard: withLazyLoading(
-    () => import('@/components/coach/coach-dashboard'),
+    () => import('@/components/coach/coach-dashboard').then(mod => ({ default: mod.default })),
     { ssr: true }
   ),
   AvailabilityManager: withLazyLoading(
-    () => import('@/components/coach/availability-manager'),
+    () => import('@/components/coach/availability-manager').then(mod => ({ default: mod.default })),
     { ssr: false }
   ),
   ClientDetailPage: withLazyLoading(
-    () => import('@/components/coach/client-detail-page'),
+    () => import('@/components/coach/client-detail-page').then(mod => ({ default: mod.default })),
     { ssr: true }
   ),
 
   // Client components
   ClientDashboard: withLazyLoading(
-    () => import('@/components/client/client-dashboard'),
+    () => import('@/components/client/client-dashboard').then(mod => ({ default: mod.default })),
     { ssr: true }
   ),
   BookingPage: withLazyLoading(
-    () => import('@/components/client/book-page'),
+    () => import('@/components/client/book-page').then(mod => ({ default: mod.default })),
     { ssr: true }
   ),
   ProgressPage: withLazyLoading(
-    () => import('@/components/client/progress-page'),
+    () => import('@/components/client/progress-page').then(mod => ({ default: mod.default })),
     { ssr: false }
   ),
 
@@ -103,23 +104,23 @@ export const LazyComponents = {
     { ssr: true }
   ),
   SessionCalendar: withLazyLoading(
-    () => import('@/components/sessions/session-calendar'),
+    () => import('@/components/sessions/session-calendar').then(mod => ({ default: mod.default })),
     { ssr: false }
   ),
 
   // Settings components
   SettingsPage: withLazyLoading(
-    () => import('@/components/settings/settings-page'),
+    () => import('@/components/settings/settings-page').then(mod => ({ default: mod.default })),
     { ssr: true }
   ),
   NotificationSettingsPage: withLazyLoading(
-    () => import('@/components/settings/notification-settings-page'),
+    () => import('@/components/settings/notification-settings-page').then(mod => ({ default: mod.default })),
     { ssr: false }
   ),
 
   // Notification components
   NotificationCenter: withLazyLoading(
-    () => import('@/components/notifications/notification-center'),
+    () => import('@/components/notifications/notification-center').then(mod => ({ default: mod.default })),
     { ssr: false }
   ),
 };
@@ -128,16 +129,16 @@ export const LazyComponents = {
 export function preloadComponentsByRole(role: 'admin' | 'coach' | 'client') {
   switch (role) {
     case 'admin':
-      preloadComponent(() => import('@/components/admin/analytics-page'));
-      preloadComponent(() => import('@/components/admin/users-page'));
+      preloadComponent(() => import('@/components/admin/analytics-page').then(mod => ({ default: mod.default })));
+      preloadComponent(() => import('@/components/admin/users-page').then(mod => ({ default: mod.default })));
       break;
     case 'coach':
-      preloadComponent(() => import('@/components/coach/coach-dashboard'));
-      preloadComponent(() => import('@/components/coach/availability-manager'));
+      preloadComponent(() => import('@/components/coach/coach-dashboard').then(mod => ({ default: mod.default })));
+      preloadComponent(() => import('@/components/coach/availability-manager').then(mod => ({ default: mod.default })));
       break;
     case 'client':
-      preloadComponent(() => import('@/components/client/client-dashboard'));
-      preloadComponent(() => import('@/components/client/book-page'));
+      preloadComponent(() => import('@/components/client/client-dashboard').then(mod => ({ default: mod.default })));
+      preloadComponent(() => import('@/components/client/book-page').then(mod => ({ default: mod.default })));
       break;
   }
 }
@@ -145,13 +146,13 @@ export function preloadComponentsByRole(role: 'admin' | 'coach' | 'client') {
 // Route-based preloading
 export function preloadRouteComponents(pathname: string) {
   if (pathname.startsWith('/admin')) {
-    preloadComponent(() => import('@/components/admin/analytics-page'));
+    preloadComponent(() => import('@/components/admin/analytics-page').then(mod => ({ default: mod.default })));
   } else if (pathname.startsWith('/coach')) {
-    preloadComponent(() => import('@/components/coach/coach-dashboard'));
+    preloadComponent(() => import('@/components/coach/coach-dashboard').then(mod => ({ default: mod.default })));
   } else if (pathname.startsWith('/client')) {
-    preloadComponent(() => import('@/components/client/client-dashboard'));
+    preloadComponent(() => import('@/components/client/client-dashboard').then(mod => ({ default: mod.default })));
   } else if (pathname.startsWith('/sessions')) {
-    preloadComponent(() => import('@/components/sessions/booking'));
+    preloadComponent(() => import('@/components/sessions/booking').then(mod => ({ default: mod.default })));
   }
 }
 

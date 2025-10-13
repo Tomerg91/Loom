@@ -12,7 +12,10 @@ import {
   TaskService,
   TaskServiceError,
 } from '@/modules/tasks/services/task-service';
-import { updateTaskSchema } from '@/modules/tasks/types/task';
+import {
+  updateTaskSchema,
+  type UpdateTaskInput,
+} from '@/modules/tasks/types/task';
 
 const taskService = new TaskService();
 
@@ -134,10 +137,12 @@ export const PATCH = async (request: NextRequest, context: RouteContext) => {
   }
 
   try {
+    const updatePayload = parsed.data as UpdateTaskInput;
+
     const task = await taskService.updateTask(
       taskId,
       { id: actor.id, role: mapRole(actor.role) },
-      parsed.data
+      updatePayload
     );
     return createSuccessResponse(task, 'Task updated successfully');
   } catch (error) {

@@ -18,6 +18,25 @@ interface RouteContext {
   };
 }
 
+const baseNoteSelectFields = [
+  'id',
+  'session_id',
+  'title',
+  'content',
+  'privacy_level',
+  'tags',
+  'category',
+  'is_favorite',
+  'is_archived',
+  'created_at',
+  'updated_at'
+] as const;
+
+const buildNoteSelect = (includeClientId: boolean) =>
+  [includeClientId ? 'client_id' : null, ...baseNoteSelectFields]
+    .filter((field): field is string => Boolean(field))
+    .join(',');
+
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
     const { id } = params;
@@ -43,22 +62,11 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const tableName = profile.role === 'coach' ? 'coach_notes' : 'client_notes';
     const ownerField = profile.role === 'coach' ? 'coach_id' : 'client_id';
 
+    const selectFields = buildNoteSelect(profile.role === 'coach');
+
     const { data: note, error } = await supabase
       .from(tableName)
-      .select(`
-        id,
-        ${profile.role === 'coach' ? 'client_id,' : ''}
-        session_id,
-        title,
-        content,
-        privacy_level,
-        tags,
-        category,
-        is_favorite,
-        is_archived,
-        created_at,
-        updated_at
-      `)
+      .select(selectFields)
       .eq('id', id)
       .eq(ownerField, user.id)
       .single();
@@ -151,25 +159,14 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     }
 
     // Update note
+    const selectFields = buildNoteSelect(profile.role === 'coach');
+
     const { data: note, error } = await supabase
       .from(tableName)
       .update(updateData)
       .eq('id', id)
       .eq(ownerField, user.id)
-      .select(`
-        id,
-        ${profile.role === 'coach' ? 'client_id,' : ''}
-        session_id,
-        title,
-        content,
-        privacy_level,
-        tags,
-        category,
-        is_favorite,
-        is_archived,
-        created_at,
-        updated_at
-      `)
+      .select(selectFields)
       .single();
 
     if (error) {
