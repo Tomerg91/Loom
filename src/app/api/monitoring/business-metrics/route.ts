@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { rateLimit } from '@/lib/security/rate-limit';
+
 import { trackBusinessMetric } from '@/lib/monitoring/sentry';
+import { adminSecurityMiddleware } from '@/lib/security/admin-middleware';
+import { rateLimit } from '@/lib/security/rate-limit';
+import { createClient } from '@/lib/supabase/server';
 
 // Business metrics collection endpoint
 const rateLimitedMetrics = rateLimit(100, 60000)( // 100 requests per minute
@@ -51,11 +53,31 @@ const rateLimitedMetrics = rateLimit(100, 60000)( // 100 requests per minute
 
 // GET /api/monitoring/business-metrics - Retrieve business metrics
 export async function GET(request: NextRequest) {
+  const security = await adminSecurityMiddleware(request, {
+    logActivity: true,
+    auditAction: 'view_metrics',
+    auditResource: 'business_metrics',
+  });
+
+  if (!security.success) {
+    return security.response;
+  }
+
   return rateLimitedMetrics(request);
 }
 
 // POST /api/monitoring/business-metrics - Submit metrics data
 export async function POST(request: NextRequest) {
+  const security = await adminSecurityMiddleware(request, {
+    logActivity: true,
+    auditAction: 'ingest_metrics',
+    auditResource: 'business_metrics',
+  });
+
+  if (!security.success) {
+    return security.response;
+  }
+
   return rateLimitedMetrics(request);
 }
 
