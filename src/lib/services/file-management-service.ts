@@ -33,8 +33,13 @@ export interface FileMetadata {
   bucketName: string;
   description: string | null;
   tags: string[];
+  isLibraryResource: boolean;
+  isPublic: boolean;
+  sharedWithAllClients: boolean;
   isShared: boolean;
   downloadCount: number;
+  viewCount: number;
+  completionCount: number;
   createdAt: string;
   updatedAt: string;
 
@@ -780,12 +785,17 @@ class FileManagementService {
       bucketName: row.bucket_name,
       description: row.description || null,
       tags: row.tags || [],
+      isLibraryResource: row.is_library_resource,
+      isPublic: row.is_public,
+      sharedWithAllClients: row.shared_with_all_clients,
       isShared: row.is_shared,
       downloadCount: row.download_count,
+      viewCount: row.view_count,
+      completionCount: row.completion_count,
       createdAt: row.created_at || new Date().toISOString(),
       updatedAt: row.updated_at || new Date().toISOString(),
-        storageUrl: publicUrl.data.publicUrl,
-      };
+      storageUrl: publicUrl.data.publicUrl,
+    };
   };
 
   private mapFileUploadRowWithJoins = async (

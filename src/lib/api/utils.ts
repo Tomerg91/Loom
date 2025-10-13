@@ -364,16 +364,16 @@ export function withRequestLogging(
 }
 
 // Authentication helpers
-export function requireAuth(
+export function requireAuth<T extends unknown[]>(
   handler: (
     user: AuthenticatedUser,
     request: NextRequest,
-    ...args: unknown[]
+    ...args: T
   ) => Promise<NextResponse>
 ) {
   return async (
     request: NextRequest,
-    ...args: unknown[]
+    ...args: T
   ): Promise<NextResponse> => {
     try {
       const supabase = await createClient();
@@ -566,26 +566,26 @@ const ROLE_HIERARCHY: Record<'admin' | 'coach' | 'client', number> = {
  * Generic factory for creating security middleware functions
  * Eliminates repetitive patterns in permission and access control
  */
-function createSecurityMiddleware(
+function createSecurityMiddleware<T extends unknown[]>(
   checkFunction: (
     user: AuthenticatedUser,
-    ...args: unknown[]
+    ...args: T
   ) => boolean | Promise<boolean>,
-  errorMessage: (user: AuthenticatedUser, ...args: unknown[]) => string,
+  errorMessage: (user: AuthenticatedUser, ...args: T) => string,
   logContext: (
     user: AuthenticatedUser,
-    ...args: unknown[]
+    ...args: T
   ) => Record<string, unknown>
 ) {
   return function (
     handler: (
       user: AuthenticatedUser,
-      ...args: unknown[]
+      ...args: T
     ) => Promise<Response | NextResponse>
   ) {
     return async (
       user: AuthenticatedUser,
-      ...args: unknown[]
+      ...args: T
     ): Promise<Response | NextResponse> => {
       try {
         const hasAccess = await checkFunction(user, ...args);
@@ -634,9 +634,9 @@ function createSecurityMiddleware(
 }
 
 // Enhanced permission helpers using the generic factory
-export function requirePermission(requiredPermission: Permission) {
-  return createSecurityMiddleware(
-    (user: AuthenticatedUser) => {
+export function requirePermission<T extends unknown[]>(requiredPermission: Permission) {
+  return createSecurityMiddleware<T>(
+    (user: AuthenticatedUser, ..._args: T) => {
       requirePermissionCheck(user.role as Role, requiredPermission);
       return true;
     },
@@ -646,9 +646,9 @@ export function requirePermission(requiredPermission: Permission) {
 }
 
 // Resource-based permission checking using the factory
-export function requireResourceAccess(resource: string, action: string) {
-  return createSecurityMiddleware(
-    (user: AuthenticatedUser) =>
+export function requireResourceAccess<T extends unknown[]>(resource: string, action: string) {
+  return createSecurityMiddleware<T>(
+    (user: AuthenticatedUser, ..._args: T) =>
       canAccessResource(user.role as Role, resource, action),
     () => `Access denied. Cannot ${action} ${resource}`,
     () => ({ resource, action })
@@ -656,9 +656,9 @@ export function requireResourceAccess(resource: string, action: string) {
 }
 
 // Legacy role-based permission checking using the factory
-export function requireRole(requiredRole: UserRole) {
-  return createSecurityMiddleware(
-    (user: AuthenticatedUser) => {
+export function requireRole<T extends unknown[]>(requiredRole: UserRole) {
+  return createSecurityMiddleware<T>(
+    (user: AuthenticatedUser, ..._args: T) => {
       const userLevel =
         ROLE_HIERARCHY[user.role as 'admin' | 'coach' | 'client'] ?? 0;
       const requiredLevel =
@@ -672,48 +672,48 @@ export function requireRole(requiredRole: UserRole) {
 }
 
 // Specific role requirement helpers (updated to use new permission system)
-export function requireAdmin(
+export function requireAdmin<T extends unknown[]>(
   handler: (
     user: AuthenticatedUser,
-    ...args: unknown[]
-  ) => Promise<NextResponse>
+    ...args: T
+  ) => Promise<NextResponse | Response>
 ) {
-  return requirePermission('admin:read')(handler);
+  return requirePermission<T>('admin:read')(handler);
 }
 
-export function requireCoach(
+export function requireCoach<T extends unknown[]>(
   handler: (
     user: AuthenticatedUser,
-    ...args: unknown[]
-  ) => Promise<NextResponse>
+    ...args: T
+  ) => Promise<NextResponse | Response>
 ) {
-  return requirePermission('coach:read')(handler);
+  return requirePermission<T>('coach:read')(handler);
 }
 
-export function requireClient(
+export function requireClient<T extends unknown[]>(
   handler: (
     user: AuthenticatedUser,
-    ...args: unknown[]
-  ) => Promise<NextResponse>
+    ...args: T
+  ) => Promise<NextResponse | Response>
 ) {
-  return requirePermission('client:read')(handler);
+  return requirePermission<T>('client:read')(handler);
 }
 
 // Ownership-based access control
-export function requireOwnership(
+export function requireOwnership<T extends unknown[]>(
   handler: (
     user: AuthenticatedUser,
-    ...args: unknown[]
-  ) => Promise<NextResponse>,
+    ...args: T
+  ) => Promise<NextResponse | Response>,
   getOwnerId: (
     user: AuthenticatedUser,
-    ...args: unknown[]
+    ...args: T
   ) => Promise<string | null>
 ) {
   return async (
     user: AuthenticatedUser,
-    ...args: unknown[]
-  ): Promise<NextResponse> => {
+    ...args: T
+  ): Promise<NextResponse | Response> => {
     try {
       const ownerId = await getOwnerId(user, ...args);
 

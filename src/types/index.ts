@@ -123,6 +123,7 @@ export interface Session {
   rescheduledFromId?: string;
   rescheduledToId?: string;
   timezone?: string;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   coach: {
@@ -248,7 +249,25 @@ export type NotificationType =
   | 'session_reminder'
   | 'new_message'
   | 'session_confirmation'
-  | 'system_update';
+  | 'system_update'
+  | 'welcome_message'
+  | 'goal_achieved'
+  | 'appointment_reminder'
+  | 'coach_message'
+  | 'client_message'
+  | 'session_cancelled'
+  | 'session_rescheduled'
+  | 'reflection_reminder'
+  | 'system_announcement'
+  | 'payment_reminder'
+  | 'mfa_setup_required'
+  | 'mfa_setup_completed'
+  | 'mfa_backup_codes_generated'
+  | 'mfa_method_added'
+  | 'mfa_method_removed'
+  | 'mfa_backup_code_used'
+  | 'mfa_login_failed'
+  | 'mfa_account_locked';
 export type NotificationChannel = 'email' | 'push' | 'inapp';
 export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent';
 

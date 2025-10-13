@@ -111,7 +111,11 @@ export const POST = withErrorHandling(async (
 
   // Send notification to the other party
   try {
-    await sessionNotificationService.onSessionUpdated(updatedSession as Session);
+    await sessionNotificationService.onSessionRescheduled(
+      updatedSession as Session,
+      session.scheduledAt,
+      userRole
+    );
 
     // Send custom reschedule notification
     const otherPartyId = user.id === session.coachId ? session.clientId : session.coachId;

@@ -133,7 +133,10 @@ export const PUT = withErrorHandling(
     return createSuccessResponse(
       {
         user: {
-          onboardingStatus: (refreshedUser?.onboardingStatus ?? 'completed') as const,
+          onboardingStatus: (refreshedUser?.onboardingStatus ?? 'completed') as
+            | 'pending'
+            | 'in_progress'
+            | 'completed',
           onboardingStep: refreshedUser?.onboardingStep ?? nextStep,
           onboardingCompletedAt: refreshedUser?.onboardingCompletedAt ?? completedAt,
           timezone: refreshedUser?.timezone ?? data.timezone ?? user.timezone ?? 'UTC',

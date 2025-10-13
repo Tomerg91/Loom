@@ -17,27 +17,17 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Brush,
-  ZoomableLineChart,
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
-  Download, 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw,
-  Maximize2,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-} from 'lucide-react';
+import { Download, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Theme colors for consistent styling
@@ -63,7 +53,6 @@ interface EnhancedBaseChartProps {
   height?: number;
   loading?: boolean;
   enableExport?: boolean;
-  enableZoom?: boolean;
   enableBrush?: boolean;
   showTrends?: boolean;
   ariaLabel?: string;
@@ -96,7 +85,11 @@ const EnhancedTooltip = ({ active, payload, label, formatter }: any) => {
 
 // Export functionality for charts
 const useChartExport = () => {
-  const exportChart = (chartRef: React.RefObject<HTMLDivElement>, filename: string, format: 'png' | 'svg' | 'pdf') => {
+  const exportChart = (
+    chartRef: React.RefObject<HTMLDivElement | null>,
+    filename: string,
+    format: 'png' | 'svg' | 'pdf'
+  ) => {
     if (!chartRef.current) return;
 
     try {
@@ -144,16 +137,14 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
   className,
   height = 300,
   loading = false,
-  enableExport = true,
-  enableZoom = true,
-  enableBrush = true,
+    enableExport = true,
+    enableBrush = true,
   showTrends = true,
   ariaLabel = "User growth chart showing new and active users over time",
   onDataPointClick,
 }) => {
-  const [zoomDomain, setZoomDomain] = useState<any>(null);
   const [selectedMetric, setSelectedMetric] = useState<'both' | 'newUsers' | 'activeUsers'>('both');
-  const chartRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<HTMLDivElement | null>(null);
   const { exportChart } = useChartExport();
 
   // Calculate trends
@@ -166,10 +157,6 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
 
   const newUsersTrend = showTrends ? calculateTrend(data.map(d => d.newUsers)) : 0;
   const activeUsersTrend = showTrends ? calculateTrend(data.map(d => d.activeUsers)) : 0;
-
-  const handleZoomReset = () => {
-    setZoomDomain(null);
-  };
 
   const handleExport = (format: 'png' | 'svg' | 'pdf') => {
     exportChart(chartRef, 'user-growth-chart', format);
@@ -212,11 +199,6 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
             <CardDescription>{description}</CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            {enableZoom && zoomDomain && (
-              <Button onClick={handleZoomReset} variant="outline" size="sm">
-                <RotateCcw className="w-4 h-4" />
-              </Button>
-            )}
             {enableExport && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -338,15 +320,14 @@ export const EnhancedSessionMetricsChart: React.FC<EnhancedSessionMetricsChartPr
   className,
   height = 300,
   loading = false,
-  enableExport = true,
-  enableZoom = true,
-  enableBrush = true,
+    enableExport = true,
+    enableBrush = true,
   showTrends = true,
   ariaLabel = "Session metrics chart showing completed, cancelled, and scheduled sessions over time",
   onDataPointClick,
 }) => {
   const [viewMode, setViewMode] = useState<'absolute' | 'percentage'>('absolute');
-  const chartRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<HTMLDivElement | null>(null);
   const { exportChart } = useChartExport();
 
   // Transform data for percentage view
