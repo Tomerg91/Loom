@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
+import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { getCorsHeadersForPublicEndpoint } from '@/lib/security/cors';
 import { fileDownloadRateLimit } from '@/lib/security/file-rate-limit';
 import { fileManagementService } from '@/lib/services/file-management-service';
@@ -35,13 +36,12 @@ export async function GET(
 
     // Get authenticated user (optional for shared files)
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const inline = searchParams.get('inline') === 'true';
     const trackAnalytics = searchParams.get('track_analytics') !== 'false';
-    const generatePreview = searchParams.get('generate_preview') === 'true';
     const token = searchParams.get('token'); // For temporary shares
 
     // Get file information
@@ -64,28 +64,28 @@ export async function GET(
 
     // Check temporary share access first (if token provided)
     if (token) {
-      const { data: temporaryShare } = await supabase
-        .from('temporary_shares')
-        .select('*')
-        .eq('share_token', token)
-        .eq('file_id', params.id)
-        .eq('is_active', true)
-        .gt('expires_at', new Date().toISOString())
-        .single();
+      const password = searchParams.get('password') || undefined;
+      const validation = await temporarySharesDatabase.validateShareAccess(token, password);
 
-      if (temporaryShare && temporaryShare.current_downloads < temporaryShare.max_downloads) {
+      if (validation.can_access && validation.share_id && validation.file_info?.id === params.id) {
         hasAccess = true;
         downloadType = 'temporary_share';
-        temporaryShareId = temporaryShare.id;
+        temporaryShareId = validation.share_id;
 
-        // Increment download count for temporary share
         await supabase
-          .from('temporary_shares')
+          .from('temporary_file_shares')
           .update({
-            current_downloads: temporaryShare.current_downloads + 1,
+            current_downloads: (validation.file_info.current_downloads ?? 0) + 1,
             updated_at: new Date().toISOString()
           })
-          .eq('id', temporaryShare.id);
+          .eq('id', validation.share_id);
+      } else if (validation.share_id) {
+        await temporarySharesDatabase.logShareAccess({
+          share_id: validation.share_id,
+          access_type: 'download',
+          success: false,
+          failure_reason: validation.failure_reason || 'Access denied',
+        });
       }
     }
 
