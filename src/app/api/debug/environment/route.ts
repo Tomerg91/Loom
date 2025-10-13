@@ -1,18 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { adminSecurityMiddleware } from '@/lib/security/admin-middleware';
+
 /**
  * Environment Debug API Endpoint
- * 
+ *
  * This endpoint helps debug environment variable issues in production.
- * Only accessible in development mode or when explicitly enabled via query parameter.
+ * Only accessible in development mode or to super-admins in production.
  */
 
 interface EnvironmentCheck {
   name: string;
   present: boolean;
   valid: boolean;
-  value: string;
+  value?: string;
   issues: string[];
+}
+
+function sanitizeEnvironmentCheck(check: EnvironmentCheck): EnvironmentCheck {
+  // Remove the actual value from the response
+  const { value: _value, ...sanitized } = check;
+  return sanitized;
 }
 
 function validateEnvironmentVariable(name: string, value: string | undefined): EnvironmentCheck {
@@ -52,7 +60,7 @@ function validateEnvironmentVariable(name: string, value: string | undefined): E
       } else {
         check.issues.push('URL does not match expected Supabase pattern');
       }
-    } catch (error) {
+    } catch (_error) {
       check.issues.push('Invalid URL format');
     }
   } else if (name.includes('KEY')) {
@@ -69,15 +77,17 @@ function validateEnvironmentVariable(name: string, value: string | undefined): E
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const forceShow = searchParams.get('force') === 'true';
-  
-  // Only allow in development or when explicitly forced
-  if (process.env.NODE_ENV !== 'development' && !forceShow) {
-    return NextResponse.json(
-      { error: 'Environment debug endpoint is only available in development mode' },
-      { status: 403 }
-    );
+  // In production, require super-admin authentication
+  if (process.env.NODE_ENV !== 'development') {
+    const security = await adminSecurityMiddleware(request, {
+      requireSuperAdmin: true,
+      auditAction: 'view_environment_diagnostics',
+      auditResource: 'environment_debug',
+    });
+
+    if (!security.success) {
+      return security.response;
+    }
   }
 
   const environmentVariables = [
@@ -87,8 +97,8 @@ export async function GET(request: NextRequest) {
     'NEXT_PUBLIC_APP_URL'
   ];
 
-  const checks = environmentVariables.map(name => 
-    validateEnvironmentVariable(name, process.env[name])
+  const checks = environmentVariables.map(name =>
+    sanitizeEnvironmentCheck(validateEnvironmentVariable(name, process.env[name]))
   );
 
   const hasIssues = checks.some(check => !check.valid);
@@ -103,11 +113,11 @@ export async function GET(request: NextRequest) {
   if (urlCheck?.valid && keyCheck?.valid) {
     try {
       const { createClient } = await import('@supabase/supabase-js');
-      const client = createClient(
+      createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
-      
+
       // Simple connection test
       supabaseConnectionStatus = 'success';
     } catch (error) {
