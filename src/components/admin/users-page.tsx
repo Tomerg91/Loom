@@ -147,7 +147,7 @@ export function AdminUsersPage() {
   };
 
   // Use filtered data hook
-  const filteredUsers = useFilteredData(
+  const filteredUsers = useFilteredData<User>(
     users,
     searchTerm,
     ['email', 'firstName', 'lastName'],

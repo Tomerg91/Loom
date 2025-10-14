@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
 import { 
   Upload, 
   Download, 
@@ -35,26 +33,9 @@ import {
   Tag,
   ExternalLink,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Select,
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { useTranslations } from 'next-intl';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -65,46 +46,48 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { 
+  Select,
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileUploadZone } from './file-upload-zone';
-import { FilePreview } from './file-preview';
-import { FileSharingDialog } from './file-sharing-dialog';
-import { FileVersionHistory } from './file-version-history';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 
-export interface FileItem {
-  id: string;
-  filename: string;
-  originalFilename: string;
-  fileType: string;
-  fileSize: number;
-  fileCategory: 'preparation' | 'notes' | 'recording' | 'resource' | 'personal' | 'avatar' | 'document';
-  description?: string;
-  tags: string[];
-  isShared: boolean;
-  downloadCount: number;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-  ownerName?: string;
-  storageUrl?: string;
+import { FilePreview } from './file-preview';
+import { FileSharingDialog } from './file-sharing-dialog';
+import { FileUploadZone } from './file-upload-zone';
+import { FileVersionHistory } from './file-version-history';
+
+
+// Import FileMetadata type instead of redefining
+export type FileItem = FileMetadata & {
   isStarred?: boolean;
   hasVersions?: boolean;
-  sharedWith?: Array<{
-    id: string;
-    name: string;
-    permission: 'view' | 'download' | 'edit';
-    expiresAt?: string;
-  }>;
-}
+};
 
 export interface FileManagerProps {
   initialFiles?: FileItem[];

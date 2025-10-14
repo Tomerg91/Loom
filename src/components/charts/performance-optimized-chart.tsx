@@ -72,9 +72,10 @@ export const PerformanceOptimizedChart: React.FC<PerformanceOptimizedChartProps>
       )}
 
       {/* Render optimized chart */}
-      {React.cloneElement(children as React.ReactElement, {
-        data: optimizedData,
-      })}
+      {React.isValidElement(children) &&
+        React.cloneElement(children as React.ReactElement<{ data?: any[] }>, {
+          data: optimizedData,
+        })}
 
       {/* Performance info */}
       {isDataOptimized && (

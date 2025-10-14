@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Upload, 
   FolderPlus, 
@@ -18,8 +17,11 @@ import {
   Trash2,
   X
 } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { 
   Dialog, 
   DialogContent, 
@@ -36,25 +38,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/components/ui/use-toast';
-
 import { FileUpload } from '@/components/ui/file-upload';
-import { FileList } from './file-list';
-import { FileGrid } from './file-grid';
-import { FolderBreadcrumb } from './folder-breadcrumb';
-import { FilePreview } from './file-preview';
-import { ShareDialog } from './share-dialog';
-
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
 import { useFiles } from '@/hooks/use-files';
 import { useFolders } from '@/hooks/use-folders';
 import { FileMetadata, FolderMetadata } from '@/lib/services/file-management-service';
+
+import { FileGrid } from './file-grid';
+import { FileList } from './file-list';
+import { FilePreview } from './file-preview';
+import { FolderBreadcrumb } from './folder-breadcrumb';
+import { ShareDialog } from './share-dialog';
+
 
 export interface FileManagerProps {
   userId: string;

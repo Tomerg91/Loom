@@ -142,6 +142,33 @@ export interface Session {
   };
 }
 
+/**
+ * Session view model with enriched coach/client information
+ * Used when displaying sessions with computed fields for UI
+ */
+export interface SessionWithCoachInfo extends Session {
+  // Enriched fields for UI display
+  coachName: string;
+  coachAvatar?: string;
+  clientName: string;
+  clientAvatar?: string;
+  keyInsights?: string[];
+}
+
+/**
+ * Helper to convert a database Session to SessionWithCoachInfo
+ */
+export function enrichSessionWithCoachInfo(session: Session): SessionWithCoachInfo {
+  return {
+    ...session,
+    coachName: `${session.coach.firstName} ${session.coach.lastName}`.trim(),
+    coachAvatar: session.coach.avatarUrl,
+    clientName: `${session.client.firstName} ${session.client.lastName}`.trim(),
+    clientAvatar: session.client.avatarUrl,
+    keyInsights: session.metadata?.keyInsights as string[] | undefined,
+  };
+}
+
 export interface SessionAttachment {
   id: string;
   sessionId: string;

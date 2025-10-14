@@ -65,6 +65,10 @@ export interface Milestone {
   completedDate?: string;
 }
 
+/**
+ * Dashboard Session type - used for displaying session information in widgets
+ * This is a view model that enriches the database Session with computed fields
+ */
 export interface Session {
   id: string;
   coachName: string;
@@ -77,6 +81,24 @@ export interface Session {
   keyInsights: string[];
   actionItems: string[];
   status: 'completed' | 'upcoming' | 'cancelled';
+}
+
+/**
+ * Type guard to check if a database Session can be converted to a dashboard Session
+ */
+export function isDashboardSession(session: any): session is Session {
+  return (
+    typeof session === 'object' &&
+    session !== null &&
+    typeof session.id === 'string' &&
+    typeof session.coachName === 'string' &&
+    typeof session.date === 'string' &&
+    typeof session.duration === 'number' &&
+    typeof session.topic === 'string' &&
+    Array.isArray(session.keyInsights) &&
+    Array.isArray(session.actionItems) &&
+    ['completed', 'upcoming', 'cancelled'].includes(session.status)
+  );
 }
 
 export interface Achievement {

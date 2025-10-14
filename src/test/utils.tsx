@@ -6,7 +6,6 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import { render, type RenderOptions } from '@testing-library/react';
-import { QueryClient, QueryClientProvider, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
 import { ReactElement, ReactNode } from 'react';
 import { vi } from 'vitest';
 import { User } from '@/types';

@@ -243,8 +243,8 @@ function getPerformanceRecommendations(): string[] {
   ];
 }
 
-// Performance alerts and thresholds
-export function checkPerformanceThresholds(metrics: any[]): Array<{
+// Helper functions (not exported as route handlers)
+function checkPerformanceThresholds(metrics: any[]): Array<{
   metric: string;
   value: number;
   threshold: number;
@@ -252,7 +252,7 @@ export function checkPerformanceThresholds(metrics: any[]): Array<{
   message: string;
 }> {
   const alerts = [];
-  
+
   for (const metric of metrics) {
     switch (metric.metric) {
       case 'LCP':
@@ -274,12 +274,12 @@ export function checkPerformanceThresholds(metrics: any[]): Array<{
           });
         }
         break;
-        
+
       case 'FID':
       case 'INP':
         const threshold = metric.metric === 'FID' ? 300 : 500;
         const warningThreshold = metric.metric === 'FID' ? 100 : 200;
-        
+
         if (metric.value > threshold) {
           alerts.push({
             metric: metric.metric,
@@ -298,7 +298,7 @@ export function checkPerformanceThresholds(metrics: any[]): Array<{
           });
         }
         break;
-        
+
       case 'CLS':
         if (metric.value > 0.25) {
           alerts.push({
@@ -320,6 +320,6 @@ export function checkPerformanceThresholds(metrics: any[]): Array<{
         break;
     }
   }
-  
+
   return alerts;
 }

@@ -517,13 +517,67 @@ export {
   GoalCategoryChart
 };
 
-// Default export for dynamic imports
-const DashboardCharts = {
-  CoachPerformanceChart,
-  SessionTimeDistributionChart,
-  ClientProgressCorrelationChart,
-  RetentionRateChart,
-  GoalCategoryChart
+// Dashboard Charts Bundle Component
+interface DashboardChartsProps {
+  coachData?: Array<{
+    name: string;
+    revenue: number;
+    sessions: number;
+    rating: number;
+  }>;
+  sessionTimeData?: Array<{
+    hour: string;
+    sessions: number;
+    bookingRate: number;
+  }>;
+  clientProgressData?: Array<{
+    clientName: string;
+    sessionsCompleted: number;
+    progressScore: number;
+    goalAchievement: number;
+  }>;
+  retentionData?: Array<{
+    month: string;
+    newClients: number;
+    retainedClients: number;
+    churnRate: number;
+  }>;
+  goalCategoryData?: Array<{
+    category: string;
+    count: number;
+    successRate: number;
+  }>;
+  loading?: boolean;
+}
+
+const DashboardChartsBundle: React.FC<DashboardChartsProps> = ({
+  coachData = [],
+  sessionTimeData = [],
+  clientProgressData = [],
+  retentionData = [],
+  goalCategoryData = [],
+  loading = false,
+}) => {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {coachData.length > 0 && (
+        <CoachPerformanceChart data={coachData} loading={loading} />
+      )}
+      {sessionTimeData.length > 0 && (
+        <SessionTimeDistributionChart data={sessionTimeData} loading={loading} />
+      )}
+      {clientProgressData.length > 0 && (
+        <ClientProgressCorrelationChart data={clientProgressData} loading={loading} />
+      )}
+      {retentionData.length > 0 && (
+        <RetentionRateChart data={retentionData} loading={loading} />
+      )}
+      {goalCategoryData.length > 0 && (
+        <GoalCategoryChart data={goalCategoryData} loading={loading} />
+      )}
+    </div>
+  );
 };
 
-export default DashboardCharts;
+// Default export for dynamic imports
+export default DashboardChartsBundle;

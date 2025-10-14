@@ -99,9 +99,6 @@ export function FileGrid({
         <div className="flex items-center gap-2">
           <Checkbox
             checked={allItemsSelected}
-            ref={(el) => {
-              if (el) el.indeterminate = someItemsSelected && !allItemsSelected;
-            }}
             onCheckedChange={(checked) => onSelectAll(!!checked)}
           />
           <span className="text-sm text-gray-600">
@@ -203,14 +200,14 @@ export function FileGrid({
                   {isImage ? (
                     <div className="relative">
                       <OptimizedThumbnailImage
-                        src={file.storageUrl}
-                        alt={file.name}
+                        src={file.storageUrl || ''}
+                        alt={file.filename}
                         size={compactMode ? 64 : 80}
-                        fallbackIcon={getFileIcon(file.fileType, file.mimeType)}
+                        fallbackIcon={getFileIcon(file.fileType, file.fileType)}
                       />
                     </div>
                   ) : (
-                    getFileIcon(file.fileType, file.mimeType)
+                    getFileIcon(file.fileType, file.fileType)
                   )}
                   
                   {/* Public badge */}
@@ -224,13 +221,13 @@ export function FileGrid({
                 {/* File info */}
                 <div className="w-full space-y-1">
                   <h3 className={`font-medium truncate ${compactMode ? 'text-xs' : 'text-sm'}`}>
-                    {file.name}
+                    {file.filename}
                   </h3>
-                  
+
                   {!compactMode && (
                     <>
                       <p className="text-xs text-gray-500">
-                        {formatFileSize(file.sizeBytes)}
+                        {formatFileSize(file.fileSize)}
                       </p>
                       <p className="text-xs text-gray-400">
                         {formatDate(file.createdAt)}

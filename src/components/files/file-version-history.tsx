@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface FileVersionHistoryProps {
@@ -12,7 +13,7 @@ export interface FileVersionHistoryProps {
  * File Version History Component - Stub
  * TODO: Implement full version history functionality
  */
-export function FileVersionHistory({ fileId, onVersionSelect }: FileVersionHistoryProps) {
+export function FileVersionHistory({ fileId: _fileId, onVersionSelect: _onVersionSelect }: FileVersionHistoryProps) {
   return (
     <Card>
       <CardHeader>

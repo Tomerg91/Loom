@@ -151,7 +151,7 @@ export function EnvironmentDebug({ forceShow = false }: { forceShow?: boolean })
               
               {value.issues.length > 0 && (
                 <ul className="text-xs text-red-600 dark:text-red-400">
-                  {value.issues.map((issue, index) => (
+                  {value.issues.map((issue: string, index: number) => (
                     <li key={index} className="flex items-start">
                       <span className="mr-1">•</span>
                       {issue}

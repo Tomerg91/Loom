@@ -181,8 +181,8 @@ export class SessionWorkflowService extends BaseSessionService {
       id: session.id,
       title: session.title,
       scheduledAt: session.scheduled_at,
-      coachName: session.coach ? `${session.coach.firstName || session.coach.first_name || ''} ${session.coach.lastName || session.coach.last_name || ''}`.trim() : 'Unknown Coach',
-      clientName: session.client ? `${session.client.firstName || session.client.first_name || ''} ${session.client.lastName || session.client.last_name || ''}`.trim() : 'Unknown Client',
+      coachName: session.coach ? `${session.coach.first_name || ''} ${session.coach.last_name || ''}`.trim() : 'Unknown Coach',
+      clientName: session.client ? `${session.client.first_name || ''} ${session.client.last_name || ''}`.trim() : 'Unknown Client',
     }));
   }
 
@@ -224,8 +224,8 @@ export class SessionWorkflowService extends BaseSessionService {
         id: session.id,
         title: session.title,
         scheduledAt: session.scheduled_at,
-        coachName: session.coach ? `${session.coach.firstName || session.coach.first_name || ''} ${session.coach.lastName || session.coach.last_name || ''}`.trim() : 'Unknown Coach',
-        clientName: session.client ? `${session.client.firstName || session.client.first_name || ''} ${session.client.lastName || session.client.last_name || ''}`.trim() : 'Unknown Client',
+        coachName: session.coach ? `${session.coach.first_name || ''} ${session.coach.last_name || ''}`.trim() : 'Unknown Coach',
+        clientName: session.client ? `${session.client.first_name || ''} ${session.client.last_name || ''}`.trim() : 'Unknown Client',
         minutesOverdue,
       };
     });
@@ -305,7 +305,7 @@ export class SessionWorkflowService extends BaseSessionService {
     // Add creation event
     history.push({
       status: 'scheduled',
-      timestamp: data.createdAt || data.created_at,
+      timestamp: data.created_at,
     });
 
     // Add status change events based on timestamps

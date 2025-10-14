@@ -115,9 +115,6 @@ export function FileList({
             <TableHead className="w-12">
               <Checkbox
                 checked={allItemsSelected}
-                ref={(el) => {
-                  if (el) el.indeterminate = someItemsSelected && !allItemsSelected;
-                }}
                 onCheckedChange={(checked) => onSelectAll(!!checked)}
               />
             </TableHead>
@@ -174,14 +171,14 @@ export function FileList({
                   />
                 </TableCell>
                 <TableCell>
-                  <div 
+                  <div
                     className="flex items-center gap-3 cursor-pointer"
                     onClick={() => onFilePreview(file)}
                   >
-                    {getFileIcon(file.fileType, file.mimeType)}
+                    {getFileIcon(file.fileType, file.fileType)}
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">
-                        {file.name}
+                        {file.filename}
                         {file.isPublic && (
                           <Badge variant="secondary" className="ml-2 text-xs">
                             Public
@@ -209,7 +206,7 @@ export function FileList({
                   </div>
                 </TableCell>
                 <TableCell className={compactMode ? 'hidden' : ''}>
-                  {formatFileSize(file.sizeBytes)}
+                  {formatFileSize(file.fileSize)}
                 </TableCell>
                 <TableCell className={compactMode ? 'hidden' : ''}>
                   {formatDate(file.updatedAt)}

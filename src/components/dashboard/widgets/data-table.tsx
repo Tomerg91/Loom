@@ -25,7 +25,7 @@ interface DataTableProps<T> {
 }
 
 // Memoized table row component
-const TableRowComponent = memo(<T extends { id: string }>({
+function TableRowComponentInner<T extends { id: string }>({
   item,
   columns,
   onRowClick,
@@ -35,19 +35,19 @@ const TableRowComponent = memo(<T extends { id: string }>({
   columns: Column<T>[];
   onRowClick?: (item: T) => void;
   getValue: (item: T, key: keyof T | string) => any;
-}) => {
+}) {
   const handleClick = useCallback(() => {
     onRowClick?.(item);
   }, [item, onRowClick]);
 
   return (
-    <TableRow 
+    <TableRow
       className={onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''}
       onClick={handleClick}
     >
       {columns.map((column, index) => (
         <TableCell key={index} className={column.className}>
-          {column.render 
+          {column.render
             ? column.render(item)
             : String(getValue(item, column.key) || '')
           }
@@ -55,9 +55,9 @@ const TableRowComponent = memo(<T extends { id: string }>({
       ))}
     </TableRow>
   );
-});
+}
 
-TableRowComponent.displayName = 'TableRowComponent';
+const TableRowComponent = memo(TableRowComponentInner) as typeof TableRowComponentInner;
 
 function DataTableComponent<T extends { id: string }>({
   title, 
@@ -77,7 +77,7 @@ function DataTableComponent<T extends { id: string }>({
   // Memoize rendered rows to prevent unnecessary re-renders
   const renderedRows = useMemo(() => {
     return data.map((item) => (
-      <TableRowComponent
+      <TableRowComponent<T>
         key={item.id}
         item={item}
         columns={columns}

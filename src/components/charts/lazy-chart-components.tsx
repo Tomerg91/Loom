@@ -127,7 +127,7 @@ export const LazyEnhancedSessionMetricsChart = dynamic(
 
 // Dashboard charts bundle (combines multiple charts)
 export const LazyDashboardCharts = dynamic(
-  () => import('./dashboard-charts').then(mod => mod.default),
+  () => import('./dashboard-charts'),
   {
     loading: () => (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
