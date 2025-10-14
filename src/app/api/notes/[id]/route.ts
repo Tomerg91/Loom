@@ -13,9 +13,9 @@ const updateNoteSchema = z.object({
 });
 
 interface RouteContext {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 const baseNoteSelectFields = [
@@ -37,7 +37,8 @@ const buildNoteSelect = (includeClientId: boolean) =>
     .filter((field): field is string => Boolean(field))
     .join(',');
 
-export async function GET(request: NextRequest, { params }: RouteContext) {
+export async function GET(request: NextRequest, context: RouteContext) {
+  const params = await context.params;
   try {
     const { id } = params;
     const supabase = createServerClient();
@@ -64,21 +65,29 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
     const selectFields = buildNoteSelect(profile.role === 'coach');
 
-    const { data: note, error } = await supabase
+    const { data, error } = await supabase
       .from(tableName)
       .select(selectFields)
       .eq('id', id)
       .eq(ownerField, user.id)
       .single();
 
-    if (error || !note) {
+    if (error) {
+      console.error('Error fetching note:', error);
       return NextResponse.json({ error: 'Note not found' }, { status: 404 });
     }
+
+    if (!data) {
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+    }
+
+    // Type assertion to resolve GenericStringError union
+    const note = data as unknown as Record<string, unknown>;
 
     // Transform response
     const transformedNote = {
       id: note.id,
-      ...(profile.role === 'coach' && note.client_id && { clientId: note.client_id }),
+      ...(profile.role === 'coach' && 'client_id' in note && note.client_id ? { clientId: note.client_id } : {}),
       sessionId: note.session_id,
       title: note.title,
       content: note.content,
@@ -98,7 +107,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: RouteContext) {
+export async function PUT(request: NextRequest, context: RouteContext) {
+  const params = await context.params;
   try {
     const { id } = params;
     const supabase = createServerClient();
@@ -161,7 +171,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     // Update note
     const selectFields = buildNoteSelect(profile.role === 'coach');
 
-    const { data: note, error } = await supabase
+    const { data, error } = await supabase
       .from(tableName)
       .update(updateData)
       .eq('id', id)
@@ -174,10 +184,17 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: 'Failed to update note' }, { status: 500 });
     }
 
+    if (!data) {
+      return NextResponse.json({ error: 'Failed to update note' }, { status: 500 });
+    }
+
+    // Type assertion to resolve GenericStringError union
+    const note = data as unknown as Record<string, unknown>;
+
     // Transform response
     const transformedNote = {
       id: note.id,
-      ...(profile.role === 'coach' && note.client_id && { clientId: note.client_id }),
+      ...(profile.role === 'coach' && 'client_id' in note && note.client_id ? { clientId: note.client_id } : {}),
       sessionId: note.session_id,
       title: note.title,
       content: note.content,
@@ -204,7 +221,8 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteContext) {
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  const params = await context.params;
   try {
     const { id } = params;
     const supabase = createServerClient();

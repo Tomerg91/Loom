@@ -162,8 +162,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
       return {
         id: session.id,
-        coachName: coach ? `${coach.firstName || coach.first_name || ''} ${coach.lastName || coach.last_name || ''}`.trim() : 'Unknown Coach',
-        clientName: client ? `${client.firstName || client.first_name || ''} ${client.lastName || client.last_name || ''}`.trim() : 'Unknown Client',
+        coachName: coach ? `${coach.first_name || ''} ${coach.last_name || ''}`.trim() : 'Unknown Coach',
+        clientName: client ? `${client.first_name || ''} ${client.last_name || ''}`.trim() : 'Unknown Client',
         coachAvatar: coach?.avatar_url,
         clientAvatar: client?.avatar_url,
         date: session.scheduled_at,

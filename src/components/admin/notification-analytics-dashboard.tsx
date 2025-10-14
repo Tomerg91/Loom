@@ -227,7 +227,8 @@ export function NotificationAnalyticsDashboard() {
     {
       name: 'In-App',
       sent: analytics.byChannel.inapp.sent,
-      delivered: analytics.byChannel.inapp.delivered ?? analytics.byChannel.inapp.sent,
+      // In-app notifications use 'viewed' as equivalent to 'delivered'
+      delivered: analytics.byChannel.inapp.viewed,
       color: COLORS.inapp,
     },
   ] : [];

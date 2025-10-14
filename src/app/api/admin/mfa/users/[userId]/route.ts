@@ -97,10 +97,14 @@ const rateLimitedHandler = rateLimit(20, 60000)( // 20 requests per minute for M
 );
 
 export async function POST(request: NextRequest, context: RouteParams): Promise<NextResponse> {
+  const params = await context.params;
+
   return rateLimitedHandler(request, context);
 }
 
 // Also support PATCH for consistency with RESTful conventions
 export async function PATCH(request: NextRequest, context: RouteParams): Promise<NextResponse> {
+  const params = await context.params;
+
   return rateLimitedHandler(request, context);
 }

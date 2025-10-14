@@ -83,7 +83,7 @@ describe('Security Headers - Snapshot Tests', () => {
 
   it('should include Strict-Transport-Security header in production', () => {
     const originalEnv = process.env.NODE_ENV;
-    vi.stubEnv('NODE_ENV', 'production');
+    process.env.NODE_ENV = 'production';
 
     const req = new NextRequest(new URL('https://example.com/en/dashboard'));
     const res = NextResponse.next();
@@ -111,7 +111,7 @@ describe('Security Headers - Snapshot Tests', () => {
     const originalEnv = process.env.CSP_NONCE_ENABLED;
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.CSP_NONCE_ENABLED = 'true';
-    vi.stubEnv('NODE_ENV', 'production');
+    process.env.NODE_ENV = 'production';
 
     const req1 = new NextRequest(new URL('http://localhost:3000/en/dashboard'));
     const res1 = NextResponse.next();
@@ -171,7 +171,7 @@ describe('Security Headers - CSP Directives', () => {
     const originalEnv = process.env.CSP_NONCE_ENABLED;
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.CSP_NONCE_ENABLED = 'true';
-    vi.stubEnv('NODE_ENV', 'production');
+    process.env.NODE_ENV = 'production';
 
     const req = new NextRequest(new URL('http://localhost:3000/en/dashboard'));
     const res = NextResponse.next();

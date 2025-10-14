@@ -47,9 +47,23 @@ export interface FileMetadata {
   ownerName?: string;
   sharedWith?: FileShareRow[];
   storageUrl?: string;
+
+  // Aliases for compatibility (map to actual properties)
+  name?: string; // alias for filename
+  mimeType?: string; // alias for fileType
+  sizeBytes?: number; // alias for fileSize
+  originalName?: string; // alias for originalFilename
 }
 
-// Remove folder metadata as it's not in the current schema
+export interface FolderMetadata {
+  id: string;
+  name: string;
+  parentFolderId: string | null;
+  userId: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface FileUploadOptions {
   sessionId?: string;

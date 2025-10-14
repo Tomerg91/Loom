@@ -407,6 +407,7 @@ describe('NotificationCenter', () => {
 
   describe('Error Handling', () => {
     it('should handle API errors gracefully', async () => {
+      const user = userEvent.setup();
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       renderWithProvider(<NotificationCenter />);

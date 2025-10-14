@@ -25,9 +25,9 @@ vi.mock('@/i18n/routing', () => ({
 
 describe('Language Switching Functionality', () => {
   const mockPush = vi.fn();
-  const mockUseRouter = useRouter as vi.MockedFunction<typeof useRouter>;
-  const mockUsePathname = usePathname as vi.MockedFunction<typeof usePathname>;
-  const mockUseLocale = useLocale as vi.MockedFunction<typeof useLocale>;
+  const mockUseRouter = useRouter as ReturnType<typeof vi.fn>;
+  const mockUsePathname = usePathname as ReturnType<typeof vi.fn>;
+  const mockUseLocale = useLocale as ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();

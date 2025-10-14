@@ -1,28 +1,29 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Share2, 
-  Users, 
-  Link, 
-  Calendar, 
-  X, 
-  Eye, 
-  Download, 
+import {
+  Share2,
+  Users,
+  Link,
+  Eye,
+  Download,
   Edit3,
   Trash2,
   Copy,
   Check
 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -30,11 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { toast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/use-toast';
 import { FileMetadata } from '@/lib/services/file-management-service';
 
 interface ShareDialogProps {
@@ -67,6 +66,7 @@ const permissionLabels = {
 };
 
 export function ShareDialog({ file, open, onClose }: ShareDialogProps) {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'share' | 'link'>('share');
   const [userEmail, setUserEmail] = useState('');
   const [selectedPermission, setSelectedPermission] = useState<'view' | 'download' | 'edit'>('view');

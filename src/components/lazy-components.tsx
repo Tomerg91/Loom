@@ -7,6 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 
 // Component prop interfaces
+// Note: Dashboard components don't accept props - they manage their own state
+// These interfaces are kept for future use if components become configurable
+
+/*
 interface CoachDashboardProps {
   className?: string;
 }
@@ -32,6 +36,7 @@ interface FileManagerProps {
   onFileSelect?: (file: any) => void;
   uploadEnabled?: boolean;
 }
+*/
 
 // Generic loading component with spinner
 export const LoadingSpinner = ({ message = "Loading..." }: { message?: string }) => (
@@ -296,26 +301,27 @@ export function LazyWrapper({ children, fallback = <DashboardSkeleton /> }: Lazy
 }
 
 // Component-specific wrappers with appropriate loading states
-export function LazyCoachDashboardWrapper(props: CoachDashboardProps) {
+// Note: The underlying dashboard components don't accept props - they fetch their own data
+export function LazyCoachDashboardWrapper() {
   return (
     <LazyWrapper>
-      <LazyCoachDashboard {...props} />
+      <LazyCoachDashboard />
     </LazyWrapper>
   );
 }
 
-export function LazyClientDashboardWrapper(props: ClientDashboardProps) {
+export function LazyClientDashboardWrapper() {
   return (
     <LazyWrapper>
-      <LazyClientDashboard {...props} />
+      <LazyClientDashboard />
     </LazyWrapper>
   );
 }
 
-export function LazyAdminAnalyticsWrapper(props: AdminAnalyticsProps) {
+export function LazyAdminAnalyticsWrapper() {
   return (
     <LazyWrapper>
-      <LazyAdminAnalytics {...props} />
+      <LazyAdminAnalytics />
     </LazyWrapper>
   );
 }
@@ -345,6 +351,10 @@ const FileManagerSkeleton = () => (
   </div>
 );
 
+// Note: LazyFileManager and LazySessionManagement components are commented out
+// due to missing dependencies. Enable them once the modules are available.
+
+/*
 export function LazyFileManagerWrapper(props: FileManagerProps) {
   return (
     <Suspense fallback={<FileManagerSkeleton />}>
@@ -361,3 +371,4 @@ export function LazySessionManagementWrapper(props: SessionManagementProps) {
     </LazyWrapper>
   );
 }
+*/

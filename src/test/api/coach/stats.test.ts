@@ -203,7 +203,7 @@ describe('/api/coach/stats', () => {
 
       it('should reject requests with null user', async () => {
         mockAuthService.getSession.mockResolvedValue({
-          user: null,
+          user: null as any,
         });
 
         const request = new NextRequest('http://localhost:3000/api/coach/stats');

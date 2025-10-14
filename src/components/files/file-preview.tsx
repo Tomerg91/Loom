@@ -97,11 +97,11 @@ const isValidFileType = (mimeType: string, expectedType: string): boolean => {
 };
 
 const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
-  const { fileType, mimeType, storageUrl, name } = file;
-  
+  const { fileType, storageUrl, filename } = file;
+
   // Sanitize the storage URL
-  const sanitizedUrl = sanitizeUrl(storageUrl);
-  
+  const sanitizedUrl = storageUrl ? sanitizeUrl(storageUrl) : '';
+
   if (!sanitizedUrl) {
     return (
       <div className="flex items-center justify-center bg-red-50 rounded-lg p-8">
@@ -115,13 +115,13 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
   }
 
   // Image preview
-  if (fileType === 'image' && isValidFileType(mimeType, 'image')) {
+  if (fileType === 'image' && isValidFileType(fileType, 'image')) {
     return (
       <div className="flex items-center justify-center bg-gray-100 rounded-lg p-4">
         <div className="relative max-w-full max-h-96">
           <Image
             src={sanitizedUrl}
-            alt={`Preview of ${name}`}
+            alt={`Preview of ${filename}`}
             width={600}
             height={400}
             style={{
@@ -147,11 +147,11 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
   }
 
   // Video preview
-  if (fileType === 'video' && isValidFileType(mimeType, 'video')) {
+  if (fileType === 'video' && isValidFileType(fileType, 'video')) {
     return (
       <div className="flex items-center justify-center bg-gray-100 rounded-lg p-4">
-        <video 
-          controls 
+        <video
+          controls
           className="max-w-full max-h-96 rounded"
           preload="metadata"
           controlsList="nodownload" // Prevent unauthorized downloads
@@ -159,7 +159,7 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
             console.error('Failed to load video:', sanitizedUrl);
           }}
         >
-          <source src={sanitizedUrl} type={mimeType} />
+          <source src={sanitizedUrl} type={fileType} />
           Your browser does not support the video tag.
         </video>
       </div>
@@ -167,20 +167,20 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
   }
 
   // Audio preview
-  if (fileType === 'audio' && isValidFileType(mimeType, 'audio')) {
+  if (fileType === 'audio' && isValidFileType(fileType, 'audio')) {
     return (
       <div className="flex items-center justify-center bg-gray-100 rounded-lg p-8">
         <div className="text-center">
           <Music className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <audio 
-            controls 
+          <audio
+            controls
             className="w-full max-w-sm"
             controlsList="nodownload" // Prevent unauthorized downloads
             onError={() => {
               console.error('Failed to load audio:', sanitizedUrl);
             }}
           >
-            <source src={sanitizedUrl} type={mimeType} />
+            <source src={sanitizedUrl} type={fileType} />
             Your browser does not support the audio tag.
           </audio>
         </div>
@@ -189,7 +189,7 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
   }
 
   // PDF preview (would need PDF.js or similar in production)
-  if (fileType === 'pdf' && isValidFileType(mimeType, 'pdf')) {
+  if (fileType === 'pdf' && isValidFileType(fileType, 'pdf')) {
     return (
       <div className="flex items-center justify-center bg-gray-100 rounded-lg p-8">
         <div className="text-center">
@@ -217,7 +217,7 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
   }
 
   // Text file preview
-  if (fileType === 'text' && isValidFileType(mimeType, 'text')) {
+  if (fileType === 'text' && isValidFileType(fileType, 'text')) {
     return (
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="text-center text-gray-600 mb-4">
@@ -252,7 +252,7 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
         <File className="h-16 w-16 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-600 mb-2">No preview available</p>
         <p className="text-sm text-gray-500 mb-4">
-          {fileType} • {formatFileSize(file.sizeBytes)}
+          {fileType} • {formatFileSize(file.fileSize)}
         </p>
         <Button asChild>
           <a 
@@ -282,18 +282,18 @@ export function FilePreview({ file, open, onClose, onShare, onDelete }: FilePrev
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <span className="truncate">{file.name}</span>
+              <span className="truncate">{file.filename}</span>
               {file.isPublic && (
                 <Badge variant="secondary">Public</Badge>
               )}
             </div>
             <div className="flex items-center gap-2 ml-4">
               <Button variant="outline" size="sm" asChild>
-                <a 
-                  href={sanitizeUrl(file.storageUrl)} 
-                  download={file.originalName}
+                <a
+                  href={file.storageUrl ? sanitizeUrl(file.storageUrl) : '#'}
+                  download={file.originalFilename}
                   onClick={(e) => {
-                    if (!sanitizeUrl(file.storageUrl)) {
+                    if (!file.storageUrl || !sanitizeUrl(file.storageUrl)) {
                       e.preventDefault();
                       console.error('Invalid download URL blocked');
                     }
@@ -342,15 +342,15 @@ export function FilePreview({ file, open, onClose, onShare, onDelete }: FilePrev
                     <dl className="space-y-2 text-sm">
                       <div>
                         <dt className="font-medium text-gray-600">Original name:</dt>
-                        <dd className="break-all">{file.originalName}</dd>
+                        <dd className="break-all">{file.originalFilename}</dd>
                       </div>
                       <div>
                         <dt className="font-medium text-gray-600">Size:</dt>
-                        <dd>{formatFileSize(file.sizeBytes)}</dd>
+                        <dd>{formatFileSize(file.fileSize)}</dd>
                       </div>
                       <div>
                         <dt className="font-medium text-gray-600">Type:</dt>
-                        <dd>{file.mimeType}</dd>
+                        <dd>{file.fileType}</dd>
                       </div>
                       <div>
                         <dt className="font-medium text-gray-600">Created:</dt>
@@ -364,12 +364,6 @@ export function FilePreview({ file, open, onClose, onShare, onDelete }: FilePrev
                         <dt className="font-medium text-gray-600">Downloads:</dt>
                         <dd>{file.downloadCount}</dd>
                       </div>
-                      {file.lastAccessedAt && (
-                        <div>
-                          <dt className="font-medium text-gray-600">Last accessed:</dt>
-                          <dd>{formatDate(file.lastAccessedAt)}</dd>
-                        </div>
-                      )}
                     </dl>
                   </div>
 
@@ -400,13 +394,6 @@ export function FilePreview({ file, open, onClose, onShare, onDelete }: FilePrev
                     </div>
                   )}
 
-                  {file.folderName && (
-                    <div>
-                      <h3 className="font-semibold mb-2">Folder</h3>
-                      <p className="text-sm text-gray-600">{file.folderName}</p>
-                    </div>
-                  )}
-
                   {file.sharedWith && file.sharedWith.length > 0 && (
                     <div>
                       <h3 className="font-semibold mb-2">Shared with</h3>
@@ -416,15 +403,7 @@ export function FilePreview({ file, open, onClose, onShare, onDelete }: FilePrev
                     </div>
                   )}
 
-                  <div>
-                    <h3 className="font-semibold mb-2">Versions</h3>
-                    <p className="text-sm text-gray-600">
-                      Version {file.version}
-                      {file.versions && file.versions.length > 0 && (
-                        <span> • {file.versions.length} older version(s)</span>
-                      )}
-                    </p>
-                  </div>
+                  {/* Version info removed - not part of FileMetadata type */}
                 </div>
               </ScrollArea>
             </div>

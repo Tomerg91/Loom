@@ -36,8 +36,10 @@ import type { ShareAllClientsRequest } from '@/types/resources';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
+
   try {
     // Get authenticated user
     const supabase = await createClient();

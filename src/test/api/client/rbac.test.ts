@@ -276,7 +276,7 @@ describe('Client API RBAC enforcement', () => {
         }));
 
       const request = new NextRequest('http://localhost:3000/api/client/sessions/session-1/notes');
-      const response = await getClientSessionNotes(request, { params: { id: 'session-1' } });
+      const response = await getClientSessionNotes(request, { params: Promise.resolve({ id: 'session-1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -308,7 +308,7 @@ describe('Client API RBAC enforcement', () => {
         }));
 
       const request = new NextRequest('http://localhost:3000/api/client/sessions/session-1/notes');
-      const response = await getClientSessionNotes(request, { params: { id: 'session-1' } });
+      const response = await getClientSessionNotes(request, { params: Promise.resolve({ id: 'session-1' }) });
 
       expect(response.status).toBe(200);
       expect(mockApiResponseHelper.success).toHaveBeenCalled();
@@ -318,7 +318,7 @@ describe('Client API RBAC enforcement', () => {
       mockAuthService.getSession.mockResolvedValue({ user: mockCoachUser });
 
       const request = new NextRequest('http://localhost:3000/api/client/sessions/session-1/notes');
-      const response = await getClientSessionNotes(request, { params: { id: 'session-1' } });
+      const response = await getClientSessionNotes(request, { params: Promise.resolve({ id: 'session-1' }) });
       const data = await response.json();
 
       expect(response.status).toBe(403);

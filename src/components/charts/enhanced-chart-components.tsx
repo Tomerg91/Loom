@@ -54,6 +54,7 @@ interface EnhancedBaseChartProps {
   loading?: boolean;
   enableExport?: boolean;
   enableBrush?: boolean;
+  enableZoom?: boolean;
   showTrends?: boolean;
   ariaLabel?: string;
   onDataPointClick?: (data: any, index: number) => void;
@@ -141,8 +142,9 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
   className,
   height = 300,
   loading = false,
-    enableExport = true,
-    enableBrush = true,
+  enableExport = true,
+  enableBrush = true,
+  enableZoom = false,
   showTrends = true,
   ariaLabel = "User growth chart showing new and active users over time",
   onDataPointClick,
@@ -388,8 +390,9 @@ export const EnhancedSessionMetricsChart: React.FC<EnhancedSessionMetricsChartPr
   className,
   height = 300,
   loading = false,
-    enableExport = true,
-    enableBrush = true,
+  enableExport = true,
+  enableBrush = true,
+  enableZoom = false,
   showTrends = true,
   ariaLabel = "Session metrics chart showing completed, cancelled, and scheduled sessions over time",
   onDataPointClick,
