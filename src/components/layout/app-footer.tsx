@@ -199,16 +199,22 @@ const normalizeSocial = (social: unknown, fallback: FooterSocialLink[]): FooterS
   }
 
   const parsed = social
-    .map((item) =>
+    .map((item): FooterSocialLink | undefined =>
       typeof item === 'object' && item !== null
         ? {
-            label: typeof (item as FooterSocialLink).label === 'string' ? (item as FooterSocialLink).label : undefined,
-            href: typeof (item as FooterSocialLink).href === 'string' ? (item as FooterSocialLink).href : undefined,
+            label: typeof (item as FooterSocialLink).label === 'string' ? (item as FooterSocialLink).label : '',
+            href: typeof (item as FooterSocialLink).href === 'string' ? (item as FooterSocialLink).href : '',
             icon: typeof (item as FooterSocialLink).icon === 'string' ? (item as FooterSocialLink).icon : undefined
           }
         : undefined
     )
-    .filter((item): item is FooterSocialLink => Boolean(item?.label && item?.href));
+    .filter((item): item is FooterSocialLink =>
+      item !== undefined &&
+      typeof item.label === 'string' &&
+      item.label.length > 0 &&
+      typeof item.href === 'string' &&
+      item.href.length > 0
+    );
 
   return parsed.length > 0 ? parsed : fallback;
 };

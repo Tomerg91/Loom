@@ -312,7 +312,7 @@ export function FileSharingDialog({
                 <Label htmlFor="permission-type">
                   {t('share.permission', { defaultValue: 'Permission Level' })}
                 </Label>
-                <Select value={permissionType} onValueChange={setPermissionType}>
+                <Select value={permissionType} onValueChange={(value) => setPermissionType(value as 'view' | 'download' | 'edit')}>
                   <SelectTrigger id="permission-type">
                     <SelectValue />
                   </SelectTrigger>

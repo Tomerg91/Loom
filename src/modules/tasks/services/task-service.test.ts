@@ -19,7 +19,7 @@ const buildTaskRecord = (
   archived_at: null,
   created_at: '2023-12-31T18:00:00.000Z',
   updated_at: '2024-01-01T18:00:00.000Z',
-  category: null,
+  category: undefined,
   instances: [
     {
       id: 'instance-id',

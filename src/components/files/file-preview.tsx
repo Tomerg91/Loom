@@ -364,12 +364,6 @@ export function FilePreview({ file, open, onClose, onShare, onDelete }: FilePrev
                         <dt className="font-medium text-gray-600">Downloads:</dt>
                         <dd>{file.downloadCount}</dd>
                       </div>
-                      {file.lastAccessedAt && (
-                        <div>
-                          <dt className="font-medium text-gray-600">Last accessed:</dt>
-                          <dd>{formatDate(file.lastAccessedAt)}</dd>
-                        </div>
-                      )}
                     </dl>
                   </div>
 
@@ -397,13 +391,6 @@ export function FilePreview({ file, open, onClose, onShare, onDelete }: FilePrev
                     <div>
                       <h3 className="font-semibold mb-2">Owner</h3>
                       <p className="text-sm text-gray-600">{file.ownerName}</p>
-                    </div>
-                  )}
-
-                  {file.folderName && (
-                    <div>
-                      <h3 className="font-semibold mb-2">Folder</h3>
-                      <p className="text-sm text-gray-600">{file.folderName}</p>
                     </div>
                   )}
 

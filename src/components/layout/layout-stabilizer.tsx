@@ -26,12 +26,11 @@ export const LayoutStabilizer = React.memo(({
   skeleton,
   isLoading = false
 }: LayoutStabilizerProps) => {
-  const style = React.useMemo(() => ({
+  const style = React.useMemo((): React.CSSProperties => ({
     minHeight: typeof minHeight === 'number' ? `${minHeight}px` : minHeight,
-    ...(reserveSpace && { 
-      contain: 'layout size',
-      containIntrinsicSize: 'layout-size',
-      contentVisibility: 'auto'
+    ...(reserveSpace && {
+      contain: 'layout size' as React.CSSProperties['contain'],
+      contentVisibility: 'auto' as React.CSSProperties['contentVisibility']
     })
   }), [minHeight, reserveSpace]);
 

@@ -581,12 +581,12 @@ function createSecurityMiddleware<T extends unknown[]>(
     handler: (
       user: AuthenticatedUser,
       ...args: T
-    ) => Promise<Response | NextResponse>
+    ) => Promise<NextResponse>
   ) {
     return async (
       user: AuthenticatedUser,
       ...args: T
-    ): Promise<Response | NextResponse> => {
+    ): Promise<NextResponse> => {
       try {
         const hasAccess = await checkFunction(user, ...args);
 
@@ -676,7 +676,7 @@ export function requireAdmin<T extends unknown[]>(
   handler: (
     user: AuthenticatedUser,
     ...args: T
-  ) => Promise<NextResponse | Response>
+  ) => Promise<NextResponse>
 ) {
   return requirePermission<T>('admin:read')(handler);
 }
@@ -685,7 +685,7 @@ export function requireCoach<T extends unknown[]>(
   handler: (
     user: AuthenticatedUser,
     ...args: T
-  ) => Promise<NextResponse | Response>
+  ) => Promise<NextResponse>
 ) {
   return requirePermission<T>('coach:read')(handler);
 }
@@ -694,7 +694,7 @@ export function requireClient<T extends unknown[]>(
   handler: (
     user: AuthenticatedUser,
     ...args: T
-  ) => Promise<NextResponse | Response>
+  ) => Promise<NextResponse>
 ) {
   return requirePermission<T>('client:read')(handler);
 }
@@ -704,7 +704,7 @@ export function requireOwnership<T extends unknown[]>(
   handler: (
     user: AuthenticatedUser,
     ...args: T
-  ) => Promise<NextResponse | Response>,
+  ) => Promise<NextResponse>,
   getOwnerId: (
     user: AuthenticatedUser,
     ...args: T
@@ -713,7 +713,7 @@ export function requireOwnership<T extends unknown[]>(
   return async (
     user: AuthenticatedUser,
     ...args: T
-  ): Promise<NextResponse | Response> => {
+  ): Promise<NextResponse> => {
     try {
       const ownerId = await getOwnerId(user, ...args);
 
