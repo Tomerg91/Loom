@@ -124,15 +124,11 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
       const result = await authService.signIn({ email, password });
       if (result.user) {
         setUser(result.user);
-      } else if (result.error) {
-        setLoading(false);
       }
       return result;
-    } catch (error) {
+    } finally {
       setLoading(false);
-      throw error;
     }
-    // Don't reset loading here - let the component control it after navigation
   }, [authService, setUser, setLoading]);
 
   const signUp = useCallback(async (data: {
