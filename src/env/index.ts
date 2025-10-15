@@ -5,6 +5,19 @@ import { z } from 'zod';
 // Use env.server.* in server contexts and env.client.* in client contexts.
 // Replace imports of '@/env.mjs' and '@/env-server.mjs' progressively with '@/env'.
 
+export const PLACEHOLDER_SUPABASE_URL = 'https://placeholder.supabase.co';
+export const PLACEHOLDER_SUPABASE_ANON_KEY = 'sb_placeholder_supabase_key';
+
+const resolvedSupabaseUrl =
+  process.env.SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  PLACEHOLDER_SUPABASE_URL;
+
+const resolvedSupabaseAnonKey =
+  process.env.SUPABASE_PUBLISHABLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  PLACEHOLDER_SUPABASE_ANON_KEY;
+
 export const env = createEnv({
   server: {
     // Make server key optional at build time; specific code paths will throw if truly required at runtime
@@ -14,8 +27,11 @@ export const env = createEnv({
     TASK_ATTACHMENTS_BUCKET: z.string().min(1).optional(),
   },
   client: {
-    NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+    NEXT_PUBLIC_SUPABASE_URL: z.string().url().default(PLACEHOLDER_SUPABASE_URL),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z
+      .string()
+      .min(1)
+      .default(PLACEHOLDER_SUPABASE_ANON_KEY),
     NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   },
   runtimeEnv: {
@@ -26,11 +42,8 @@ export const env = createEnv({
     SENTRY_DSN: process.env.SENTRY_DSN,
     TASK_ATTACHMENTS_BUCKET: process.env.TASK_ATTACHMENTS_BUCKET,
     // Allow SUPABASE_URL (new naming) to satisfy NEXT_PUBLIC_SUPABASE_URL
-    NEXT_PUBLIC_SUPABASE_URL:
-      process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY:
-      process.env.SUPABASE_PUBLISHABLE_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: resolvedSupabaseUrl,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: resolvedSupabaseAnonKey,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
 });
