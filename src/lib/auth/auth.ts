@@ -1,8 +1,8 @@
+import { routing } from '@/i18n/routing';
 import { config } from '@/lib/config';
 import type { UserServiceOptions } from '@/lib/database/users';
 import { supabase as clientSupabase } from '@/lib/supabase/client';
 import { createClient } from '@/lib/supabase/server';
-import { routing } from '@/i18n/routing';
 import type { Language, User, UserRole, UserStatus } from '@/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
@@ -132,10 +132,10 @@ export class AuthService {
       return AuthService.create({ isServer: options });
     }
 
-    const { isServer = true } = options;
+    const { isServer = true, supabaseClient } = options;
 
     if (isServer) {
-      const supabase = createClient();
+      const supabase = supabaseClient ?? createClient();
       return new AuthService(true, supabase);
     }
 
@@ -198,9 +198,7 @@ export class AuthService {
   /**
    * Sign up a new user
    */
-  async signUp(
-    data: SignUpData
-  ): Promise<{
+  async signUp(data: SignUpData): Promise<{
     user: AuthUser | null;
     error: string | null;
     sessionActive: boolean;
@@ -360,9 +358,7 @@ export class AuthService {
   /**
    * Sign in an existing user
    */
-  async signIn(
-    data: SignInData
-  ): Promise<{
+  async signIn(data: SignInData): Promise<{
     user: AuthUser | null;
     error: string | null;
     session: AuthSessionTokens | null;
@@ -382,11 +378,29 @@ export class AuthService {
         return { user: null, error: 'Failed to sign in', session: null };
       }
 
-      const sessionTokens: AuthSessionTokens | null = authData.session
+      let activeSession = authData.session ?? null;
+
+      if (authData.session?.access_token && authData.session?.refresh_token) {
+        const { data: sessionData, error: sessionError } =
+          await this.supabase.auth.setSession({
+            access_token: authData.session.access_token,
+            refresh_token: authData.session.refresh_token,
+          });
+
+        if (sessionError) {
+          console.error('Failed to hydrate Supabase session after sign-in:', {
+            error: sessionError.message,
+          });
+        } else if (sessionData?.session) {
+          activeSession = sessionData.session;
+        }
+      }
+
+      const sessionTokens: AuthSessionTokens | null = activeSession
         ? {
-            accessToken: authData.session.access_token,
-            refreshToken: authData.session.refresh_token,
-            expiresAt: authData.session.expires_at ?? null,
+            accessToken: activeSession.access_token,
+            refreshToken: activeSession.refresh_token,
+            expiresAt: activeSession.expires_at ?? null,
           }
         : null;
 

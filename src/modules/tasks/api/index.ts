@@ -15,6 +15,7 @@ export {
   buildTaskListQuery,
   createProgressUpdate,
   createTask,
+  fetchClientTaskList,
   fetchTask,
   fetchTaskList,
   updateTask,

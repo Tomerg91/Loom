@@ -6,7 +6,11 @@ import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { type NextRequest, type NextResponse } from 'next/server';
 
-import { env } from '@/env';
+import {
+  env,
+  PLACEHOLDER_SUPABASE_ANON_KEY,
+  PLACEHOLDER_SUPABASE_URL,
+} from '@/env';
 
 // Singleton instances to prevent multiple GoTrueClient creation
 // We intentionally widen the Supabase generic to `any` because our generated
@@ -32,14 +36,22 @@ let adminClientInstance: LooseAdminClient | null = null;
 
 // Validate required environment variables
 function validateSupabaseEnv() {
-  if (!env.NEXT_PUBLIC_SUPABASE_URL) {
+  if (
+    !env.NEXT_PUBLIC_SUPABASE_URL ||
+    env.NEXT_PUBLIC_SUPABASE_URL === PLACEHOLDER_SUPABASE_URL
+  ) {
     throw new Error(
-      'Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL'
+      'Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL. ' +
+        'Set NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL) before starting the server.'
     );
   }
-  if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (
+    !env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY === PLACEHOLDER_SUPABASE_ANON_KEY
+  ) {
     throw new Error(
-      'Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY'
+      'Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY. ' +
+        'Set NEXT_PUBLIC_SUPABASE_ANON_KEY (or SUPABASE_PUBLISHABLE_KEY) before starting the server.'
     );
   }
 

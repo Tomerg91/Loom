@@ -132,8 +132,15 @@ export const POST = withErrorHandling(
         );
       }
 
+      // Create a request-scoped Supabase client so session cookies are persisted
+      const supabaseResponse = NextResponse.next();
+      const supabase = createServerClientWithRequest(request, supabaseResponse);
+
       // Create auth service and attempt signin
-      const authService = createAuthService(true);
+      const authService = createAuthService({
+        isServer: true,
+        supabaseClient: supabase,
+      });
       const { user, error, session } = await authService.signIn({ email, password, rememberMe });
 
       if (error || !user) {
@@ -231,37 +238,13 @@ export const POST = withErrorHandling(
         refreshToken: string;
         expiresAt: number | null;
       } | null = null;
-      let cookieResponse: NextResponse | null = null;
 
       if (session?.accessToken && session?.refreshToken) {
-        cookieResponse = NextResponse.next();
-        const supabase = createServerClientWithRequest(request, cookieResponse);
-        const { data: setSessionData, error: sessionError } = await supabase.auth.setSession({
-          access_token: session.accessToken,
-          refresh_token: session.refreshToken,
-        });
-
-        if (sessionError) {
-          console.error('Failed to set Supabase session cookies:', sessionError);
-          const errorResponse = createErrorResponse(
-            'Failed to establish session',
-            HTTP_STATUS.INTERNAL_SERVER_ERROR
-          );
-          return applyCorsHeaders(errorResponse, request);
-        }
-
-        const rotatedSession = setSessionData?.session;
-        if (rotatedSession) {
-          sessionPayload = {
-            accessToken: rotatedSession.access_token,
-            refreshToken: rotatedSession.refresh_token,
-            expiresAt: rotatedSession.expires_at ?? null,
-          };
-        } else {
-          console.warn('Supabase session rotation returned no session payload', {
-            userId: user.id,
-          });
-        }
+        sessionPayload = {
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken,
+          expiresAt: session.expiresAt ?? null,
+        };
       } else {
         console.warn('Sign-in succeeded but no session tokens were returned for user', {
           userId: user.id,
@@ -274,22 +257,20 @@ export const POST = withErrorHandling(
         message: 'Successfully signed in'
       }, 'Authentication successful');
 
-      if (cookieResponse) {
-        cookieResponse.cookies.getAll().forEach(cookie => {
-          response.cookies.set({
-            name: cookie.name,
-            value: cookie.value,
-            domain: cookie.domain,
-            path: cookie.path,
-            expires: cookie.expires,
-            httpOnly: cookie.httpOnly,
-            maxAge: cookie.maxAge,
-            sameSite: cookie.sameSite,
-            secure: cookie.secure,
-            priority: cookie.priority,
-          });
+      supabaseResponse.cookies.getAll().forEach(cookie => {
+        response.cookies.set({
+          name: cookie.name,
+          value: cookie.value,
+          domain: cookie.domain,
+          path: cookie.path,
+          expires: cookie.expires,
+          httpOnly: cookie.httpOnly,
+          maxAge: cookie.maxAge,
+          sameSite: cookie.sameSite,
+          secure: cookie.secure,
+          priority: cookie.priority,
         });
-      }
+      });
 
       return applyCorsHeaders(response, request);
       

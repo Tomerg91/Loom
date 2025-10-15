@@ -1,6 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr';
 
-import { env } from '@/env';
+import { env, PLACEHOLDER_SUPABASE_ANON_KEY, PLACEHOLDER_SUPABASE_URL } from '@/env';
 import { Database } from '@/types/supabase';
 
 // Direct access to client-safe environment variables
@@ -50,6 +50,7 @@ function validateClientEnv() {
     ];
 
     if (
+      NEXT_PUBLIC_SUPABASE_URL === PLACEHOLDER_SUPABASE_URL ||
       placeholderPatterns.some(pattern =>
         NEXT_PUBLIC_SUPABASE_URL.includes(pattern)
       )
@@ -102,7 +103,10 @@ function validateClientEnv() {
     }
 
     // Additional placeholder detection
-    if (NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('your-supabase')) {
+    if (
+      NEXT_PUBLIC_SUPABASE_ANON_KEY === PLACEHOLDER_SUPABASE_ANON_KEY ||
+      NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('your-supabase')
+    ) {
       const errorMsg =
         'Invalid Supabase key: appears to be a placeholder value. ' +
         'Please set the correct publishable key from your Supabase dashboard.';

@@ -121,12 +121,7 @@ export const useClientTaskList = (
 
   return useQuery({
     queryKey: taskKeys.clientList(normalized),
-    queryFn: () => {
-      if (typeof fetchClientTaskList !== 'function') {
-        throw new Error('fetchClientTaskList is not defined or not a function. Please ensure it is correctly exported from ../api.');
-      }
-      return fetchClientTaskList(filters);
-    },
+    queryFn: () => fetchClientTaskList(filters),
     staleTime: 60 * 1000,
     ...options,
   });
