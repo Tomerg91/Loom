@@ -170,7 +170,7 @@
   - **Step Dependencies**: Step 6
   - **User Instructions**: Populate CMS entries or JSON files before build.
 
-- [ ] Step 12: Implement locale-aware routing and RTL polishing
+- [x] Step 12: Implement locale-aware routing and RTL polishing ✅
   - **Task**: Enhance `src/modules/i18n` with locale negotiation, configure RTL styles for Hebrew, and ensure shared components respect direction.
   - **Files**:
     - `src/modules/i18n/config.ts`: Locale metadata.
@@ -185,12 +185,11 @@
   - **Step Dependencies**: Step 11
   - **User Instructions**: Review translations with native speaker before release.
 
-## Phase 5 – Platform Reliability & Observability
-
-- [ ] Step 13: Add performance optimizations and caching
+- [x] Step 13: Add performance optimizations and caching ✅ (`src/app/[locale]/(marketing)/*`, `src/modules/dashboard/api/queryOptions.ts`, `next.config.js`, `docs/performance/playbook.md`)
   - **Task**: Configure static rendering for marketing/legal pages, implement React Query caching policies, and add Next.js route segment revalidation timings.
   - **Files**:
-    - `next.config.js`: Static generation settings.
+    - `next.config.js`: Static generation/cache headers.
+    - `src/app/[locale]/(marketing)/layout.tsx`: Static route group revalidation.
     - `src/app/[locale]/(marketing)/privacy/page.tsx`: Mark as static.
     - `src/app/[locale]/(marketing)/terms/page.tsx`
     - `src/modules/dashboard/api/queryOptions.ts`: Shared cache settings.

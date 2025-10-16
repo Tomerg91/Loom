@@ -6,8 +6,9 @@
 
 'use client';
 
-import { queryOptions, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
+import { dashboardQueryOptions } from '@/modules/dashboard/api/queryOptions';
 import type { ClientOverviewData } from '@/modules/dashboard/types';
 
 export const clientOverviewKeys = {
@@ -41,7 +42,7 @@ async function fetchClientOverviewFromApi(): Promise<ClientOverviewData> {
 export const getClientOverviewQueryOptions = (
   config: ClientOverviewQueryConfig = {}
 ) =>
-  queryOptions({
+  dashboardQueryOptions({
     queryKey: clientOverviewKeys.all,
     queryFn: async () => {
       if (config.fetchClientOverview) {
@@ -50,7 +51,6 @@ export const getClientOverviewQueryOptions = (
 
       return fetchClientOverviewFromApi();
     },
-    staleTime: 60_000,
   });
 
 export const useClientOverview = () =>

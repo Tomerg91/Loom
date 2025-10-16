@@ -6,8 +6,9 @@
 
 'use client';
 
-import { queryOptions, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
+import { dashboardQueryOptions } from '@/modules/dashboard/api/queryOptions';
 import type { CoachOverviewData } from '@/modules/dashboard/types';
 
 export const coachOverviewKeys = {
@@ -41,7 +42,7 @@ async function fetchCoachOverviewFromApi(): Promise<CoachOverviewData> {
 export const getCoachOverviewQueryOptions = (
   config: CoachOverviewQueryConfig = {}
 ) =>
-  queryOptions({
+  dashboardQueryOptions({
     queryKey: coachOverviewKeys.all,
     queryFn: async () => {
       if (config.fetchCoachOverview) {
@@ -50,7 +51,6 @@ export const getCoachOverviewQueryOptions = (
 
       return fetchCoachOverviewFromApi();
     },
-    staleTime: 60_000,
   });
 
 export const useCoachOverview = () =>
