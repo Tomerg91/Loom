@@ -1176,3 +1176,31 @@ a:focus-visible {
     transparent 100%);
   margin: 2rem 0;
 }
+
+/* Dashboard specific RTL handling */
+.dashboard-sidebar[dir="rtl"] .dashboard-sidebar__content {
+  text-align: right;
+}
+
+.dashboard-sidebar[dir="rtl"] .dashboard-sidebar__content > .flex {
+  flex-direction: row-reverse;
+}
+
+.dashboard-sidebar[dir="rtl"] .dashboard-sidebar__content .ml-auto {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.dashboard-sidebar[dir="rtl"] .dashboard-sidebar__footer {
+  text-align: right;
+}
+
+button[data-locale-direction="rtl"],
+button[data-locale-direction="rtl"] * {
+  direction: rtl;
+}
+
+button[data-locale-direction="rtl"] svg {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}

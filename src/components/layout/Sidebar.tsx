@@ -21,6 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import { Link, usePathname } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 import { LocaleSwitcher } from '@/modules/i18n/components/LocaleSwitcher';
+import { getLocaleDirection } from '@/modules/i18n/config';
 
 interface SidebarProps {
   locale: string;
@@ -50,6 +51,13 @@ interface SidebarContentProps {
   } | null;
 }
 
+interface NavigationListProps {
+  section: NavigationSection;
+  activePath: string;
+  role: NavigationRole;
+  direction: 'ltr' | 'rtl';
+}
+
 const ROLE_BADGE_TONES: Record<NavigationRole, 'default' | 'secondary'> = {
   admin: 'secondary',
   coach: 'default',
@@ -77,19 +85,15 @@ function isItemActive(pathname: string, item: NavigationItem) {
   return pathname.startsWith(item.href);
 }
 
-interface NavigationListProps {
-  section: NavigationSection;
-  activePath: string;
-  role: NavigationRole;
-}
-
-function NavigationList({ section, activePath, role }: NavigationListProps) {
+function NavigationList({ section, activePath, role, direction }: NavigationListProps) {
   const hasLabel = Boolean(section.label);
+  const isRtl = direction === 'rtl';
 
   return (
     <div
       className="space-y-2"
       aria-labelledby={hasLabel ? `${section.id}-label` : undefined}
+      dir={direction}
     >
       {hasLabel ? (
         <p
@@ -115,7 +119,8 @@ function NavigationList({ section, activePath, role }: NavigationListProps) {
                 size="sm"
                 className={cn(
                   'w-full justify-start gap-3',
-                  active && 'font-semibold'
+                  active && 'font-semibold',
+                  isRtl && 'text-right'
                 )}
               >
                 <Link
@@ -128,7 +133,10 @@ function NavigationList({ section, activePath, role }: NavigationListProps) {
                   ) : null}
                   <span className="truncate">{item.label}</span>
                   {item.badge ? (
-                    <Badge variant="outline" className="ml-auto">
+                    <Badge
+                      variant="outline"
+                      className={cn('ml-auto', isRtl && 'mr-auto ml-0')}
+                    >
                       {item.badge}
                     </Badge>
                   ) : null}
@@ -151,6 +159,8 @@ function SidebarContent({
   userSummary,
 }: SidebarContentProps) {
   const t = useTranslations('navigation.roles');
+  const direction = getLocaleDirection(locale);
+  const isRtl = direction === 'rtl';
 
   const summary = useMemo(() => {
     if (!userSummary) {
@@ -171,7 +181,7 @@ function SidebarContent({
               {initials || userSummary.email.charAt(0)}
             </AvatarFallback>
           </Avatar>
-          <div className="min-w-0">
+          <div className="min-w-0 text-left" dir={direction}>
             <p className="truncate text-sm font-semibold">{userSummary.name}</p>
             <p className="truncate text-xs text-muted-foreground">
               {userSummary.email}
@@ -183,20 +193,35 @@ function SidebarContent({
         </Badge>
       </div>
     );
-  }, [t, userSummary]);
+  }, [direction, t, userSummary]);
 
   return (
-    <div className="dashboard-sidebar">
+    <div
+      className={cn(
+        'dashboard-sidebar',
+        isRtl ? 'dashboard-sidebar--rtl' : 'dashboard-sidebar--ltr'
+      )}
+      dir={direction}
+      data-locale={locale}
+    >
       <div className="dashboard-sidebar__content">
-        <div className="flex items-center justify-between gap-3">
+        <div
+          className={cn(
+            'flex items-center justify-between gap-3',
+            isRtl && 'flex-row-reverse text-right'
+          )}
+        >
           <Link
             href={`/${locale}/dashboard` as `/${string}`}
-            className="flex items-center gap-2 font-semibold text-lg"
+            className={cn(
+              'flex items-center gap-2 font-semibold text-lg',
+              isRtl && 'flex-row-reverse'
+            )}
             aria-label="Loom dashboard"
             onClick={onClose}
           >
             <MessageSquare
-              className="h-6 w-6 text-primary"
+              className={cn('h-6 w-6 text-primary', isRtl && 'order-last')}
               aria-hidden="true"
             />
             <span className="truncate">Loom</span>
@@ -220,6 +245,7 @@ function SidebarContent({
             section={section}
             activePath={activePath}
             role={role}
+            direction={direction}
           />
         ))}
 
@@ -232,6 +258,7 @@ function SidebarContent({
                 section={section}
                 activePath={activePath}
                 role={role}
+                direction={direction}
               />
             ))}
           </Fragment>
@@ -256,6 +283,7 @@ export function Sidebar({
   const pathname = usePathname();
   const normalizedPath = pathname.split('?')[0];
   const role = userSummary?.role ?? 'all';
+  const direction = getLocaleDirection(locale);
 
   return (
     <>
@@ -264,6 +292,7 @@ export function Sidebar({
         className="hidden lg:block"
         aria-label="Dashboard navigation"
         id="main-navigation"
+        dir={direction}
       >
         <SidebarContent
           navigation={navigation}
@@ -288,6 +317,7 @@ export function Sidebar({
           <div
             className="dashboard-sidebar__mobile-panel"
             data-testid="dashboard-mobile-sidebar"
+            dir={direction}
           >
             <SidebarContent
               navigation={navigation}
