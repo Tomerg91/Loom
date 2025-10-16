@@ -28,14 +28,13 @@
   - **Step Dependencies**: Step 1
   - **User Instructions**: Update `.env.local` with any new variables before running the app.
 
-- [ ] Step 3: Establish shared Supabase client factories
+- [x] Step 3: Establish shared Supabase client factories ✅ (`src/modules/platform/supabase/*`, `docs/platform/supabase.md`)
   - **Task**: Move Supabase client creation into `src/modules/platform/supabase` with separate server/browser factories, inject retry policies, and refactor existing usages in app router middleware and services.
   - **Files**:
     - `src/modules/platform/supabase/client.ts`: Browser client.
     - `src/modules/platform/supabase/server.ts`: Server client with Service Role usage guard.
     - `src/middleware.ts`: Consume new factory.
-    - `src/lib/auth/session.ts`: Update imports.
-    - `src/services/supabase.ts`: Replace with new module or remove.
+    - `src/lib/auth/*`: Update imports to new platform module.
     - `docs/platform/supabase.md`: Usage instructions.
   - **Step Dependencies**: Steps 1-2
   - **User Instructions**: Re-run lint/type-check to verify no stray imports remain.

@@ -1,4 +1,4 @@
-import { supabase as clientSupabase } from '@/lib/supabase/client';
+import { supabase as clientSupabase } from '@/modules/platform/supabase/client';
 
 import type { AuthUser, SignInData, SignUpData } from './auth';
 
@@ -9,7 +9,10 @@ import type { AuthUser, SignInData, SignUpData } from './auth';
  */
 export class ClientAuthService {
   private supabase = clientSupabase;
-  private userProfileCache = new Map<string, { data: AuthUser; expires: number }>();
+  private userProfileCache = new Map<
+    string,
+    { data: AuthUser; expires: number }
+  >();
 
   private getCachedUserProfile(userId: string): AuthUser | null {
     const cached = this.userProfileCache.get(`user_profile_${userId}`);
@@ -19,41 +22,57 @@ export class ClientAuthService {
     return null;
   }
 
-  private cacheUserProfile(userId: string, user: AuthUser, ttlMs: number): void {
+  private cacheUserProfile(
+    userId: string,
+    user: AuthUser,
+    ttlMs: number
+  ): void {
     this.userProfileCache.set(`user_profile_${userId}`, {
       data: user,
-      expires: Date.now() + ttlMs
+      expires: Date.now() + ttlMs,
     });
   }
 
   /**
    * Sign up a new user
    */
-  async signUp(data: SignUpData): Promise<{ user: AuthUser | null; error: string | null; sessionActive: boolean }> {
+  async signUp(
+    data: SignUpData
+  ): Promise<{
+    user: AuthUser | null;
+    error: string | null;
+    sessionActive: boolean;
+  }> {
     try {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const emailRedirectTo = `${siteUrl}/api/auth/verify`;
-      const { data: authData, error: authError } = await this.supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo,
-          data: {
-            first_name: data.firstName,
-            last_name: data.lastName,
-            role: data.role,
-            phone: data.phone,
-            language: data.language,
+      const { data: authData, error: authError } =
+        await this.supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            emailRedirectTo,
+            data: {
+              first_name: data.firstName,
+              last_name: data.lastName,
+              role: data.role,
+              phone: data.phone,
+              language: data.language,
+            },
           },
-        },
-      });
+        });
 
       if (authError) {
         return { user: null, error: authError.message, sessionActive: false };
       }
 
       if (!authData.user) {
-        return { user: null, error: 'Failed to create user', sessionActive: false };
+        return {
+          user: null,
+          error: 'Failed to create user',
+          sessionActive: false,
+        };
       }
 
       // Fetch user profile via API instead of using UserService
@@ -65,16 +84,30 @@ export class ClientAuthService {
         return { user: userProfile, error: null, sessionActive };
       }
 
-      return { user: null, error: 'Failed to fetch user profile after signup', sessionActive };
+      return {
+        user: null,
+        error: 'Failed to fetch user profile after signup',
+        sessionActive,
+      };
     } catch (error) {
-      return { user: null, error: error instanceof Error ? error.message : 'Unknown error', sessionActive: false };
+      return {
+        user: null,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        sessionActive: false,
+      };
     }
   }
 
   /**
    * Sign in an existing user
    */
-  async signIn(data: SignInData): Promise<{ user: AuthUser | null; error: string | null; requiresMFA?: boolean }> {
+  async signIn(
+    data: SignInData
+  ): Promise<{
+    user: AuthUser | null;
+    error: string | null;
+    requiresMFA?: boolean;
+  }> {
     try {
       const response = await fetch('/api/auth/signin', {
         method: 'POST',
@@ -126,7 +159,10 @@ export class ClientAuthService {
         });
 
         if (sessionError) {
-          console.warn('[ClientAuthService] Failed to hydrate Supabase session:', sessionError);
+          console.warn(
+            '[ClientAuthService] Failed to hydrate Supabase session:',
+            sessionError
+          );
         }
       }
 
@@ -140,7 +176,10 @@ export class ClientAuthService {
         error: null,
       };
     } catch (error) {
-      return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        user: null,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -152,7 +191,9 @@ export class ClientAuthService {
       const { error } = await this.supabase.auth.signOut();
       return { error: error?.message || null };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -161,7 +202,9 @@ export class ClientAuthService {
    */
   async getCurrentUser(): Promise<AuthUser | null> {
     try {
-      const { data: { user } } = await this.supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await this.supabase.auth.getUser();
 
       if (!user) {
         console.log('[ClientAuthService] No Supabase user found');
@@ -171,7 +214,7 @@ export class ClientAuthService {
       console.log('[ClientAuthService] Getting current user:', {
         userId: user.id,
         email: user.email,
-        metadataRole: user.user_metadata?.role
+        metadataRole: user.user_metadata?.role,
       });
 
       // Check cache first
@@ -191,7 +234,9 @@ export class ClientAuthService {
       }
 
       // Fallback: construct user from metadata if API fails
-      console.warn('[ClientAuthService] API fetch failed, constructing from user_metadata');
+      console.warn(
+        '[ClientAuthService] API fetch failed, constructing from user_metadata'
+      );
       const fallbackUser: AuthUser = {
         id: user.id,
         email: user.email || '',
@@ -201,7 +246,8 @@ export class ClientAuthService {
         language: (user.user_metadata?.language as any) || 'en',
         status: 'active',
         createdAt: user.created_at || new Date().toISOString(),
-        updatedAt: user.updated_at || user.created_at || new Date().toISOString(),
+        updatedAt:
+          user.updated_at || user.created_at || new Date().toISOString(),
         mfaEnabled: !!user.user_metadata?.mfaEnabled,
       };
 
@@ -217,7 +263,9 @@ export class ClientAuthService {
    */
   async getSession() {
     try {
-      const { data: { session } } = await this.supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await this.supabase.auth.getSession();
       return session;
     } catch (error) {
       console.error('Error getting session:', error);
@@ -231,15 +279,18 @@ export class ClientAuthService {
   async resetPassword(email: string): Promise<{ error: string | null }> {
     try {
       // Use environment variable or fallback
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const redirectUrl = `${siteUrl}/reset-password`;
-      
+
       const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
       });
       return { error: error?.message || null };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -253,43 +304,66 @@ export class ClientAuthService {
       });
       return { error: error?.message || null };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
-  async updateProfile(updates: Partial<AuthUser>): Promise<{ user: AuthUser | null; error: string | null }> {
+  async updateProfile(
+    updates: Partial<AuthUser>
+  ): Promise<{ user: AuthUser | null; error: string | null }> {
     try {
-      const { data: { user } } = await this.supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await this.supabase.auth.getUser();
       if (!user) {
         return { user: null, error: 'Not authenticated' };
       }
 
       const metadataUpdates: Record<string, unknown> = {};
-      if (typeof updates.firstName !== 'undefined') metadataUpdates.first_name = updates.firstName;
-      if (typeof updates.lastName !== 'undefined') metadataUpdates.last_name = updates.lastName;
-      if (typeof updates.language !== 'undefined') metadataUpdates.language = updates.language;
-      if (typeof updates.phone !== 'undefined') metadataUpdates.phone = updates.phone;
-      if (typeof updates.avatarUrl !== 'undefined') metadataUpdates.avatar_url = updates.avatarUrl;
+      if (typeof updates.firstName !== 'undefined')
+        metadataUpdates.first_name = updates.firstName;
+      if (typeof updates.lastName !== 'undefined')
+        metadataUpdates.last_name = updates.lastName;
+      if (typeof updates.language !== 'undefined')
+        metadataUpdates.language = updates.language;
+      if (typeof updates.phone !== 'undefined')
+        metadataUpdates.phone = updates.phone;
+      if (typeof updates.avatarUrl !== 'undefined')
+        metadataUpdates.avatar_url = updates.avatarUrl;
 
       if (Object.keys(metadataUpdates).length > 0) {
-        const { error } = await this.supabase.auth.updateUser({ data: metadataUpdates });
+        const { error } = await this.supabase.auth.updateUser({
+          data: metadataUpdates,
+        });
         if (error) {
           return { user: null, error: error.message };
         }
       }
 
       const profilePayload: Record<string, unknown> = {};
-      if (typeof updates.timezone !== 'undefined') profilePayload.timezone = updates.timezone;
-      if (typeof updates.status !== 'undefined') profilePayload.status = updates.status;
-      if (typeof updates.preferences !== 'undefined') profilePayload.preferences = updates.preferences;
+      if (typeof updates.timezone !== 'undefined')
+        profilePayload.timezone = updates.timezone;
+      if (typeof updates.status !== 'undefined')
+        profilePayload.status = updates.status;
+      if (typeof updates.preferences !== 'undefined')
+        profilePayload.preferences = updates.preferences;
       if (typeof updates.bio !== 'undefined') profilePayload.bio = updates.bio;
-      if (typeof updates.location !== 'undefined') profilePayload.location = updates.location;
-      if (typeof updates.website !== 'undefined') profilePayload.website = updates.website;
-      if (typeof updates.specialties !== 'undefined') profilePayload.specialties = updates.specialties;
+      if (typeof updates.location !== 'undefined')
+        profilePayload.location = updates.location;
+      if (typeof updates.website !== 'undefined')
+        profilePayload.website = updates.website;
+      if (typeof updates.specialties !== 'undefined')
+        profilePayload.specialties = updates.specialties;
 
       if (Object.keys(profilePayload).length > 0) {
-        const { data: { session } } = await this.supabase.auth.getSession();
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        const {
+          data: { session },
+        } = await this.supabase.auth.getSession();
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
         if (session?.access_token) {
           headers['Authorization'] = `Bearer ${session.access_token}`;
         }
@@ -300,7 +374,10 @@ export class ClientAuthService {
         });
         if (!response.ok) {
           const body = await response.json().catch(() => null);
-          return { user: null, error: body?.error || 'Failed to update profile' };
+          return {
+            user: null,
+            error: body?.error || 'Failed to update profile',
+          };
         }
       }
 
@@ -312,7 +389,10 @@ export class ClientAuthService {
 
       return { user: null, error: 'Failed to fetch updated profile' };
     } catch (error) {
-      return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        user: null,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -333,9 +413,13 @@ export class ClientAuthService {
   /**
    * Fetch user profile from API endpoint
    */
-  private async fetchUserProfileFromAPI(userId: string): Promise<AuthUser | null> {
+  private async fetchUserProfileFromAPI(
+    userId: string
+  ): Promise<AuthUser | null> {
     try {
-      const { data: { session } } = await this.supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await this.supabase.auth.getSession();
       const headers: Record<string, string> = {};
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -343,18 +427,21 @@ export class ClientAuthService {
 
       console.log('[ClientAuthService] Fetching user profile:', {
         userId,
-        hasAccessToken: !!session?.access_token
+        hasAccessToken: !!session?.access_token,
       });
 
       const response = await fetch(`/api/users/${userId}/profile`, { headers });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('[ClientAuthService] Failed to fetch user profile from API:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText
-        });
+        console.error(
+          '[ClientAuthService] Failed to fetch user profile from API:',
+          {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText,
+          }
+        );
         return null;
       }
 
@@ -362,11 +449,14 @@ export class ClientAuthService {
       console.log('[ClientAuthService] User profile fetched successfully:', {
         userId: data?.id,
         role: data?.role,
-        email: data?.email
+        email: data?.email,
       });
       return data;
     } catch (error) {
-      console.error('[ClientAuthService] Error fetching user profile from API:', error);
+      console.error(
+        '[ClientAuthService] Error fetching user profile from API:',
+        error
+      );
       return null;
     }
   }
@@ -376,8 +466,12 @@ export class ClientAuthService {
    */
   private async updateLastSeenViaAPI(userId: string): Promise<void> {
     try {
-      const { data: { session } } = await this.supabase.auth.getSession();
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const {
+        data: { session },
+      } = await this.supabase.auth.getSession();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
       }

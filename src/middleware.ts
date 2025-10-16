@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import createMiddleware from 'next-intl/middleware';
+
+import { createServerClientWithRequest } from '@/modules/platform/supabase/server';
+
 import { routing } from './i18n/routing';
 import { applySecurityHeaders } from './lib/security/headers';
 import { validateUserAgent } from './lib/security/validation';
-import createMiddleware from 'next-intl/middleware';
-import { createServerClientWithRequest } from '@/lib/supabase/server';
 
 // Create next-intl middleware
 const intlMiddleware = createMiddleware(routing);
@@ -23,7 +25,10 @@ async function getHasSession(request: NextRequest): Promise<boolean> {
   }
 }
 
-async function refreshSessionOnResponse(request: NextRequest, response: NextResponse) {
+async function refreshSessionOnResponse(
+  request: NextRequest,
+  response: NextResponse
+) {
   try {
     const supabase = createServerClientWithRequest(request, response);
     // This ensures rotating access tokens are re-cookies on every request
@@ -73,10 +78,13 @@ export async function middleware(request: NextRequest) {
       method: request.method,
       path: pathname,
       ua: request.headers.get('user-agent') || '',
-      ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      ip:
+        request.headers.get('x-forwarded-for') ||
+        request.headers.get('x-real-ip') ||
+        'unknown',
     });
   }
-  
+
   // CRITICAL: Skip ALL middleware logic for Next.js static assets
   // This must be the FIRST check to prevent any middleware execution
   // This prevents CSS files from being processed as pages/routes
@@ -102,26 +110,43 @@ export async function middleware(request: NextRequest) {
     pathname.endsWith('.eot') ||
     pathname.startsWith('/api/') ||
     // Additional protection for static assets with query parameters
-    pathname.match(/\.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot)(\?.*)?$/)
+    pathname.match(
+      /\.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot)(\?.*)?$/
+    )
   ) {
     // Return immediately without any processing
     // This ensures static assets are served directly by the web server
     const res = NextResponse.next();
     if (logRequests) {
       res.headers.set('X-Request-ID', reqId);
-      console.info('[RES]', { id: reqId, path: pathname, status: 200, durMs: Date.now() - start, static: true });
+      console.info('[RES]', {
+        id: reqId,
+        path: pathname,
+        status: 200,
+        durMs: Date.now() - start,
+        static: true,
+      });
     }
     return res;
   }
 
   // Apply basic UA validation in production only (can be disabled via env flag)
   const userAgent = request.headers.get('user-agent') || '';
-  if (process.env.NODE_ENV === 'production' && process.env.MIDDLEWARE_UA_CHECK !== 'false') {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.MIDDLEWARE_UA_CHECK !== 'false'
+  ) {
     if (!validateUserAgent(userAgent)) {
       const res = new NextResponse('Forbidden', { status: 403 });
       if (logRequests) {
         res.headers.set('X-Request-ID', reqId);
-        console.warn('[RES]', { id: reqId, path: pathname, status: 403, reason: 'UA invalid', durMs: Date.now() - start });
+        console.warn('[RES]', {
+          id: reqId,
+          path: pathname,
+          status: 403,
+          reason: 'UA invalid',
+          durMs: Date.now() - start,
+        });
       }
       return res;
     }
@@ -130,15 +155,32 @@ export async function middleware(request: NextRequest) {
   // Check for invalid locale patterns first
   const segments = pathname.split('/').filter(Boolean);
   const firstSegment = segments[0];
-  
+
   // If first segment looks like a locale (2 chars) but isn't valid, redirect to default locale
-  if (firstSegment && firstSegment.length === 2 && !routing.locales.includes(firstSegment as 'en' | 'he')) {
+  if (
+    firstSegment &&
+    firstSegment.length === 2 &&
+    !routing.locales.includes(firstSegment as 'en' | 'he')
+  ) {
     const pathWithoutInvalidLocale = '/' + segments.slice(1).join('/');
-    const redirectUrl = new URL(`/${routing.defaultLocale}${pathWithoutInvalidLocale}`, request.url);
-    const res = applySecurityHeaders(request, NextResponse.redirect(redirectUrl));
+    const redirectUrl = new URL(
+      `/${routing.defaultLocale}${pathWithoutInvalidLocale}`,
+      request.url
+    );
+    const res = applySecurityHeaders(
+      request,
+      NextResponse.redirect(redirectUrl)
+    );
     if (logRequests) {
       res.headers.set('X-Request-ID', reqId);
-      console.info('[RES]', { id: reqId, path: pathname, status: 307, redirect: redirectUrl.toString(), reason: 'invalid locale', durMs: Date.now() - start });
+      console.info('[RES]', {
+        id: reqId,
+        path: pathname,
+        status: 307,
+        redirect: redirectUrl.toString(),
+        reason: 'invalid locale',
+        durMs: Date.now() - start,
+      });
     }
     return res;
   }
@@ -151,7 +193,13 @@ export async function middleware(request: NextRequest) {
     res = await refreshSessionOnResponse(request, res);
     if (logRequests) {
       res.headers.set('X-Request-ID', reqId);
-      console.info('[RES]', { id: reqId, path: pathname, status: res.status, durMs: Date.now() - start, intl: true });
+      console.info('[RES]', {
+        id: reqId,
+        path: pathname,
+        status: res.status,
+        durMs: Date.now() - start,
+        intl: true,
+      });
     }
     return res;
   }
@@ -168,12 +216,13 @@ export async function middleware(request: NextRequest) {
     const pathWithoutLocale = pathname.slice(locale.length + 1) || '/';
 
     // Check if route is protected
-    const isProtectedRoute = protectedRoutes.some(route => 
+    const isProtectedRoute = protectedRoutes.some(route =>
       pathWithoutLocale.startsWith(route)
     );
 
-    const isPublicRoute = publicRoutes.some(route => 
-      pathWithoutLocale === route || pathWithoutLocale.startsWith(route)
+    const isPublicRoute = publicRoutes.some(
+      route =>
+        pathWithoutLocale === route || pathWithoutLocale.startsWith(route)
     );
 
     const isAuthRoute = pathWithoutLocale.startsWith('/auth/');
@@ -183,24 +232,41 @@ export async function middleware(request: NextRequest) {
       // MFA gating: if authenticated and pending MFA, force to MFA verify page
       if (hasAuthSession && mfaPending && !isMfaVerifyRoute) {
         const redirectUrl = new URL(`/${locale}/auth/mfa-verify`, request.url);
-        const origRedirect = request.nextUrl.searchParams.get('redirectTo') || '/dashboard';
+        const origRedirect =
+          request.nextUrl.searchParams.get('redirectTo') || '/dashboard';
         redirectUrl.searchParams.set('redirectTo', origRedirect);
         let res = NextResponse.redirect(redirectUrl);
         res = await refreshSessionOnResponse(request, res);
         if (logRequests) {
           res.headers.set('X-Request-ID', reqId);
-          console.info('[RES]', { id: reqId, path: pathname, status: 307, redirect: redirectUrl.toString(), reason: 'mfa pending redirect', durMs: Date.now() - start });
+          console.info('[RES]', {
+            id: reqId,
+            path: pathname,
+            status: 307,
+            redirect: redirectUrl.toString(),
+            reason: 'mfa pending redirect',
+            durMs: Date.now() - start,
+          });
         }
         return res;
       }
 
       // Redirect authenticated users away from other auth pages
       if (hasAuthSession && isAuthRoute && !mfaPending) {
-        let res = NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
+        let res = NextResponse.redirect(
+          new URL(`/${locale}/dashboard`, request.url)
+        );
         res = await refreshSessionOnResponse(request, res);
         if (logRequests) {
           res.headers.set('X-Request-ID', reqId);
-          console.info('[RES]', { id: reqId, path: pathname, status: 307, redirect: `/${locale}/dashboard`, reason: 'auth route, already authed', durMs: Date.now() - start });
+          console.info('[RES]', {
+            id: reqId,
+            path: pathname,
+            status: 307,
+            redirect: `/${locale}/dashboard`,
+            reason: 'auth route, already authed',
+            durMs: Date.now() - start,
+          });
         }
         return res;
       }
@@ -211,7 +277,13 @@ export async function middleware(request: NextRequest) {
         res = await refreshSessionOnResponse(request, res);
         if (logRequests) {
           res.headers.set('X-Request-ID', reqId);
-          console.info('[RES]', { id: reqId, path: pathname, status: 200, reason: 'public route', durMs: Date.now() - start });
+          console.info('[RES]', {
+            id: reqId,
+            path: pathname,
+            status: 200,
+            reason: 'public route',
+            durMs: Date.now() - start,
+          });
         }
         return res;
       }
@@ -224,7 +296,14 @@ export async function middleware(request: NextRequest) {
         res = await refreshSessionOnResponse(request, res);
         if (logRequests) {
           res.headers.set('X-Request-ID', reqId);
-          console.info('[RES]', { id: reqId, path: pathname, status: 307, redirect: redirectUrl.toString(), reason: 'protected route not authed', durMs: Date.now() - start });
+          console.info('[RES]', {
+            id: reqId,
+            path: pathname,
+            status: 307,
+            redirect: redirectUrl.toString(),
+            reason: 'protected route not authed',
+            durMs: Date.now() - start,
+          });
         }
         return res;
       }
@@ -235,22 +314,39 @@ export async function middleware(request: NextRequest) {
     res = await refreshSessionOnResponse(request, res);
     if (logRequests) {
       res.headers.set('X-Request-ID', reqId);
-      console.info('[RES]', { id: reqId, path: pathname, status: 200, durMs: Date.now() - start });
+      console.info('[RES]', {
+        id: reqId,
+        path: pathname,
+        status: 200,
+        durMs: Date.now() - start,
+      });
     }
     return res;
   } catch (error) {
     console.error('Auth middleware error:', error);
-    
+
     // If there's an error and it's a protected route, redirect to signin
     const locale = pathname.split('/')[1];
     const pathWithoutLocale = pathname.slice(locale.length + 1) || '/';
-    
-    if (AUTH_GATING_ENABLED && protectedRoutes.some(route => pathWithoutLocale.startsWith(route))) {
-      let res = NextResponse.redirect(new URL(`/${locale}/auth/signin`, request.url));
+
+    if (
+      AUTH_GATING_ENABLED &&
+      protectedRoutes.some(route => pathWithoutLocale.startsWith(route))
+    ) {
+      let res = NextResponse.redirect(
+        new URL(`/${locale}/auth/signin`, request.url)
+      );
       res = await refreshSessionOnResponse(request, res);
       if (logRequests) {
         res.headers.set('X-Request-ID', reqId);
-        console.warn('[RES]', { id: reqId, path: pathname, status: 307, redirect: `/${locale}/auth/signin`, reason: 'middleware error on protected route', durMs: Date.now() - start });
+        console.warn('[RES]', {
+          id: reqId,
+          path: pathname,
+          status: 307,
+          redirect: `/${locale}/auth/signin`,
+          reason: 'middleware error on protected route',
+          durMs: Date.now() - start,
+        });
       }
       return res;
     }
@@ -258,7 +354,13 @@ export async function middleware(request: NextRequest) {
     res = await refreshSessionOnResponse(request, res);
     if (logRequests) {
       res.headers.set('X-Request-ID', reqId);
-      console.info('[RES]', { id: reqId, path: pathname, status: 200, durMs: Date.now() - start, errorHandled: true });
+      console.info('[RES]', {
+        id: reqId,
+        path: pathname,
+        status: 200,
+        durMs: Date.now() - start,
+        errorHandled: true,
+      });
     }
     return res;
   }

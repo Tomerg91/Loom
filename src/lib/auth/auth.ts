@@ -1,8 +1,8 @@
 import { routing } from '@/i18n/routing';
 import { config } from '@/lib/config';
 import type { UserServiceOptions } from '@/lib/database/users';
-import { supabase as clientSupabase } from '@/lib/supabase/client';
-import { createClient } from '@/lib/supabase/server';
+import { supabase as clientSupabase } from '@/modules/platform/supabase/client';
+import { createClient } from '@/modules/platform/supabase/server';
 import type { Language, User, UserRole, UserStatus } from '@/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
@@ -241,7 +241,9 @@ export class AuthService {
 
       // Try to fetch the newly created user profile using admin client to avoid RLS issues
       try {
-        const { createAdminClient } = await import('@/lib/supabase/server');
+        const { createAdminClient } = await import(
+          '@/modules/platform/supabase/server'
+        );
         const admin = createAdminClient();
 
         // Ensure a profile row exists (trigger should create it, but upsert defensively)
