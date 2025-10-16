@@ -55,13 +55,13 @@
   - **Step Dependencies**: Steps 1-3
   - **User Instructions**: Configure MFA factors in Supabase dashboard before testing.
 
-- [ ] Step 5: Tighten auth middleware and role-based redirects
+- [x] Step 5: Tighten auth middleware and role-based redirects ✅ (`src/middleware.ts`, `src/modules/auth/*`, `tests/auth/middleware.test.ts`, `docs/auth/redirects.md`)
   - **Task**: Expand `middleware.ts` to enforce locale negotiation, session hydration, and role-aware routing; add unit tests covering redirect matrix.
   - **Files**:
-    - `src/middleware.ts`: Add chained middleware.
+    - `src/middleware.ts`: Add chained middleware with locale + role enforcement.
     - `src/modules/auth/server/session.ts`: Session fetch with role data.
-    - `src/modules/auth/constants.ts`: Route definitions.
-    - `src/modules/auth/utils/redirect.ts`: Helper.
+    - `src/modules/auth/constants.ts`: Route definitions and MFA helpers.
+    - `src/modules/auth/utils/redirect.ts`: Locale-aware redirect helpers.
     - `tests/auth/middleware.test.ts`: Vitest coverage.
     - `docs/auth/redirects.md`: Document behavior.
   - **Step Dependencies**: Step 4
