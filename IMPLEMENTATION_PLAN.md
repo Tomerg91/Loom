@@ -15,14 +15,15 @@
   - **Step Dependencies**: None
   - **User Instructions**: Confirm team alignment on module scope before continuing.
 
-- [ ] Step 2: Harden environment and configuration validation
+- [x] Step 2: Harden environment and configuration validation ✅ (`src/env/{client,server,runtime}.(ts|js)`, `next.config.js`, `docs/configuration.md`)
   - **Task**: Introduce runtime validation for client/server env vars using `zod`, split environment loaders into `src/env/client.ts` and `src/env/server.ts`, and update Next.js config to consume typed env helpers.
   - **Files**:
-    - `package.json`: Add `zod` if missing.
-    - `src/env/client.ts`: Define safe browser vars.
-    - `src/env/server.ts`: Validate server-only secrets.
+    - `src/env/runtime.js`: Shared CommonJS runtime consumed by Next.js and scripts.
+    - `src/env/runtime.d.ts`: Type declarations for runtime exports.
+    - `src/env/client.ts`: Re-export client-safe variables.
+    - `src/env/server.ts`: Server-only accessors and backwards-compatible alias.
     - `src/env/index.ts`: Export helpers.
-    - `next.config.js`: Reference env helpers.
+    - `next.config.js`: Reference validated env values.
     - `docs/configuration.md`: Document required variables.
   - **Step Dependencies**: Step 1
   - **User Instructions**: Update `.env.local` with any new variables before running the app.

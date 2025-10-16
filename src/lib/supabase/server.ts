@@ -7,10 +7,12 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { type NextRequest, type NextResponse } from 'next/server';
 
 import {
-  env,
+  serverEnv,
   PLACEHOLDER_SUPABASE_ANON_KEY,
   PLACEHOLDER_SUPABASE_URL,
-} from '@/env';
+} from '@/env/server';
+
+const env = serverEnv;
 
 // Singleton instances to prevent multiple GoTrueClient creation
 // We intentionally widen the Supabase generic to `any` because our generated

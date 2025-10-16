@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
-import { env } from '@/env';
+import { serverEnv } from '@/env/server';
 import { createSuccessResponse, createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
 
 interface RouteParams {
@@ -18,8 +18,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const authHeader = request.headers.get('authorization');
     const supabase = authHeader
       ? createSupabaseClient<Database>(
-          env.NEXT_PUBLIC_SUPABASE_URL!,
-          env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          serverEnv.NEXT_PUBLIC_SUPABASE_URL!,
+          serverEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
           { global: { headers: { Authorization: authHeader } } }
         )
       : createServerClient();

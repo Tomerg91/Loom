@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
-import { env } from '@/env';
+import { serverEnv } from '@/env/server';
 import {
   HTTP_STATUS,
   createErrorResponse,
@@ -63,7 +63,7 @@ const sanitizeFileName = (fileName: string): string => {
 const resolveBucketName = () => {
   try {
     return (
-      env.TASK_ATTACHMENTS_BUCKET ||
+      serverEnv.TASK_ATTACHMENTS_BUCKET ||
       process.env.NEXT_PUBLIC_TASK_ATTACHMENTS_BUCKET ||
       'task-attachments'
     );
