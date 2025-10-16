@@ -11,11 +11,9 @@ import { createServerClient } from '@/lib/supabase/server';
 import {
   TaskService,
   TaskServiceError,
-} from '@/modules/tasks/services/task-service';
-import {
-  updateTaskSchema,
-  type UpdateTaskInput,
-} from '@/modules/tasks/types/task';
+} from '@/modules/sessions/server/task-service';
+import type { SessionUpdateTaskInput } from '@/modules/sessions/types';
+import { sessionUpdateTaskSchema } from '@/modules/sessions/validators/task';
 
 const taskService = new TaskService();
 
@@ -130,14 +128,14 @@ export const PATCH = async (request: NextRequest, context: RouteContext) => {
     console.warn('Failed to parse task update payload:', error);
     return createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
   }
-  const parsed = validateRequestBody(updateTaskSchema, body);
+  const parsed = validateRequestBody(sessionUpdateTaskSchema, body);
 
   if (!parsed.success) {
     return createErrorResponse(parsed.error, HTTP_STATUS.BAD_REQUEST);
   }
 
   try {
-    const updatePayload = parsed.data as UpdateTaskInput;
+    const updatePayload = parsed.data as SessionUpdateTaskInput;
 
     const task = await taskService.updateTask(
       taskId,

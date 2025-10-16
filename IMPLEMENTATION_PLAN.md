@@ -119,19 +119,21 @@
 
 ## Phase 3 – Sessions & Tasks Domain
 
-- [ ] Step 9: Implement tasks CRUD API and hooks
+- [x] Step 9: Implement tasks CRUD API and hooks ✅
   - **Task**: Add Supabase SQL migrations for `tasks`, build `/api/tasks` REST endpoints with validation, and expose React Query hooks and forms.
   - **Files**:
-    - `supabase/migrations/2025XXXX_tasks.sql`: Create table/indexes.
-    - `src/app/api/tasks/route.ts`: List/create.
-    - `src/app/api/tasks/[id]/route.ts`: Read/update/delete.
+    - `supabase/migrations/20251015000010_tasks_performance_view.sql`: Indexes and aggregated view to support new list queries.
+    - `src/app/api/tasks/route.ts`: List/create (wired to sessions facade).
+    - `src/app/api/tasks/[id]/route.ts`: Read/update/delete (sessions facade).
     - `src/modules/sessions/validators/task.ts`: Zod schemas.
     - `src/modules/sessions/api/tasks.ts`: Fetch/mutate hooks.
     - `src/modules/sessions/components/TaskForm.tsx`
     - `src/modules/sessions/components/TaskList.tsx`
     - `src/modules/sessions/types.ts`
+    - `src/modules/sessions/server/task-service.ts`
     - `tests/api/tasks.test.ts`: Route tests.
     - `tests/components/task-form.test.tsx`
+    - `src/messages/{en,he}.json`: Session task copy.
   - **Step Dependencies**: Step 8
   - **User Instructions**: Run `supabase db push` or migration command after review.
 

@@ -1443,5 +1443,86 @@
         "redirecting": "Redirecting to your dashboard..."
       }
     }
+  },
+  "sessions": {
+    "tasks": {
+      "form": {
+        "title": "Assign task",
+        "fields": {
+          "title": {
+            "label": "Task title",
+            "placeholder": "Enter a task name"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Provide supporting details (optional)"
+          },
+          "clientId": {
+            "label": "Client ID",
+            "placeholder": "UUID of the client"
+          },
+          "coachId": {
+            "label": "Coach ID",
+            "placeholder": "UUID of the coach"
+          },
+          "dueDate": {
+            "label": "Due date"
+          },
+          "priority": {
+            "label": "Priority",
+            "placeholder": "Select a priority",
+            "options": {
+              "low": "Low",
+              "medium": "Medium",
+              "high": "High"
+            }
+          },
+          "visibilityToCoach": {
+            "label": "Visible to coach",
+            "help": "Hide this task from the client if you need to prep before sharing."
+          }
+        },
+        "actions": {
+          "cancel": "Cancel",
+          "createTask": "Create task",
+          "saveChanges": "Save changes"
+        },
+        "messages": {
+          "genericError": "We couldn't save your task. Please try again."
+        }
+      },
+      "list": {
+        "title": "Assigned tasks",
+        "columns": {
+          "title": "Title",
+          "client": "Client",
+          "dueDate": "Due",
+          "status": "Status",
+          "priority": "Priority"
+        },
+        "actions": {
+          "refresh": "Refresh"
+        },
+        "status": {
+          "pending": "Pending",
+          "in_progress": "In progress",
+          "completed": "Completed",
+          "overdue": "Overdue"
+        },
+        "priority": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        },
+        "count": "{count, plural, one {# task} other {# tasks}}",
+        "refreshing": "Updating…",
+        "empty": "No tasks match the selected filters yet.",
+        "error": {
+          "title": "Unable to load tasks",
+          "description": "Try again or adjust your filters."
+        },
+        "unknownClient": "Unassigned client"
+      }
+    }
   }
 }

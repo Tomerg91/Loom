@@ -1677,5 +1677,86 @@
         "redirecting": "מעביר ללוח הבקרה שלך..."
       }
     }
+  },
+  "sessions": {
+    "tasks": {
+      "form": {
+        "title": "הקצה משימה",
+        "fields": {
+          "title": {
+            "label": "כותרת המשימה",
+            "placeholder": "הקלד שם למשימה"
+          },
+          "description": {
+            "label": "תיאור",
+            "placeholder": "הוסף פרטים נוספים (לא חובה)"
+          },
+          "clientId": {
+            "label": "מזהה מתאמן",
+            "placeholder": "מזהה ה-UUID של המתאמן"
+          },
+          "coachId": {
+            "label": "מזהה מאמן",
+            "placeholder": "מזהה ה-UUID של המאמן"
+          },
+          "dueDate": {
+            "label": "תאריך יעד"
+          },
+          "priority": {
+            "label": "עדיפות",
+            "placeholder": "בחר עדיפות",
+            "options": {
+              "low": "נמוכה",
+              "medium": "בינונית",
+              "high": "גבוהה"
+            }
+          },
+          "visibilityToCoach": {
+            "label": "גלוי למאמן",
+            "help": "החבא את המשימה מהמתאמן עד שתהיה מוכן לשתף."
+          }
+        },
+        "actions": {
+          "cancel": "ביטול",
+          "createTask": "צור משימה",
+          "saveChanges": "שמור שינויים"
+        },
+        "messages": {
+          "genericError": "לא הצלחנו לשמור את המשימה. נסה שוב."
+        }
+      },
+      "list": {
+        "title": "משימות מוקצות",
+        "columns": {
+          "title": "כותרת",
+          "client": "מתאמן",
+          "dueDate": "תאריך יעד",
+          "status": "סטטוס",
+          "priority": "עדיפות"
+        },
+        "actions": {
+          "refresh": "רענן"
+        },
+        "status": {
+          "pending": "בהמתנה",
+          "in_progress": "בתהליך",
+          "completed": "הושלם",
+          "overdue": "באיחור"
+        },
+        "priority": {
+          "low": "נמוכה",
+          "medium": "בינונית",
+          "high": "גבוהה"
+        },
+        "count": "{count, plural, one {משימה אחת} other {# משימות}}",
+        "refreshing": "מרענן…",
+        "empty": "אין משימות שתואמות למסננים שנבחרו.",
+        "error": {
+          "title": "לא ניתן לטעון משימות",
+          "description": "נסה שוב או עדכן את המסננים."
+        },
+        "unknownClient": "מתאמן לא משויך"
+      }
+    }
   }
 }

@@ -10,13 +10,13 @@ import { createServerClient } from '@/lib/supabase/server';
 import {
   TaskService,
   TaskServiceError,
-} from '@/modules/tasks/services/task-service';
+} from '@/modules/sessions/server/task-service';
+import type {
+  SessionCreateTaskInput,
+  SessionTaskListQueryInput,
+} from '@/modules/sessions/types';
+import { sessionCreateTaskSchema } from '@/modules/sessions/validators/task';
 import { parseTaskListQueryParams } from '@/modules/tasks/api/query-helpers';
-import {
-  createTaskSchema,
-  type CreateTaskInput,
-  type TaskListQueryInput,
-} from '@/modules/tasks/types/task';
 
 const taskService = new TaskService();
 
@@ -88,7 +88,7 @@ export const GET = async (request: NextRequest) => {
     return createErrorResponse('Validation failed', HTTP_STATUS.BAD_REQUEST);
   }
 
-  const normalizedFilters: TaskListQueryInput = {
+  const normalizedFilters: SessionTaskListQueryInput = {
     ...parsedQuery.data,
     coachId: actor.role === 'coach' ? actor.id : parsedQuery.data.coachId,
   };
@@ -134,23 +134,22 @@ export const POST = async (request: NextRequest) => {
     console.warn('Failed to parse task creation payload:', error);
     return createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
   }
-  const parsed = validateRequestBody(createTaskSchema, body);
+  const parsed = validateRequestBody(sessionCreateTaskSchema, body);
 
   if (!parsed.success) {
     return createErrorResponse(parsed.error, HTTP_STATUS.BAD_REQUEST);
   }
 
-  const createPayload = parsed.data as CreateTaskInput;
+  const createPayload = parsed.data as SessionCreateTaskInput;
 
-  const payload: CreateTaskInput = {
-    ...createPayload,
-    coachId: actor.role === 'coach' ? actor.id : createPayload.coachId,
-  };
+  if (actor.role === 'coach') {
+    createPayload.coachId = actor.id;
+  }
 
   try {
     const task = await taskService.createTask(
       { id: actor.id, role: actor.role as 'coach' | 'admin' | 'client' },
-      payload
+      createPayload
     );
 
     return createSuccessResponse(

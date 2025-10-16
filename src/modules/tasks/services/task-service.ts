@@ -119,6 +119,7 @@ export const serializeTaskRecord = (task: TaskRecord): TaskDto => {
     title: task.title,
     description: task.description,
     priority: task.priority,
+    status: (task.status ?? 'PENDING') as TaskStatus,
     visibilityToCoach: task.visibility_to_coach,
     dueDate: toISOStringOrNull(task.due_date),
     recurrenceRule: task.recurrence_rule ?? null,
@@ -390,7 +391,7 @@ export class TaskService {
     const client = this.getClient();
 
     const effectiveClientId =
-      actor.role === 'client' ? actor.id : filters.clientId ?? actor.id;
+      actor.role === 'client' ? actor.id : (filters.clientId ?? actor.id);
 
     const page = filters.page ?? 1;
     const pageSize = filters.pageSize ?? 20;
