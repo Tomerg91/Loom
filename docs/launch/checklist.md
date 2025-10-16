@@ -25,7 +25,7 @@ A structured runbook to guide the team from staging sign-off through production 
 
 ## 4. Data Seeding
 
-- [ ] Run `npm run seed:staging` (delegates to `scripts/seed/staging.ts`) with fresh auth tokens.
+- [ ] Run `npm run seed:staging` (delegates to `scripts/seed/staging.mjs`) with fresh auth tokens.
 - [ ] Invite pilot coaches/clients and confirm welcome emails deliver successfully.
 - [ ] Snapshot staging Supabase data for rollback reference before production promotion.
 

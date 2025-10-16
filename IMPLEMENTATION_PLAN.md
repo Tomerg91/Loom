@@ -231,7 +231,7 @@
   - **Files**:
     - `docs/launch/checklist.md`: End-to-end launch tasks.
     - `docs/launch/support-playbook.md`: Support process.
-    - `scripts/seed/staging.ts`: Seed automation.
+    - `scripts/seed/staging.mjs`: Seed automation.
     - `docs/launch/known-issues.md`: Track blockers.
     - `README.md`: Update with launch instructions.
   - **Step Dependencies**: Steps 1-15

@@ -1,4 +1,4 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env node
 /**
  * @fileoverview Staging data seeding utility. The script provisions a small set
  * of representative coaches, clients, sessions, and tasks so the staging
@@ -13,68 +13,12 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-import { serverEnv } from '@/env/server';
-import type { Database, Json } from '@/types/supabase';
+const env = {
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
+  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+};
 
-type SupabaseDatabase = Database['public'];
-type UserRole = SupabaseDatabase['Enums']['user_role'];
-type Language = SupabaseDatabase['Enums']['language'];
-type TaskPriority = SupabaseDatabase['Enums']['task_priority'];
-type TaskStatus = SupabaseDatabase['Enums']['task_status'];
-type SessionStatus = SupabaseDatabase['Enums']['session_status'];
-
-type AdminClient = ReturnType<typeof createClient<Database>>;
-
-interface SeedUser {
-  email: string;
-  password: string;
-  role: UserRole;
-  firstName: string;
-  lastName: string;
-  language: Language;
-  phone?: string;
-  timezone?: string;
-}
-
-interface SessionSeed {
-  id: string;
-  title: string;
-  description: string;
-  scheduledAt: string;
-  durationMinutes: number;
-  status: SessionStatus;
-  meetingUrl: string | null;
-  coachEmail: string;
-  clientEmail: string;
-}
-
-interface TaskCategorySeed {
-  id: string;
-  label: string;
-  colorHex: string;
-  coachEmail: string;
-}
-
-interface TaskSeed {
-  id: string;
-  title: string;
-  description: string;
-  priority: TaskPriority;
-  status: TaskStatus;
-  dueDate: string | null;
-  visibilityToCoach: boolean;
-  categoryId?: string;
-  coachEmail: string;
-  clientEmail: string;
-  recurrenceRule?: Json | null;
-}
-
-interface SeedContext {
-  client: AdminClient;
-  userIdsByEmail: Map<string, string>;
-}
-
-const seedUsers: SeedUser[] = [
+const seedUsers = [
   {
     email: 'coach.staging@loom-app.com',
     password: 'CoachLaunch!2025',
@@ -107,7 +51,7 @@ const seedUsers: SeedUser[] = [
   },
 ];
 
-const sessionSeeds = (now: Date): SessionSeed[] => [
+const sessionSeeds = now => [
   {
     id: '1f3b3ce4-566b-4a9d-b1df-3e9d8ad27c10',
     title: 'Launch Readiness Kickoff',
@@ -150,7 +94,7 @@ const sessionSeeds = (now: Date): SessionSeed[] => [
   },
 ];
 
-const taskCategorySeeds: TaskCategorySeed[] = [
+const taskCategorySeeds = [
   {
     id: 'b3bd6d6e-8db7-4bdb-a220-8590f0c9c5da',
     label: 'Accountability',
@@ -165,7 +109,7 @@ const taskCategorySeeds: TaskCategorySeed[] = [
   },
 ];
 
-const taskSeeds = (now: Date): TaskSeed[] => [
+const taskSeeds = now => [
   {
     id: '5f0f7fd7-9f36-4c02-9c76-6d7c79a22e54',
     title: 'Publish weekly accountability recap',
@@ -196,45 +140,33 @@ const taskSeeds = (now: Date): TaskSeed[] => [
       interval: 1,
       startDate: now.toISOString(),
       rrule: 'FREQ=WEEKLY;BYDAY=MO',
-    } as Json,
+    },
   },
 ];
 
-const logSection = (title: string) => {
+const logSection = title => {
   console.info(`\n—— ${title} ——`);
 };
 
 const validateEnv = () => {
-  if (!serverEnv.NEXT_PUBLIC_SUPABASE_URL) {
-    throw new Error(
-      'NEXT_PUBLIC_SUPABASE_URL is required to seed staging data.'
-    );
+  if (!env.supabaseUrl) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL is required to seed staging data.');
   }
 
-  if (!serverEnv.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      'SUPABASE_SERVICE_ROLE_KEY must be set to run the staging seed.'
-    );
+  if (!env.serviceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY must be set to run the staging seed.');
   }
 };
 
-const createAdminClient = (): AdminClient => {
-  return createClient<Database>(
-    serverEnv.NEXT_PUBLIC_SUPABASE_URL!,
-    serverEnv.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-};
+const createAdminClient = () =>
+  createClient(env.supabaseUrl, env.serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 
-const ensureUser = async (
-  context: SeedContext,
-  user: SeedUser
-): Promise<string> => {
+const ensureUser = async (context, user) => {
   const existing = await context.client
     .from('users')
     .select('id')
@@ -273,10 +205,10 @@ const ensureUser = async (
     first_name: user.firstName,
     last_name: user.lastName,
     language: user.language,
-    status: 'active' as SupabaseDatabase['Enums']['user_status'],
+    status: 'active',
     phone: user.phone ?? null,
     timezone: user.timezone ?? null,
-  } satisfies SupabaseDatabase['Tables']['users']['Insert'];
+  };
 
   const upsertResult = await context.client
     .from('users')
@@ -299,7 +231,7 @@ const ensureUser = async (
       languages: [user.language],
       specializations: ['Leadership', 'Productivity'],
       experience_years: 8,
-    } satisfies SupabaseDatabase['Tables']['coach_profiles']['Insert'];
+    };
 
     const coachProfileResult = await context.client
       .from('coach_profiles')
@@ -316,7 +248,7 @@ const ensureUser = async (
   return userId;
 };
 
-const upsertTaskCategories = async (context: SeedContext) => {
+const upsertTaskCategories = async context => {
   logSection('Task Categories');
 
   for (const category of taskCategorySeeds) {
@@ -332,7 +264,7 @@ const upsertTaskCategories = async (context: SeedContext) => {
       coach_id: coachId,
       label: category.label,
       color_hex: category.colorHex,
-    } satisfies SupabaseDatabase['Tables']['task_categories']['Insert'];
+    };
 
     const result = await context.client
       .from('task_categories')
@@ -346,7 +278,7 @@ const upsertTaskCategories = async (context: SeedContext) => {
   }
 };
 
-const upsertSessions = async (context: SeedContext, now: Date) => {
+const upsertSessions = async (context, now) => {
   logSection('Sessions');
 
   for (const session of sessionSeeds(now)) {
@@ -370,7 +302,7 @@ const upsertSessions = async (context: SeedContext, now: Date) => {
       duration_minutes: session.durationMinutes,
       status: session.status,
       meeting_url: session.meetingUrl,
-    } satisfies SupabaseDatabase['Tables']['sessions']['Insert'];
+    };
 
     const result = await context.client
       .from('sessions')
@@ -384,7 +316,7 @@ const upsertSessions = async (context: SeedContext, now: Date) => {
   }
 };
 
-const upsertTasks = async (context: SeedContext, now: Date) => {
+const upsertTasks = async (context, now) => {
   logSection('Tasks');
 
   for (const task of taskSeeds(now)) {
@@ -408,7 +340,7 @@ const upsertTasks = async (context: SeedContext, now: Date) => {
       visibility_to_coach: task.visibilityToCoach,
       due_date: task.dueDate,
       recurrence_rule: task.recurrenceRule ?? null,
-    } satisfies SupabaseDatabase['Tables']['tasks']['Insert'];
+    };
 
     const result = await context.client
       .from('tasks')
@@ -426,7 +358,7 @@ const seed = async () => {
   validateEnv();
 
   const client = createAdminClient();
-  const context: SeedContext = {
+  const context = {
     client,
     userIdsByEmail: new Map(),
   };
