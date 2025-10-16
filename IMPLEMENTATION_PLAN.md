@@ -197,16 +197,16 @@
   - **Step Dependencies**: Steps 7-12 (performance touches multiple areas)
   - **User Instructions**: Benchmark before/after using Lighthouse script.
 
-- [ ] Step 14: Integrate observability and security guards
+- [x] Step 14: Integrate observability and security guards ✅ (`sentry.client.config.js`, `sentry.server.config.js`, `src/modules/platform/{logging,security}/*`, `src/app/api/{attachments/sign,sessions,task}/*`, `docs/operations/observability.md`, `tests/platform/security/httpGuard.test.ts`)
   - **Task**: Ensure Sentry DSN, analytics, and Supabase function guards are configured; add logging utilities and alert documentation.
   - **Files**:
-    - `sentry.client.config.js`: Verify DSN usage.
-    - `sentry.server.config.js`: Server instrumentation.
-    - `src/modules/platform/logging/logger.ts`
-    - `src/modules/platform/security/httpGuard.ts`: Block unsafe Supabase HTTP calls.
-    - `src/modules/platform/security/index.ts`: Export guards.
-    - `src/app/api/*`: Apply guards where relevant (≤5 endpoints per step to stay under limit).
-    - `docs/operations/observability.md`: Alert runbook.
+    - `sentry.client.config.js`: DSN validation and warning when telemetry is disabled.
+    - `sentry.server.config.js`: Server instrumentation with environment-aware sampling.
+    - `src/modules/platform/logging/logger.ts`: Structured logger feeding console + Sentry.
+    - `src/modules/platform/security/{httpGuard.ts,index.ts}`: Supabase HTTP guard exports.
+    - `src/app/api/attachments/sign/route.ts`, `src/app/api/sessions/route.ts`, `src/app/api/tasks/route.ts`: Apply guard + scoped logging.
+    - `tests/platform/security/httpGuard.test.ts`: Guard regression coverage.
+    - `docs/operations/observability.md`: Alert and configuration runbook.
   - **Step Dependencies**: Step 13
   - **User Instructions**: Configure Sentry project keys and alert policies post-deploy.
 

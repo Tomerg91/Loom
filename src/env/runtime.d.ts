@@ -2,6 +2,7 @@ export type ClientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: string;
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
   NEXT_PUBLIC_APP_URL?: string;
+  NEXT_PUBLIC_SENTRY_DSN?: string;
 };
 
 export type ServerEnv = ClientEnv & {

@@ -11,6 +11,11 @@ import {
 } from '@/lib/api/utils';
 import { config } from '@/lib/config';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/modules/platform/logging/logger';
+import {
+  ForbiddenSupabaseHttpError,
+  ensureNoSupabaseHttpUsage,
+} from '@/modules/platform/security';
 
 const signRequestSchema = z.object({
   fileName: z
@@ -60,6 +65,8 @@ const sanitizeFileName = (fileName: string): string => {
   return `${safeBase || 'file'}${extension}`;
 };
 
+const log = createLogger({ context: 'api:attachments' });
+
 const resolveBucketName = () => {
   try {
     return (
@@ -73,10 +80,10 @@ const resolveBucketName = () => {
     // process.env keeps the handler usable in mocked environments while
     // preserving runtime validation in production.
     if (process.env.NODE_ENV !== 'test') {
-      console.warn(
-        'Falling back to process.env for TASK_ATTACHMENTS_BUCKET',
-        error
-      );
+      log.warn('Falling back to process.env for TASK_ATTACHMENTS_BUCKET', {
+        error,
+        feature: 'attachments-api',
+      });
     }
     return (
       process.env.TASK_ATTACHMENTS_BUCKET ||
@@ -104,7 +111,10 @@ async function getAuthenticatedActor(): Promise<
       },
     };
   } catch (error) {
-    console.error('Attachment sign API authentication error:', error);
+    log.error('Attachment sign API authentication error', {
+      error,
+      feature: 'attachments-api',
+    });
     return { response: createUnauthorizedResponse() };
   }
 }
@@ -121,8 +131,23 @@ export const POST = async (request: NextRequest) => {
   try {
     body = await request.json();
   } catch (error) {
-    console.warn('Failed to parse attachment sign payload:', error);
+    log.warn('Failed to parse attachment sign payload', {
+      error,
+      feature: 'attachments-api',
+    });
     return createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
+  }
+
+  try {
+    ensureNoSupabaseHttpUsage(body, { context: 'attachments.sign.body' });
+  } catch (error) {
+    if (error instanceof ForbiddenSupabaseHttpError) {
+      return createErrorResponse(
+        'Invalid payload received.',
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+    throw error;
   }
 
   const parsed = validateRequestBody(signRequestSchema, body);
@@ -142,7 +167,10 @@ export const POST = async (request: NextRequest) => {
     .createSignedUploadUrl(objectPath, { upsert: false });
 
   if (uploadError || !uploadData?.signedUrl) {
-    console.error('Failed to create signed upload URL:', uploadError);
+    log.error('Failed to create signed upload URL', {
+      error: uploadError,
+      feature: 'attachments-api',
+    });
     return createErrorResponse(
       'Unable to generate upload URL. Please try again.',
       HTTP_STATUS.INTERNAL_SERVER_ERROR

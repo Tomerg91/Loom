@@ -7,6 +7,11 @@ import {
   validateRequestBody,
 } from '@/lib/api/utils';
 import { createServerClient } from '@/lib/supabase/server';
+import { createLogger } from '@/modules/platform/logging/logger';
+import {
+  ForbiddenSupabaseHttpError,
+  ensureNoSupabaseHttpUsage,
+} from '@/modules/platform/security';
 import {
   SessionSchedulerError,
   SessionSchedulerService,
@@ -24,6 +29,7 @@ type AuthActor = {
 };
 
 const scheduler = new SessionSchedulerService();
+const log = createLogger({ context: 'api:sessions' });
 
 const createUnauthorizedResponse = () =>
   createErrorResponse(
@@ -49,10 +55,10 @@ async function getAuthenticatedActor(): Promise<
       .single();
 
     if (profileError) {
-      console.warn(
-        'Failed to fetch user profile for sessions API:',
-        profileError.message
-      );
+      log.warn('Failed to fetch user profile for sessions API', {
+        error: profileError,
+        feature: 'sessions-api',
+      });
     }
 
     return {
@@ -62,7 +68,10 @@ async function getAuthenticatedActor(): Promise<
       },
     };
   } catch (error) {
-    console.error('Sessions API authentication error:', error);
+    log.error('Sessions API authentication error', {
+      error,
+      feature: 'sessions-api',
+    });
     return { response: createUnauthorizedResponse() };
   }
 }
@@ -77,6 +86,11 @@ const parseCalendarSearchParams = (request: NextRequest) => {
 };
 
 export const GET = async (request: NextRequest) => {
+  ensureNoSupabaseHttpUsage(
+    Object.fromEntries(request.nextUrl.searchParams.entries()),
+    { context: 'sessions.list.query' }
+  );
+
   const authResult = await getAuthenticatedActor();
   if ('response' in authResult) {
     return authResult.response;
@@ -100,7 +114,10 @@ export const GET = async (request: NextRequest) => {
     if (error instanceof SessionSchedulerError) {
       return createErrorResponse(error.message, error.status);
     }
-    console.error('Sessions API GET error:', error);
+    log.error('Sessions API GET error', {
+      error,
+      feature: 'sessions-api',
+    });
     return createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -120,8 +137,23 @@ export const POST = async (request: NextRequest) => {
   try {
     body = await request.json();
   } catch (error) {
-    console.warn('Failed to parse session request payload:', error);
+    log.warn('Failed to parse session request payload', {
+      error,
+      feature: 'sessions-api',
+    });
     return createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
+  }
+
+  try {
+    ensureNoSupabaseHttpUsage(body, { context: 'sessions.create.body' });
+  } catch (error) {
+    if (error instanceof ForbiddenSupabaseHttpError) {
+      return createErrorResponse(
+        'Invalid payload received.',
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+    throw error;
   }
 
   const parsed = validateRequestBody(sessionRequestSchema, body);
@@ -151,7 +183,10 @@ export const POST = async (request: NextRequest) => {
     if (error instanceof SessionSchedulerError) {
       return createErrorResponse(error.message, error.status);
     }
-    console.error('Sessions API POST error:', error);
+    log.error('Sessions API POST error', {
+      error,
+      feature: 'sessions-api',
+    });
     return createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR

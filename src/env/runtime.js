@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { createEnv } = require('@t3-oss/env-nextjs');
 const { z } = require('zod');
 
@@ -17,6 +18,10 @@ const clientEnvSchema = z.object({
     .string()
     .url('NEXT_PUBLIC_APP_URL must be a valid URL')
     .optional(),
+  NEXT_PUBLIC_SENTRY_DSN: z
+    .string()
+    .url('NEXT_PUBLIC_SENTRY_DSN must be a valid DSN URL')
+    .optional(),
 });
 
 const resolveSupabaseUrl = () =>
@@ -33,6 +38,8 @@ const rawClientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: resolveSupabaseUrl(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: resolveSupabaseAnonKey(),
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_SENTRY_DSN:
+    process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN,
 };
 
 const parsedClientEnv = clientEnvSchema.safeParse(rawClientEnv);
@@ -67,6 +74,7 @@ const serverEnv = createEnv({
     NEXT_PUBLIC_SUPABASE_URL: clientEnv.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_APP_URL: clientEnv.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_SENTRY_DSN: clientEnv.NEXT_PUBLIC_SENTRY_DSN,
   },
   emptyStringAsUndefined: true,
 });
