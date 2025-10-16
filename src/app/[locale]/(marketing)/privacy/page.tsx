@@ -8,7 +8,7 @@ import type { Metadata } from 'next';
  * imports without a full redeploy.
  */
 export const dynamic = 'error';
-export const revalidate = 60 * 60 * 6; // Revalidate every 6 hours
+export const revalidate = 21600; // Revalidate every 6 hours
 
 export const metadata: Metadata = {
   title: 'Privacy Policy – Satya Method',

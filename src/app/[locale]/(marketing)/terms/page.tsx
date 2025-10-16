@@ -7,7 +7,7 @@ import type { Metadata } from 'next';
  * marketing/legal updates propagate without invalidating the entire build.
  */
 export const dynamic = 'error';
-export const revalidate = 60 * 60 * 6; // Revalidate every 6 hours
+export const revalidate = 21600; // Revalidate every 6 hours
 
 export const metadata: Metadata = {
   title: 'Terms of Service – Satya Method',
