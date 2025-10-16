@@ -54,7 +54,8 @@
     "supabase:types": "supabase gen types typescript --local > src/types/supabase.ts",
     "supabase:migration": "supabase migration new",
     "supabase:push": "supabase db push",
-    "db:seed": "supabase db reset"
+    "db:seed": "supabase db reset",
+    "seed:staging": "tsx scripts/seed/staging.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -155,6 +156,7 @@
     "supabase": "^2.30.4",
     "tailwindcss": "^4",
     "tdd-guard": "^0.1.4",
+    "tsx": "^4.7.1",
     "typescript": "^5",
     "undici": "^6.20.0",
     "vitest": "^3.2.4",

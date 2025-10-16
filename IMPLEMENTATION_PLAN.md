@@ -226,7 +226,7 @@
   - **Step Dependencies**: Steps 4-14
   - **User Instructions**: Install Playwright browsers locally via `npx playwright install`.
 
-- [ ] Step 16: Final staging checklist and launch preparation
+- [x] Step 16: Final staging checklist and launch preparation ✅
   - **Task**: Compile go-live checklist covering environment promotion, seed scripts, support tooling, and beta feedback channels; run full regression and document known issues.
   - **Files**:
     - `docs/launch/checklist.md`: End-to-end launch tasks.
