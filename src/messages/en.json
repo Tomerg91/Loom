@@ -613,6 +613,93 @@
       }
     }
   },
+  "practiceJournal": {
+    "title": "Practice journal",
+    "description": "A dedicated space to reflect on your somatic practice.",
+    "emptyTitle": "No practices captured yet",
+    "emptyDescription": "Start documenting your somatic journey by logging your first practice entry.",
+    "emptyAction": "Record a practice entry",
+    "newEntry": "Record a practice entry",
+    "editEntry": "Edit entry",
+    "deleteEntry": "Delete entry",
+    "shareWithCoach": "Share with coach",
+    "unshareWithCoach": "Stop sharing",
+    "shared": "Shared",
+    "private": "Private",
+    "form": {
+      "title": "Title (optional)",
+      "titlePlaceholder": "For example: Morning breathwork reflection",
+      "content": "What came up in your body?",
+      "contentPlaceholder": "Describe your somatic experience...\\n\\nIdeas:\\n• What sensations did you notice?\\n• Where did you feel ease or tension?\\n• What did you learn about yourself?",
+      "insights": "Insights and discoveries",
+      "insightsPlaceholder": "What stood out during this practice?",
+      "sensations": "Sensations",
+      "sensationsPlaceholder": "Add sensations (press Enter)",
+      "emotions": "Emotions",
+      "emotionsPlaceholder": "Add emotions (press Enter)",
+      "bodyAreas": "Body areas",
+      "bodyAreasPlaceholder": "Add body areas (press Enter)",
+      "practicesDone": "Practices completed",
+      "practicesDonePlaceholder": "Add practices (press Enter)",
+      "energyLevel": "Energy level",
+      "energyLevelPlaceholder": "Select the energy you felt",
+      "attachments": "Attachments",
+      "attachmentsDescription": "Upload notes, audio, or images tied to this reflection.",
+      "attachmentsHint": "Supported formats: PDF, audio, and images up to 20MB.",
+      "addAttachment": "Add attachment",
+      "removeAttachment": "Remove attachment",
+      "shareLabel": "Share with my coach",
+      "submit": "Save entry",
+      "saving": "Saving…",
+      "cancel": "Cancel"
+    },
+    "list": {
+      "title": "Recent reflections",
+      "description": "Revisit how your practice evolved over time.",
+      "filterLabel": "Filter entries",
+      "showAll": "All",
+      "showShared": "Shared",
+      "showPrivate": "Private",
+      "searchPlaceholder": "Search reflections",
+      "noResultsTitle": "No matching reflections",
+      "noResultsDescription": "Try adjusting your filters or search query.",
+      "loading": "Loading reflections…",
+      "loadMore": "Load more"
+    },
+    "entry": {
+      "sharedWithCoach": "Shared with your coach",
+      "privateEntry": "Visible only to you",
+      "createdAt": "Created {timestamp}",
+      "lastUpdated": "Updated {timestamp}",
+      "shareToggle": "Toggle sharing",
+      "confirmDeleteTitle": "Delete this entry?",
+      "confirmDeleteDescription": "This action cannot be undone and will remove the entry from your history.",
+      "confirmDeleteCancel": "Keep entry",
+      "confirmDeleteConfirm": "Delete entry"
+    },
+    "insights": {
+      "title": "Practice insights",
+      "description": "Highlight patterns, discoveries, or breakthroughs to revisit later.",
+      "prompt": "What feels important about this entry?",
+      "emptyTitle": "No insights yet",
+      "emptyDescription": "Capture a quick note about what changed or what you want to remember."
+    },
+    "coachView": {
+      "title": "Shared reflections",
+      "description": "Entries your client has shared for review.",
+      "emptyTitle": "Nothing shared yet",
+      "emptyDescription": "Encourage your client to share reflections when they're ready."
+    },
+    "errors": {
+      "create": "We couldn't save the entry. Please try again.",
+      "update": "We couldn't update the entry. Please try again.",
+      "delete": "We couldn't delete the entry. Please try again.",
+      "share": "We couldn't share the entry with your coach.",
+      "unshare": "We couldn't stop sharing the entry.",
+      "load": "We couldn't load your practice journal.",
+      "loadInsights": "We couldn't load practice insights."
+    }
+  },
   "mfa": {
     "setup": {
       "title": "Set Up Two-Factor Authentication",

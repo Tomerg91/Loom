@@ -212,15 +212,16 @@
 
 ## Phase 6 – Quality Engineering & Release Readiness
 
-- [ ] Step 15: Expand automated testing suites
+- [x] Step 15: Expand automated testing suites ✅
   - **Task**: Wire Vitest “production readiness” suite, extend Playwright smoke tests for auth and dashboards, and add accessibility/performance scripts to CI.
   - **Files**:
-    - `package.json`: Add new test scripts.
-    - `vitest.config.ts`: Configure new test suite.
-    - `tests/playwright/auth.spec.ts`: E2E coverage.
-    - `tests/playwright/dashboard.spec.ts`
-    - `tests/accessibility.test.ts`: Axe checks.
-    - `.github/workflows/ci.yml`: Run new checks.
+    - `package.json`: Add QA aggregate script and point accessibility suite at shared tests.
+    - `vitest.config.ts`: Ensure Vitest discovers root-level `tests/` specs.
+    - `tests/playwright/auth.spec.ts`: Authentication smoke coverage.
+    - `tests/playwright/dashboard.spec.ts`: Dashboard redirect smoke coverage.
+    - `tests/accessibility.test.tsx`: High-signal accessibility regression checks.
+    - `playwright.smoke.config.ts`: Target smoke specs in `tests/playwright`.
+    - `.github/workflows/ci.yml`: Run production-readiness, accessibility, performance, and smoke checks.
     - `docs/testing/strategy.md`: Update methodology.
   - **Step Dependencies**: Steps 4-14
   - **User Instructions**: Install Playwright browsers locally via `npx playwright install`.

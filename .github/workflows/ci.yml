@@ -110,7 +110,16 @@ jobs:
       
       - name: Run integration tests
         run: npm run test:integration
-      
+
+      - name: Run production readiness tests
+        run: npm run test:production-readiness
+
+      - name: Run accessibility smoke tests
+        run: npm run test:accessibility
+
+      - name: Run performance budget checks
+        run: npm run test:performance
+
       - name: Generate coverage report
         run: npm run test:coverage
       
@@ -159,7 +168,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
-      
+
+      - name: Run Playwright smoke suite
+        run: npm run test:e2e:smoke
+
       - name: Run E2E tests
         run: npm run test:e2e
       
@@ -197,7 +209,6 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
