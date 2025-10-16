@@ -155,11 +155,11 @@
 
 ## Phase 4 – Marketing Site & Localization
 
-- [ ] Step 11: Replace placeholder landing content with CMS-backed data
+- [x] Step 11: Replace placeholder landing content with CMS-backed data ✅
   - **Task**: Integrate a CMS or structured JSON for hero copy, testimonials, and pricing; update English/Hebrew content and ensure ISR/static generation for marketing pages.
   - **Files**:
     - `src/app/[locale]/page.tsx`: Fetch CMS content.
-    - `src/modules/platform/cms/client.ts`: CMS SDK wrapper or JSON loader.
+    - `src/modules/platform/cms/client.ts`: CMS JSON loader with validation.
     - `src/modules/platform/cms/types.ts`
     - `src/components/features/landing/Hero.tsx`
     - `src/components/features/landing/Testimonials.tsx`
