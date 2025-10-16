@@ -83,10 +83,11 @@
   - **Step Dependencies**: Step 5
   - **User Instructions**: Review design with product before wiring data.
 
-- [ ] Step 7: Deliver initial coach dashboard widgets
+- [x] Step 7: Deliver initial coach dashboard widgets ✅
   - **Task**: Build React Query loaders for sessions, tasks, and clients; render overview cards and lists with server-prefetch using `dehydrate` in server components.
   - **Files**:
     - `src/app/[locale]/(dashboard)/coach/page.tsx`: Server loader + hydration.
+    - `src/app/api/dashboard/coach-overview/route.ts`: API endpoint reusing server loader.
     - `src/modules/dashboard/api/useCoachOverview.ts`: React Query hook.
     - `src/modules/dashboard/components/CoachOverview.tsx`
     - `src/modules/dashboard/components/widgets/SessionsList.tsx`
@@ -95,10 +96,12 @@
     - `src/modules/dashboard/server/loaders.ts`: Supabase queries.
     - `src/modules/dashboard/types.ts`
     - `tests/dashboard/coach-overview.test.tsx`: Component test.
+    - `src/messages/en.json`
+    - `src/messages/he.json`
   - **Step Dependencies**: Step 6
   - **User Instructions**: Seed Supabase with fixture data for testing.
 
-- [ ] Step 8: Build client dashboard parity
+- [x] Step 8: Build client dashboard parity ✅
   - **Task**: Mirror Step 7 for client view with personalized tasks/sessions, add CTA for booking sessions.
   - **Files**:
     - `src/app/[locale]/(dashboard)/client/page.tsx`
@@ -109,8 +112,8 @@
     - `src/modules/dashboard/components/widgets/GoalsProgress.tsx`
     - `src/modules/dashboard/server/client-loaders.ts`
     - `tests/dashboard/client-overview.test.tsx`
-    - `src/i18n/locales/en/dashboard.json`
-    - `src/i18n/locales/he/dashboard.json`
+    - `src/messages/en.json`
+    - `src/messages/he.json`
   - **Step Dependencies**: Step 7
   - **User Instructions**: Verify RLS policies allow clients to only see their data.
 

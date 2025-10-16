@@ -409,6 +409,93 @@
         "contact": "Message my coach"
       }
     },
+    "client": {
+      "title": "Client overview",
+      "subtitle": "Stay focused on your next steps and track your progress with your coach.",
+      "lastUpdated": "Last updated {timestamp}",
+      "actions": {
+        "refresh": "Refresh data",
+        "refreshing": "Refreshing…"
+      },
+      "summary": {
+        "sessions": {
+          "label": "Upcoming sessions",
+          "description": "What's scheduled with your coach"
+        },
+        "tasks": {
+          "label": "Active tasks",
+          "description": "Action items waiting for you"
+        },
+        "goalsInProgress": {
+          "label": "Goals in progress",
+          "description": "Milestones you're actively working toward"
+        },
+        "completedGoals": {
+          "label": "Completed goals",
+          "description": "Wins you've already achieved"
+        }
+      },
+      "statuses": {
+        "scheduled": "Scheduled",
+        "in_progress": "In progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "no_show": "No show"
+      },
+      "tasks": {
+        "status": {
+          "pending": "Pending",
+          "in_progress": "In progress",
+          "completed": "Completed",
+          "overdue": "Overdue"
+        },
+        "priority": {
+          "high": "High priority",
+          "medium": "Medium priority",
+          "low": "Low priority"
+        }
+      },
+      "goals": {
+        "status": {
+          "active": "In progress",
+          "completed": "Completed",
+          "paused": "Paused",
+          "cancelled": "Cancelled"
+        },
+        "priority": {
+          "high": "High priority",
+          "medium": "Medium priority",
+          "low": "Low priority"
+        }
+      },
+      "sections": {
+        "upcomingSessions": {
+          "title": "Upcoming sessions",
+          "description": "See what's coming up with your coach.",
+          "empty": "You don't have any upcoming sessions yet.",
+          "join": "Join session",
+          "with": "with",
+          "duration": "Duration"
+        },
+        "tasks": {
+          "title": "My tasks",
+          "description": "Action items assigned by your coach.",
+          "empty": "You're all caught up on assigned tasks.",
+          "due": "Due",
+          "assignedBy": "Assigned by"
+        },
+        "goals": {
+          "title": "Goals",
+          "description": "Track how you're progressing on your goals.",
+          "empty": "Create your first goal to see progress here.",
+          "target": "Target"
+        }
+      },
+      "errors": {
+        "title": "We couldn't load your overview",
+        "description": "Try refreshing the page to request the latest data."
+      }
+    },
     "coachSections": {
       "todaysAgenda": {
         "title": "Today's Agenda",
@@ -447,6 +534,82 @@
         "addClient": "Add or invite a client",
         "viewCalendar": "Open calendar",
         "manageAvailability": "Manage availability"
+      }
+    },
+    "coach": {
+      "title": "Coach overview",
+      "subtitle": "Monitor upcoming sessions, high-priority tasks, and client engagement at a glance.",
+      "lastUpdated": "Last updated {timestamp}",
+      "actions": {
+        "refresh": "Refresh data",
+        "refreshing": "Refreshing…"
+      },
+      "summary": {
+        "clients": {
+          "label": "Active clients",
+          "description": "People you're currently coaching"
+        },
+        "tasks": {
+          "label": "Open tasks",
+          "description": "Action items that still need follow-up"
+        },
+        "overdue": {
+          "label": "Overdue tasks",
+          "description": "Items that are past their due date"
+        },
+        "sessions": {
+          "label": "Upcoming sessions",
+          "description": "Meetings scheduled over the next few days"
+        }
+      },
+      "statuses": {
+        "scheduled": "Scheduled",
+        "in_progress": "In progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "no_show": "No show"
+      },
+      "tasks": {
+        "status": {
+          "pending": "Pending",
+          "in_progress": "In progress",
+          "completed": "Completed",
+          "overdue": "Overdue"
+        },
+        "priority": {
+          "high": "High priority",
+          "medium": "Medium priority",
+          "low": "Low priority"
+        }
+      },
+      "sections": {
+        "upcomingSessions": {
+          "title": "Upcoming sessions",
+          "description": "Stay ready for your next coaching conversations.",
+          "empty": "No upcoming sessions scheduled.",
+          "join": "Join session",
+          "duration": "Duration"
+        },
+        "tasks": {
+          "title": "Tasks to review",
+          "description": "Follow up on tasks that are due soon or need attention.",
+          "empty": "You're all caught up on assigned tasks.",
+          "due": "Due"
+        },
+        "clientProgress": {
+          "title": "Client progress",
+          "description": "Track how each client is progressing across sessions and tasks.",
+          "empty": "Client progress will appear once you start working with clients.",
+          "noTasks": "No tasks assigned yet",
+          "completion": "{value}% complete",
+          "activeTasks": "{count, plural, one {# active task} other {# active tasks}}",
+          "noSession": "No recent session recorded",
+          "lastSession": "Last session {timestamp}"
+        }
+      },
+      "errors": {
+        "title": "We couldn't load your overview",
+        "description": "Try refreshing the page to request the latest data."
       }
     }
   },
