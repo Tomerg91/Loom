@@ -1757,6 +1757,83 @@
         },
         "unknownClient": "מתאמן לא משויך"
       }
+    },
+    "schedule": {
+      "modal": {
+        "title": "תזמון פגישה",
+        "description": "תכננו מפגשים עתידיים עם הלקוחות שלכם ממקום אחד.",
+        "fields": {
+          "title": {
+            "label": "כותרת הפגישה",
+            "placeholder": "הכניסו נושא לפגישה"
+          },
+          "client": {
+            "label": "לקוח",
+            "placeholder": "בחרו לקוח"
+          },
+          "date": {
+            "label": "תאריך",
+            "placeholder": "בחרו תאריך"
+          },
+          "time": {
+            "label": "שעה"
+          },
+          "duration": {
+            "label": "משך",
+            "placeholder": "בחרו משך",
+            "option": "{minutes} דקות"
+          },
+          "timezone": {
+            "label": "אזור זמן",
+            "placeholder": "למשל Asia/Jerusalem"
+          },
+          "meetingUrl": {
+            "label": "קישור לפגישה",
+            "placeholder": "https://example.com/session"
+          },
+          "notes": {
+            "label": "הערות",
+            "placeholder": "הוסיפו הוראות הכנה (אופציונלי)"
+          }
+        },
+        "actions": {
+          "cancel": "בטל",
+          "submitRequest": "שלח בקשה",
+          "scheduleSession": "קבע פגישה"
+        },
+        "messages": {
+          "successTitle": "הכל מוכן!",
+          "successDescription": "פרטי הפגישה נשמרו והציר עודכן.",
+          "errorTitle": "לא ניתן לקבוע פגישה",
+          "missingCoach": "יש לבחור מאמן כדי לקבוע פגישה."
+        }
+      },
+      "timeline": {
+        "title": "מצב תזמון",
+        "description": "עקבו אחר בקשות ממתינות ומפגשים קרובים.",
+        "loading": "טוען לוח זמנים…",
+        "pendingTitle": "בקשות ממתינות",
+        "upcomingTitle": "מפגשים קרובים",
+        "emptyRequests": "אין בקשות תזמון כרגע.",
+        "emptySessions": "אין מפגשים מתוכננים.",
+        "requestFallbackTitle": "פגישת אימון",
+        "requestedBy": "הוגש על ידי {name}",
+        "unknownRequester": "מבקש לא ידוע",
+        "unknownClient": "לקוח לא ידוע",
+        "durationLabel": "משך: {duration}",
+        "requestStatus": {
+          "pending": "ממתין לאישור",
+          "approved": "אושרה",
+          "declined": "נדחתה"
+        },
+        "sessionStatus": {
+          "scheduled": "מתוכנן",
+          "in_progress": "בתהליך",
+          "completed": "הושלם",
+          "cancelled": "בוטל",
+          "no_show": "לא הגיע"
+        }
+      }
     }
   }
 }

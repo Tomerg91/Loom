@@ -1523,6 +1523,83 @@
         },
         "unknownClient": "Unassigned client"
       }
+    },
+    "schedule": {
+      "modal": {
+        "title": "Schedule a session",
+        "description": "Coordinate upcoming work with your clients from one place.",
+        "fields": {
+          "title": {
+            "label": "Session title",
+            "placeholder": "Enter a session focus"
+          },
+          "client": {
+            "label": "Client",
+            "placeholder": "Select a client"
+          },
+          "date": {
+            "label": "Date",
+            "placeholder": "Pick a date"
+          },
+          "time": {
+            "label": "Time"
+          },
+          "duration": {
+            "label": "Duration",
+            "placeholder": "Select duration",
+            "option": "{minutes} minutes"
+          },
+          "timezone": {
+            "label": "Timezone",
+            "placeholder": "e.g. America/New_York"
+          },
+          "meetingUrl": {
+            "label": "Meeting link",
+            "placeholder": "https://example.com/session"
+          },
+          "notes": {
+            "label": "Notes",
+            "placeholder": "Provide preparation details (optional)"
+          }
+        },
+        "actions": {
+          "cancel": "Cancel",
+          "submitRequest": "Submit request",
+          "scheduleSession": "Schedule session"
+        },
+        "messages": {
+          "successTitle": "All set!",
+          "successDescription": "Your session details were saved and the timeline was refreshed.",
+          "errorTitle": "Unable to schedule",
+          "missingCoach": "A coach is required to schedule sessions."
+        }
+      },
+      "timeline": {
+        "title": "Scheduling overview",
+        "description": "Track pending requests and upcoming sessions at a glance.",
+        "loading": "Loading session schedule…",
+        "pendingTitle": "Pending requests",
+        "upcomingTitle": "Upcoming sessions",
+        "emptyRequests": "No scheduling requests right now.",
+        "emptySessions": "No upcoming sessions scheduled.",
+        "requestFallbackTitle": "Coaching session",
+        "requestedBy": "Requested by {name}",
+        "unknownRequester": "Unknown requester",
+        "unknownClient": "Unknown client",
+        "durationLabel": "Duration: {duration}",
+        "requestStatus": {
+          "pending": "Pending approval",
+          "approved": "Approved",
+          "declined": "Declined"
+        },
+        "sessionStatus": {
+          "scheduled": "Scheduled",
+          "in_progress": "In progress",
+          "completed": "Completed",
+          "cancelled": "Cancelled",
+          "no_show": "No-show"
+        }
+      }
     }
   }
 }

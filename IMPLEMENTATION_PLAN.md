@@ -137,10 +137,10 @@
   - **Step Dependencies**: Step 8
   - **User Instructions**: Run `supabase db push` or migration command after review.
 
-- [ ] Step 10: Build session scheduling workflows
+- [x] Step 10: Build session scheduling workflows ✅
   - **Task**: Design session entity migrations, create booking API, integrate calendar UI, and enable coaches to approve/reschedule sessions.
   - **Files**:
-    - `supabase/migrations/2025XXXX_sessions.sql`
+    - `supabase/migrations/20251020000020_session_booking_workflows.sql`
     - `src/app/api/sessions/route.ts`
     - `src/app/api/sessions/[id]/route.ts`
     - `src/modules/sessions/api/sessions.ts`
