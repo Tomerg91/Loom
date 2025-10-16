@@ -69,7 +69,7 @@
 
 ## Phase 2 – Dashboard Foundations
 
-- [ ] Step 6: Implement dashboard layout shell with navigation states
+- [x] Step 6: Implement dashboard layout shell with navigation states ✅ (`src/app/[locale]/(dashboard)/layout.tsx`, `src/components/layout/*`, `src/styles/dashboard.css`)
   - **Task**: Create shared dashboard layout housing sidebar, topbar, locale switcher, and skeleton placeholders; wire to design system tokens.
   - **Files**:
     - `src/app/[locale]/(dashboard)/layout.tsx`: Layout composition.
@@ -78,8 +78,8 @@
     - `src/components/layout/Topbar.tsx`: Session/user info.
     - `src/styles/dashboard.css` or Tailwind layer adjustments.
     - `src/modules/i18n/components/LocaleSwitcher.tsx`
-    - `src/components/ui/Skeleton.tsx`: Loading states.
-    - `src/types/navigation.ts`: Nav config.
+    - `src/components/ui/dashboard-skeletons.tsx`: Loading states.
+    - `src/components/layout/navigation-types.ts`: Nav config.
   - **Step Dependencies**: Step 5
   - **User Instructions**: Review design with product before wiring data.
 
