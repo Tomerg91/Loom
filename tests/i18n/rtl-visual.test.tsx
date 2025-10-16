@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
-import { LocaleDirectionProvider } from '@/modules/i18n/config';
+import { LocaleDirectionProvider } from '@/modules/i18n/direction-context';
 
 vi.mock('next-intl', () => import('@/test/mocks/next-intl'));
 

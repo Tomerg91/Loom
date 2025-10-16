@@ -2,7 +2,6 @@
  * @fileoverview Locale-aware routing helpers built on top of next-intl.
  */
 
-import { headers } from 'next/headers';
 import { createNavigation } from 'next-intl/navigation';
 import { defineRouting } from 'next-intl/routing';
 
@@ -67,11 +66,6 @@ export function negotiateRequestLocale(headerValue: string | null | undefined): 
   return DEFAULT_LOCALE;
 }
 
-/** Convenience helper that reads the current request headers to negotiate. */
-export function negotiateRequestLocaleFromHeaders(): AppLocale {
-  return negotiateRequestLocale(headers().get('accept-language'));
-}
-
 /**
  * Ensures a pathname is scoped to the requested locale (defaults to the
  * configured default when none is provided).
@@ -88,7 +82,7 @@ export function buildLocalizedPath(
 
 export interface LocalePathDetails {
   locale: AppLocale;
-  pathname: `/${string}`;
+  pathname: '/' | `/${string}`;
   direction: 'ltr' | 'rtl';
 }
 
@@ -99,7 +93,7 @@ export function stripLocaleFromPath(pathname: string): LocalePathDetails {
   const sanitized = pathname.startsWith('/') ? pathname : `/${pathname}`;
   const [, possibleLocale, ...rest] = sanitized.split('/');
   const normalizedLocale = normalizeLocale(possibleLocale);
-  const resolvedPath = rest.length ? `/${rest.join('/')}` : '/' as const;
+  const resolvedPath = rest.length ? (`/${rest.join('/')}` as `/${string}`) : '/';
 
   return {
     locale: normalizedLocale,

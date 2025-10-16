@@ -2,13 +2,10 @@
  * @fileoverview Locale configuration and direction helpers for the Loom app.
  *
  * Centralizes knowledge about supported locales, their metadata, and how the
- * UI should respond to locale-specific nuances like text direction. The module
- * intentionally exposes both server-safe utilities (for routing and data
- * loading) and a lightweight React context provider so client components can
- * react to direction changes without prop-drilling.
+ * UI should respond to locale-specific nuances like text direction. This module
+ * intentionally stays free of any React-specific logic so it can be shared
+ * safely between server and client environments.
  */
-
-import { createContext, type ReactNode } from 'react';
 
 /** All locales supported by the marketing site and authenticated app. */
 export const SUPPORTED_LOCALES = ['en', 'he'] as const;
@@ -92,36 +89,4 @@ export function getLocaleDirection(locale: string | AppLocale): 'ltr' | 'rtl' {
 export function getLocaleMetadata(locale: string | AppLocale): LocaleMetadata {
   const normalized = normalizeLocale(locale);
   return LOCALE_METADATA[normalized];
-}
-
-/** Shared value describing the current locale + direction context. */
-export interface LocaleDirectionValue {
-  locale: AppLocale;
-  direction: 'ltr' | 'rtl';
-}
-
-/**
- * React context seeded with sensible defaults so client components can inspect
- * the current direction without relying solely on DOM queries.
- */
-export const LocaleDirectionContext = createContext<LocaleDirectionValue>({
-  locale: DEFAULT_LOCALE,
-  direction: getLocaleDirection(DEFAULT_LOCALE),
-});
-
-export interface LocaleDirectionProviderProps {
-  value: LocaleDirectionValue;
-  children: ReactNode;
-}
-
-/** Simple provider wrapper to avoid duplicating the React import elsewhere. */
-export function LocaleDirectionProvider({
-  value,
-  children,
-}: LocaleDirectionProviderProps) {
-  return (
-    <LocaleDirectionContext.Provider value={value}>
-      {children}
-    </LocaleDirectionContext.Provider>
-  );
 }

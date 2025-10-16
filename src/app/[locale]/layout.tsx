@@ -11,11 +11,8 @@ import { Providers } from '@/components/providers/providers';
 import { PwaBootstrap } from '@/components/pwa/pwa-bootstrap';
 import { SkipLink } from '@/components/ui/skip-link';
 import { getServerUser } from '@/lib/auth/auth';
-import {
-  LocaleDirectionProvider,
-  getLocaleDirection,
-  isAppLocale,
-} from '@/modules/i18n/config';
+import { getLocaleDirection, isAppLocale } from '@/modules/i18n/config';
+import { LocaleDirectionProvider } from '@/modules/i18n/direction-context';
 import { routing } from '@/modules/i18n/routing';
 import '../globals.css';
 

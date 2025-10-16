@@ -2,10 +2,8 @@ import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import './globals.css';
 
-import {
-  LocaleDirectionProvider,
-  getLocaleDirection,
-} from '@/modules/i18n/config';
+import { getLocaleDirection } from '@/modules/i18n/config';
+import { LocaleDirectionProvider } from '@/modules/i18n/direction-context';
 import { negotiateRequestLocale } from '@/modules/i18n/routing';
 
 interface RootLayoutProps {
@@ -18,8 +16,8 @@ interface RootLayoutProps {
  * been resolved, but providing a fallback prevents flashes of incorrect
  * alignment while streaming.
  */
-export default function RootLayout({ children }: RootLayoutProps) {
-  const headerList = headers();
+export default async function RootLayout({ children }: RootLayoutProps) {
+  const headerList = await headers();
   const fallbackLocale = negotiateRequestLocale(headerList.get('accept-language'));
   const fallbackDirection = getLocaleDirection(fallbackLocale);
 

@@ -6,7 +6,7 @@
 
 import { useContext } from 'react';
 
-import { LocaleDirectionContext } from './config';
+import { LocaleDirectionContext } from './direction-context';
 
 /** Accessor for the current locale + direction context seeded on the server. */
 export function useLocaleDirection() {
