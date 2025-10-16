@@ -149,6 +149,7 @@ export interface TaskDto {
   title: string;
   description?: string | null;
   priority: TaskPriority;
+  status: TaskStatus;
   visibilityToCoach: boolean;
   dueDate?: string | null;
   recurrenceRule?: unknown;

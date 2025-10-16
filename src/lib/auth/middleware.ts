@@ -1,6 +1,7 @@
-import { createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+
+import { createServerClient } from '@/modules/platform/supabase/server';
 import { UserRole } from '@/types';
 
 // Routes that require authentication
@@ -24,23 +25,17 @@ const publicRoutes = [
 ];
 
 // Admin-only routes
-const adminRoutes = [
-  '/admin',
-];
+const adminRoutes = ['/admin'];
 
 // Coach-only routes
-const coachRoutes = [
-  '/coach',
-];
+const coachRoutes = ['/coach'];
 
 // Client-only routes
-const clientRoutes = [
-  '/client',
-];
+const clientRoutes = ['/client'];
 
 export async function authMiddleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   // Skip middleware for static files and API routes
   if (
     pathname.startsWith('/_next') ||
@@ -53,24 +48,28 @@ export async function authMiddleware(request: NextRequest) {
 
   // Create supabase client
   const supabase = createServerClient();
-  
+
   try {
     // Get session
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const user = session?.user;
 
     // Check if route is protected
-    const isProtectedRoute = protectedRoutes.some(route => 
+    const isProtectedRoute = protectedRoutes.some(route =>
       pathname.startsWith(route)
     );
 
-    const isPublicRoute = publicRoutes.some(route => 
-      pathname === route || pathname.startsWith(route)
+    const isPublicRoute = publicRoutes.some(
+      route => pathname === route || pathname.startsWith(route)
     );
 
     // Redirect authenticated users away from auth pages
     if (user && pathname.startsWith('/auth/')) {
-      const response = NextResponse.redirect(new URL('/dashboard', request.url));
+      const response = NextResponse.redirect(
+        new URL('/dashboard', request.url)
+      );
       return response;
     }
 
@@ -81,7 +80,9 @@ export async function authMiddleware(request: NextRequest) {
 
     // Require authentication for protected routes
     if (isProtectedRoute && !user) {
-      const response = NextResponse.redirect(new URL('/auth/signin', request.url));
+      const response = NextResponse.redirect(
+        new URL('/auth/signin', request.url)
+      );
       return response;
     }
 
@@ -99,7 +100,9 @@ export async function authMiddleware(request: NextRequest) {
       // Check admin routes
       if (adminRoutes.some(route => pathname.startsWith(route))) {
         if (userRole !== 'admin') {
-          const response = NextResponse.redirect(new URL('/dashboard', request.url));
+          const response = NextResponse.redirect(
+            new URL('/dashboard', request.url)
+          );
           return response;
         }
       }
@@ -107,7 +110,9 @@ export async function authMiddleware(request: NextRequest) {
       // Check coach routes
       if (coachRoutes.some(route => pathname.startsWith(route))) {
         if (userRole !== 'coach' && userRole !== 'admin') {
-          const response = NextResponse.redirect(new URL('/dashboard', request.url));
+          const response = NextResponse.redirect(
+            new URL('/dashboard', request.url)
+          );
           return response;
         }
       }
@@ -115,7 +120,9 @@ export async function authMiddleware(request: NextRequest) {
       // Check client routes
       if (clientRoutes.some(route => pathname.startsWith(route))) {
         if (userRole !== 'client' && userRole !== 'admin') {
-          const response = NextResponse.redirect(new URL('/dashboard', request.url));
+          const response = NextResponse.redirect(
+            new URL('/dashboard', request.url)
+          );
           return response;
         }
       }
@@ -130,13 +137,15 @@ export async function authMiddleware(request: NextRequest) {
     return NextResponse.next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    
+
     // If there's an error and it's a protected route, redirect to signin
     if (protectedRoutes.some(route => pathname.startsWith(route))) {
-      const response = NextResponse.redirect(new URL('/auth/signin', request.url));
+      const response = NextResponse.redirect(
+        new URL('/auth/signin', request.url)
+      );
       return response;
     }
-    
+
     return NextResponse.next();
   }
 }

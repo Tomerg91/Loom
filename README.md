@@ -129,6 +129,12 @@ npm run test         # Run tests
 npm run test:e2e     # Run Playwright tests
 ```
 
+### Launch Preparation
+
+- Review the [Launch Checklist](docs/launch/checklist.md) and assign owners before promoting a release candidate.
+- Seed staging data with representative users and sessions via `npm run seed:staging` (requires Supabase service-role access and executes `scripts/seed/staging.mjs`).
+- Align customer support on the [Support Playbook](docs/launch/support-playbook.md) and circulate known risks from [Known Issues](docs/launch/known-issues.md).
+
 ## 🎨 Design System
 
 ### Color Palette

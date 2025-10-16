@@ -499,6 +499,93 @@
         "contact": "שלח הודעה למאמן"
       }
     },
+    "client": {
+      "title": "סקירת לקוח",
+      "subtitle": "הישאר ממוקד בצעדים הבאים ועקוב אחר ההתקדמות עם המאמן שלך.",
+      "lastUpdated": "עודכן לאחרונה {timestamp}",
+      "actions": {
+        "refresh": "רענן נתונים",
+        "refreshing": "מרענן…"
+      },
+      "summary": {
+        "sessions": {
+          "label": "פגישות קרובות",
+          "description": "מה מתוזמן עם המאמן שלך"
+        },
+        "tasks": {
+          "label": "משימות פעילות",
+          "description": "משימות שממתינות לביצוע"
+        },
+        "goalsInProgress": {
+          "label": "יעדים בתהליך",
+          "description": "אבני הדרך שעליהן אתה עובד"
+        },
+        "completedGoals": {
+          "label": "יעדים שהושלמו",
+          "description": "הישגים שכבר סימנת"
+        }
+      },
+      "statuses": {
+        "scheduled": "מתוזמנת",
+        "in_progress": "בתהליך",
+        "completed": "הושלמה",
+        "cancelled": "בוטלה",
+        "no_show": "לא הגיע/ה"
+      },
+      "tasks": {
+        "status": {
+          "pending": "ממתינה",
+          "in_progress": "בתהליך",
+          "completed": "הושלמה",
+          "overdue": "באיחור"
+        },
+        "priority": {
+          "high": "עדיפות גבוהה",
+          "medium": "עדיפות בינונית",
+          "low": "עדיפות נמוכה"
+        }
+      },
+      "goals": {
+        "status": {
+          "active": "בתהליך",
+          "completed": "הושלם",
+          "paused": "מושהה",
+          "cancelled": "בוטל"
+        },
+        "priority": {
+          "high": "עדיפות גבוהה",
+          "medium": "עדיפות בינונית",
+          "low": "עדיפות נמוכה"
+        }
+      },
+      "sections": {
+        "upcomingSessions": {
+          "title": "פגישות קרובות",
+          "description": "ראה מה מחכה לך עם המאמן שלך.",
+          "empty": "אין לך פגישות קרובות כרגע.",
+          "join": "הצטרף לפגישה",
+          "with": "עם",
+          "duration": "משך"
+        },
+        "tasks": {
+          "title": "המשימות שלי",
+          "description": "משימות שהמאמן שלך הטיל עליך.",
+          "empty": "אתה מעודכן בכל המשימות.",
+          "due": "תאריך יעד",
+          "assignedBy": "הוקצה על ידי"
+        },
+        "goals": {
+          "title": "יעדים",
+          "description": "עקוב אחר ההתקדמות שלך ביעדים.",
+          "empty": "צור את היעד הראשון שלך כדי לראות התקדמות כאן.",
+          "target": "יעד"
+        }
+      },
+      "errors": {
+        "title": "לא הצלחנו לטעון את הסקירה",
+        "description": "נסה לרענן את הדף כדי לקבל את הנתונים העדכניים."
+      }
+    },
     "coachSections": {
       "todaysAgenda": {
         "title": "הלו\"ז של היום",
@@ -537,6 +624,82 @@
         "addClient": "הוסף או הזמן לקוח",
         "viewCalendar": "פתח יומן",
         "manageAvailability": "נהל זמינות"
+      }
+    },
+    "coach": {
+      "title": "סקירת המאמן",
+      "subtitle": "עקוב אחר הפגישות הקרובות, המשימות החשובות והמעורבות של הלקוחות במבט מהיר.",
+      "lastUpdated": "עודכן לאחרונה {timestamp}",
+      "actions": {
+        "refresh": "רענן נתונים",
+        "refreshing": "מרענן..."
+      },
+      "summary": {
+        "clients": {
+          "label": "לקוחות פעילים",
+          "description": "אנשים שאיתם אתה עובד כרגע"
+        },
+        "tasks": {
+          "label": "משימות פתוחות",
+          "description": "פעולות שעדיין דורשות מעקב"
+        },
+        "overdue": {
+          "label": "משימות באיחור",
+          "description": "פריטים שעבר מועד היעד שלהם"
+        },
+        "sessions": {
+          "label": "פגישות קרובות",
+          "description": "מפגשים שנקבעו לימים הקרובים"
+        }
+      },
+      "statuses": {
+        "scheduled": "מתוכננת",
+        "in_progress": "בתהליך",
+        "completed": "הושלמה",
+        "cancelled": "בוטלה",
+        "no_show": "לא הגיע"
+      },
+      "tasks": {
+        "status": {
+          "pending": "ממתינה",
+          "in_progress": "בתהליך",
+          "completed": "הושלמה",
+          "overdue": "באיחור"
+        },
+        "priority": {
+          "high": "עדיפות גבוהה",
+          "medium": "עדיפות בינונית",
+          "low": "עדיפות נמוכה"
+        }
+      },
+      "sections": {
+        "upcomingSessions": {
+          "title": "פגישות קרובות",
+          "description": "הישאר מוכן לשיחות האימון הבאות שלך.",
+          "empty": "אין לך פגישות קרובות כרגע.",
+          "join": "הצטרף לפגישה",
+          "duration": "משך"
+        },
+        "tasks": {
+          "title": "משימות למעקב",
+          "description": "טפל במשימות שעתידות להסתיים או דורשות תשומת לב.",
+          "empty": "כל המשימות שלך מעודכנות.",
+          "due": "מועד"
+        },
+        "clientProgress": {
+          "title": "התקדמות לקוחות",
+          "description": "בדוק כיצד כל לקוח מתקדם בפגישות ובמשימות.",
+          "empty": "נתוני התקדמות יופיעו לאחר שתתחיל לעבוד עם לקוחות.",
+          "noTasks": "אין משימות שהוקצו עדיין",
+          "completion": "{value}% הושלמו",
+          "activeTasks": "{count, plural, one {משימה פעילה אחת} other {# משימות פעילות}}",
+          "noSession": "אין פגישה אחרונה מתועדת",
+          "lastSession": "פגישה אחרונה {timestamp}"
+        }
+      },
+      "errors": {
+        "title": "לא הצלחנו לטעון את הסקירה",
+        "description": "נסו לרענן את הדף כדי לקבל את הנתונים העדכניים."
       }
     },
     "tabs": {
@@ -1512,6 +1675,164 @@
         "title": "ההכשרה הושלמה!",
         "message": "פרופיל המאמן שלך נוצר בהצלחה. ברוך הבא ל-Loom!",
         "redirecting": "מעביר ללוח הבקרה שלך..."
+      }
+    }
+  },
+  "sessions": {
+    "tasks": {
+      "form": {
+        "title": "הקצה משימה",
+        "fields": {
+          "title": {
+            "label": "כותרת המשימה",
+            "placeholder": "הקלד שם למשימה"
+          },
+          "description": {
+            "label": "תיאור",
+            "placeholder": "הוסף פרטים נוספים (לא חובה)"
+          },
+          "clientId": {
+            "label": "מזהה מתאמן",
+            "placeholder": "מזהה ה-UUID של המתאמן"
+          },
+          "coachId": {
+            "label": "מזהה מאמן",
+            "placeholder": "מזהה ה-UUID של המאמן"
+          },
+          "dueDate": {
+            "label": "תאריך יעד"
+          },
+          "priority": {
+            "label": "עדיפות",
+            "placeholder": "בחר עדיפות",
+            "options": {
+              "low": "נמוכה",
+              "medium": "בינונית",
+              "high": "גבוהה"
+            }
+          },
+          "visibilityToCoach": {
+            "label": "גלוי למאמן",
+            "help": "החבא את המשימה מהמתאמן עד שתהיה מוכן לשתף."
+          }
+        },
+        "actions": {
+          "cancel": "ביטול",
+          "createTask": "צור משימה",
+          "saveChanges": "שמור שינויים"
+        },
+        "messages": {
+          "genericError": "לא הצלחנו לשמור את המשימה. נסה שוב."
+        }
+      },
+      "list": {
+        "title": "משימות מוקצות",
+        "columns": {
+          "title": "כותרת",
+          "client": "מתאמן",
+          "dueDate": "תאריך יעד",
+          "status": "סטטוס",
+          "priority": "עדיפות"
+        },
+        "actions": {
+          "refresh": "רענן"
+        },
+        "status": {
+          "pending": "בהמתנה",
+          "in_progress": "בתהליך",
+          "completed": "הושלם",
+          "overdue": "באיחור"
+        },
+        "priority": {
+          "low": "נמוכה",
+          "medium": "בינונית",
+          "high": "גבוהה"
+        },
+        "count": "{count, plural, one {משימה אחת} other {# משימות}}",
+        "refreshing": "מרענן…",
+        "empty": "אין משימות שתואמות למסננים שנבחרו.",
+        "error": {
+          "title": "לא ניתן לטעון משימות",
+          "description": "נסה שוב או עדכן את המסננים."
+        },
+        "unknownClient": "מתאמן לא משויך"
+      }
+    },
+    "schedule": {
+      "modal": {
+        "title": "תזמון פגישה",
+        "description": "תכננו מפגשים עתידיים עם הלקוחות שלכם ממקום אחד.",
+        "fields": {
+          "title": {
+            "label": "כותרת הפגישה",
+            "placeholder": "הכניסו נושא לפגישה"
+          },
+          "client": {
+            "label": "לקוח",
+            "placeholder": "בחרו לקוח"
+          },
+          "date": {
+            "label": "תאריך",
+            "placeholder": "בחרו תאריך"
+          },
+          "time": {
+            "label": "שעה"
+          },
+          "duration": {
+            "label": "משך",
+            "placeholder": "בחרו משך",
+            "option": "{minutes} דקות"
+          },
+          "timezone": {
+            "label": "אזור זמן",
+            "placeholder": "למשל Asia/Jerusalem"
+          },
+          "meetingUrl": {
+            "label": "קישור לפגישה",
+            "placeholder": "https://example.com/session"
+          },
+          "notes": {
+            "label": "הערות",
+            "placeholder": "הוסיפו הוראות הכנה (אופציונלי)"
+          }
+        },
+        "actions": {
+          "cancel": "בטל",
+          "submitRequest": "שלח בקשה",
+          "scheduleSession": "קבע פגישה"
+        },
+        "messages": {
+          "successTitle": "הכל מוכן!",
+          "successDescription": "פרטי הפגישה נשמרו והציר עודכן.",
+          "errorTitle": "לא ניתן לקבוע פגישה",
+          "missingCoach": "יש לבחור מאמן כדי לקבוע פגישה."
+        }
+      },
+      "timeline": {
+        "title": "מצב תזמון",
+        "description": "עקבו אחר בקשות ממתינות ומפגשים קרובים.",
+        "loading": "טוען לוח זמנים…",
+        "pendingTitle": "בקשות ממתינות",
+        "upcomingTitle": "מפגשים קרובים",
+        "emptyRequests": "אין בקשות תזמון כרגע.",
+        "emptySessions": "אין מפגשים מתוכננים.",
+        "requestFallbackTitle": "פגישת אימון",
+        "requestedBy": "הוגש על ידי {name}",
+        "unknownRequester": "מבקש לא ידוע",
+        "unknownClient": "לקוח לא ידוע",
+        "durationLabel": "משך: {duration}",
+        "requestStatus": {
+          "pending": "ממתין לאישור",
+          "approved": "אושרה",
+          "declined": "נדחתה"
+        },
+        "sessionStatus": {
+          "scheduled": "מתוכנן",
+          "in_progress": "בתהליך",
+          "completed": "הושלם",
+          "cancelled": "בוטל",
+          "no_show": "לא הגיע"
+        }
       }
     }
   }

@@ -1,23 +1,46 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  Loader2,
+  Shield,
+  Smartphone,
+  Copy,
+  Check,
+  Download,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { OptimizedQRImage } from '@/components/ui/optimized-image';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Shield, Smartphone, Copy, Check, Download, Eye, EyeOff } from 'lucide-react';
-import type { MfaSetupData } from '@/types';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { OptimizedQRImage } from '@/components/ui/optimized-image';
+import {
+  mfaQueryKeys,
+  useMfaEnable,
+  useMfaSetup,
+} from '@/modules/auth/hooks/useMfa';
+import type { MfaSetupResponse } from '@/modules/auth/types';
 
 const mfaSetupSchema = z.object({
-  verificationCode: z.string()
+  verificationCode: z
+    .string()
     .min(6, 'Verification code must be 6 digits')
     .max(6, 'Verification code must be 6 digits')
     .regex(/^\d{6}$/, 'Verification code must contain only numbers'),
@@ -34,31 +57,44 @@ interface MfaSetupFormProps {
   onCancel?: () => void;
 }
 
-export function MfaSetupForm({ 
-  userId, 
-  userEmail, 
+export function MfaSetupForm({
+  userId,
+  userEmail,
   isRequired = false,
   redirectTo = '/dashboard',
   onSuccess,
-  onCancel 
+  onCancel,
 }: MfaSetupFormProps) {
   const t = useTranslations('auth.mfa');
   const router = useRouter();
   const locale = useLocale();
   const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const setupMutation = useMfaSetup();
+  const enableMutation = useMfaEnable();
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [setupData, setSetupData] = useState<MfaSetupData | null>(null);
-  const [currentStep, setCurrentStep] = useState<'setup' | 'verify' | 'backup' | 'complete'>('setup');
+  const [setupData, setSetupData] = useState<MfaSetupResponse | null>(null);
+  const [currentStep, setCurrentStep] = useState<
+    'setup' | 'verify' | 'backup' | 'complete'
+  >('setup');
   const [copiedSecret, setCopiedSecret] = useState(false);
   const [copiedCodes, setCopiedCodes] = useState<number[]>([]);
   const [showBackupCodes, setShowBackupCodes] = useState(false);
 
-  const rawRedirectTo = redirectTo || searchParams.get('redirectTo') || '/dashboard';
-  const safeRedirectTo = rawRedirectTo && rawRedirectTo.startsWith('/') ? rawRedirectTo : '/dashboard';
-  const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
-    ? safeRedirectTo
-    : `/${locale}${safeRedirectTo}`;
+  const rawRedirectTo =
+    redirectTo || searchParams.get('redirectTo') || '/dashboard';
+  const safeRedirectTo =
+    rawRedirectTo && rawRedirectTo.startsWith('/')
+      ? rawRedirectTo
+      : '/dashboard';
+  const finalRedirectTo = useMemo(
+    () =>
+      /^\/(en|he)\//.test(safeRedirectTo)
+        ? safeRedirectTo
+        : `/${locale}${safeRedirectTo}`,
+    [locale, safeRedirectTo]
+  );
   const required = isRequired || searchParams.get('required') === 'true';
 
   const {
@@ -70,74 +106,50 @@ export function MfaSetupForm({
     resolver: zodResolver(mfaSetupSchema),
   });
 
-  useEffect(() => {
-    generateMfaSetup();
-  }, []);
+  const bootstrapSetup = useCallback(async () => {
+    if (!userId) {
+      setSetupData(null);
+      setIsBootstrapping(false);
+      return;
+    }
 
-  const generateMfaSetup = async () => {
-    setIsLoading(true);
     setError(null);
-
+    setIsBootstrapping(true);
     try {
-      const response = await fetch('/api/auth/mfa/setup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        setError(result.error || t('setup.error'));
-        return;
-      }
-
-      if (result.data) {
-        setSetupData(result.data);
-        setCurrentStep('setup');
-      }
+      const data = await setupMutation.mutateAsync();
+      setSetupData(data);
+      setCurrentStep('setup');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('setup.error'));
     } finally {
-      setIsLoading(false);
+      setIsBootstrapping(false);
     }
-  };
+  }, [setupMutation, t, userId]);
+
+  useEffect(() => {
+    void bootstrapSetup();
+  }, [bootstrapSetup]);
 
   const onSubmit = async (data: MfaSetupFormData) => {
-    if (!setupData) return;
+    if (!setupData) {
+      return;
+    }
 
-    setIsLoading(true);
     setError(null);
-
     try {
-      const response = await fetch('/api/auth/mfa/enable', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          totpCode: data.verificationCode,
-          secret: setupData.secret,
-          backupCodes: setupData.backupCodes,
-        }),
+      await enableMutation.mutateAsync({
+        totpCode: data.verificationCode,
+        secret: setupData.secret,
+        backupCodes: setupData.backupCodes,
       });
 
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        setError(result.error || t('setup.verificationFailed'));
-        reset();
-        return;
-      }
-
       setCurrentStep('backup');
+      await queryClient.invalidateQueries({ queryKey: mfaQueryKeys.status() });
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('setup.verificationFailed'));
+      setError(
+        err instanceof Error ? err.message : t('setup.verificationFailed')
+      );
       reset();
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -164,7 +176,7 @@ export function MfaSetupForm({
       'Loom MFA Backup Codes',
       '========================',
       '',
-      'IMPORTANT: Save these backup codes in a secure location.',  
+      'IMPORTANT: Save these backup codes in a secure location.',
       'Each code can only be used once.',
       '',
       ...setupData.backupCodes.map((code, index) => `${index + 1}. ${code}`),
@@ -195,7 +207,6 @@ export function MfaSetupForm({
 
   const handleCancel = () => {
     if (required) {
-      // If MFA is required, redirect to appropriate page
       router.push(`/${locale}/dashboard`);
     } else if (onCancel) {
       onCancel();
@@ -203,6 +214,14 @@ export function MfaSetupForm({
       router.push(`/${locale}/settings/security`);
     }
   };
+
+  const handleBackToSetup = () => {
+    setError(null);
+    setCurrentStep('setup');
+  };
+
+  const isLoading =
+    isBootstrapping || setupMutation.isPending || enableMutation.isPending;
 
   const renderSetupStep = () => (
     <div className="space-y-6">
@@ -215,17 +234,15 @@ export function MfaSetupForm({
       {required && (
         <Alert>
           <Shield className="h-4 w-4" />
-          <AlertDescription>
-            {t('setup.required')}
-          </AlertDescription>
+          <AlertDescription>{t('setup.required')}</AlertDescription>
         </Alert>
       )}
 
       <div className="text-center">
         <div className="mb-4">
           {setupData?.qrCodeUrl ? (
-            <OptimizedQRImage 
-              src={setupData.qrCodeUrl} 
+            <OptimizedQRImage
+              src={setupData.qrCodeUrl}
               alt={t('setup.qrCodeAlt')}
               size={200}
             />
@@ -233,14 +250,16 @@ export function MfaSetupForm({
             <div className="w-48 h-48 mx-auto bg-muted animate-pulse rounded-lg" />
           )}
         </div>
-        
+
         <p className="text-sm text-muted-foreground mb-4">
           {t('setup.scanInstructions')}
         </p>
 
         <div className="space-y-3">
           <div className="p-3 bg-muted rounded-lg">
-            <Label className="text-xs font-medium">{t('setup.manualEntry')}</Label>
+            <Label className="text-xs font-medium">
+              {t('setup.manualEntry')}
+            </Label>
             <div className="flex items-center gap-2 mt-1">
               <code className="flex-1 text-sm font-mono bg-background px-2 py-1 rounded border">
                 {setupData?.secret || '••••••••••••••••'}
@@ -278,7 +297,7 @@ export function MfaSetupForm({
           <Smartphone className="w-4 h-4 mr-2" />
           {t('setup.continue')}
         </Button>
-        
+
         {!required && (
           <Button
             type="button"
@@ -324,15 +343,15 @@ export function MfaSetupForm({
         <Button
           type="button"
           variant="outline"
-          onClick={() => setCurrentStep('setup')}
+          onClick={handleBackToSetup}
           disabled={isLoading}
         >
           {t('back')}
         </Button>
-        
-        <Button 
-          type="submit" 
-          className="flex-1" 
+
+        <Button
+          type="submit"
+          className="flex-1"
           disabled={isLoading}
           data-testid="verify-setup-button"
         >
@@ -347,9 +366,7 @@ export function MfaSetupForm({
     <div className="space-y-6">
       <Alert>
         <Shield className="h-4 w-4" />
-        <AlertDescription>
-          {t('backup.importance')}
-        </AlertDescription>
+        <AlertDescription>{t('backup.importance')}</AlertDescription>
       </Alert>
 
       <div className="space-y-4">
@@ -385,7 +402,10 @@ export function MfaSetupForm({
               key={index}
               className="flex items-center gap-2 p-2 bg-muted rounded border"
             >
-              <Badge variant="outline" className="text-xs min-w-[24px] justify-center">
+              <Badge
+                variant="outline"
+                className="text-xs min-w-[24px] justify-center"
+              >
                 {index + 1}
               </Badge>
               <code className="flex-1 text-sm font-mono">
@@ -436,9 +456,7 @@ export function MfaSetupForm({
         <h3 className="text-lg font-semibold text-green-900 mb-2">
           {t('complete.title')}
         </h3>
-        <p className="text-muted-foreground">
-          {t('complete.description')}
-        </p>
+        <p className="text-muted-foreground">{t('complete.description')}</p>
       </div>
 
       <div className="space-y-2 text-sm text-muted-foreground">
@@ -457,7 +475,7 @@ export function MfaSetupForm({
     </div>
   );
 
-  if (isLoading && !setupData) {
+  if (isBootstrapping && !setupData) {
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardContent className="flex items-center justify-center py-8">

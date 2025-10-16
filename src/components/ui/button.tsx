@@ -2,9 +2,10 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
+import { useLocaleDirection } from '@/modules/i18n/hooks';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-normal tracking-normal ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 will-change-transform active:scale-[0.98] relative overflow-hidden touch-target',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-normal tracking-normal ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 will-change-transform active:scale-[0.98] relative overflow-hidden touch-target rtl:flex-row-reverse gap-2',
   {
     variants: {
       variant: {
@@ -32,11 +33,11 @@ const buttonVariants = cva(
         lg: 'h-13 px-8 py-3 text-base rounded-xl min-h-[52px]',
         icon: 'h-11 w-11 rounded-xl min-w-[44px] min-h-[44px]',
       },
-    },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-    },
+  },
+  defaultVariants: {
+    variant: 'default',
+    size: 'default',
+  },
   }
 );
 
@@ -73,6 +74,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     'aria-label': ariaLabel,
     ...props
   }, ref) => {
+    const { direction } = useLocaleDirection();
+
     // Ensure icon-only buttons have proper aria-label
     const shouldHaveAriaLabel = iconOnly && !ariaLabel && !children;
     if (shouldHaveAriaLabel && process.env.NODE_ENV === 'development') {
@@ -87,9 +90,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       className,
     );
 
+    const spinnerSpacing = direction === 'rtl' ? 'ml-2' : 'mr-2';
     const spinner = loading ? (
       <svg
-        className="rtl:ml-2 rtl:mr-0 ltr:mr-2 ltr:ml-0 h-4 w-4 animate-spin"
+        className={cn(spinnerSpacing, 'h-4 w-4 animate-spin shrink-0')}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
@@ -139,6 +143,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         'aria-disabled': (disabled ?? childDisabled) || loading,
         'aria-busy': loading,
         'aria-label': loading ? loadingText : ariaLabel ?? childAriaLabel,
+        dir: child.props?.dir ?? direction,
+        'data-locale-direction': direction,
         ...props,
         children: (
           <>
@@ -160,6 +166,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         aria-disabled={disabled || loading}
         aria-busy={loading}
         aria-label={loading ? loadingText : ariaLabel}
+        dir={direction}
+        data-locale-direction={direction}
         {...props}
       >
         {spinner}
