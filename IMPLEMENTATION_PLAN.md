@@ -41,19 +41,17 @@
 
 ## Phase 1 – Authentication & Access Control
 
-- [ ] Step 4: Finalize MFA-aware auth flows
-  - **Task**: Implement Supabase MFA enrollment/verification screens, ensure locale coverage, and wire React Query mutations to new `/api/auth/mfa` endpoints.
+- [x] Step 4: Finalize MFA-aware auth flows ✅ (`src/modules/auth/*`, `src/components/auth/mfa-*.tsx`, `src/app/[locale]/auth/mfa-*`)
+  - **Task**: Wrap the existing MFA setup and verification experiences in module-aware components, add React Query powered API clients, and update the locale-aware pages to consume the new hooks while preserving redirects.
   - **Files**:
-    - `src/app/[locale]/(auth)/signin/page.tsx`: Trigger MFA flow.
-    - `src/app/[locale]/(auth)/mfa/setup/page.tsx`: Enrollment UI.
-    - `src/app/[locale]/(auth)/mfa/verify/page.tsx`: Verification UI.
-    - `src/app/api/auth/mfa/route.ts`: Handle enrollment/verify.
-    - `src/modules/auth/api/mfa.ts`: Client hooks.
-    - `src/modules/auth/components/MfaForm.tsx`
-    - `src/modules/auth/hooks/useMfa.ts`
-    - `src/modules/auth/types.ts`: Define payloads.
-    - `src/i18n/locales/en/auth.json`: Add copy.
-    - `src/i18n/locales/he/auth.json`
+    - `src/modules/auth/types.ts`: Centralize MFA payload/response contracts.
+    - `src/modules/auth/api/mfa.ts`: Typed fetch helpers for MFA endpoints.
+    - `src/modules/auth/hooks/useMfa.ts`: React Query mutations/queries and keys.
+    - `src/modules/auth/components/MfaForm.tsx`: Wrapper exposing setup/verify variants.
+    - `src/components/auth/mfa-setup-form.tsx`: Consume hooks for setup flow.
+    - `src/components/auth/mfa-verification-form.tsx`: Consume hooks for verification flow.
+    - `src/app/[locale]/auth/mfa-setup/page.tsx`: Gate by MFA status and render module form.
+    - `src/app/[locale]/auth/mfa-verify/page.tsx`: Switch to module form wrapper.
   - **Step Dependencies**: Steps 1-3
   - **User Instructions**: Configure MFA factors in Supabase dashboard before testing.
 
