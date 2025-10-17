@@ -63,6 +63,19 @@ const publicRoutes = [
 const AUTH_GATING_ENABLED = process.env.MIDDLEWARE_AUTH_ENABLED === 'true';
 
 export async function middleware(request: NextRequest) {
+  // Handle OPTIONS requests (CORS preflight) immediately
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
+  }
+
   const pathname = request.nextUrl.pathname;
   const logRequests = process.env.LOG_REQUESTS === 'true';
   const reqId = crypto.randomUUID();
@@ -76,7 +89,7 @@ export async function middleware(request: NextRequest) {
       ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
     });
   }
-  
+
   // CRITICAL: Skip ALL middleware logic for Next.js static assets
   // This must be the FIRST check to prevent any middleware execution
   // This prevents CSS files from being processed as pages/routes
