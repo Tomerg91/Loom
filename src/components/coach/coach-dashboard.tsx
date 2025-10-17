@@ -1,32 +1,33 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { useUser } from '@/lib/auth/use-user';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format, parseISO, endOfWeek, isWithinInterval, startOfWeek } from 'date-fns';
 import {
+  ArrowUpRight,
   Calendar,
-  Users,
-  Clock,
-  TrendingUp,
   CheckCircle,
+  Clock,
   MessageSquare,
   ArrowUpRight,
   UserPlus,
 } from 'lucide-react';
-import { SessionList } from '@/components/sessions/session-list';
-import { SessionCalendar } from '@/components/sessions/session-calendar';
-import { CoachClientsPage } from '@/components/coach/clients-page';
-import { ReflectionSpaceWidget } from '@/components/coach/reflection-space-widget';
-import { EmptyState } from '@/components/coach/empty-state';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { AddClientModal } from '@/components/coach/add-client-modal';
 import { AddSessionModal } from '@/components/coach/add-session-modal';
-import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { CoachClientsPage } from '@/components/coach/clients-page';
+import { EmptyState } from '@/components/coach/empty-state';
+import { ReflectionSpaceWidget } from '@/components/coach/reflection-space-widget';
+import { SessionCalendar } from '@/components/sessions/session-calendar';
+import { SessionList } from '@/components/sessions/session-list';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useUser } from '@/lib/auth/use-user';
 import type { Session } from '@/types';
 
 // Helper function moved outside component to prevent re-creation
@@ -90,7 +91,12 @@ export function CoachDashboard() {
   const refreshInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
 
   // Fetch dashboard stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: statsError,
+    error: statsErrorDetails,
+  } = useQuery({
     queryKey: ['coach-stats', user?.id],
     queryFn: async (): Promise<DashboardStats> => {
       const response = await fetch('/api/coach/stats');
@@ -107,7 +113,11 @@ export function CoachDashboard() {
   });
 
   // Fetch upcoming sessions
-  const { data: upcomingSessions } = useQuery({
+  const {
+    data: upcomingSessions = [],
+    isError: upcomingSessionsError,
+    error: upcomingSessionsErrorDetails,
+  } = useQuery({
     queryKey: ['upcoming-sessions', user?.id],
     queryFn: async (): Promise<Session[]> => {
       const response = await fetch(`/api/sessions?coachId=${user?.id}&status=scheduled&limit=5&sortOrder=asc`);
@@ -121,7 +131,11 @@ export function CoachDashboard() {
   });
 
   // Fetch recent clients
-  const { data: recentClients } = useQuery({
+  const {
+    data: recentClients = [],
+    isError: recentClientsError,
+    error: recentClientsErrorDetails,
+  } = useQuery({
     queryKey: ['recent-clients', user?.id],
     queryFn: async (): Promise<Client[]> => {
       const response = await fetch('/api/coach/clients?limit=5');
@@ -137,7 +151,11 @@ export function CoachDashboard() {
   });
 
   // Fetch recent activity
-  const { data: recentActivity } = useQuery({
+  const {
+    data: recentActivity = [],
+    isError: recentActivityError,
+    error: recentActivityErrorDetails,
+  } = useQuery({
     queryKey: ['recent-activity', user?.id],
     queryFn: async (): Promise<RecentActivity[]> => {
       const response = await fetch('/api/coach/activity?limit=10');
@@ -167,11 +185,9 @@ export function CoachDashboard() {
 
   // Memoize expensive calculations
   const thisWeekSessions = useMemo(() => {
-    if (!upcomingSessions) return [];
-    
     const thisWeekStart = startOfWeek(new Date());
     const thisWeekEnd = endOfWeek(new Date());
-    
+
     return upcomingSessions.filter(session =>
       isWithinInterval(parseISO(session.scheduledAt), { start: thisWeekStart, end: thisWeekEnd })
     );
@@ -181,9 +197,13 @@ export function CoachDashboard() {
     <div className="space-y-6">
       {/* Accessibility: Screen reader announcements */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {statsLoading ? 'Loading coach dashboard statistics...' : 'Coach dashboard loaded successfully'}
+        {statsLoading
+          ? 'Loading coach dashboard statistics...'
+          : hasAnyDashboardError
+            ? 'Some dashboard data failed to load.'
+            : 'Coach dashboard loaded successfully'}
       </div>
-      
+
       {/* Header - Satya Method */}
       <div className="flex items-center justify-between">
         <div>
@@ -211,6 +231,14 @@ export function CoachDashboard() {
         </div>
       </div>
 
+      {hasAnyDashboardError && (
+        <Alert variant="destructive" role="status" className="bg-terracotta-50 border-terracotta-200">
+          <AlertDescription className="text-terracotta-700 text-sm">
+            {t('loadError')}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3 max-w-md" role="tablist" aria-label="Coach dashboard navigation">
           <TabsTrigger value="overview" aria-label="Overview dashboard">{t('tabs.overview')}</TabsTrigger>
@@ -230,10 +258,10 @@ export function CoachDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-semibold text-sand-900">
-                  {statsLoading ? '...' : stats?.upcomingSessions || 0}
+                  {statsLoading ? '...' : statsError ? '—' : safeStats.upcomingSessions}
                 </div>
                 <p className="text-xs text-sand-500">
-                  {thisWeekSessions.length} {t('stats.thisWeek')}
+                  {statsError ? '—' : thisWeekSessions.length} {t('stats.thisWeek')}
                 </p>
               </CardContent>
             </Card>
@@ -247,10 +275,10 @@ export function CoachDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-semibold text-sand-900">
-                  {statsLoading ? '...' : stats?.activeClients || 0}
+                  {statsLoading ? '...' : statsError ? '—' : safeStats.activeClients}
                 </div>
                 <p className="text-xs text-sand-500">
-                  {t('stats.of')} {stats?.totalClients || 0} {t('stats.total')}
+                  {t('stats.of')} {statsError ? '—' : safeStats.totalClients} {t('stats.total')}
                 </p>
               </CardContent>
             </Card>
@@ -264,10 +292,10 @@ export function CoachDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-semibold text-sand-900">
-                  {statsLoading ? '...' : stats?.completedSessions || 0}
+                  {statsLoading ? '...' : statsError ? '—' : safeStats.completedSessions}
                 </div>
                 <p className="text-xs text-sand-500">
-                  {t('stats.of')} {stats?.totalSessions || 0} {t('stats.total')}
+                  {t('stats.of')} {statsError ? '—' : safeStats.totalSessions} {t('stats.total')}
                 </p>
               </CardContent>
             </Card>
@@ -287,7 +315,11 @@ export function CoachDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {!upcomingSessions || upcomingSessions.length === 0 ? (
+                {upcomingSessionsError ? (
+                  <div className="text-sm text-terracotta-600">
+                    {t('loadError')}
+                  </div>
+                ) : upcomingSessions.length === 0 ? (
                   <EmptyState
                     icon={Calendar}
                     title={t('upcomingSessions.emptyTitle')}
@@ -347,7 +379,9 @@ export function CoachDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!recentActivity || recentActivity.length === 0 ? (
+              {recentActivityError ? (
+                <div className="text-sm text-terracotta-600">{t('loadError')}</div>
+              ) : recentActivity.length === 0 ? (
                 <div className="text-center py-6 text-sand-400">
                   <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>{t('recentActivity.empty')}</p>
@@ -387,7 +421,9 @@ export function CoachDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!recentClients || recentClients.length === 0 ? (
+              {recentClientsError ? (
+                <div className="text-sm text-terracotta-600">{t('loadError')}</div>
+              ) : recentClients.length === 0 ? (
                 <EmptyState
                   icon={Users}
                   title={t('recentClients.emptyTitle')}
