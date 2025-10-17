@@ -102,7 +102,8 @@ type SortOption = 'newest' | 'oldest' | 'unread' | 'priority' | 'type';
 type GroupByOption = 'none' | 'type' | 'date' | 'importance';
 type FilterOption = 'all' | 'unread' | 'read' | 'today' | 'week';
 
-interface NotificationWithEnhancement extends Omit<Notification, 'data'> {
+interface NotificationWithEnhancement extends Omit<Notification, 'data' | 'priority'> {
+  priority?: NotificationPriority;
   importance?: NotificationImportance;
   isArchived?: boolean;
   snoozeUntil?: string;
