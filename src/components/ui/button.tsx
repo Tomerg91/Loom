@@ -60,6 +60,8 @@ type AsChildElementProps = {
   ['aria-label']?: string;
   ariaLabel?: string;
   ref?: React.Ref<unknown>;
+  dir?: string;
+  ['data-locale-direction']?: string;
 };
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
