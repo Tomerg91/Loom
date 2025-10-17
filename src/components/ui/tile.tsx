@@ -103,13 +103,13 @@ const Tile = React.forwardRef<HTMLDivElement, TileProps>(
     }
 
     return (
-      <Component
+      <div
         className={cn(tileVariants({ variant, size, clickable, className }))}
         ref={ref}
         {...props}
       >
         {content}
-      </Component>
+      </div>
     )
   }
 )
