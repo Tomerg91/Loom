@@ -234,22 +234,31 @@ const getSocialIcon = (icon?: string) => {
   }
 };
 
-const resolveLocaleProp = (href: string, locale: string) =>
-  href.startsWith('/') ? locale : undefined;
-
 export async function AppFooter({ locale }: { locale: string }) {
   const fallback = footerDefaults[(locale as SupportedLocale)] ?? footerDefaults.he;
   let footerContent = fallback;
 
   try {
     const t = await getTranslations({ locale, namespace: 'landing.footer' });
-    const rawColumns = t.raw('columns');
-    const rawSocial = t.raw('social');
-    const rawLegal = t.raw('legal');
-    const rawMadeWith = t.raw('madeWith');
-    const rawFollowLabel = t.raw('followLabel');
-    const rawPrivacyLabel = t.raw('privacyLabel');
-    const rawTermsLabel = t.raw('termsLabel');
+
+    const safeRaw = (key: string): unknown => {
+      try {
+        return t.raw(key);
+      } catch (error) {
+        if (process.env.LOG_MISSING_TRANSLATIONS === 'true') {
+          console.warn('Missing footer translation key', { key, locale, error });
+        }
+        return undefined;
+      }
+    };
+
+    const rawColumns = safeRaw('columns');
+    const rawSocial = safeRaw('social');
+    const rawLegal = safeRaw('legal');
+    const rawMadeWith = safeRaw('madeWith');
+    const rawFollowLabel = safeRaw('followLabel');
+    const rawPrivacyLabel = safeRaw('privacyLabel');
+    const rawTermsLabel = safeRaw('termsLabel');
 
     footerContent = {
       columns: normalizeColumns(rawColumns, fallback.columns),
@@ -264,7 +273,7 @@ export async function AppFooter({ locale }: { locale: string }) {
         typeof rawTermsLabel === 'string' && rawTermsLabel.trim().length > 0 ? rawTermsLabel : fallback.termsLabel
     };
   } catch (error) {
-    console.warn('Falling back to default footer content', error);
+    console.warn('Falling back to default footer content', { locale, error });
     footerContent = fallback;
   }
 
@@ -312,13 +321,24 @@ export async function AppFooter({ locale }: { locale: string }) {
                 <ul className="mt-4 space-y-3 text-sm text-slate-600">
                   {column.links.map((link) => (
                     <li key={`${column.title}-${link.label}`}>
-                      <Link
-                        href={link.href as any}
-                        locale={resolveLocaleProp(link.href, locale)}
-                        className="transition-colors hover:text-purple-600"
-                      >
-                        {link.label}
-                      </Link>
+                      {link.href.startsWith('/') ? (
+                        <Link
+                          href={link.href}
+                          locale={locale}
+                          className="transition-colors hover:text-purple-600"
+                        >
+                          {link.label}
+                        </Link>
+                      ) : (
+                        <a
+                          href={link.href}
+                          className="transition-colors hover:text-purple-600"
+                          target={link.href.startsWith('http') ? '_blank' : undefined}
+                          rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                        >
+                          {link.label}
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>
