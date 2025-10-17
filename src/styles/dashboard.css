@@ -1,0 +1,211 @@
+/**
+ * Dashboard layout primitives.
+ *
+ * The shell is intentionally implemented with plain CSS variables so both
+ * Tailwind utility classes and future module scoped styles can reuse the same
+ * sizing tokens.
+ */
+
+:root {
+  --dashboard-shell-sidebar-width: clamp(16rem, 21vw, 22rem);
+  --dashboard-shell-topbar-height: 4rem;
+  --dashboard-shell-content-max-width: min(1200px, 95vw);
+  --dashboard-shell-content-padding: clamp(1.25rem, 2vw, 2.5rem);
+}
+
+.dashboard-shell {
+  min-height: 100vh;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  display: grid;
+  grid-template-columns: var(--dashboard-shell-sidebar-width) 1fr;
+  position: relative;
+}
+
+.dashboard-shell__content-area {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, hsl(var(--background)) 92%, transparent) 0%,
+    hsl(var(--background)) 100%
+  );
+}
+
+.dashboard-shell__scroll-region {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: var(--dashboard-shell-content-max-width);
+  margin: 0 auto;
+  padding: var(--dashboard-shell-content-padding);
+  width: min(100%, var(--dashboard-shell-content-max-width));
+}
+
+.dashboard-shell__scroll-region:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 4px;
+}
+
+.dashboard-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--card));
+  border-inline-end: 1px solid hsl(var(--border));
+  box-shadow: 4px 0 24px -16px rgba(15, 23, 42, 0.25);
+  z-index: 40;
+}
+
+.dashboard-sidebar__content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--dashboard-shell-content-padding);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.dashboard-sidebar__footer {
+  margin-top: auto;
+  padding: var(--dashboard-shell-content-padding);
+  border-top: 1px solid hsl(var(--border));
+  background: color-mix(in srgb, hsl(var(--card)) 94%, transparent);
+}
+
+.dashboard-sidebar__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 45;
+  backdrop-filter: blur(6px);
+}
+
+.dashboard-sidebar__mobile-panel {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: min(100vw, 20rem);
+  background: hsl(var(--card));
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 45px -30px rgba(15, 23, 42, 0.5);
+  animation: dashboard-slide-in 0.2s ease-out;
+  z-index: 50;
+}
+
+@keyframes dashboard-slide-in {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.dashboard-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: var(--dashboard-shell-topbar-height);
+  display: flex;
+  align-items: center;
+  background: color-mix(in srgb, hsl(var(--card)) 92%, transparent);
+  border-bottom: 1px solid hsl(var(--border));
+  backdrop-filter: blur(10px);
+}
+
+.dashboard-topbar__content {
+  width: 100%;
+  max-width: var(--dashboard-shell-content-max-width);
+  margin: 0 auto;
+  padding-inline: clamp(1rem, 2vw, 1.5rem);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dashboard-topbar__actions {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dashboard-topbar__user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.dashboard-skeleton {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.dashboard-skeleton__header {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.dashboard-skeleton__grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.dashboard-skeleton__list {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-sidebar {
+    display: none;
+  }
+
+  .dashboard-shell__scroll-region {
+    padding: clamp(1rem, 4vw, 2rem);
+  }
+}
+
+[dir='rtl'] .dashboard-shell {
+  direction: rtl;
+}
+
+[dir='rtl'] .dashboard-shell__content-area {
+  direction: rtl;
+}
+
+[dir='rtl'] .dashboard-sidebar {
+  border-inline-end: none;
+  border-inline-start: 1px solid hsl(var(--border));
+}
+
+[dir='rtl'] .dashboard-sidebar__mobile-panel {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  animation-name: dashboard-slide-in-rtl;
+}
+
+@keyframes dashboard-slide-in-rtl {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

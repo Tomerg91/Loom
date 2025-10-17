@@ -1,26 +1,40 @@
 'use client';
 
-import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
+import { Loader2, Smartphone, Key, Shield, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Smartphone, Key, Shield, ArrowLeft } from 'lucide-react';
-import type { MfaMethod } from '@/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { mfaQueryKeys, useMfaVerification } from '@/modules/auth/hooks/useMfa';
+import type { MfaMethod } from '@/modules/auth/types';
 
 const mfaVerificationSchema = z.object({
-  code: z.string()
+  code: z
+    .string()
     .min(6, 'Code must be at least 6 characters')
     .max(10, 'Code must be at most 10 characters')
-    .regex(/^[0-9A-Z]+$/, 'Code must contain only numbers and uppercase letters'),
+    .regex(
+      /^[0-9A-Z]+$/,
+      'Code must contain only numbers and uppercase letters'
+    ),
   rememberDevice: z.boolean(),
 });
 
@@ -34,28 +48,37 @@ interface MfaVerificationFormProps {
   onCancel?: () => void;
 }
 
-export function MfaVerificationForm({ 
-  userId, 
-  mfaSessionToken, 
+export function MfaVerificationForm({
+  userId,
+  mfaSessionToken: _mfaSessionToken,
   redirectTo = '/dashboard',
   onSuccess,
-  onCancel 
+  onCancel,
 }: MfaVerificationFormProps) {
   const t = useTranslations('auth.mfa');
   const router = useRouter();
   const locale = useLocale();
   const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const verificationMutation = useMfaVerification();
   const [error, setError] = useState<string | null>(null);
   const [activeMethod, setActiveMethod] = useState<MfaMethod>('totp');
   const [attempts, setAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
 
-  const rawRedirectTo = redirectTo || searchParams.get('redirectTo') || '/dashboard';
-  const safeRedirectTo = rawRedirectTo && rawRedirectTo.startsWith('/') ? rawRedirectTo : '/dashboard';
-  const finalRedirectTo = /^\/(en|he)\//.test(safeRedirectTo)
-    ? safeRedirectTo
-    : `/${locale}${safeRedirectTo}`;
+  const rawRedirectTo =
+    redirectTo || searchParams.get('redirectTo') || '/dashboard';
+  const safeRedirectTo =
+    rawRedirectTo && rawRedirectTo.startsWith('/')
+      ? rawRedirectTo
+      : '/dashboard';
+  const finalRedirectTo = useMemo(
+    () =>
+      /^\/(en|he)\//.test(safeRedirectTo)
+        ? safeRedirectTo
+        : `/${locale}${safeRedirectTo}`,
+    [locale, safeRedirectTo]
+  );
 
   const {
     register,
@@ -71,6 +94,7 @@ export function MfaVerificationForm({
   });
 
   const watchRememberDevice = watch('rememberDevice');
+  const isLoading = verificationMutation.isPending;
 
   const onSubmit = async (data: MfaVerificationFormData) => {
     if (isLocked) {
@@ -78,56 +102,43 @@ export function MfaVerificationForm({
       return;
     }
 
-    setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/mfa/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          code: data.code.toUpperCase(),
-          method: activeMethod,
-        }),
+      const result = await verificationMutation.mutateAsync({
+        userId,
+        code: data.code.toUpperCase(),
+        method: activeMethod,
       });
 
-      const result = await response.json();
+      // Mark MFA complete for this browser session
+      document.cookie = `mfa_verified=true; path=/; secure; samesite=strict; max-age=3600`;
+      // Clear pending flag set during password sign-in
+      document.cookie = `mfa_pending=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`;
 
-      if (!response.ok || !result.success) {
-        setError(result.error || t('verificationFailed'));
-        setAttempts(prev => prev + 1);
+      await queryClient.invalidateQueries({ queryKey: mfaQueryKeys.status() });
 
-        // Lock after 5 failed attempts
-        if (attempts + 1 >= 5) {
-          setIsLocked(true);
-          setError(t('accountLocked'));
-        }
-
-        reset({ rememberDevice: data.rememberDevice });
-        return;
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(finalRedirectTo);
+        router.refresh();
       }
 
-      if (result.success) {
-        // Mark MFA complete for this browser session
-        document.cookie = `mfa_verified=true; path=/; secure; samesite=strict; max-age=3600`;
-        // Clear pending flag set during password sign-in
-        document.cookie = `mfa_pending=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`;
-
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          router.push(finalRedirectTo);
-          router.refresh();
-        }
+      if (result.warning) {
+        console.warn('MFA verification warning:', result.warning);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('verificationFailed'));
-      setAttempts(prev => prev + 1);
-    } finally {
-      setIsLoading(false);
+      const nextAttempts = attempts + 1;
+      setAttempts(nextAttempts);
+
+      if (nextAttempts >= 5) {
+        setIsLocked(true);
+        setError(t('accountLocked'));
+      }
+
+      reset({ rememberDevice: data.rememberDevice });
     }
   };
 
@@ -152,9 +163,7 @@ export function MfaVerificationForm({
           <Shield className="w-6 h-6 text-primary" />
         </div>
         <CardTitle className="text-2xl">{t('verify.title')}</CardTitle>
-        <CardDescription>
-          {t('verify.description')}
-        </CardDescription>
+        <CardDescription>{t('verify.description')}</CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -173,13 +182,19 @@ export function MfaVerificationForm({
             </Alert>
           )}
 
-          <Tabs value={activeMethod} onValueChange={(value) => handleMethodChange(value as MfaMethod)}>
+          <Tabs
+            value={activeMethod}
+            onValueChange={value => handleMethodChange(value as MfaMethod)}
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="totp" className="flex items-center gap-2">
                 <Smartphone className="w-4 h-4" />
                 {t('methods.authenticator')}
               </TabsTrigger>
-              <TabsTrigger value="backup_code" className="flex items-center gap-2">
+              <TabsTrigger
+                value="backup_code"
+                className="flex items-center gap-2"
+              >
                 <Key className="w-4 h-4" />
                 {t('methods.backupCode')}
               </TabsTrigger>
@@ -231,7 +246,7 @@ export function MfaVerificationForm({
             <Switch
               id="remember-device"
               checked={watchRememberDevice}
-              onCheckedChange={(checked) => {
+              onCheckedChange={checked => {
                 reset({ code: '', rememberDevice: checked });
               }}
               disabled={isLoading || isLocked}
@@ -241,7 +256,7 @@ export function MfaVerificationForm({
               {t('rememberDevice')}
             </Label>
           </div>
-          
+
           {watchRememberDevice && (
             <Alert>
               <AlertDescription className="text-sm">
@@ -252,9 +267,9 @@ export function MfaVerificationForm({
         </CardContent>
 
         <CardFooter className="flex flex-col space-y-4">
-          <Button 
-            type="submit" 
-            className="w-full" 
+          <Button
+            type="submit"
+            className="w-full"
             disabled={isLoading || isLocked}
             data-testid="verify-mfa-button"
           >
@@ -280,10 +295,16 @@ export function MfaVerificationForm({
               type="button"
               variant="link"
               className="p-0 h-auto text-sm"
-              onClick={() => handleMethodChange(activeMethod === 'totp' ? 'backup_code' : 'totp')}
+              onClick={() =>
+                handleMethodChange(
+                  activeMethod === 'totp' ? 'backup_code' : 'totp'
+                )
+              }
               disabled={isLoading || isLocked}
             >
-              {activeMethod === 'totp' ? t('useBackupCode') : t('useAuthenticator')}
+              {activeMethod === 'totp'
+                ? t('useBackupCode')
+                : t('useAuthenticator')}
             </Button>
           </div>
         </CardFooter>

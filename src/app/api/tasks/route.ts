@@ -7,18 +7,24 @@ import {
   validateRequestBody,
 } from '@/lib/api/utils';
 import { createServerClient } from '@/lib/supabase/server';
+import { createLogger } from '@/modules/platform/logging/logger';
+import {
+  ForbiddenSupabaseHttpError,
+  ensureNoSupabaseHttpUsage,
+} from '@/modules/platform/security';
 import {
   TaskService,
   TaskServiceError,
-} from '@/modules/tasks/services/task-service';
+} from '@/modules/sessions/server/task-service';
+import type {
+  SessionCreateTaskInput,
+  SessionTaskListQueryInput,
+} from '@/modules/sessions/types';
+import { sessionCreateTaskSchema } from '@/modules/sessions/validators/task';
 import { parseTaskListQueryParams } from '@/modules/tasks/api/query-helpers';
-import {
-  createTaskSchema,
-  type CreateTaskInput,
-  type TaskListQueryInput,
-} from '@/modules/tasks/types/task';
 
 const taskService = new TaskService();
+const log = createLogger({ context: 'api:tasks' });
 
 type AuthActor = {
   id: string;
@@ -49,10 +55,10 @@ async function getAuthenticatedActor(): Promise<
       .single();
 
     if (profileError) {
-      console.warn(
-        'Failed to fetch user profile for tasks API:',
-        profileError.message
-      );
+      log.warn('Failed to fetch user profile for tasks API', {
+        error: profileError,
+        feature: 'tasks-api',
+      });
     }
 
     return {
@@ -62,12 +68,20 @@ async function getAuthenticatedActor(): Promise<
       },
     };
   } catch (error) {
-    console.error('Task API authentication error:', error);
+    log.error('Task API authentication error', {
+      error,
+      feature: 'tasks-api',
+    });
     return { response: createUnauthorizedResponse() };
   }
 }
 
 export const GET = async (request: NextRequest) => {
+  ensureNoSupabaseHttpUsage(
+    Object.fromEntries(request.nextUrl.searchParams.entries()),
+    { context: 'tasks.list.query' }
+  );
+
   const authResult = await getAuthenticatedActor();
   if ('response' in authResult) {
     return authResult.response;
@@ -88,7 +102,7 @@ export const GET = async (request: NextRequest) => {
     return createErrorResponse('Validation failed', HTTP_STATUS.BAD_REQUEST);
   }
 
-  const normalizedFilters: TaskListQueryInput = {
+  const normalizedFilters: SessionTaskListQueryInput = {
     ...parsedQuery.data,
     coachId: actor.role === 'coach' ? actor.id : parsedQuery.data.coachId,
   };
@@ -104,7 +118,10 @@ export const GET = async (request: NextRequest) => {
     if (error instanceof TaskServiceError) {
       return createErrorResponse(error.message, error.status);
     }
-    console.error('Task list error:', error);
+    log.error('Task list error', {
+      error,
+      feature: 'tasks-api',
+    });
     return createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -131,26 +148,39 @@ export const POST = async (request: NextRequest) => {
   try {
     body = await request.json();
   } catch (error) {
-    console.warn('Failed to parse task creation payload:', error);
+    log.warn('Failed to parse task creation payload', {
+      error,
+      feature: 'tasks-api',
+    });
     return createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
   }
-  const parsed = validateRequestBody(createTaskSchema, body);
+  try {
+    ensureNoSupabaseHttpUsage(body, { context: 'tasks.create.body' });
+  } catch (error) {
+    if (error instanceof ForbiddenSupabaseHttpError) {
+      return createErrorResponse(
+        'Invalid payload received.',
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+    throw error;
+  }
+  const parsed = validateRequestBody(sessionCreateTaskSchema, body);
 
   if (!parsed.success) {
     return createErrorResponse(parsed.error, HTTP_STATUS.BAD_REQUEST);
   }
 
-  const createPayload = parsed.data as CreateTaskInput;
+  const createPayload = parsed.data as SessionCreateTaskInput;
 
-  const payload: CreateTaskInput = {
-    ...createPayload,
-    coachId: actor.role === 'coach' ? actor.id : createPayload.coachId,
-  };
+  if (actor.role === 'coach') {
+    createPayload.coachId = actor.id;
+  }
 
   try {
     const task = await taskService.createTask(
       { id: actor.id, role: actor.role as 'coach' | 'admin' | 'client' },
-      payload
+      createPayload
     );
 
     return createSuccessResponse(
@@ -162,7 +192,10 @@ export const POST = async (request: NextRequest) => {
     if (error instanceof TaskServiceError) {
       return createErrorResponse(error.message, error.status);
     }
-    console.error('Task creation error:', error);
+    log.error('Task creation error', {
+      error,
+      feature: 'tasks-api',
+    });
     return createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR

@@ -409,6 +409,93 @@
         "contact": "Message my coach"
       }
     },
+    "client": {
+      "title": "Client overview",
+      "subtitle": "Stay focused on your next steps and track your progress with your coach.",
+      "lastUpdated": "Last updated {timestamp}",
+      "actions": {
+        "refresh": "Refresh data",
+        "refreshing": "Refreshing…"
+      },
+      "summary": {
+        "sessions": {
+          "label": "Upcoming sessions",
+          "description": "What's scheduled with your coach"
+        },
+        "tasks": {
+          "label": "Active tasks",
+          "description": "Action items waiting for you"
+        },
+        "goalsInProgress": {
+          "label": "Goals in progress",
+          "description": "Milestones you're actively working toward"
+        },
+        "completedGoals": {
+          "label": "Completed goals",
+          "description": "Wins you've already achieved"
+        }
+      },
+      "statuses": {
+        "scheduled": "Scheduled",
+        "in_progress": "In progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "no_show": "No show"
+      },
+      "tasks": {
+        "status": {
+          "pending": "Pending",
+          "in_progress": "In progress",
+          "completed": "Completed",
+          "overdue": "Overdue"
+        },
+        "priority": {
+          "high": "High priority",
+          "medium": "Medium priority",
+          "low": "Low priority"
+        }
+      },
+      "goals": {
+        "status": {
+          "active": "In progress",
+          "completed": "Completed",
+          "paused": "Paused",
+          "cancelled": "Cancelled"
+        },
+        "priority": {
+          "high": "High priority",
+          "medium": "Medium priority",
+          "low": "Low priority"
+        }
+      },
+      "sections": {
+        "upcomingSessions": {
+          "title": "Upcoming sessions",
+          "description": "See what's coming up with your coach.",
+          "empty": "You don't have any upcoming sessions yet.",
+          "join": "Join session",
+          "with": "with",
+          "duration": "Duration"
+        },
+        "tasks": {
+          "title": "My tasks",
+          "description": "Action items assigned by your coach.",
+          "empty": "You're all caught up on assigned tasks.",
+          "due": "Due",
+          "assignedBy": "Assigned by"
+        },
+        "goals": {
+          "title": "Goals",
+          "description": "Track how you're progressing on your goals.",
+          "empty": "Create your first goal to see progress here.",
+          "target": "Target"
+        }
+      },
+      "errors": {
+        "title": "We couldn't load your overview",
+        "description": "Try refreshing the page to request the latest data."
+      }
+    },
     "coachSections": {
       "todaysAgenda": {
         "title": "Today's Agenda",
@@ -448,6 +535,169 @@
         "viewCalendar": "Open calendar",
         "manageAvailability": "Manage availability"
       }
+    },
+    "coach": {
+      "title": "Coach overview",
+      "subtitle": "Monitor upcoming sessions, high-priority tasks, and client engagement at a glance.",
+      "lastUpdated": "Last updated {timestamp}",
+      "actions": {
+        "refresh": "Refresh data",
+        "refreshing": "Refreshing…"
+      },
+      "summary": {
+        "clients": {
+          "label": "Active clients",
+          "description": "People you're currently coaching"
+        },
+        "tasks": {
+          "label": "Open tasks",
+          "description": "Action items that still need follow-up"
+        },
+        "overdue": {
+          "label": "Overdue tasks",
+          "description": "Items that are past their due date"
+        },
+        "sessions": {
+          "label": "Upcoming sessions",
+          "description": "Meetings scheduled over the next few days"
+        }
+      },
+      "statuses": {
+        "scheduled": "Scheduled",
+        "in_progress": "In progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "no_show": "No show"
+      },
+      "tasks": {
+        "status": {
+          "pending": "Pending",
+          "in_progress": "In progress",
+          "completed": "Completed",
+          "overdue": "Overdue"
+        },
+        "priority": {
+          "high": "High priority",
+          "medium": "Medium priority",
+          "low": "Low priority"
+        }
+      },
+      "sections": {
+        "upcomingSessions": {
+          "title": "Upcoming sessions",
+          "description": "Stay ready for your next coaching conversations.",
+          "empty": "No upcoming sessions scheduled.",
+          "join": "Join session",
+          "duration": "Duration"
+        },
+        "tasks": {
+          "title": "Tasks to review",
+          "description": "Follow up on tasks that are due soon or need attention.",
+          "empty": "You're all caught up on assigned tasks.",
+          "due": "Due"
+        },
+        "clientProgress": {
+          "title": "Client progress",
+          "description": "Track how each client is progressing across sessions and tasks.",
+          "empty": "Client progress will appear once you start working with clients.",
+          "noTasks": "No tasks assigned yet",
+          "completion": "{value}% complete",
+          "activeTasks": "{count, plural, one {# active task} other {# active tasks}}",
+          "noSession": "No recent session recorded",
+          "lastSession": "Last session {timestamp}"
+        }
+      },
+      "errors": {
+        "title": "We couldn't load your overview",
+        "description": "Try refreshing the page to request the latest data."
+      }
+    }
+  },
+  "practiceJournal": {
+    "title": "Practice journal",
+    "description": "A dedicated space to reflect on your somatic practice.",
+    "emptyTitle": "No practices captured yet",
+    "emptyDescription": "Start documenting your somatic journey by logging your first practice entry.",
+    "emptyAction": "Record a practice entry",
+    "newEntry": "Record a practice entry",
+    "editEntry": "Edit entry",
+    "deleteEntry": "Delete entry",
+    "shareWithCoach": "Share with coach",
+    "unshareWithCoach": "Stop sharing",
+    "shared": "Shared",
+    "private": "Private",
+    "form": {
+      "title": "Title (optional)",
+      "titlePlaceholder": "For example: Morning breathwork reflection",
+      "content": "What came up in your body?",
+      "contentPlaceholder": "Describe your somatic experience...\\n\\nIdeas:\\n• What sensations did you notice?\\n• Where did you feel ease or tension?\\n• What did you learn about yourself?",
+      "insights": "Insights and discoveries",
+      "insightsPlaceholder": "What stood out during this practice?",
+      "sensations": "Sensations",
+      "sensationsPlaceholder": "Add sensations (press Enter)",
+      "emotions": "Emotions",
+      "emotionsPlaceholder": "Add emotions (press Enter)",
+      "bodyAreas": "Body areas",
+      "bodyAreasPlaceholder": "Add body areas (press Enter)",
+      "practicesDone": "Practices completed",
+      "practicesDonePlaceholder": "Add practices (press Enter)",
+      "energyLevel": "Energy level",
+      "energyLevelPlaceholder": "Select the energy you felt",
+      "attachments": "Attachments",
+      "attachmentsDescription": "Upload notes, audio, or images tied to this reflection.",
+      "attachmentsHint": "Supported formats: PDF, audio, and images up to 20MB.",
+      "addAttachment": "Add attachment",
+      "removeAttachment": "Remove attachment",
+      "shareLabel": "Share with my coach",
+      "submit": "Save entry",
+      "saving": "Saving…",
+      "cancel": "Cancel"
+    },
+    "list": {
+      "title": "Recent reflections",
+      "description": "Revisit how your practice evolved over time.",
+      "filterLabel": "Filter entries",
+      "showAll": "All",
+      "showShared": "Shared",
+      "showPrivate": "Private",
+      "searchPlaceholder": "Search reflections",
+      "noResultsTitle": "No matching reflections",
+      "noResultsDescription": "Try adjusting your filters or search query.",
+      "loading": "Loading reflections…",
+      "loadMore": "Load more"
+    },
+    "entry": {
+      "sharedWithCoach": "Shared with your coach",
+      "privateEntry": "Visible only to you",
+      "createdAt": "Created {timestamp}",
+      "lastUpdated": "Updated {timestamp}",
+      "shareToggle": "Toggle sharing",
+      "confirmDeleteTitle": "Delete this entry?",
+      "confirmDeleteDescription": "This action cannot be undone and will remove the entry from your history.",
+      "confirmDeleteCancel": "Keep entry",
+      "confirmDeleteConfirm": "Delete entry"
+    },
+    "insights": {
+      "title": "Practice insights",
+      "description": "Highlight patterns, discoveries, or breakthroughs to revisit later.",
+      "prompt": "What feels important about this entry?",
+      "emptyTitle": "No insights yet",
+      "emptyDescription": "Capture a quick note about what changed or what you want to remember."
+    },
+    "coachView": {
+      "title": "Shared reflections",
+      "description": "Entries your client has shared for review.",
+      "emptyTitle": "Nothing shared yet",
+      "emptyDescription": "Encourage your client to share reflections when they're ready."
+    },
+    "errors": {
+      "create": "We couldn't save the entry. Please try again.",
+      "update": "We couldn't update the entry. Please try again.",
+      "delete": "We couldn't delete the entry. Please try again.",
+      "share": "We couldn't share the entry with your coach.",
+      "unshare": "We couldn't stop sharing the entry.",
+      "load": "We couldn't load your practice journal.",
+      "loadInsights": "We couldn't load practice insights."
     }
   },
   "mfa": {
@@ -1278,6 +1528,164 @@
         "title": "Onboarding Complete!",
         "message": "Your coach profile has been created successfully. Welcome to Loom!",
         "redirecting": "Redirecting to your dashboard..."
+      }
+    }
+  },
+  "sessions": {
+    "tasks": {
+      "form": {
+        "title": "Assign task",
+        "fields": {
+          "title": {
+            "label": "Task title",
+            "placeholder": "Enter a task name"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Provide supporting details (optional)"
+          },
+          "clientId": {
+            "label": "Client ID",
+            "placeholder": "UUID of the client"
+          },
+          "coachId": {
+            "label": "Coach ID",
+            "placeholder": "UUID of the coach"
+          },
+          "dueDate": {
+            "label": "Due date"
+          },
+          "priority": {
+            "label": "Priority",
+            "placeholder": "Select a priority",
+            "options": {
+              "low": "Low",
+              "medium": "Medium",
+              "high": "High"
+            }
+          },
+          "visibilityToCoach": {
+            "label": "Visible to coach",
+            "help": "Hide this task from the client if you need to prep before sharing."
+          }
+        },
+        "actions": {
+          "cancel": "Cancel",
+          "createTask": "Create task",
+          "saveChanges": "Save changes"
+        },
+        "messages": {
+          "genericError": "We couldn't save your task. Please try again."
+        }
+      },
+      "list": {
+        "title": "Assigned tasks",
+        "columns": {
+          "title": "Title",
+          "client": "Client",
+          "dueDate": "Due",
+          "status": "Status",
+          "priority": "Priority"
+        },
+        "actions": {
+          "refresh": "Refresh"
+        },
+        "status": {
+          "pending": "Pending",
+          "in_progress": "In progress",
+          "completed": "Completed",
+          "overdue": "Overdue"
+        },
+        "priority": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        },
+        "count": "{count, plural, one {# task} other {# tasks}}",
+        "refreshing": "Updating…",
+        "empty": "No tasks match the selected filters yet.",
+        "error": {
+          "title": "Unable to load tasks",
+          "description": "Try again or adjust your filters."
+        },
+        "unknownClient": "Unassigned client"
+      }
+    },
+    "schedule": {
+      "modal": {
+        "title": "Schedule a session",
+        "description": "Coordinate upcoming work with your clients from one place.",
+        "fields": {
+          "title": {
+            "label": "Session title",
+            "placeholder": "Enter a session focus"
+          },
+          "client": {
+            "label": "Client",
+            "placeholder": "Select a client"
+          },
+          "date": {
+            "label": "Date",
+            "placeholder": "Pick a date"
+          },
+          "time": {
+            "label": "Time"
+          },
+          "duration": {
+            "label": "Duration",
+            "placeholder": "Select duration",
+            "option": "{minutes} minutes"
+          },
+          "timezone": {
+            "label": "Timezone",
+            "placeholder": "e.g. America/New_York"
+          },
+          "meetingUrl": {
+            "label": "Meeting link",
+            "placeholder": "https://example.com/session"
+          },
+          "notes": {
+            "label": "Notes",
+            "placeholder": "Provide preparation details (optional)"
+          }
+        },
+        "actions": {
+          "cancel": "Cancel",
+          "submitRequest": "Submit request",
+          "scheduleSession": "Schedule session"
+        },
+        "messages": {
+          "successTitle": "All set!",
+          "successDescription": "Your session details were saved and the timeline was refreshed.",
+          "errorTitle": "Unable to schedule",
+          "missingCoach": "A coach is required to schedule sessions."
+        }
+      },
+      "timeline": {
+        "title": "Scheduling overview",
+        "description": "Track pending requests and upcoming sessions at a glance.",
+        "loading": "Loading session schedule…",
+        "pendingTitle": "Pending requests",
+        "upcomingTitle": "Upcoming sessions",
+        "emptyRequests": "No scheduling requests right now.",
+        "emptySessions": "No upcoming sessions scheduled.",
+        "requestFallbackTitle": "Coaching session",
+        "requestedBy": "Requested by {name}",
+        "unknownRequester": "Unknown requester",
+        "unknownClient": "Unknown client",
+        "durationLabel": "Duration: {duration}",
+        "requestStatus": {
+          "pending": "Pending approval",
+          "approved": "Approved",
+          "declined": "Declined"
+        },
+        "sessionStatus": {
+          "scheduled": "Scheduled",
+          "in_progress": "In progress",
+          "completed": "Completed",
+          "cancelled": "Cancelled",
+          "no_show": "No-show"
+        }
       }
     }
   }

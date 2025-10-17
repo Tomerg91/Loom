@@ -1,0 +1,152 @@
+{
+  "locale": "en",
+  "navigation": {
+    "links": [
+      { "label": "Platform", "href": "#platform" },
+      { "label": "Solutions", "href": "#solutions" },
+      { "label": "Customers", "href": "#testimonials" },
+      { "label": "Pricing", "href": "#pricing" }
+    ],
+    "contact": { "label": "Contact sales", "href": "mailto:hello@loom-app.io" },
+    "signIn": { "label": "Sign in", "href": "/auth/signin" },
+    "signUp": { "label": "Start free trial", "href": "/auth/signup" },
+    "logoLabel": "Back to the Loom-app homepage",
+    "navigationAriaLabel": "Primary marketing navigation",
+    "openMenuLabel": "Open navigation menu",
+    "closeMenuLabel": "Close navigation menu"
+  },
+  "hero": {
+    "eyebrow": "The Satya method operating system",
+    "title": "Grow every coaching relationship with a single workspace",
+    "description": "Loom-app unifies client records, scheduling, payments, and progress tracking so Satya practitioners can focus on transformation instead of admin work.",
+    "primary": {
+      "label": "Book a walkthrough",
+      "href": "mailto:hello@loom-app.io"
+    },
+    "secondary": { "label": "Explore the platform", "href": "#platform" },
+    "signInPrompt": "Already using Loom-app?",
+    "signInLabel": "Sign in",
+    "signInHref": "/auth/signin",
+    "visualAlt": "Screenshot of the Loom-app dashboard showing client progress trends and upcoming sessions.",
+    "chip": "Purpose-built for Satya practitioners",
+    "previewCards": [
+      { "label": "Weekly progress", "value": "+18% vs. last month" },
+      { "label": "Next session", "value": "Wednesday · 14:30 · Cohort circle" },
+      {
+        "label": "Practice reminder",
+        "value": "Share a reflection before the next meeting"
+      }
+    ]
+  },
+  "socialProof": {
+    "title": "Trusted by Satya method leaders",
+    "logos": [
+      "Satya Collective",
+      "Inner Balance Studio",
+      "MindfulFlow Retreats",
+      "North Star Coaching",
+      "The Renewal Center",
+      "Open Heart Institute"
+    ]
+  },
+  "features": {
+    "title": "What makes Loom-app different",
+    "items": [
+      {
+        "title": "Context-rich client profiles",
+        "description": "Capture reflections, practices, and intake notes in one secure record with advanced permissions."
+      },
+      {
+        "title": "Automated Satya session flow",
+        "description": "Coordinate journeys, reminders, and home practices with workflows that mirror the Satya methodology."
+      },
+      {
+        "title": "Insightful progress analytics",
+        "description": "Visualize individual and cohort growth with trend lines, milestones, and qualitative feedback side by side."
+      }
+    ]
+  },
+  "testimonials": {
+    "title": "Designed with Satya guides and centers",
+    "highlight": {
+      "quote": "Loom-app helped us launch a hybrid program in weeks. Every facilitator can see the full picture without chasing spreadsheets.",
+      "name": "Maya Feldman",
+      "role": "Director, Inner Balance Studio"
+    },
+    "items": [
+      {
+        "quote": "We replaced four tools with Loom-app. Scheduling and reflections finally live in one place.",
+        "name": "Ilan Goren",
+        "role": "Lead Coach, North Star"
+      },
+      {
+        "quote": "Clients arrive prepared because the practices and notes are always at their fingertips.",
+        "name": "Sasha Levy",
+        "role": "Founder, Open Heart Institute"
+      },
+      {
+        "quote": "From onboarding to billing, Loom-app mirrors the Satya flow our team already uses.",
+        "name": "Karin Azulay",
+        "role": "Program Manager, Renewal Center"
+      }
+    ]
+  },
+  "pricing": {
+    "title": "Simple pricing that scales with your practice",
+    "description": "Choose a plan that fits your Satya organization today and upgrade as your community grows.",
+    "tiers": [
+      {
+        "name": "Solo Guide",
+        "price": "$49",
+        "priceCaption": "per practitioner / month",
+        "description": "Best for independent Satya coaches who manage up to 30 clients.",
+        "features": [
+          "Unlimited client records",
+          "Automated practice reminders",
+          "Session templates and reflections",
+          "Secure document sharing"
+        ],
+        "cta": { "label": "Start trial", "href": "/auth/signup" }
+      },
+      {
+        "name": "Practice Studio",
+        "price": "$149",
+        "priceCaption": "per team / month",
+        "description": "Ideal for Satya centers with multiple practitioners and shared cohorts.",
+        "features": [
+          "All Solo Guide features",
+          "Team scheduling calendar",
+          "Shared program dashboards",
+          "Integrated payments"
+        ],
+        "cta": { "label": "Talk to sales", "href": "mailto:hello@loom-app.io" },
+        "popular": true,
+        "badgeLabel": "Most popular"
+      },
+      {
+        "name": "Enterprise Center",
+        "price": "Custom",
+        "priceCaption": "tailored pricing",
+        "description": "For multi-location Satya organizations that require bespoke workflows and integrations.",
+        "features": [
+          "Dedicated success partner",
+          "Advanced analytics workspace",
+          "SAML SSO and custom security",
+          "Priority roadmap influence"
+        ],
+        "cta": {
+          "label": "Book a consultation",
+          "href": "mailto:hello@loom-app.io"
+        }
+      }
+    ]
+  },
+  "cta": {
+    "title": "Invite your Satya community to Loom-app",
+    "description": "Launch guided journeys, manage practices, and grow your impact with one integrated workspace.",
+    "primary": {
+      "label": "Schedule a discovery call",
+      "href": "mailto:hello@loom-app.io"
+    }
+  }
+}

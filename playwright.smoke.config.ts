@@ -15,6 +15,7 @@ const chromiumFallback = {
 
 export default defineConfig({
   ...baseConfig,
+  testDir: './tests/playwright',
   projects: smokeProjects.length > 0 ? smokeProjects : [chromiumFallback],
-  testMatch: ['auth.spec.ts', 'client-dashboard.spec.ts'],
+  testMatch: ['auth.spec.ts', 'dashboard.spec.ts'],
 });

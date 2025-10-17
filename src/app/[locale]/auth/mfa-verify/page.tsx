@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { MfaVerificationForm } from '@/components/auth/mfa-verification-form';
+import { useMemo } from 'react';
+
+import { MfaForm } from '@/modules/auth/components/MfaForm';
 
 export default function MfaVerifyPage() {
   const router = useRouter();
@@ -12,10 +13,17 @@ export default function MfaVerifyPage() {
 
   const userId = searchParams.get('userId');
   const rawRedirectTo = searchParams.get('redirectTo') || '/dashboard';
-  const safeRedirectTo = rawRedirectTo && rawRedirectTo.startsWith('/') ? rawRedirectTo : '/dashboard';
-  const redirectTo = useMemo(() => (
-    /^\/(en|he)\//.test(safeRedirectTo) ? safeRedirectTo : `/${locale}${safeRedirectTo}`
-  ), [safeRedirectTo, locale]);
+  const safeRedirectTo =
+    rawRedirectTo && rawRedirectTo.startsWith('/')
+      ? rawRedirectTo
+      : '/dashboard';
+  const redirectTo = useMemo(
+    () =>
+      /^\/(en|he)\//.test(safeRedirectTo)
+        ? safeRedirectTo
+        : `/${locale}${safeRedirectTo}`,
+    [safeRedirectTo, locale]
+  );
 
   if (!userId) {
     // If we don't have a userId (should be provided by the sign-in redirect),
@@ -37,7 +45,8 @@ export default function MfaVerifyPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <MfaVerificationForm
+      <MfaForm
+        variant="verify"
         userId={userId}
         redirectTo={redirectTo}
         onSuccess={handleSuccess}

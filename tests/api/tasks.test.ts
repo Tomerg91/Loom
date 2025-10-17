@@ -125,7 +125,7 @@ const hoisted = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/modules/tasks/services/task-service', () => ({
+vi.mock('@/modules/sessions/server/task-service', () => ({
   TaskService: vi.fn(() => hoisted.mockTaskService),
   TaskServiceError: class MockTaskServiceError extends Error {
     status: number;
@@ -171,7 +171,7 @@ const {
 
 import { GET as GET_TASK, PATCH } from '@/app/api/tasks/[taskId]/route';
 import { POST, GET } from '@/app/api/tasks/route';
-import { TaskServiceError } from '@/modules/tasks/services/task-service';
+import { TaskServiceError } from '@/modules/sessions/server/task-service';
 
 const createNextRequest = (url: string, init?: RequestInit) =>
   new NextRequest(new Request(url, init));
@@ -185,6 +185,7 @@ describe('Task API routes', () => {
     title: 'Complete worksheet',
     description: 'Finish the weekly reflection worksheet.',
     priority: 'MEDIUM',
+    status: 'PENDING',
     visibilityToCoach: true,
     dueDate: new Date().toISOString(),
     recurrenceRule: null,

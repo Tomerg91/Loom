@@ -11,6 +11,10 @@ export default defineConfig({
     globals: true,
     css: true,
     coverage: coverageConfig,
+    include: [
+      'src/**/*.{test,spec}.{ts,tsx}',
+      'tests/**/*.{test,spec}.{ts,tsx}',
+    ],
     pool: 'forks',
     poolOptions: {
       forks: {

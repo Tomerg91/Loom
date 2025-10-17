@@ -9,19 +9,51 @@ import { describe, it, expect, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
 // Mock modules that may not exist yet
-vi.mock('@/lib/performance/optimization', () => ({
-  createLazyLoader: vi.fn(() => ({ observe: vi.fn(), disconnect: vi.fn() })),
-  CACHE_CONFIG: {
-    STATIC_ASSETS: { maxAge: 31536000, staleWhileRevalidate: 86400 },
-    API_RESPONSES: { maxAge: 300, staleWhileRevalidate: 60 },
-  },
-  optimizeQuery: vi.fn((query) => query),
-  monitorMemoryUsage: vi.fn(() => ({ usage: 50 })),
-  deduplicateRequest: vi.fn((key, fn) => fn()),
-  preloadResource: vi.fn(),
-  preloadRoute: vi.fn(),
-  optimizeApiResponse: vi.fn((data) => ({ ...data, compression: 'gzip' })),
-}));
+vi.mock('@/lib/performance/optimization', () => {
+  const dedupeCache = new Map<string, Promise<unknown>>();
+
+  return {
+    createLazyLoader: vi.fn(() => ({ observe: vi.fn(), disconnect: vi.fn() })),
+    CACHE_CONFIG: {
+      STATIC_ASSETS: { maxAge: 31536000, staleWhileRevalidate: 86400 },
+      API_RESPONSES: { maxAge: 300, staleWhileRevalidate: 60 },
+    },
+    optimizeQuery: vi.fn((query, options: Record<string, unknown> = {}) => {
+      if (options.limit && typeof query.limit === 'function') {
+        query.limit(options.limit);
+      }
+      if (options.offset && typeof query.offset === 'function') {
+        query.offset(options.offset);
+      }
+      if (Array.isArray(options.fields) && typeof query.select === 'function') {
+        query.select((options.fields as string[]).join(', '));
+      }
+      if (Array.isArray(options.relations) && typeof query.with === 'function') {
+        query.with(options.relations);
+      }
+      return query;
+    }),
+    monitorMemoryUsage: vi.fn(() => ({ usage: 50 })),
+    deduplicateRequest: vi.fn((key: string, factory: () => Promise<unknown>) => {
+      if (!dedupeCache.has(key)) {
+        dedupeCache.set(key, factory());
+      }
+      return dedupeCache.get(key)!;
+    }),
+    preloadResource: vi.fn((href: string, as: string) => {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.href = href;
+      (link as HTMLLinkElement).as = as;
+      document.head.appendChild(link);
+    }),
+    preloadRoute: vi.fn(),
+    optimizeApiResponse: vi.fn((data: Record<string, unknown>) => ({
+      ...data,
+      compression: 'gzip',
+    })),
+  };
+});
 
 vi.mock('@/lib/performance/web-vitals', () => ({
   collectWebVitals: vi.fn(),
