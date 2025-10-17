@@ -74,13 +74,15 @@ export function SessionInfo({ session }: SessionInfoProps) {
               {session.duration} minutes
             </p>
           </div>
-          <div>
-            <Label className="text-sm font-medium text-muted-foreground">Session Type</Label>
-            <p className="text-sm flex items-center">
-              {getSessionTypeIcon(session.sessionType)}
-              <span className="ml-1 capitalize">{session.sessionType.replace('-', ' ')}</span>
-            </p>
-          </div>
+          {session.sessionType && (
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">Session Type</Label>
+              <p className="text-sm flex items-center">
+                {getSessionTypeIcon(session.sessionType)}
+                <span className="ml-1 capitalize">{session.sessionType.replace('-', ' ')}</span>
+              </p>
+            </div>
+          )}
           <div>
             <Label className="text-sm font-medium text-muted-foreground">Status</Label>
             <Badge className={getStatusColor(session.status)} data-testid="session-status">

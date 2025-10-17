@@ -60,6 +60,8 @@ type AsChildElementProps = {
   ['aria-label']?: string;
   ariaLabel?: string;
   ref?: React.Ref<unknown>;
+  dir?: string;
+  ['data-locale-direction']?: string;
 };
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -145,7 +147,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         'aria-disabled': (disabled ?? childDisabled) || loading,
         'aria-busy': loading,
         'aria-label': loading ? loadingText : ariaLabel ?? childAriaLabel,
-        dir: child.props?.dir ?? direction,
+        dir: (child.props as any)?.dir ?? direction,
         'data-locale-direction': direction,
         ...props,
         children: (

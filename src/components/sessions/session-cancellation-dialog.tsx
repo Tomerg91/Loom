@@ -30,31 +30,7 @@ import {
   X
 } from 'lucide-react';
 import { useUser } from '@/lib/auth/use-user';
-
-interface Session {
-  id: string;
-  title: string;
-  scheduledAt: string;
-  duration: number;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no-show';
-  coach: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  client: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  cancellationPolicy?: {
-    freeUntilHours: number;
-    partialRefundUntilHours: number;
-    feeAmount: number;
-  };
-}
+import { Session } from '@/types';
 
 interface SessionCancellationDialogProps {
   session: Session | null;

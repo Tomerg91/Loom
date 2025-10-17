@@ -40,13 +40,9 @@ export function useAuthMonitor(options: AuthMonitorOptions = {}) {
           onSignOut?.();
           break;
 
-        case 'USER_DELETED':
-          onSignOut?.();
-          break;
-
         default:
           // Check for expired session
-          if (!session && event !== 'SIGNED_OUT' && event !== 'INITIAL_SESSION') {
+          if (!session && event !== 'INITIAL_SESSION') {
             onSessionExpired?.();
           }
       }

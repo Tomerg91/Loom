@@ -465,7 +465,7 @@ export function EnhancedSessionList({
             </Card>
           ) : (
             <>
-              {sessions.map((session) => (
+              {sessions.map((session: Session) => (
                 <SessionCard key={session.id} session={session} />
               ))}
 

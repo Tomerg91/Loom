@@ -313,9 +313,62 @@
       ]
     },
     "footer": {
+      "columns": [
+        {
+          "title": "Platform",
+          "links": [
+            { "label": "Product tour", "href": "#platform" },
+            { "label": "Client management", "href": "#features" },
+            { "label": "Satya workflows", "href": "#hero" },
+            { "label": "Customer hub", "href": "#testimonial" }
+          ]
+        },
+        {
+          "title": "Solutions",
+          "links": [
+            { "label": "Private practices", "href": "#features" },
+            { "label": "Community centers", "href": "#features" },
+            { "label": "Enterprise programs", "href": "#hero" },
+            { "label": "Team coordination", "href": "#platform" }
+          ]
+        },
+        {
+          "title": "Company",
+          "links": [
+            { "label": "About", "href": "#hero" },
+            { "label": "Careers", "href": "#cta" },
+            { "label": "Partners", "href": "#platform" },
+            { "label": "Press", "href": "#testimonial" }
+          ]
+        },
+        {
+          "title": "Resources",
+          "links": [
+            { "label": "Learning center", "href": "#features" },
+            { "label": "Knowledge base", "href": "#platform" },
+            { "label": "Webinars", "href": "#testimonial" },
+            { "label": "Community", "href": "#cta" }
+          ]
+        },
+        {
+          "title": "Contact",
+          "links": [
+            { "label": "Support", "href": "mailto:support@loom.app" },
+            { "label": "FAQ", "href": "#cta" },
+            { "label": "Talk with us", "href": "mailto:hello@loom.app" },
+            { "label": "Privacy", "href": "/privacy" }
+          ]
+        }
+      ],
+      "social": [
+        { "label": "LinkedIn", "href": "https://www.linkedin.com/company/loom-app", "icon": "linkedin" },
+        { "label": "Facebook", "href": "https://www.facebook.com/loom-app", "icon": "facebook" },
+        { "label": "Instagram", "href": "https://www.instagram.com/loom-app", "icon": "instagram" },
+        { "label": "YouTube", "href": "https://www.youtube.com/@loom-app", "icon": "youtube" }
+      ],
       "madeWith": "Made with ❤️ for the Satya community",
       "followLabel": "Follow us",
-      "legal": "© 2025 Loom-app. All rights reserved.",
+      "legal": "© {year} Loom-app. All rights reserved.",
       "privacyLabel": "Privacy Policy",
       "termsLabel": "Terms of Service"
     }

@@ -102,7 +102,7 @@ type SortOption = 'newest' | 'oldest' | 'unread' | 'priority' | 'type';
 type GroupByOption = 'none' | 'type' | 'date' | 'importance';
 type FilterOption = 'all' | 'unread' | 'read' | 'today' | 'week';
 
-interface NotificationWithEnhancement extends Notification {
+interface NotificationWithEnhancement extends Omit<Notification, 'data' | 'priority'> {
   priority?: NotificationPriority;
   importance?: NotificationImportance;
   isArchived?: boolean;
@@ -110,6 +110,7 @@ interface NotificationWithEnhancement extends Notification {
   category?: string;
   threadId?: string;
   relatedNotifications?: string[];
+  data?: Record<string, unknown>;
 }
 
 interface NotificationGroup {
@@ -123,7 +124,7 @@ interface NotificationAction {
   id: string;
   type: 'mark_read' | 'delete' | 'archive' | 'snooze' | 'mark_all_read' | 'delete_all' | 'export';
   notificationId?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   timestamp: string;
 }
 
@@ -132,7 +133,7 @@ interface NotificationAnalytics {
   notificationId: string;
   type: NotificationType;
   action: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Memoized notification item component
@@ -151,9 +152,13 @@ const NotificationItem = memo(({
   getNotificationIcon: (type: NotificationType) => React.ReactNode;
   getNotificationTypeLabel: (type: NotificationType) => string;
   formatNotificationTime: (dateString: string) => string;
-  handleNotificationClick: (notification: Notification) => void;
-  markAsReadMutation: any;
-  deleteNotificationMutation: any;
+  handleNotificationClick: (notification: NotificationWithEnhancement) => void;
+  markAsReadMutation: {
+    mutate: (id: string) => void;
+  };
+  deleteNotificationMutation: {
+    mutate: (id: string) => void;
+  };
 }) => {
   const handleClick = useCallback(() => {
     handleNotificationClick(notification);
@@ -335,7 +340,7 @@ function NotificationCenterComponent() {
     
     // Track with analytics service
     if (typeof window !== 'undefined' && window.posthog) {
-      window.posthog.capture('notification_clicked', analyticsData);
+      window.posthog.capture('notification_clicked', analyticsData as unknown as Record<string, unknown>);
     }
     
     // Store in navigation history
@@ -378,17 +383,11 @@ function NotificationCenterComponent() {
     },
     enabled: !!user?.id,
     refetchInterval: isConnected && !fallbackPollingActive ? false : 30000, // Poll when disconnected or using fallback
-    retry: (failureCount, error) => {
+    retry: (failureCount, error: Error) => {
       // Retry up to 3 times for network errors, but not for auth errors
       if (failureCount >= 3) return false;
       if (error.message.includes('Unauthorized')) return false;
       return true;
-    },
-    onError: (error) => {
-      console.error('Failed to fetch notifications:', error);
-      if (!error.message.includes('Unauthorized')) {
-        toast.error('Error', 'Failed to load notifications. Please refresh the page.');
-      }
     },
   });
 
@@ -712,7 +711,7 @@ function NotificationCenterComponent() {
     }
   }, []);
 
-  const handleNotificationClick = useCallback(async (notification: Notification) => {
+  const handleNotificationClick = useCallback(async (notification: NotificationWithEnhancement) => {
     try {
       // Mark notification as read if not already read
       if (!notification.readAt) {
@@ -757,15 +756,15 @@ function NotificationCenterComponent() {
 
   // Enhanced notification processing with filtering, sorting, and grouping
   const enhancedNotifications = useMemo(() => {
-    const baseNotifications: NotificationWithEnhancement[] = (notificationsData?.data || []).map(n => ({
+    const baseNotifications = (notificationsData?.data || []).map((n: Notification): NotificationWithEnhancement => ({
       ...n,
-      priority: (n.data?.priority as NotificationPriority) || 'medium',
+      priority: (n.data?.priority as NotificationPriority) || n.priority || 'normal',
       importance: (n.data?.importance as NotificationImportance) || 'normal',
-      isArchived: n.data?.isArchived || false,
-      snoozeUntil: n.data?.snoozeUntil,
-      category: n.data?.category || n.type,
-      threadId: n.data?.threadId,
-      relatedNotifications: n.data?.relatedNotifications || [],
+      isArchived: (n.data?.isArchived as boolean) || false,
+      snoozeUntil: n.data?.snoozeUntil as string | undefined,
+      category: (n.data?.category as string) || n.type,
+      threadId: n.data?.threadId as string | undefined,
+      relatedNotifications: (n.data?.relatedNotifications as string[]) || [],
     }));
     
     // Apply search filter
@@ -812,10 +811,12 @@ function NotificationCenterComponent() {
           if (a.readAt && !b.readAt) return 1;
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         case 'priority': {
-          const priorityOrder = { high: 3, medium: 2, low: 1 };
-          const importanceOrder = { urgent: 5, important: 4, normal: 3 };
-          const aScore = (importanceOrder[a.importance!] || 3) + (priorityOrder[a.priority!] || 2);
-          const bScore = (importanceOrder[b.importance!] || 3) + (priorityOrder[b.priority!] || 2);
+          const priorityOrder: Record<string, number> = { urgent: 4, high: 3, normal: 2, medium: 2, low: 1 };
+          const importanceOrder: Record<string, number> = { urgent: 5, important: 4, normal: 3 };
+          const aScore = (a.importance && importanceOrder[a.importance] ? importanceOrder[a.importance] : 3) +
+                        (a.priority && priorityOrder[a.priority] ? priorityOrder[a.priority] : 2);
+          const bScore = (b.importance && importanceOrder[b.importance] ? importanceOrder[b.importance] : 3) +
+                        (b.priority && priorityOrder[b.priority] ? priorityOrder[b.priority] : 2);
           return bScore - aScore;
         }
         case 'type':
@@ -825,9 +826,9 @@ function NotificationCenterComponent() {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
     });
-    
+
     return filteredNotifications;
-  }, [notificationsData?.data, debouncedSearchQuery, filterBy, sortBy]);
+  }, [notificationsData, debouncedSearchQuery, filterBy, sortBy]);
   
   // Group notifications
   const groupedNotifications = useMemo(() => {

@@ -17,23 +17,23 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'loading' | 'notification';
+export type EnhancedToastType = 'success' | 'error' | 'warning' | 'info' | 'loading' | 'notification';
 
-export interface ToastAction {
+export interface EnhancedToastAction {
   label: string;
   onClick: () => void;
   variant?: 'default' | 'outline' | 'destructive';
 }
 
-export interface Toast {
+export interface EnhancedToast {
   id: string;
-  type: ToastType;
+  type: EnhancedToastType;
   title?: string;
   description: string;
   duration?: number;
   persistent?: boolean;
   dismissible?: boolean;
-  action?: ToastAction;
+  action?: EnhancedToastAction;
   progress?: boolean;
   sound?: boolean;
   icon?: React.ReactNode;
@@ -45,19 +45,19 @@ export interface Toast {
 }
 
 interface ToastContextValue {
-  toasts: Toast[];
+  toasts: EnhancedToast[];
   toast: {
-    success: (description: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'description'>>) => string;
-    error: (description: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'description'>>) => string;
-    warning: (description: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'description'>>) => string;
-    info: (description: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'description'>>) => string;
-    loading: (description: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'description'>>) => string;
-    notification: (description: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'description'>>) => string;
-    custom: (toast: Omit<Toast, 'id' | 'createdAt' | 'updatedAt'>) => string;
+    success: (description: string, options?: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>>) => string;
+    error: (description: string, options?: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>>) => string;
+    warning: (description: string, options?: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>>) => string;
+    info: (description: string, options?: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>>) => string;
+    loading: (description: string, options?: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>>) => string;
+    notification: (description: string, options?: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>>) => string;
+    custom: (toast: Omit<EnhancedToast, 'id' | 'createdAt' | 'updatedAt'>) => string;
   };
   dismiss: (toastId: string) => void;
   dismissAll: () => void;
-  update: (toastId: string, updates: Partial<Toast>) => void;
+  update: (toastId: string, updates: Partial<EnhancedToast>) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
@@ -79,7 +79,7 @@ export function EnhancedToastProvider({
   swipeDirection = 'right',
   enableSounds = true,
 }: ToastProviderProps) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [toasts, setToasts] = useState<EnhancedToast[]>([]);
   const toastTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const audioContext = useRef<AudioContext | null>(null);
 
@@ -97,7 +97,7 @@ export function EnhancedToastProvider({
   }, [enableSounds]);
 
   // Play notification sound
-  const playNotificationSound = useCallback((type: ToastType) => {
+  const playNotificationSound = useCallback((type: EnhancedToastType) => {
     if (!enableSounds || !audioContext.current) return;
 
     try {
@@ -130,7 +130,7 @@ export function EnhancedToastProvider({
   }, [enableSounds]);
 
   // Auto-dismiss toast after duration
-  const scheduleAutoDismiss = useCallback((toast: Toast) => {
+  const scheduleAutoDismiss = useCallback((toast: EnhancedToast) => {
     if (toast.persistent || !toast.duration) return;
 
     const timeout = setTimeout(() => {
@@ -146,11 +146,11 @@ export function EnhancedToastProvider({
   }, []);
 
   // Add new toast
-  const addToast = useCallback((newToast: Omit<Toast, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addToast = useCallback((newToast: Omit<EnhancedToast, 'id' | 'createdAt' | 'updatedAt'>) => {
     const id = generateToastId();
     const now = new Date();
     
-    const toast: Toast = {
+    const toast: EnhancedToast = {
       ...newToast,
       id,
       duration: newToast.duration ?? defaultDuration,
@@ -212,7 +212,7 @@ export function EnhancedToastProvider({
   }, []);
 
   // Update toast
-  const update = useCallback((toastId: string, updates: Partial<Toast>) => {
+  const update = useCallback((toastId: string, updates: Partial<EnhancedToast>) => {
     setToasts(prev => prev.map(toast => 
       toast.id === toastId 
         ? { ...toast, ...updates, updatedAt: new Date() }
@@ -229,32 +229,32 @@ export function EnhancedToastProvider({
 
       const toast = toasts.find(t => t.id === toastId);
       if (toast) {
-        scheduleAutoDismiss({ ...toast, ...updates } as Toast);
+        scheduleAutoDismiss({ ...toast, ...updates } as EnhancedToast);
       }
     }
   }, [toasts, scheduleAutoDismiss]);
 
   // Toast creator functions
   const toastFunctions = {
-    success: (description: string, options: Partial<Omit<Toast, 'id' | 'type' | 'description'>> = {}) =>
+    success: (description: string, options: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>> = {}) =>
       addToast({ type: 'success', description, ...options }),
 
-    error: (description: string, options: Partial<Omit<Toast, 'id' | 'type' | 'description'>> = {}) =>
+    error: (description: string, options: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>> = {}) =>
       addToast({ type: 'error', description, ...options }),
 
-    warning: (description: string, options: Partial<Omit<Toast, 'id' | 'type' | 'description'>> = {}) =>
+    warning: (description: string, options: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>> = {}) =>
       addToast({ type: 'warning', description, ...options }),
 
-    info: (description: string, options: Partial<Omit<Toast, 'id' | 'type' | 'description'>> = {}) =>
+    info: (description: string, options: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>> = {}) =>
       addToast({ type: 'info', description, ...options }),
 
-    loading: (description: string, options: Partial<Omit<Toast, 'id' | 'type' | 'description'>> = {}) =>
+    loading: (description: string, options: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>> = {}) =>
       addToast({ type: 'loading', description, persistent: true, ...options }),
 
-    notification: (description: string, options: Partial<Omit<Toast, 'id' | 'type' | 'description'>> = {}) =>
+    notification: (description: string, options: Partial<Omit<EnhancedToast, 'id' | 'type' | 'description'>> = {}) =>
       addToast({ type: 'notification', description, ...options }),
 
-    custom: (toast: Omit<Toast, 'id' | 'createdAt' | 'updatedAt'>) =>
+    custom: (toast: Omit<EnhancedToast, 'id' | 'createdAt' | 'updatedAt'>) =>
       addToast(toast),
   };
 
@@ -305,7 +305,7 @@ export function EnhancedToastProvider({
 }
 
 interface ToastComponentProps {
-  toast: Toast;
+  toast: EnhancedToast;
   onDismiss: () => void;
   swipeDirection: 'up' | 'down' | 'left' | 'right';
 }
@@ -319,10 +319,11 @@ function ToastComponent({ toast, onDismiss, swipeDirection }: ToastComponentProp
     if (toast.persistent || !toast.duration || isPaused) return;
 
     const startTime = Date.now();
+    const duration = toast.duration || 5000; // Default to 5 seconds
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, toast.duration - elapsed);
-      setProgress((remaining / toast.duration) * 100);
+      const remaining = Math.max(0, duration - elapsed);
+      setProgress((remaining / duration) * 100);
 
       if (remaining <= 0) {
         clearInterval(interval);
@@ -579,5 +580,3 @@ export function useAsyncToast() {
     [toast, update]
   );
 }
-
-export type { Toast, ToastAction, ToastType };

@@ -140,6 +140,11 @@ export interface Session {
     lastName: string;
     avatarUrl?: string;
   };
+  cancellationPolicy?: {
+    freeUntilHours: number;
+    partialRefundUntilHours: number;
+    feeAmount: number;
+  };
 }
 
 /**
@@ -530,11 +535,13 @@ declare global {
       config?: Record<string, unknown>
     ) => void;
     posthog?: {
+      init: (key: string, config: Record<string, unknown>) => void;
       capture: (
         eventName: string,
         properties?: Record<string, unknown>
       ) => void;
       identify: (userId: string, properties?: Record<string, unknown>) => void;
+      reset: () => void;
     };
   }
 }
