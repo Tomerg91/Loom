@@ -311,6 +311,13 @@
         "Radix UI",
         "TanStack Query"
       ]
+    },
+    "footer": {
+      "madeWith": "Made with ❤️ for the Satya community",
+      "followLabel": "Follow us",
+      "legal": "© 2025 Loom-app. All rights reserved.",
+      "privacyLabel": "Privacy Policy",
+      "termsLabel": "Terms of Service"
     }
   },
   "dashboard": {
