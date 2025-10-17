@@ -1,21 +1,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createClient } from '@/lib/supabase/server';
 
-// Mock Supabase server client
-const mockSupabaseServerClient = {
-  from: vi.fn(),
-  rpc: vi.fn(),
-  auth: {
-    getUser: vi.fn(),
-  },
-  storage: {
+vi.mock('@/lib/supabase/server', () => {
+  // Mock Supabase server client
+  const mockSupabaseServerClient = {
     from: vi.fn(),
-  },
-};
+    rpc: vi.fn(),
+    auth: {
+      getUser: vi.fn(),
+    },
+    storage: {
+      from: vi.fn(),
+    },
+  };
 
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn().mockResolvedValue(mockSupabaseServerClient),
-}));
+  return {
+    createClient: vi.fn().mockResolvedValue(mockSupabaseServerClient),
+  };
+});
 
 // Mock database connection for raw SQL transactions
 const mockPostgresClient = {

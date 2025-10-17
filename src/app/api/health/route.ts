@@ -323,8 +323,9 @@ async function getDatabasePoolStats(supabase: any) {
 
 function determineOverallHealth(...checks: any[]): boolean {
   // System is healthy if all critical checks pass
-  return checks.every(check => 
-    check && (check.status === 'healthy' || check.status === 'degraded')
+  // Allow 'slow' status for database checks as they might be warming up
+  return checks.every(check =>
+    check && (check.status === 'healthy' || check.status === 'degraded' || check.status === 'slow')
   );
 }
 

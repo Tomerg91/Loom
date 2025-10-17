@@ -70,7 +70,7 @@ export function PerformanceDashboard() {
   }, []);
 
   const updatePerformanceData = useCallback((metrics: PerformanceMetrics) => {
-    const budget = checkPerformanceBudget(metrics);
+    const budget = checkPerformanceBudget(metrics as Record<string, number>);
     const score = calculateScore(metrics);
     const grade = getGrade(score);
 
@@ -129,9 +129,11 @@ export function PerformanceDashboard() {
 
   const formatMetricValue = (metric: keyof PerformanceMetrics, value?: number): string => {
     if (!value) return '--';
-    
-    if (metric === 'CLS') return value.toFixed(3);
-    return `${Math.round(value)}${metric === 'CLS' ? '' : 'ms'}`;
+
+    if (metric === 'CLS') {
+      return value.toFixed(3);
+    }
+    return `${Math.round(value)}ms`;
   };
 
   const refreshMetrics = () => {
