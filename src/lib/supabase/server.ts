@@ -135,71 +135,79 @@ export const createServerClientWithRequest = (
 };
 
 // For route handlers and server components that have access to cookies
-export const createClient = async () => {
+export const createClient = () => {
   validateSupabaseEnv();
 
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let cookieStore: any | null = null;
-  try {
-    // Dynamic import to avoid bundling next/headers in client code
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { cookies } = require('next/headers');
-    cookieStore = await cookies();
-  } catch (_error) {
-    // Cookies not available in client context - will fall back to cookieless client
-  }
+  const getCookieStore = () => {
+    try {
+      // Dynamic import to avoid bundling next/headers in client code
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { cookies } = require('next/headers');
+      return cookies();
+    } catch (_error) {
+      // Cookies not available in client context
+      return null;
+    }
+  };
 
-  const cookieAdapter = cookieStore
-    ? {
-        getAll: async () => {
-          try {
-            const allCookies = await cookieStore!.getAll();
-            return allCookies.map(({ name, value }: { name: string; value: string }) => ({
-              name,
-              value,
-            })) as SupabaseCookie[];
-          } catch (error) {
-            console.warn('Failed to read cookies:', error);
-            return [] as SupabaseCookie[];
-          }
-        },
-        setAll: (newCookies: SupabaseCookie[]) => {
+  const cookieAdapter = {
+    getAll: async () => {
+      const cookieStorePromise = getCookieStore();
+      if (!cookieStorePromise) return [] as SupabaseCookie[];
 
-          const mutableStore = cookieStore as unknown as {
-            set?: (
-              name: string,
-              value: string,
-              options?: Record<string, unknown>
-            ) => void;
-          };
-
-          newCookies.forEach((cookie: SupabaseCookie) => {
-            const { name, value, options } = cookie;
-            try {
-              const sameSiteValue =
-                options?.sameSite === true
-                  ? 'strict'
-                  : options?.sameSite === false
-                    ? 'none'
-                    : options?.sameSite;
-
-              mutableStore.set?.(name, value, {
-                ...options,
-                sameSite: sameSiteValue,
-              });
-            } catch (error) {
-              console.warn('Failed to set cookie:', error);
-            }
-          });
-        },
+      try {
+        const cookieStore = await cookieStorePromise;
+        const allCookies = await cookieStore.getAll();
+        return allCookies.map(({ name, value }: { name: string; value: string }) => ({
+          name,
+          value,
+        })) as SupabaseCookie[];
+      } catch (error) {
+        console.warn('Failed to read cookies:', error);
+        return [] as SupabaseCookie[];
       }
-    : {
-        getAll: async () => [] as SupabaseCookie[],
-        setAll: () => {},
-      };
+    },
+    setAll: async (newCookies: SupabaseCookie[]) => {
+      const cookieStorePromise = getCookieStore();
+      if (!cookieStorePromise) return;
+
+      try {
+        const cookieStore = await cookieStorePromise;
+        const mutableStore = cookieStore as unknown as {
+          set?: (
+            name: string,
+            value: string,
+            options?: Record<string, unknown>
+          ) => void;
+        };
+
+        newCookies.forEach((cookie: SupabaseCookie) => {
+          const { name, value, options } = cookie;
+          try {
+            const sameSiteValue =
+              options?.sameSite === true
+                ? 'strict'
+                : options?.sameSite === false
+                  ? 'none'
+                  : options?.sameSite;
+
+            mutableStore.set?.(name, value, {
+              ...options,
+              sameSite: sameSiteValue,
+            });
+          } catch (error) {
+            console.warn('Failed to set cookie:', error);
+          }
+        });
+      } catch (error) {
+        console.warn('Failed to set cookies:', error);
+      }
+    },
+  };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return createSupabaseServerClient<any>(supabaseUrl, supabaseKey, {
