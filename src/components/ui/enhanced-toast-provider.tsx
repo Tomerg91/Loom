@@ -79,7 +79,7 @@ export function EnhancedToastProvider({
   swipeDirection = 'right',
   enableSounds = true,
 }: ToastProviderProps) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [toasts, setToasts] = useState<EnhancedToast[]>([]);
   const toastTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const audioContext = useRef<AudioContext | null>(null);
 
@@ -212,7 +212,7 @@ export function EnhancedToastProvider({
   }, []);
 
   // Update toast
-  const update = useCallback((toastId: string, updates: Partial<Toast>) => {
+  const update = useCallback((toastId: string, updates: Partial<EnhancedToast>) => {
     setToasts(prev => prev.map(toast => 
       toast.id === toastId 
         ? { ...toast, ...updates, updatedAt: new Date() }
@@ -580,5 +580,3 @@ export function useAsyncToast() {
     [toast, update]
   );
 }
-
-export type { EnhancedToast, EnhancedToastAction, EnhancedToastType };
