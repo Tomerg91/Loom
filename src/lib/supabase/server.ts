@@ -135,7 +135,7 @@ export const createServerClientWithRequest = (
 };
 
 // For route handlers and server components that have access to cookies
-export const createClient = () => {
+export const createClient = async () => {
   validateSupabaseEnv();
 
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -147,28 +147,27 @@ export const createClient = () => {
     // Dynamic import to avoid bundling next/headers in client code
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { cookies } = require('next/headers');
-    cookieStore = cookies();
+    cookieStore = await cookies();
   } catch (_error) {
     // Cookies not available in client context - will fall back to cookieless client
   }
 
   const cookieAdapter = cookieStore
     ? {
-        getAll: () => {
+        getAll: async () => {
           try {
-            return cookieStore!
-              .getAll()
-              .map(({ name, value }: { name: string; value: string }) => ({
-                name,
-                value,
-              })) as SupabaseCookie[];
+            const allCookies = await cookieStore!.getAll();
+            return allCookies.map(({ name, value }: { name: string; value: string }) => ({
+              name,
+              value,
+            })) as SupabaseCookie[];
           } catch (error) {
             console.warn('Failed to read cookies:', error);
             return [] as SupabaseCookie[];
           }
         },
         setAll: (newCookies: SupabaseCookie[]) => {
-           
+
           const mutableStore = cookieStore as unknown as {
             set?: (
               name: string,
@@ -198,7 +197,7 @@ export const createClient = () => {
         },
       }
     : {
-        getAll: () => [] as SupabaseCookie[],
+        getAll: async () => [] as SupabaseCookie[],
         setAll: () => {},
       };
 
