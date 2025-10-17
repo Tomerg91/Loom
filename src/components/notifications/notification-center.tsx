@@ -711,7 +711,7 @@ function NotificationCenterComponent() {
     }
   }, []);
 
-  const handleNotificationClick = useCallback(async (notification: Notification) => {
+  const handleNotificationClick = useCallback(async (notification: NotificationWithEnhancement) => {
     try {
       // Mark notification as read if not already read
       if (!notification.readAt) {

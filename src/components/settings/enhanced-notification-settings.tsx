@@ -20,12 +20,12 @@ import {
   Mail, 
   Smartphone, 
   Clock, 
-  Volume2, 
-  VolumeX, 
+  Volume2,
+  VolumeX,
   Moon,
   Sun,
   Settings2,
-  Test,
+  FlaskConical,
   CheckCircle,
   AlertCircle,
   Info,
@@ -71,7 +71,7 @@ interface NotificationPreferences {
   };
 }
 
-interface NotificationTest {
+interface NotificationFlaskConical {
   type: 'email' | 'push' | 'inapp';
   status: 'idle' | 'testing' | 'success' | 'error';
   message?: string;
@@ -85,7 +85,7 @@ export function EnhancedNotificationSettings() {
   const pushNotifications = usePushNotifications();
 
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
-  const [testStatus, setTestStatus] = useState<NotificationTest[]>([
+  const [testStatus, setFlaskConicalStatus] = useState<NotificationFlaskConical[]>([
     { type: 'email', status: 'idle' },
     { type: 'push', status: 'idle' },
     { type: 'inapp', status: 'idle' }
@@ -129,7 +129,7 @@ export function EnhancedNotificationSettings() {
     },
   });
 
-  // Test notification mutation
+  // FlaskConical notification mutation
   const testNotificationMutation = useMutation({
     mutationFn: async (type: 'email' | 'push' | 'inapp') => {
       const response = await fetch('/api/notifications/test', {
@@ -140,21 +140,21 @@ export function EnhancedNotificationSettings() {
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Test failed');
+        throw new Error(error.error || 'FlaskConical failed');
       }
       
       return response.json();
     },
     onSuccess: (data, type) => {
-      setTestStatus(prev => prev.map(test => 
+      setFlaskConicalStatus(prev => prev.map(test => 
         test.type === type 
-          ? { ...test, status: 'success', message: 'Test notification sent successfully' }
+          ? { ...test, status: 'success', message: 'FlaskConical notification sent successfully' }
           : test
       ));
-      toast.success('Success', `Test ${type} notification sent successfully`);
+      toast.success('Success', `FlaskConical ${type} notification sent successfully`);
     },
     onError: (error, type) => {
-      setTestStatus(prev => prev.map(test => 
+      setFlaskConicalStatus(prev => prev.map(test => 
         test.type === type 
           ? { ...test, status: 'error', message: error.message }
           : test
@@ -179,9 +179,9 @@ export function EnhancedNotificationSettings() {
     savePreferencesMutation.mutate(updates);
   };
 
-  // Test notification handler
-  const handleTestNotification = (type: 'email' | 'push' | 'inapp') => {
-    setTestStatus(prev => prev.map(test => 
+  // FlaskConical notification handler
+  const handleFlaskConicalNotification = (type: 'email' | 'push' | 'inapp') => {
+    setFlaskConicalStatus(prev => prev.map(test => 
       test.type === type 
         ? { ...test, status: 'testing', message: undefined }
         : test
@@ -293,15 +293,15 @@ export function EnhancedNotificationSettings() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleTestNotification('email')}
+                    onClick={() => handleFlaskConicalNotification('email')}
                     disabled={testStatus.find(t => t.type === 'email')?.status === 'testing'}
                   >
                     {testStatus.find(t => t.type === 'email')?.status === 'testing' ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : (
-                      <Test className="h-4 w-4 mr-2" />
+                      <FlaskConical className="h-4 w-4 mr-2" />
                     )}
-                    Test Email
+                    FlaskConical Email
                   </Button>
                   {testStatus.find(t => t.type === 'email')?.status === 'success' && (
                     <Badge variant="secondary" className="bg-green-50 text-green-700">
@@ -456,15 +456,15 @@ export function EnhancedNotificationSettings() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleTestNotification('push')}
+                    onClick={() => handleFlaskConicalNotification('push')}
                     disabled={testStatus.find(t => t.type === 'push')?.status === 'testing' || !pushNotifications.isSubscribed}
                   >
                     {testStatus.find(t => t.type === 'push')?.status === 'testing' ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : (
-                      <Test className="h-4 w-4 mr-2" />
+                      <FlaskConical className="h-4 w-4 mr-2" />
                     )}
-                    Test Push
+                    FlaskConical Push
                   </Button>
                   {pushNotifications.isSubscribed && (
                     <Badge variant="secondary" className="bg-green-50 text-green-700">
@@ -684,15 +684,15 @@ export function EnhancedNotificationSettings() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleTestNotification('inapp')}
+                    onClick={() => handleFlaskConicalNotification('inapp')}
                     disabled={testStatus.find(t => t.type === 'inapp')?.status === 'testing'}
                   >
                     {testStatus.find(t => t.type === 'inapp')?.status === 'testing' ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : (
-                      <Test className="h-4 w-4 mr-2" />
+                      <FlaskConical className="h-4 w-4 mr-2" />
                     )}
-                    Test In-App
+                    FlaskConical In-App
                   </Button>
                 </div>
               </div>

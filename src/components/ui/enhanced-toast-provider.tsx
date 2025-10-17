@@ -319,10 +319,11 @@ function ToastComponent({ toast, onDismiss, swipeDirection }: ToastComponentProp
     if (toast.persistent || !toast.duration || isPaused) return;
 
     const startTime = Date.now();
+    const duration = toast.duration || 5000; // Default to 5 seconds
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, toast.duration - elapsed);
-      setProgress((remaining / toast.duration) * 100);
+      const remaining = Math.max(0, duration - elapsed);
+      setProgress((remaining / duration) * 100);
 
       if (remaining <= 0) {
         clearInterval(interval);
