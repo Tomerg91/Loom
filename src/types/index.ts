@@ -140,6 +140,11 @@ export interface Session {
     lastName: string;
     avatarUrl?: string;
   };
+  cancellationPolicy?: {
+    freeUntilHours: number;
+    partialRefundUntilHours: number;
+    feeAmount: number;
+  };
 }
 
 /**
