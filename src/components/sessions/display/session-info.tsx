@@ -78,7 +78,7 @@ export function SessionInfo({ session }: SessionInfoProps) {
             <Label className="text-sm font-medium text-muted-foreground">Session Type</Label>
             <p className="text-sm flex items-center">
               {getSessionTypeIcon(session.sessionType)}
-              <span className="ml-1 capitalize">{session.sessionType.replace('-', ' ')}</span>
+              <span className="ml-1 capitalize">{session.sessionType?.replace('-', ' ') || 'Not specified'}</span>
             </p>
           </div>
           <div>

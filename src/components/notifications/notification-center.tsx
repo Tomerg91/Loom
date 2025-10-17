@@ -339,7 +339,7 @@ function NotificationCenterComponent() {
     
     // Track with analytics service
     if (typeof window !== 'undefined' && window.posthog) {
-      window.posthog.capture('notification_clicked', analyticsData as Record<string, unknown>);
+      window.posthog.capture('notification_clicked', analyticsData as unknown as Record<string, unknown>);
     }
     
     // Store in navigation history
@@ -755,7 +755,7 @@ function NotificationCenterComponent() {
 
   // Enhanced notification processing with filtering, sorting, and grouping
   const enhancedNotifications = useMemo(() => {
-    const baseNotifications: NotificationWithEnhancement[] = (notificationsData?.data || []).map((n: Notification) => ({
+    const baseNotifications = (notificationsData?.data || []).map((n: Notification): NotificationWithEnhancement => ({
       ...n,
       priority: (n.data?.priority as NotificationPriority) || n.priority || 'normal',
       importance: (n.data?.importance as NotificationImportance) || 'normal',

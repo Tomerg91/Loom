@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { onCLS, onFID, onFCP, onLCP, onTTFB } from 'web-vitals';
+import { onCLS, onINP, onFCP, onLCP, onTTFB, type Metric } from 'web-vitals';
 
 interface WebVitalsMetric {
   id: string;
@@ -11,29 +11,37 @@ interface WebVitalsMetric {
   delta: number;
 }
 
+declare global {
+  interface Window {
+    Sentry?: {
+      captureMessage: (message: string, options?: Record<string, unknown>) => void;
+    };
+  }
+}
+
 // Track and report Web Vitals metrics
 export function WebVitals() {
   useEffect(() => {
     // Core Web Vitals
-    onCLS((metric) => {
-      reportWebVital(metric);
+    onCLS((metric: Metric) => {
+      reportWebVital(metric as WebVitalsMetric);
     });
-    
-    onFID((metric) => {
-      reportWebVital(metric);
+
+    onINP((metric: Metric) => {
+      reportWebVital(metric as WebVitalsMetric);
     });
-    
-    onLCP((metric) => {
-      reportWebVital(metric);
+
+    onLCP((metric: Metric) => {
+      reportWebVital(metric as WebVitalsMetric);
     });
-    
+
     // Additional metrics
-    onFCP((metric) => {
-      reportWebVital(metric);
+    onFCP((metric: Metric) => {
+      reportWebVital(metric as WebVitalsMetric);
     });
-    
-    onTTFB((metric) => {
-      reportWebVital(metric);
+
+    onTTFB((metric: Metric) => {
+      reportWebVital(metric as WebVitalsMetric);
     });
   }, []);
 
