@@ -69,9 +69,7 @@ export function SessionCalendar({ coachId, clientId, onSessionClick }: SessionCa
       }
 
       const response = await fetch(`/api/sessions?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${user?.token || ''}`,
-        },
+        credentials: 'include', // Include cookies for auth
       });
       if (!response.ok) throw new Error('Failed to fetch sessions');
       return response.json();
