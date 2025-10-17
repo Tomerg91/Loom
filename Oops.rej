@@ -1,0 +1,45 @@
+@@ -470,7 +470,7 @@
+           <input
+             type="checkbox"
+             checked={reminderSettings.email1h}
+-            onChange={(e) => setReminderSettings(prev => ({ 
++            onChange={(e) => setReminderSettings((prev: typeof reminderSettings) => ({ 
+               ...prev, 
+               email1h: e.target.checked 
+             }))}
+@@ -482,7 +482,7 @@
+           <input
+             type="checkbox"
+             checked={reminderSettings.sms15m}
+-            onChange={(e) => setReminderSettings(prev => ({ 
++            onChange={(e) => setReminderSettings((prev: typeof reminderSettings) => ({ 
+               ...prev, 
+               sms15m: e.target.checked 
+             }))}
+@@ -494,7 +494,7 @@
+           <input
+             type="checkbox"
+             checked={reminderSettings.push5m}
+-            onChange={(e) => setReminderSettings(prev => ({ 
++            onChange={(e) => setReminderSettings((prev: typeof reminderSettings) => ({ 
+               ...prev, 
+               push5m: e.target.checked 
+             }))}
+@@ -1098,7 +1098,7 @@
+   describe('Communication Delivery Tracking', () => {
+     it('tracks email delivery status and bounces', async () => {
+       const DeliveryTracker = () => {
+-        const [deliveryStatus, setDeliveryStatus] = React.useState<Record<string, string>>({});
++        const [deliveryStatus, setDeliveryStatus] = React.useState({} as Record<string, string>);
+ 
+         const sendTrackedEmail = async () => {
+           try {
+@@ -1119,7 +1119,7 @@
+ 
+         // Simulate webhook status updates
+         React.useEffect(() => {
+-          const handleWebhook = (event: any) => {
++          const handleWebhook = (event: CustomEvent) => {
+             setDeliveryStatus(prev => ({
+               ...prev,
+               [event.messageId]: event.status,

@@ -221,6 +221,21 @@
     }
   },
   "landing": {
+    "navigation": {
+      "links": [
+        { "label": "הפלטפורמה", "href": "#platform" },
+        { "label": "פתרונות", "href": "#features" },
+        { "label": "לקוחות", "href": "#testimonial" },
+        { "label": "תמחור", "href": "#cta" }
+      ],
+      "contact": { "label": "צרו קשר", "href": "#cta" },
+      "signIn": { "label": "התחברות", "href": "/auth/signin" },
+      "signUp": { "label": "הרשמה", "href": "/auth/signup" },
+      "logoLabel": "חזרה לדף הבית של Loom-app",
+      "navigationAriaLabel": "ניווט ראשי",
+      "openMenuLabel": "פתחו תפריט ניווט",
+      "closeMenuLabel": "סגרו תפריט ניווט"
+    },
     "hero": {
       "chip": "מערכת ההפעלה המודרנית לאימון",
       "title": "בונים מערכות יחסים פורחות באימון",
@@ -229,6 +244,97 @@
       "primaryHref": "/auth/signin",
       "secondaryCta": "לצפות בהדגמה",
       "secondaryHref": "/auth/signup"
+    },
+    "socialProof": {
+      "title": "בשימוש על ידי מטפלים ומרכזים מובילים",
+      "logos": ["מרכז סאטיה", "תודעה חדשה", "Balance Studio", "MindfulFlow", "לב פתוח", "המסע הפנימי"]
+    },
+    "features": {
+      "title": "פלטפורמה אחת, אינסוף אפשרויות.",
+      "items": [
+        {
+          "title": "ניהול מטופלים מרכזי",
+          "description": "נהלו את כל המידע על המטופלים שלכם במקום אחד מאובטח ונוח."
+        },
+        {
+          "title": "תיאום פגישות חכם",
+          "description": "מערכת זימון תורים אינטואיטיבית החוסכת לכם זמן ומונעת טעויות."
+        },
+        {
+          "title": "מעקב התקדמות ויזואלי",
+          "description": "הציגו למטופלים את ההתקדמות שלהם בעזרת כלים וגרפים ויזואליים."
+        }
+      ]
+    },
+    "testimonial": {
+      "quote": "Loom-app שינה את הדרך בה אני מנהלת את הקליניקה שלי. הכל כל כך מאורגן וקל לשימוש, וזה חוסך לי שעות כל שבוע.",
+      "name": "שם המטפל/ת",
+      "role": "קליניקה פרטית"
+    },
+    "cta": {
+      "title": "מוכנים להתחיל?",
+      "description": "הצטרפו למאמנים שכבר עובדים בצורה חכמה ויעילה יותר.",
+      "primary": { "label": "התנסות חינם", "href": "/auth/signup" }
+    },
+    "footer": {
+      "columns": [
+        {
+          "title": "הפלטפורמה",
+          "links": [
+            { "label": "סקירת יכולות", "href": "#platform" },
+            { "label": "ניהול מטופלים", "href": "#features" },
+            { "label": "יישומי Satya", "href": "#hero" },
+            { "label": "מרכז הלקוחות", "href": "#testimonial" }
+          ]
+        },
+        {
+          "title": "פתרונות",
+          "links": [
+            { "label": "קליניקות פרטיות", "href": "#features" },
+            { "label": "מרכזים קהילתיים", "href": "#features" },
+            { "label": "תוכניות ארגוניות", "href": "#hero" },
+            { "label": "ניהול צוותים", "href": "#platform" }
+          ]
+        },
+        {
+          "title": "חברה",
+          "links": [
+            { "label": "אודות", "href": "#hero" },
+            { "label": "קריירה", "href": "#cta" },
+            { "label": "שותפים", "href": "#platform" },
+            { "label": "חדשות", "href": "#testimonial" }
+          ]
+        },
+        {
+          "title": "משאבים",
+          "links": [
+            { "label": "מרכז הדרכה", "href": "#features" },
+            { "label": "ספריית ידע", "href": "#platform" },
+            { "label": "וובינרים", "href": "#testimonial" },
+            { "label": "קהילה", "href": "#cta" }
+          ]
+        },
+        {
+          "title": "צרו קשר",
+          "links": [
+            { "label": "תמיכה", "href": "mailto:support@loom.app" },
+            { "label": "שאלות נפוצות", "href": "#cta" },
+            { "label": "דברו איתנו", "href": "mailto:hello@loom.app" },
+            { "label": "מדיניות פרטיות", "href": "/privacy" }
+          ]
+        }
+      ],
+      "social": [
+        { "label": "LinkedIn", "href": "https://www.linkedin.com/company/loom-app", "icon": "linkedin" },
+        { "label": "Facebook", "href": "https://www.facebook.com/loom-app", "icon": "facebook" },
+        { "label": "Instagram", "href": "https://www.instagram.com/loom-app", "icon": "instagram" },
+        { "label": "YouTube", "href": "https://www.youtube.com/@loom-app", "icon": "youtube" }
+      ],
+      "legal": "© {year} Loom-app. כל הזכויות שמורות.",
+      "madeWith": "מעוצב באהבה עבור קהילת שיטת סאטיה",
+      "followLabel": "עקבו אחרינו",
+      "privacyLabel": "פרטיות",
+      "termsLabel": "תנאי שימוש"
     },
     "personas": {
       "title": "בחרו את המסלול שלכם",
