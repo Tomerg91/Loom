@@ -4,6 +4,37 @@ A modern, professional coaching platform built with Next.js 15, featuring a beau
 
 ## ✨ Features
 
+### 📚 Resource Library (NEW!)
+
+Comprehensive content management system for coaches to share educational materials with clients:
+
+**For Coaches:**
+
+- Upload and organize resources (PDFs, videos, audio, documents)
+- Create themed collections for structured learning paths
+- Share resources with all clients or individually
+- Auto-share resources with new clients
+- Track engagement with detailed analytics dashboard
+- View top performing resources and client engagement metrics
+
+**For Clients:**
+
+- Access resources shared by coaches
+- Track progress with automatic "viewed" and manual "completed" markers
+- Filter and search resources by category, tags, or keywords
+- Browse themed collections
+- View personal progress statistics
+
+**Technical Highlights:**
+
+- Row-Level Security (RLS) enforced at database level
+- Comprehensive analytics with time-range filtering
+- Drag-and-drop collection organization
+- Real-time progress tracking
+- Category-based organization system
+
+See [Features Guide](docs/FEATURES.md#resource-library) for detailed documentation.
+
 ### 🎨 Modern Design System
 
 - **Professional SaaS Aesthetic**: Clean, light backgrounds with sophisticated dark accents
@@ -12,13 +43,18 @@ A modern, professional coaching platform built with Next.js 15, featuring a beau
 - **No Gradients**: Solid colors throughout for a clean, modern appearance
 - **Responsive Design**: Mobile-first approach with beautiful animations
 
-### 🔐 Authentication System
+### 🔐 Authentication & Security
 
 - **Modern Sign In/Up Pages**: Redesigned with new design system
-- **Multi-Factor Authentication (MFA)**: Enhanced security features
+- **Multi-Factor Authentication (MFA)**: Enhanced security with TOTP support
 - **Password Reset Flow**: Professional reset process with email verification
-- **Role-Based Access**: Client and Coach user types
+- **Role-Based Access**: Client and Coach user types with route guards
 - **Internationalization**: English and Hebrew language support
+- **Security Hardening**: SECURITY DEFINER functions with secure search_path
+- **Enhanced Auth Config**: 15-minute OTP expiry, email confirmation required
+- **Database Health Monitoring**: Built-in health check function for critical systems
+
+See [Admin Guide](docs/ADMIN_GUIDE.md) for security monitoring and maintenance procedures.
 
 ### 🧩 Component Library
 
@@ -102,12 +138,25 @@ A modern, professional coaching platform built with Next.js 15, featuring a beau
 
 ## 🎯 Key Pages
 
+### Public Pages
+
 - **`/`** - Landing page with hero section
 - **`/design-system`** - Complete design system showcase
 - **`/auth/signin`** - Modern sign in page
 - **`/auth/signup`** - Professional registration flow
 - **`/auth/reset-password`** - Password reset process
-- **`/dashboard`** - Main application dashboard
+
+### Coach Dashboard
+
+- **`/coach/dashboard`** - Main coach dashboard
+- **`/coach/resources`** - Resource library management
+- **`/coach/resources/collections`** - Collections management
+- **`/coach/resources/analytics`** - Resource analytics dashboard
+
+### Client Dashboard
+
+- **`/client/dashboard`** - Main client dashboard
+- **`/client/resources`** - Shared resources library
 
 ## 🧪 Testing & Development
 
@@ -178,6 +227,34 @@ src/
 └── types/                  # TypeScript type definitions
 ```
 
+## 📖 Documentation
+
+Comprehensive guides for users and administrators:
+
+- **[Features Guide](docs/FEATURES.md)** - Complete feature documentation
+  - Resource Library user guide for coaches and clients
+  - Authentication and security features
+  - User roles and permissions
+  - API usage examples and best practices
+
+- **[Admin Guide](docs/ADMIN_GUIDE.md)** - Administration and operations
+  - Database health monitoring
+  - Security advisor tools and procedures
+  - Supabase management and maintenance
+  - Performance monitoring and optimization
+  - Troubleshooting common issues
+
+- **[Resource Library Technical Docs](docs/RESOURCE_LIBRARY.md)** - Developer reference
+  - Database schema and architecture
+  - API endpoints and usage
+  - Component architecture
+  - Security implementation details
+
+- **[Launch Preparation](docs/launch/)** - Production readiness
+  - [Launch Checklist](docs/launch/checklist.md)
+  - [Support Playbook](docs/launch/support-playbook.md)
+  - [Known Issues](docs/launch/known-issues.md)
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -185,6 +262,8 @@ src/
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+Please review the [Features Guide](docs/FEATURES.md) and [Admin Guide](docs/ADMIN_GUIDE.md) to understand the system architecture before contributing.
 
 ## 📄 License
 

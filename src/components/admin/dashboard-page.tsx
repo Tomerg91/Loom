@@ -23,7 +23,8 @@ import {
   DollarSign,
   Star,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Database
 } from 'lucide-react';
 import { StatsCard, LoadingState, ErrorState } from '@/components/dashboard';
 
@@ -364,6 +365,21 @@ export function AdminDashboardPage() {
                   <div className="text-left">
                     <p className="font-medium">MFA Health Monitor</p>
                     <p className="text-xs text-muted-foreground">Track MFA source discrepancies</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant="outline"
+                className="justify-between h-auto p-4"
+                onClick={() => router.push(`/${locale}/admin/resource-validation`)}
+              >
+                <div className="flex items-center gap-3">
+                  <Database className="h-5 w-5" />
+                  <div className="text-left">
+                    <p className="font-medium">Resource Library Validation</p>
+                    <p className="text-xs text-muted-foreground">Check for data inconsistencies</p>
                   </div>
                 </div>
                 <ArrowRight className="h-4 w-4" />
