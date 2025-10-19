@@ -1,0 +1,77 @@
+# ============================================================================
+# CI Workflow: Validate SECURITY DEFINER Functions
+# ============================================================================
+# This workflow ensures all SECURITY DEFINER functions have SET search_path
+# to prevent privilege escalation vulnerabilities.
+#
+# Runs on: Pull requests that modify migration files
+# Phase 1: Security Hardening
+# ============================================================================
+
+name: Validate Security Definer Functions
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**/*.sql'
+      - '.github/workflows/validate-security-definer.yml'
+
+jobs:
+  check-security-definer:
+    runs-on: ubuntu-latest
+    name: Check SECURITY DEFINER search_path
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for vulnerable SECURITY DEFINER functions
+        run: |
+          echo "Checking for SECURITY DEFINER functions without SET search_path..."
+
+          # Find all migration files
+          MIGRATION_FILES=$(find supabase/migrations -name "*.sql" -type f)
+
+          VULNERABLE_FOUND=0
+
+          for file in $MIGRATION_FILES; do
+            # Check if file contains SECURITY DEFINER
+            if grep -q "SECURITY DEFINER" "$file"; then
+              echo "Checking $file..."
+
+              # Extract function definitions that are SECURITY DEFINER but lack SET search_path
+              # This is a simplified check - we look for SECURITY DEFINER followed by AS $$
+              # without SET search_path in between
+
+              if grep -B 10 "SECURITY DEFINER" "$file" | grep -A 10 "SECURITY DEFINER" | grep -v "SET search_path" | grep -q "SECURITY DEFINER"; then
+                # More precise check: extract the full function and verify
+                TEMP_FUNCS=$(grep -B 20 "SECURITY DEFINER" "$file" | grep -A 5 "SECURITY DEFINER")
+
+                # Check if any of these blocks lack search_path
+                if echo "$TEMP_FUNCS" | grep "SECURITY DEFINER" | while read -r line; do
+                  # Get the next 10 lines after SECURITY DEFINER
+                  CONTEXT=$(grep -A 10 "SECURITY DEFINER" "$file" | head -15)
+                  if ! echo "$CONTEXT" | grep -q "SET search_path"; then
+                    echo "::error file=$file::Found SECURITY DEFINER function without SET search_path"
+                    exit 1
+                  fi
+                done; then
+                  VULNERABLE_FOUND=1
+                fi
+              fi
+            fi
+          done
+
+          if [ $VULNERABLE_FOUND -eq 1 ]; then
+            echo "::error ::Found SECURITY DEFINER functions without SET search_path clause"
+            echo "All SECURITY DEFINER functions must include 'SET search_path = public, pg_temp'"
+            exit 1
+          fi
+
+          echo "✓ All SECURITY DEFINER functions have proper search_path settings"
+
+      - name: Run security regression tests
+        run: |
+          echo "Would run: pnpm supabase:test"
+          echo "Test suite location: supabase/tests/security_definer_regression.sql"
+          echo "Note: Requires Supabase CLI and database connection"

@@ -1,37 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Shield,
-  Users,
-  Settings,
-  BarChart3,
+import {
   AlertTriangle,
+  BarChart3,
   CheckCircle,
-  Clock,
-  Eye,
   Download,
-  RefreshCw,
+  Eye,
   MoreHorizontal,
-  UserX,
+  RefreshCw,
+  RotateCcw,
+  Settings,
+  Shield,
   UserCheck,
-  RotateCcw
+  UserX,
+  Users,
 } from 'lucide-react';
-import { 
+import { useCallback, useEffect, useState } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface MfaAdminSettingsProps {
   onSaveSettings?: (settings: MfaEnforcementSettings) => Promise<void>;
@@ -55,6 +54,7 @@ interface UserMfaStatus {
   email: string;
   role: 'admin' | 'coach' | 'client';
   mfaEnabled: boolean;
+  activeMethodTypes: string[];
   lastLogin: string;
   backupCodesUsed: number;
   backupCodesRemaining: number;
@@ -62,6 +62,8 @@ interface UserMfaStatus {
   mfaVerifiedAt?: string;
   mfaSetupCompleted: boolean;
   createdAt: string;
+  lastMfaUsedAt: string | null;
+  hasBackupCodes: boolean;
 }
 
 interface MfaStatistics {
@@ -89,8 +91,20 @@ interface ApiResponse<T> {
   data?: T;
 }
 
+type MfaUsersApiPayload = {
+  users: UserMfaStatus[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+  };
+  statistics: MfaStatistics | null;
+};
+
+type RoleKey = keyof MfaEnforcementSettings['roleRequirements'];
+type RoleRequirement = MfaEnforcementSettings['roleRequirements'][RoleKey];
+
 export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
-  const t = useTranslations('admin');
   const [activeTab, setActiveTab] = useState('enforcement');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
@@ -118,7 +132,7 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
   });
 
   // Fetch MFA settings from API
-  const fetchMfaSettings = async () => {
+  const fetchMfaSettings = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/mfa/settings');
       if (!response.ok) {
@@ -132,10 +146,15 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
       console.error('Error fetching MFA settings:', error);
       setError('Failed to load MFA settings');
     }
-  };
+  }, []);
 
   // Fetch user MFA statuses from API
-  const fetchUserStatuses = async (page = 1, search = '', role = 'all', mfaStatus = 'all') => {
+  const fetchUserStatuses = useCallback(async (
+    page = 1,
+    search = '',
+    role: 'all' | 'admin' | 'coach' | 'client' = 'all',
+    mfaStatus: 'all' | 'enabled' | 'disabled' = 'all'
+  ) => {
     setIsLoadingUsers(true);
     setError(null);
     try {
@@ -156,13 +175,12 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
         throw new Error('Failed to fetch user MFA statuses');
       }
       
-      const result: ApiResponse<any> = await response.json();
-      if (result.data) {
-        setUserStatuses(result.data.users || []);
-        setTotalUsers(result.data.total || 0);
-        if (result.data.statistics) {
-          setStatistics(result.data.statistics);
-        }
+      const result: ApiResponse<MfaUsersApiPayload> = await response.json();
+      const payload = result.data;
+      if (payload) {
+        setUserStatuses(payload.users ?? []);
+        setTotalUsers(payload.pagination?.total ?? 0);
+        setStatistics(payload.statistics);
       }
     } catch (error) {
       console.error('Error fetching user MFA statuses:', error);
@@ -170,10 +188,10 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
     } finally {
       setIsLoadingUsers(false);
     }
-  };
+  }, [activeTab, pageSize]);
 
   // Fetch MFA statistics from API
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     setIsLoadingStats(true);
     setError(null);
     try {
@@ -191,7 +209,7 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
     } finally {
       setIsLoadingStats(false);
     }
-  };
+  }, []);
 
   // Handle MFA actions for users
   const handleMfaAction = async (userId: string, action: 'enable' | 'disable' | 'reset', reason?: string) => {
@@ -209,7 +227,7 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
       }
 
       // Refresh user data after successful action
-      await fetchUserStatuses(currentPage, searchQuery, roleFilter === 'all' ? '' : roleFilter, mfaStatusFilter);
+      await fetchUserStatuses(currentPage, searchQuery, roleFilter, mfaStatusFilter);
       
       // Also refresh statistics if they're displayed
       if (statistics || activeTab === 'analytics') {
@@ -224,27 +242,27 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
   // Load data on component mount and tab changes
   useEffect(() => {
     fetchMfaSettings();
-  }, []);
+  }, [fetchMfaSettings]);
 
   useEffect(() => {
     if (activeTab === 'users') {
-      fetchUserStatuses(currentPage, searchQuery, roleFilter === 'all' ? '' : roleFilter, mfaStatusFilter);
+      fetchUserStatuses(currentPage, searchQuery, roleFilter, mfaStatusFilter);
     } else if (activeTab === 'analytics') {
       fetchStatistics();
     }
-  }, [activeTab, currentPage, searchQuery, roleFilter, mfaStatusFilter]);
+  }, [activeTab, currentPage, fetchStatistics, fetchUserStatuses, mfaStatusFilter, roleFilter, searchQuery]);
 
   // Handle search with debouncing
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (activeTab === 'users') {
         setCurrentPage(1); // Reset to first page on search
-        fetchUserStatuses(1, searchQuery, roleFilter === 'all' ? '' : roleFilter, mfaStatusFilter);
+        fetchUserStatuses(1, searchQuery, roleFilter, mfaStatusFilter);
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [activeTab, fetchUserStatuses, mfaStatusFilter, roleFilter, searchQuery]);
 
   const handleSaveSettings = async () => {
     setIsLoading(true);
@@ -273,14 +291,20 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
     }
   };
 
-  const handleSettingChange = (key: keyof MfaEnforcementSettings, value: any) => {
+  const handleSettingChange = <K extends keyof MfaEnforcementSettings>(
+    key: K,
+    value: MfaEnforcementSettings[K]
+  ) => {
     setSettings(prev => ({
       ...prev,
       [key]: value
     }));
   };
 
-  const handleRoleRequirementChange = (role: keyof typeof settings.roleRequirements, value: 'optional' | 'required') => {
+  const handleRoleRequirementChange = <R extends keyof MfaEnforcementSettings['roleRequirements']>(
+    role: R,
+    value: MfaEnforcementSettings['roleRequirements'][R]
+  ) => {
     setSettings(prev => ({
       ...prev,
       roleRequirements: {
@@ -423,7 +447,12 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
                   <Label htmlFor="global-requirement">Global Requirement</Label>
                   <Select
                     value={settings.globalRequirement}
-                    onValueChange={(value: any) => handleSettingChange('globalRequirement', value)}
+                    onValueChange={value =>
+                      handleSettingChange(
+                        'globalRequirement',
+                        value as MfaEnforcementSettings['globalRequirement']
+                      )
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -441,7 +470,9 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
                   <Label htmlFor="grace-period">Grace Period (Days)</Label>
                   <Select
                     value={settings.gracePeriodDays.toString()}
-                    onValueChange={(value) => handleSettingChange('gracePeriodDays', parseInt(value))}
+                    onValueChange={value =>
+                      handleSettingChange('gracePeriodDays', Number.parseInt(value, 10))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -472,10 +503,12 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
 
               <div className="space-y-2">
                 <Label>Trusted Device Expiry (Days)</Label>
-                <Select
-                  value={settings.trustedDeviceExpiry.toString()}
-                  onValueChange={(value) => handleSettingChange('trustedDeviceExpiry', parseInt(value))}
-                >
+                  <Select
+                    value={settings.trustedDeviceExpiry.toString()}
+                    onValueChange={value =>
+                      handleSettingChange('trustedDeviceExpiry', Number.parseInt(value, 10))
+                    }
+                  >
                   <SelectTrigger className="w-48">
                     <SelectValue />
                   </SelectTrigger>
@@ -501,7 +534,10 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {Object.entries(settings.roleRequirements).map(([role, requirement]) => (
+                {(Object.entries(settings.roleRequirements) as Array<[
+                  RoleKey,
+                  RoleRequirement
+                ]>).map(([role, requirement]) => (
                   <div key={role} className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
                       <p className="font-medium">{getRoleLabel(role)}</p>
@@ -513,8 +549,8 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
                       {getRequirementBadge(requirement)}
                       <Select
                         value={requirement}
-                        onValueChange={(value: 'optional' | 'required') => 
-                          handleRoleRequirementChange(role as keyof typeof settings.roleRequirements, value)
+                        onValueChange={value =>
+                          handleRoleRequirementChange(role, value as RoleRequirement)
                         }
                       >
                         <SelectTrigger className="w-32">
@@ -558,7 +594,7 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => fetchUserStatuses(currentPage, searchQuery, roleFilter === 'all' ? '' : roleFilter, mfaStatusFilter)}
+                    onClick={() => fetchUserStatuses(currentPage, searchQuery, roleFilter, mfaStatusFilter)}
                     disabled={isLoadingUsers}
                   >
                     <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingUsers ? 'animate-spin' : ''}`} />
@@ -583,7 +619,12 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Select value={roleFilter} onValueChange={(value: any) => setRoleFilter(value)}>
+                  <Select
+                    value={roleFilter}
+                    onValueChange={value =>
+                      setRoleFilter(value as 'all' | 'admin' | 'coach' | 'client')
+                    }
+                  >
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
@@ -594,7 +635,12 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
                       <SelectItem value="client">Client</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Select value={mfaStatusFilter} onValueChange={(value: any) => setMfaStatusFilter(value)}>
+                  <Select
+                    value={mfaStatusFilter}
+                    onValueChange={value =>
+                      setMfaStatusFilter(value as 'all' | 'enabled' | 'disabled')
+                    }
+                  >
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>

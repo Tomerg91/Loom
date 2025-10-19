@@ -6,9 +6,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { NextRequest } from 'next/server';
-import { GET } from '@/app/api/admin/mfa/users/route';
-import { mockUser, mockAdminUser, mockCoachUser } from '@/test/utils';
 
 // Mock all dependencies
 vi.mock('@/lib/services/auth-service', () => ({
@@ -70,22 +67,31 @@ vi.mock('@/lib/api/errors', () => ({
   },
 }));
 
-vi.mock('@/lib/security/rate-limit', () => ({
-  rateLimit: vi.fn((limit, window) => (handler: any) => handler),
-}));
+const { NextRequest } = await import('next/server');
+const rateLimitModule = await import('@/lib/security/rate-limit');
+const rateLimitMock = vi
+  .spyOn(rateLimitModule, 'rateLimit')
+  .mockImplementation(<Args extends unknown[]>(
+    _limit: number,
+    _window: number
+  ) =>
+    (handler: (request: NextRequest, ...args: Args) => Promise<Response>) => handler
+  );
+
+const { GET } = await import('@/app/api/admin/mfa/users/route');
 
 // Import mocked functions
-import { authService } from '@/lib/services/auth-service';
-import { getMfaUserStatuses, getMfaStatistics } from '@/lib/database/mfa-admin';
-import { ApiResponseHelper } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/errors';
-import { rateLimit } from '@/lib/security/rate-limit';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { getMfaUserStatuses, getMfaStatistics } from '@/lib/database/mfa-admin';
+import { authService } from '@/lib/services/auth-service';
+import { mockUser, mockAdminUser, mockCoachUser } from '@/test/utils';
 
 const mockAuthService = vi.mocked(authService);
 const mockGetMfaUserStatuses = vi.mocked(getMfaUserStatuses);
 const mockGetMfaStatistics = vi.mocked(getMfaStatistics);
 const mockApiResponseHelper = vi.mocked(ApiResponseHelper);
-const mockRateLimit = vi.mocked(rateLimit);
+const mockRateLimit = rateLimitMock;
 
 describe('/api/admin/mfa/users', () => {
   const mockMfaUsers = [
@@ -138,7 +144,7 @@ describe('/api/admin/mfa/users', () => {
     vi.clearAllMocks();
     
     // Setup default rate limiting (no-op wrapper)
-    mockRateLimit.mockImplementation((limit, window) => (handler) => handler);
+    mockRateLimit.mockImplementation((_limit, _window) => handler => handler);
   });
 
   afterEach(() => {
@@ -472,6 +478,25 @@ describe('/api/admin/mfa/users', () => {
 
     describe('Rate Limiting Testing', () => {
       it('should apply appropriate rate limiting for admin endpoints', async () => {
+        mockAuthService.getSession.mockResolvedValue({
+          user: mockAdminUser,
+        });
+
+        mockGetMfaUserStatuses.mockResolvedValue({
+          success: true,
+          data: {
+            users: [],
+            total: 0,
+            page: 1,
+            limit: 20,
+          },
+          error: null,
+        });
+
+        const request = new NextRequest('http://localhost:3000/api/admin/mfa/users');
+
+        await GET(request);
+
         expect(mockRateLimit).toHaveBeenCalledWith(
           50, // 50 requests per minute
           60000 // 1 minute window
@@ -712,9 +737,10 @@ describe('/api/admin/mfa/users', () => {
       it('should handle URL parsing errors', async () => {
         // Mock URL constructor to throw
         const originalURL = global.URL;
-        global.URL = vi.fn().mockImplementation(() => {
+        const faultyURL = vi.fn<typeof URL>(() => {
           throw new Error('Invalid URL');
-        }) as any;
+        }) as unknown as typeof URL;
+        global.URL = faultyURL;
 
         const request = new NextRequest('http://localhost:3000/api/admin/mfa/users');
 
@@ -785,11 +811,8 @@ describe('/api/admin/mfa/users', () => {
 
         await GET(request);
 
-        expect(mockGetMfaUserStatuses).toHaveBeenCalledWith(
-          expect.not.objectContaining({
-            search: expect.anything(),
-          })
-        );
+        const lastCall = mockGetMfaUserStatuses.mock.calls.at(-1)?.[0];
+        expect(lastCall?.search).toBeUndefined();
       });
     });
 

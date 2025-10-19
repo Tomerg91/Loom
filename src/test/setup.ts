@@ -1,6 +1,93 @@
 import '@testing-library/jest-dom';
-import { afterEach, beforeEach, vi } from 'vitest';
+
 import { cleanup } from '@testing-library/react';
+import { afterEach, beforeEach, vi } from 'vitest';
+
+const NativeURL = global.URL;
+
+type MinimalNextConfig = {
+  basePath: string;
+  i18n?: {
+    locales: string[];
+    defaultLocale: string;
+    localeDetection: boolean;
+  };
+  trailingSlash: boolean;
+};
+
+const globalWithNextConfig = globalThis as typeof globalThis & {
+  __NEXT_CONFIG__?: MinimalNextConfig;
+};
+
+if (!globalWithNextConfig.__NEXT_CONFIG__) {
+  globalWithNextConfig.__NEXT_CONFIG__ = {
+    basePath: '',
+    i18n: {
+      locales: ['en'],
+      defaultLocale: 'en',
+      localeDetection: false,
+    },
+    trailingSlash: false,
+  };
+}
+
+vi.mock('next/server', async importOriginal => {
+  const actual = await importOriginal<typeof import('next/server')>();
+
+  class MockNextRequest {
+    public nextUrl: URL;
+    public headers: Headers;
+    public method: string;
+    public url: string;
+    private bodyInit: BodyInit | null;
+
+    constructor(input: RequestInfo | URL, init?: RequestInit) {
+      const url = new NativeURL(
+        input instanceof URL ? input.toString() : String(input),
+        'http://localhost'
+      );
+      this.nextUrl = url;
+      this.url = url.toString();
+      this.headers = new Headers(init?.headers);
+      this.method = init?.method ?? 'GET';
+      this.bodyInit = init?.body ?? null;
+    }
+
+    get searchParams(): URLSearchParams {
+      return this.nextUrl.searchParams;
+    }
+
+    async json(): Promise<unknown> {
+      if (!this.bodyInit) {
+        return {};
+      }
+
+      if (typeof this.bodyInit === 'string') {
+        try {
+          return JSON.parse(this.bodyInit);
+        } catch (_error) {
+          return {};
+        }
+      }
+
+      if (this.bodyInit instanceof Uint8Array) {
+        try {
+          const text = new TextDecoder().decode(this.bodyInit);
+          return JSON.parse(text);
+        } catch (_error) {
+          return {};
+        }
+      }
+
+      return {};
+    }
+  }
+
+  return {
+    ...actual,
+    NextRequest: MockNextRequest,
+  };
+});
 
 // Cleanup after each test
 afterEach(() => {
