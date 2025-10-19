@@ -4,17 +4,20 @@
  * These tests verify that all query functions in src/lib/database/resources.ts
  * work correctly with RLS policies after the resource_id → file_id migration.
  *
- * @requires SUPABASE_SERVICE_ROLE_KEY environment variable
+ * @requires SUPABASE_SERVICE_ROLE_KEY and SUPABASE_JWT_SECRET environment variables
  */
 
-import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
+import { createHmac } from 'node:crypto';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
+
 import type { Database } from '@/types/supabase';
 
 // Skip tests if no service role key available
-const skipReason = !process.env.SUPABASE_SERVICE_ROLE_KEY
-  ? 'Skipping resource query RLS tests (no SUPABASE_SERVICE_ROLE_KEY). These tests require database access.'
-  : undefined;
+const skipReason =
+  !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.SUPABASE_JWT_SECRET
+    ? 'Skipping resource query RLS tests (missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_JWT_SECRET). These tests require database access.'
+    : undefined;
 
 describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
   let adminClient: ReturnType<typeof createClient<Database>>;
@@ -79,32 +82,37 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
     }
 
     // Create test files
-    const { error: filesError } = await adminClient.from('file_uploads').insert([
-      {
-        id: file1Id,
-        user_id: coach1Id,
-        filename: 'resource1.pdf',
-        original_filename: 'resource1.pdf',
-        storage_path: '/test/resource1.pdf',
-        bucket_name: 'documents',
-        file_type: 'application/pdf',
-        file_size: 1024,
-        is_library_resource: true,
-        file_category: 'worksheet',
-      },
-      {
-        id: file2Id,
-        user_id: coach2Id,
-        filename: 'resource2.pdf',
-        original_filename: 'resource2.pdf',
-        storage_path: '/test/resource2.pdf',
-        bucket_name: 'documents',
-        file_type: 'application/pdf',
-        file_size: 2048,
-        is_library_resource: true,
-        file_category: 'guide',
-      },
-    ]);
+    const fileUploadRows: Database['public']['Tables']['file_uploads']['Insert'][] =
+      [
+        {
+          id: file1Id,
+          user_id: coach1Id,
+          filename: 'resource1.pdf',
+          original_filename: 'resource1.pdf',
+          storage_path: '/test/resource1.pdf',
+          bucket_name: 'documents',
+          file_type: 'application/pdf',
+          file_size: 1024,
+          is_library_resource: true,
+          file_category: 'document',
+        },
+        {
+          id: file2Id,
+          user_id: coach2Id,
+          filename: 'resource2.pdf',
+          original_filename: 'resource2.pdf',
+          storage_path: '/test/resource2.pdf',
+          bucket_name: 'documents',
+          file_type: 'application/pdf',
+          file_size: 2048,
+          is_library_resource: true,
+          file_category: 'resource',
+        },
+      ];
+
+    const { error: filesError } = await adminClient
+      .from('file_uploads')
+      .insert(fileUploadRows);
 
     if (filesError) {
       throw new Error(`Failed to create test files: ${filesError.message}`);
@@ -113,12 +121,30 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
 
   afterEach(async () => {
     // Cleanup in reverse order of dependencies
-    await adminClient.from('resource_client_progress').delete().in('client_id', [client1Id]);
-    await adminClient.from('file_shares').delete().in('file_id', [file1Id, file2Id]);
-    await adminClient.from('resource_collection_items').delete().in('file_id', [file1Id, file2Id]);
-    await adminClient.from('resource_collections').delete().in('coach_id', [coach1Id, coach2Id]);
-    await adminClient.from('file_uploads').delete().in('id', [file1Id, file2Id]);
-    await adminClient.from('users').delete().in('id', [coach1Id, coach2Id, client1Id]);
+    await adminClient
+      .from('resource_client_progress')
+      .delete()
+      .in('client_id', [client1Id]);
+    await adminClient
+      .from('file_shares')
+      .delete()
+      .in('file_id', [file1Id, file2Id]);
+    await adminClient
+      .from('resource_collection_items')
+      .delete()
+      .in('file_id', [file1Id, file2Id]);
+    await adminClient
+      .from('resource_collections')
+      .delete()
+      .in('coach_id', [coach1Id, coach2Id]);
+    await adminClient
+      .from('file_uploads')
+      .delete()
+      .in('id', [file1Id, file2Id]);
+    await adminClient
+      .from('users')
+      .delete()
+      .in('id', [coach1Id, coach2Id, client1Id]);
   });
 
   describe('resource_collection_items queries', () => {
@@ -177,10 +203,12 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
       // Query with join (this tests the foreign key relationship)
       const { data: items, error } = await adminClient
         .from('resource_collection_items')
-        .select(`
+        .select(
+          `
           *,
           file_uploads!resource_collection_items_file_id_fkey(*)
-        `)
+        `
+        )
         .eq('collection_id', collection1Id);
 
       expect(error).toBeNull();
@@ -242,10 +270,12 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
       // Query with join
       const { data: progressRecords, error } = await adminClient
         .from('resource_client_progress')
-        .select(`
+        .select(
+          `
           *,
           file_uploads!resource_client_progress_file_id_fkey(*)
-        `)
+        `
+        )
         .eq('client_id', client1Id);
 
       expect(error).toBeNull();
@@ -259,7 +289,12 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
   describe('RPC function parameter compliance', () => {
     it('should call increment_resource_view_count with p_file_id parameter', async () => {
       // This tests that the RPC function accepts the new parameter name
-      const { error } = await adminClient.rpc('increment_resource_view_count', {
+      const rpc = adminClient.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>
+      ) => Promise<{ error: { message: string } | null }>;
+
+      const { error } = await rpc('increment_resource_view_count', {
         p_file_id: file1Id,
         p_client_id: client1Id,
       });
@@ -325,12 +360,38 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
 });
 
 /**
- * Helper to generate a test JWT token for authenticated requests
- * Note: This is a simplified version for testing purposes
+ * Helper to generate a signed JWT token that represents an authenticated user
+ * Uses the SUPABASE_JWT_SECRET to mimic Supabase auth-issued access tokens
  */
-async function generateTestToken(_userId: string): Promise<string> {
-  // In a real test environment, you would generate a proper JWT
-  // For now, we'll use the service role key which bypasses RLS
-  // In production tests, use proper test user tokens
-  return process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+async function generateTestToken(userId: string): Promise<string> {
+  const secret = process.env.SUPABASE_JWT_SECRET;
+
+  if (!secret) {
+    throw new Error(
+      'Missing SUPABASE_JWT_SECRET environment variable for test token generation'
+    );
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'HS256', typ: 'JWT' } as const;
+  const payload = {
+    aud: 'authenticated',
+    exp: now + 60 * 60,
+    iat: now,
+    iss: 'supabase',
+    role: 'authenticated',
+    sub: userId,
+  } as const;
+
+  const encode = (segment: Record<string, unknown>) =>
+    Buffer.from(JSON.stringify(segment)).toString('base64url');
+
+  const headerSegment = encode(header);
+  const payloadSegment = encode(payload);
+  const signingInput = `${headerSegment}.${payloadSegment}`;
+  const signature = createHmac('sha256', secret)
+    .update(signingInput)
+    .digest('base64url');
+
+  return `${signingInput}.${signature}`;
 }
