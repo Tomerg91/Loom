@@ -850,3 +850,64 @@ export const getMfaAuditLog = (options?: {
   action?: string;
   days?: number;
 }) => mfaAdminService.getMfaAuditLog(options);
+
+export interface MfaDiscrepancy {
+  userId: string;
+  email: string;
+  role: 'admin' | 'coach' | 'client';
+  unifiedStatus: boolean;
+  legacyStatus: boolean;
+  activeMethodCount: number;
+  totalMethods: number;
+  activeMethodTypes: string[];
+}
+
+export const getMfaDiscrepancies = async (): Promise<ResultType<{
+  discrepancies: MfaDiscrepancy[];
+  total: number;
+}>> => {
+  try {
+    const supabase = createServerClient();
+
+    const { data, error } = await supabase
+      .from('mfa_status_discrepancies')
+      .select(`
+        user_id,
+        email,
+        role,
+        mfa_enabled,
+        legacy_mfa_enabled,
+        active_method_count,
+        total_methods,
+        active_method_types
+      `);
+
+    if (error) {
+      console.error('Error fetching MFA discrepancies:', error);
+      return Result.error(`Failed to fetch MFA discrepancies: ${error.message}`);
+    }
+
+    const discrepancies: MfaDiscrepancy[] = (data || []).map(row => ({
+      userId: row.user_id,
+      email: row.email,
+      role: row.role as 'admin' | 'coach' | 'client',
+      unifiedStatus: !!row.mfa_enabled,
+      legacyStatus: !!row.legacy_mfa_enabled,
+      activeMethodCount: row.active_method_count || 0,
+      totalMethods: row.total_methods || 0,
+      activeMethodTypes: Array.isArray(row.active_method_types)
+        ? (row.active_method_types as string[])
+        : [],
+    }));
+
+    return Result.success({
+      discrepancies,
+      total: discrepancies.length,
+    });
+  } catch (error) {
+    console.error('Unexpected error in getMfaDiscrepancies:', error);
+    return Result.error(
+      error instanceof Error ? error.message : 'Failed to fetch MFA discrepancies'
+    );
+  }
+};

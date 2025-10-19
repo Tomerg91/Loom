@@ -353,6 +353,21 @@ export function AdminDashboardPage() {
                 </div>
                 <ArrowRight className="h-4 w-4" />
               </Button>
+
+              <Button
+                variant="outline"
+                className="justify-between h-auto p-4"
+                onClick={() => router.push(`/${locale}/admin/mfa-health`)}
+              >
+                <div className="flex items-center gap-3">
+                  <Shield className="h-5 w-5" />
+                  <div className="text-left">
+                    <p className="font-medium">MFA Health Monitor</p>
+                    <p className="text-xs text-muted-foreground">Track MFA source discrepancies</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             </div>
           </CardContent>
         </Card>
