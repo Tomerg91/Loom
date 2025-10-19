@@ -89,6 +89,15 @@ export async function getCoachLibraryResources(
   const { data, error } = await query;
 
   if (error) {
+    // Log RLS policy violations for debugging
+    if (error.code === 'PGRST301' || error.message.includes('policy')) {
+      console.error('[RLS Policy Violation] Failed to fetch library resources:', {
+        coachId,
+        filters,
+        error: error.message,
+        code: error.code,
+      });
+    }
     throw new Error(`Failed to fetch library resources: ${error.message}`);
   }
 
@@ -170,6 +179,14 @@ export async function getClientSharedResources(
   const { data: shares, error } = await sharesQuery;
 
   if (error) {
+    // Log RLS policy violations for debugging
+    if (error.code === 'PGRST301' || error.message.includes('policy')) {
+      console.error('[RLS Policy Violation] Failed to fetch shared resources:', {
+        clientId,
+        error: error.message,
+        code: error.code,
+      });
+    }
     throw new Error(`Failed to fetch shared resources: ${error.message}`);
   }
 
@@ -589,6 +606,15 @@ export async function addResourcesToCollection(
     .select();
 
   if (error) {
+    // Log RLS policy violations for debugging
+    if (error.code === 'PGRST301' || error.message.includes('policy')) {
+      console.error('[RLS Policy Violation] Failed to add resources to collection:', {
+        collectionId,
+        resourceIds,
+        error: error.message,
+        code: error.code,
+      });
+    }
     throw new Error(`Failed to add resources to collection: ${error.message}`);
   }
 
@@ -649,14 +675,30 @@ export async function trackResourceProgress(
   );
 
   if (error) {
+    // Log RLS policy violations for debugging
+    if (error.code === 'PGRST301' || error.message.includes('policy')) {
+      console.error('[RLS Policy Violation] Failed to track progress:', {
+        resourceId,
+        clientId,
+        action,
+        error: error.message,
+        code: error.code,
+      });
+    }
     throw new Error(`Failed to track progress: ${error.message}`);
   }
 
   // Increment view count on resource
   if (action === 'viewed' || action === 'accessed') {
-    await supabase.rpc('increment_resource_view_count', {
-      resource_id: resourceId,
+    const { error: rpcError } = await supabase.rpc('increment_resource_view_count', {
+      p_file_id: resourceId,
+      p_client_id: clientId,
     });
+
+    if (rpcError) {
+      console.error('Failed to increment view count:', rpcError);
+      // Don't throw - this is a non-critical analytics operation
+    }
   }
 }
 
