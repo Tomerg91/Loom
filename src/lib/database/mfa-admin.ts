@@ -1,5 +1,4 @@
 import { createServerClient } from '@/lib/supabase/server';
-import type { Database } from '@/types/supabase';
 import { Result, type Result as ResultType } from '@/lib/types/result';
 
 // Types for MFA admin operations
@@ -9,6 +8,7 @@ export interface UserMfaStatus {
   email: string;
   role: 'admin' | 'coach' | 'client';
   mfaEnabled: boolean;
+  activeMethodTypes: string[];
   lastLogin: string;
   backupCodesUsed: number;
   backupCodesRemaining: number;
@@ -16,6 +16,8 @@ export interface UserMfaStatus {
   mfaVerifiedAt?: string;
   mfaSetupCompleted: boolean;
   createdAt: string;
+  lastMfaUsedAt: string | null;
+  hasBackupCodes: boolean;
 }
 
 export interface MfaStatistics {
@@ -32,6 +34,20 @@ export interface MfaStatistics {
   accountLockouts30Days: number;
   averageBackupCodesUsed: number;
   avgTrustedDevicesPerUser: number;
+}
+
+export interface UserMfaStatusDetails {
+  userId: string;
+  mfaEnabled: boolean;
+  activeMethods: Array<{
+    methodType: string;
+    status: string;
+    lastUsedAt: string | null;
+  }>;
+  totalMethods: number;
+  activeMethodCount: number;
+  lastMfaUsedAt: string | null;
+  hasBackupCodes: boolean;
 }
 
 export interface MfaEnforcementSettings {
@@ -55,6 +71,27 @@ export interface GetMfaUsersOptions {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
+
+type UserProfileRow = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  created_at: string;
+  last_seen_at: string | null;
+  mfa_verified_at: string | null;
+  mfa_setup_completed: boolean | null;
+};
+
+type AuditLogEvent = {
+  id: string;
+  userId: string;
+  userEmail?: string;
+  userName?: string;
+  action: string;
+  timestamp: string;
+  ipAddress?: string;
+  details?: Record<string, unknown>;
+};
 
 export class MfaAdminService {
   private supabase: ReturnType<typeof createServerClient>;
@@ -84,70 +121,150 @@ export class MfaAdminService {
       } = options;
 
       const offset = (page - 1) * limit;
+      // Map incoming sort keys to columns that exist on the unified view
+      const sortColumnMap: Record<string, string> = {
+        email: 'email',
+        role: 'role',
+        mfa_enabled: 'mfa_enabled',
+        mfaEnabled: 'mfa_enabled',
+        last_mfa_used_at: 'last_mfa_used_at',
+        lastMfaUsedAt: 'last_mfa_used_at',
+        created_at: 'last_mfa_used_at', // Legacy default falls back to most recent MFA usage
+      };
 
-      // Build the query for users with their MFA data
-      let query = this.supabase
-        .from('users')
-        .select(`
-          id,
-          email,
-          first_name,
-          last_name,
-          role,
-          created_at,
-          last_seen_at,
-          mfa_enabled,
-          mfa_verified_at,
-          mfa_setup_completed
-        `, { count: 'exact' });
+      const orderColumn = sortColumnMap[sortBy] || 'last_mfa_used_at';
+      const orderAscending = sortOrder === 'asc';
 
-      // Apply filters
+      let matchedUserIds: string[] | undefined;
+
       if (search) {
-        query = query.or(
-          `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`
-        );
-      }
+        const searchQuery = this.supabase
+          .from('users')
+          .select('id')
+          .or(
+            `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`
+          );
 
-      if (role) {
-        query = query.eq('role', role);
-      }
+        if (role) {
+          searchQuery.eq('role', role);
+        }
 
-      if (mfaStatus !== 'all') {
-        if (mfaStatus === 'enabled') {
-          query = query.eq('mfa_enabled', true);
-        } else if (mfaStatus === 'disabled') {
-          query = query.eq('mfa_enabled', false);
+        const { data: searchMatches, error: searchError } = await searchQuery;
+
+        if (searchError) {
+          console.error('Error searching users for MFA status view:', searchError);
+          return Result.error(
+            `Failed to search users: ${searchError.message}`
+          );
+        }
+
+        matchedUserIds = (searchMatches || []).map(user => user.id);
+
+        if (matchedUserIds.length === 0) {
+          return Result.success({ users: [], total: 0, page, limit });
         }
       }
 
-      // Apply sorting
-      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+      let viewQuery = this.supabase
+        .from('user_mfa_status_unified')
+        .select(
+          `
+            user_id,
+            email,
+            role,
+            mfa_enabled,
+            last_mfa_used_at,
+            active_method_types,
+            has_backup_codes,
+            total_methods,
+            active_method_count,
+            pending_method_count,
+            disabled_method_count,
+            legacy_mfa_enabled,
+            has_discrepancy
+          `,
+          { count: 'exact' }
+        );
 
-      // Apply pagination
-      query = query.range(offset, offset + limit - 1);
+      if (matchedUserIds) {
+        viewQuery = viewQuery.in('user_id', matchedUserIds);
+      }
 
-      const { data, error, count } = await query;
+      if (role) {
+        viewQuery = viewQuery.eq('role', role);
+      }
+
+      if (mfaStatus === 'enabled') {
+        viewQuery = viewQuery.eq('mfa_enabled', true);
+      } else if (mfaStatus === 'disabled') {
+        viewQuery = viewQuery.eq('mfa_enabled', false);
+      }
+
+      viewQuery = viewQuery.order(orderColumn, {
+        ascending: orderAscending,
+        nullsFirst: orderAscending,
+      });
+
+      viewQuery = viewQuery.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await viewQuery;
 
       if (error) {
-        console.error('Error fetching MFA user statuses:', error);
+        console.error('Error fetching MFA user statuses from unified view:', error);
         return Result.error(`Failed to fetch MFA user statuses: ${error.message}`);
       }
 
-      // Transform the data
-      const users: UserMfaStatus[] = (data || []).map(user => {
+      const userIds = (data || []).map(row => row.user_id);
+      const userDetailsMap = new Map<string, UserProfileRow>();
+
+      if (userIds.length > 0) {
+        const { data: userDetails, error: userDetailsError } = await this.supabase
+          .from('users')
+          .select(
+            `id, first_name, last_name, created_at, last_seen_at, mfa_verified_at, mfa_setup_completed`
+          )
+          .in('id', userIds);
+
+        if (userDetailsError) {
+          console.error('Error fetching user profile details for MFA admin view:', userDetailsError);
+        } else {
+          (userDetails || []).forEach(user => {
+            userDetailsMap.set(user.id, user as UserProfileRow);
+          });
+        }
+      }
+
+      const users: UserMfaStatus[] = (data || []).map(row => {
+        const details = userDetailsMap.get(row.user_id);
+        const firstName = details?.first_name ?? '';
+        const lastName = details?.last_name ?? '';
+
+        const activeMethodTypes = Array.isArray(row.active_method_types)
+          ? (row.active_method_types as string[])
+          : [];
+
+        const lastLogin =
+          details?.last_seen_at ||
+          details?.created_at ||
+          row.last_mfa_used_at ||
+          '';
+
         return {
-          id: user.id,
-          name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User',
-          email: user.email,
-          role: user.role as 'admin' | 'coach' | 'client',
-          mfaEnabled: user.mfa_enabled || false,
-          lastLogin: user.last_seen_at || user.created_at,
-          backupCodesUsed: 0, // Default values - will be updated when we have actual MFA data
+          id: row.user_id,
+          name: `${firstName} ${lastName}`.trim() || row.email || 'Unknown User',
+          email: row.email,
+          role: (row.role as 'admin' | 'coach' | 'client') || 'client',
+          mfaEnabled: !!row.mfa_enabled,
+          activeMethodTypes,
+          lastLogin,
+          backupCodesUsed: 0,
           backupCodesRemaining: 0,
           trustedDevices: 0,
-          mfaVerifiedAt: user.mfa_verified_at,
-          mfaSetupCompleted: user.mfa_setup_completed || false,
-          createdAt: user.created_at,
+          mfaVerifiedAt: details?.mfa_verified_at ?? undefined,
+          mfaSetupCompleted: details?.mfa_setup_completed ?? false,
+          createdAt: details?.created_at || row.last_mfa_used_at || '',
+          lastMfaUsedAt: row.last_mfa_used_at ?? null,
+          hasBackupCodes: !!row.has_backup_codes,
         };
       });
 
@@ -170,23 +287,46 @@ export class MfaAdminService {
    */
   async getMfaStatistics(): Promise<ResultType<MfaStatistics>> {
     try {
-      // Get total user counts by role
-      const { data: userCounts, error: userCountsError } = await this.supabase
-        .from('users')
-        .select('role, mfa_enabled')
-        .eq('status', 'active');
+      const { data: unifiedStatuses, error: unifiedError } = await this.supabase
+        .from('user_mfa_status_unified')
+        .select('user_id, role, mfa_enabled');
 
-      if (userCountsError) {
-        console.error('Error fetching user counts:', userCountsError);
-        return Result.error(`Failed to fetch user counts: ${userCountsError.message}`);
+      if (unifiedError) {
+        console.error('Error fetching unified MFA statuses for statistics:', unifiedError);
+        return Result.error(
+          `Failed to fetch MFA statistics: ${unifiedError.message}`
+        );
       }
 
-      // Calculate statistics
-      const totalUsers = userCounts?.length || 0;
-      const mfaEnabledUsers = userCounts?.filter(user => user.mfa_enabled).length || 0;
-      const adminUsers = userCounts?.filter(user => user.role === 'admin') || [];
-      const coachUsers = userCounts?.filter(user => user.role === 'coach') || [];
-      const clientUsers = userCounts?.filter(user => user.role === 'client') || [];
+      const userIds = (unifiedStatuses || []).map(row => row.user_id);
+      let activeUsers: Set<string> | null = null;
+
+      if (userIds.length > 0) {
+        const { data: userStates, error: userStatesError } = await this.supabase
+          .from('users')
+          .select('id, status')
+          .in('id', userIds);
+
+        if (userStatesError) {
+          console.error('Error fetching user activation states for MFA statistics:', userStatesError);
+        } else {
+          activeUsers = new Set(
+            (userStates || [])
+              .filter(user => user.status === 'active')
+              .map(user => user.id)
+          );
+        }
+      }
+
+      const relevantStatuses = activeUsers
+        ? (unifiedStatuses || []).filter(status => activeUsers!.has(status.user_id))
+        : (unifiedStatuses || []);
+
+      const totalUsers = relevantStatuses.length;
+      const mfaEnabledUsers = relevantStatuses.filter(user => user.mfa_enabled).length;
+      const adminUsers = relevantStatuses.filter(user => user.role === 'admin');
+      const coachUsers = relevantStatuses.filter(user => user.role === 'coach');
+      const clientUsers = relevantStatuses.filter(user => user.role === 'client');
 
       const adminMfaEnabled = adminUsers.filter(user => user.mfa_enabled).length;
       const coachMfaEnabled = coachUsers.filter(user => user.mfa_enabled).length;
@@ -215,7 +355,6 @@ export class MfaAdminService {
 
       // For now, use default values for trusted devices and backup codes
       // These will be properly calculated once the full MFA system is implemented
-      const trustedDevicesCount = 0;
       const avgTrustedDevicesPerUser = 0;
       const averageBackupCodesUsed = 0;
 
@@ -240,6 +379,63 @@ export class MfaAdminService {
       console.error('Unexpected error in getMfaStatistics:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to fetch MFA statistics'
+      );
+    }
+  }
+
+  /**
+   * Fetch unified MFA status details for a specific user via RPC wrapper
+   */
+  async getUserMfaStatus(userId: string): Promise<ResultType<UserMfaStatusDetails>> {
+    try {
+      const { data, error } = await this.supabase.rpc('get_user_mfa_status', {
+        p_user_id: userId,
+      });
+
+      if (error) {
+        console.error('Error fetching unified MFA status via RPC:', error);
+        return Result.error(`Failed to fetch user MFA status: ${error.message}`);
+      }
+
+      if (!data) {
+        return Result.error('MFA status not found for the requested user');
+      }
+
+      const payload = data as {
+        user_id?: string;
+        mfa_enabled?: boolean;
+        active_methods?: Array<{
+          method_type: string;
+          status: string;
+          last_used_at: string | null;
+        }>;
+        total_methods?: number;
+        active_method_count?: number;
+        last_mfa_used_at?: string | null;
+        has_backup_codes?: boolean;
+      };
+
+      const activeMethods = Array.isArray(payload.active_methods)
+        ? payload.active_methods.map(method => ({
+            methodType: method.method_type,
+            status: method.status,
+            lastUsedAt: method.last_used_at,
+          }))
+        : [];
+
+      return Result.success({
+        userId: payload.user_id || userId,
+        mfaEnabled: !!payload.mfa_enabled,
+        activeMethods,
+        totalMethods: payload.total_methods ?? activeMethods.length,
+        activeMethodCount: payload.active_method_count ?? activeMethods.length,
+        lastMfaUsedAt: payload.last_mfa_used_at ?? null,
+        hasBackupCodes: !!payload.has_backup_codes,
+      });
+    } catch (error) {
+      console.error('Unexpected error in getUserMfaStatus:', error);
+      return Result.error(
+        error instanceof Error ? error.message : 'Failed to fetch user MFA status'
       );
     }
   }
@@ -526,16 +722,7 @@ export class MfaAdminService {
     action?: string;
     days?: number;
   } = {}): Promise<ResultType<{
-    events: Array<{
-      id: string;
-      userId: string;
-      userEmail?: string;
-      userName?: string;
-      action: string;
-      timestamp: string;
-      ipAddress?: string;
-      details?: any;
-    }>;
+    events: AuditLogEvent[];
     total: number;
     page: number;
     limit: number;
@@ -553,7 +740,7 @@ export class MfaAdminService {
       const dateFilter = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
       // Try to query from available MFA event tables
-      let events: any[] = [];
+      let events: AuditLogEvent[] = [];
       let count = 0;
 
       try {
@@ -605,7 +792,7 @@ export class MfaAdminService {
             action: event.event_type || 'unknown',
             timestamp: event.created_at,
             ipAddress: event.ip_address,
-            details: event.metadata || {},
+            details: (event.metadata as Record<string, unknown> | null) || undefined,
           }));
         }
       } catch (error) {
@@ -637,6 +824,9 @@ export const getMfaUserStatuses = (options?: GetMfaUsersOptions) =>
 
 export const getMfaStatistics = () => 
   mfaAdminService.getMfaStatistics();
+
+export const getUserMfaStatus = (userId: string) =>
+  mfaAdminService.getUserMfaStatus(userId);
 
 export const enableMfaForUser = (userId: string, adminUserId: string) => 
   mfaAdminService.enableMfaForUser(userId, adminUserId);
