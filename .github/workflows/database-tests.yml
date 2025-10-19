@@ -1,0 +1,175 @@
+# ============================================================================
+# CI Workflow: Database Regression and RLS Tests
+# ============================================================================
+# This workflow runs comprehensive database tests including:
+# - SECURITY DEFINER function validation
+# - Resource library RLS policy tests
+# - General database integrity checks
+#
+# Runs on: Pull requests (all PRs for security tests, resource-related for RLS)
+# Blocks merge: Yes, if any tests fail
+# ============================================================================
+
+name: Database Tests
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**/*.sql'
+      - 'supabase/tests/**/*.sql'
+      - '.github/workflows/database-tests.yml'
+
+jobs:
+  security-regression-tests:
+    runs-on: ubuntu-latest
+    name: Security DEFINER Regression Tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Supabase CLI
+        run: |
+          npm install -g supabase
+          supabase --version
+
+      - name: Start Supabase local instance
+        run: |
+          supabase init || echo "Already initialized"
+          supabase start
+        env:
+          SUPABASE_DB_PASSWORD: postgres
+
+      - name: Get database connection URL
+        id: db-url
+        run: |
+          DB_URL=$(supabase status -o env | grep DATABASE_URL | cut -d'=' -f2)
+          echo "db_url=$DB_URL" >> $GITHUB_OUTPUT
+
+      - name: Run security DEFINER regression tests
+        run: |
+          echo "============================================"
+          echo "Running SECURITY DEFINER regression tests"
+          echo "============================================"
+
+          # Run the test file using psql
+          psql "${{ steps.db-url.outputs.db_url }}" -f supabase/tests/security_definer_regression.sql 2>&1 | tee test_output.log
+
+          # Check exit code
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "::error::Security DEFINER regression tests failed"
+            cat test_output.log
+            exit 1
+          fi
+
+          echo "✓ All security DEFINER regression tests passed"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-definer-test-results
+          path: test_output.log
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop
+
+  resource-library-rls-tests:
+    runs-on: ubuntu-latest
+    name: Resource Library RLS Tests
+
+    # Run on all PRs, but especially important for resource-related changes
+    if: |
+      contains(github.event.pull_request.changed_files, 'resource') ||
+      contains(github.event.pull_request.title, 'resource') ||
+      github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Supabase CLI
+        run: |
+          npm install -g supabase
+          supabase --version
+
+      - name: Start Supabase local instance
+        run: |
+          supabase init || echo "Already initialized"
+          supabase start
+        env:
+          SUPABASE_DB_PASSWORD: postgres
+
+      - name: Get database connection URL
+        id: db-url
+        run: |
+          DB_URL=$(supabase status -o env | grep DATABASE_URL | cut -d'=' -f2)
+          echo "db_url=$DB_URL" >> $GITHUB_OUTPUT
+
+      - name: Run resource library RLS tests
+        run: |
+          echo "============================================"
+          echo "Running Resource Library RLS tests"
+          echo "============================================"
+
+          # Run the test file using psql
+          psql "${{ steps.db-url.outputs.db_url }}" -f supabase/tests/resource_library_rls_tests.sql 2>&1 | tee rls_test_output.log
+
+          # Check exit code
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "::error::Resource library RLS tests failed"
+            cat rls_test_output.log
+            exit 1
+          fi
+
+          echo "✓ All resource library RLS tests passed"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resource-library-rls-test-results
+          path: rls_test_output.log
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop
+
+  test-summary:
+    runs-on: ubuntu-latest
+    name: Test Summary
+    needs: [security-regression-tests, resource-library-rls-tests]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          echo "============================================"
+          echo "Database Test Suite Summary"
+          echo "============================================"
+
+          SECURITY_RESULT="${{ needs.security-regression-tests.result }}"
+          RLS_RESULT="${{ needs.resource-library-rls-tests.result }}"
+
+          echo "Security DEFINER Tests: $SECURITY_RESULT"
+          echo "Resource Library RLS Tests: $RLS_RESULT"
+
+          if [ "$SECURITY_RESULT" != "success" ] || [ "$RLS_RESULT" != "success" ]; then
+            echo ""
+            echo "::error::Database tests failed. Please review test output above."
+            exit 1
+          fi
+
+          echo ""
+          echo "✓ All database tests passed successfully!"
