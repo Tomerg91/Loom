@@ -6,9 +6,9 @@ This document addresses security warnings related to Supabase Auth configuration
 
 **Issue**: Email OTP expiry is set to more than 1 hour, which poses a security risk.
 
-**Current Status**: ⚠️ OTP expiry exceeds recommended threshold
+**Current Status**: ✅ OTP expiry enforced at 15 minutes via `otp_expiry = 900`
 
-**Recommendation**: Set OTP expiry to less than 1 hour (recommended: 10-15 minutes)
+**Recommendation**: Keep OTP expiry below 1 hour (recommended: 10-15 minutes)
 
 ### How to Fix
 
@@ -41,12 +41,21 @@ This document addresses security warnings related to Supabase Auth configuration
 ### Recommended Settings
 
 ```toml
+[auth]
+site_url = "env(SUPABASE_SITE_URL)"
+additional_redirect_urls = [
+  "http://localhost:3000",
+  "env(SUPABASE_SITE_URL)"
+]
+
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = true  # Enable for production
-otp_expiry = 900  # 15 minutes (recommended)
+enable_confirmations = true
+otp_expiry = 900
 ```
+
+> ℹ️ Define `SUPABASE_SITE_URL` in every environment (e.g. `.env.local` = `http://localhost:3000`, Vercel/Supabase dashboard = production domain) so auth callbacks always use the right host.
 
 ## Additional Auth Security Recommendations
 
@@ -76,8 +85,8 @@ otp_expiry = 900  # 15 minutes (recommended)
 
 ## Implementation Priority
 
-1. **High Priority**: Fix OTP expiry (immediate security risk)
-2. **Medium Priority**: Enable email confirmations for production
+1. **High Priority**: Keep OTP expiry at 10–15 minutes (already applied)
+2. **Medium Priority**: Ensure email confirmations stay enabled in production
 3. **Low Priority**: Review and optimize other JWT settings
 
 ## Verification

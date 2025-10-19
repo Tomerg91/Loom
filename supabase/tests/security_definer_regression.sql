@@ -34,34 +34,48 @@ BEGIN
   JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public'
     AND prosecdef = true
-    AND pg_get_functiondef(p.oid) NOT LIKE '%SET search_path%';
+    AND NOT EXISTS (
+      SELECT 1
+      FROM unnest(COALESCE(p.proconfig, ARRAY[]::text[])) AS setting(value)
+      WHERE setting.value = 'search_path=pg_catalog, public, extensions'
+    );
 
   IF v_vulnerable_count > 0 THEN
-    -- List all vulnerable functions
+    -- List all vulnerable functions with their current configuration
     FOR v_function IN
-      SELECT p.proname, pg_get_function_identity_arguments(p.oid) AS args
+      SELECT
+        p.proname,
+        pg_get_function_identity_arguments(p.oid) AS args,
+        COALESCE(array_to_string(p.proconfig, ', '), '<unset>') AS config
       FROM pg_proc p
       JOIN pg_namespace n ON n.oid = p.pronamespace
       WHERE n.nspname = 'public'
         AND prosecdef = true
-        AND pg_get_functiondef(p.oid) NOT LIKE '%SET search_path%'
+        AND NOT EXISTS (
+          SELECT 1
+          FROM unnest(COALESCE(p.proconfig, ARRAY[]::text[])) AS setting(value)
+          WHERE setting.value = 'search_path=pg_catalog, public, extensions'
+        )
       LIMIT 10
     LOOP
-      RAISE WARNING 'Vulnerable function: %(%)', v_function.proname, v_function.args;
+      RAISE WARNING 'Vulnerable function: %(%) has config %',
+        v_function.proname,
+        v_function.args,
+        v_function.config;
     END LOOP;
 
     INSERT INTO test_results (test_name, status, message)
     VALUES (
       'SECURITY DEFINER search_path check',
       'FAIL',
-      format('%s functions lack SET search_path clause', v_vulnerable_count)
+      format('%s functions missing search_path=pg_catalog, public, extensions', v_vulnerable_count)
     );
   ELSE
     INSERT INTO test_results (test_name, status, message)
     VALUES (
       'SECURITY DEFINER search_path check',
       'PASS',
-      'All SECURITY DEFINER functions have SET search_path'
+      'All SECURITY DEFINER functions set search_path to pg_catalog, public, extensions'
     );
   END IF;
 END $$;
