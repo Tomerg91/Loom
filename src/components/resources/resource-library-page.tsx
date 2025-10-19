@@ -15,8 +15,8 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, FolderPlus, Upload, BarChart3, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { FolderPlus, Upload, Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,8 +24,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 // Resource components
 import { ResourceGrid } from '@/components/resources/resource-grid';
 import { ResourceFilters } from '@/components/resources/resource-filters';
-import { ResourceUploadDialog } from '@/components/resources/resource-upload-dialog';
 import { ResourceShareDialog } from '@/components/resources/resource-share-dialog';
+import { ResourceUploadDialog } from '@/components/resources/resource-upload-dialog';
 import { CollectionDialog } from '@/components/resources/collection-dialog';
 import { CollectionCard } from '@/components/resources/collection-card';
 import { AnalyticsOverview } from '@/components/resources/analytics-overview';
@@ -37,7 +37,6 @@ import type {
   ResourceLibraryItem,
   ResourceCollection,
   ResourceListParams,
-  ResourceCategory,
   LibraryAnalytics,
 } from '@/types/resources';
 
