@@ -69,8 +69,9 @@ async function getAuthenticatedActor(): Promise<
 
 export const PATCH = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) => {
+  const params = await context.params;
   const authResult = await getAuthenticatedActor();
   if ('response' in authResult) {
     return authResult.response;

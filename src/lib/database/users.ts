@@ -1,5 +1,6 @@
 import { routing } from '@/i18n/routing';
 import { config } from '@/lib/config';
+import { DatabaseError } from '@/lib/errors/database-errors';
 import { createClient } from '@/lib/supabase/client';
 import { createServerClient } from '@/lib/supabase/server';
 import { Result, type Result as ResultType } from '@/lib/types/result';
@@ -62,22 +63,19 @@ export class UserService {
         .eq('id', userId)
         .single();
 
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return Result.error(`Failed to fetch user profile: ${error.message}`);
+      const result = Result.fromSupabase(data, error, 'fetch', 'User');
+      if (!result.success) {
+        return result;
       }
 
-      if (!data) {
-        return Result.error('User not found');
-      }
-
-      const user = this.mapDatabaseUserToUser(data);
+      const user = this.mapDatabaseUserToUser(result.data);
       return Result.success(user);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('Unexpected error in getUserProfile:', error);
-      return Result.error(`Unexpected error: ${message}`);
+      const dbError = DatabaseError.operationFailed('fetch user profile', 'User', {
+        userId,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+      return Result.fromDatabaseError(dbError);
     }
   }
 
@@ -104,36 +102,45 @@ export class UserService {
         .select()
         .single();
 
-      if (error) {
-        console.error('Error updating user profile:', error);
-        return Result.error(`Failed to update user profile: ${error.message}`);
+      const result = Result.fromSupabase(data, error, 'update', 'User');
+      if (!result.success) {
+        return result;
       }
 
-      if (!data) {
-        return Result.error('No user data returned after update');
-      }
-
-      const user = this.mapDatabaseUserToUser(data);
+      const user = this.mapDatabaseUserToUser(result.data);
       return Result.success(user);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('Unexpected error in updateUserProfile:', error);
-      return Result.error(`Unexpected error: ${message}`);
+      const dbError = DatabaseError.operationFailed('update user profile', 'User', {
+        userId,
+        updates,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+      return Result.fromDatabaseError(dbError);
     }
   }
 
   /**
    * Update user last seen timestamp
    */
-  async updateLastSeen(userId: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('users')
-      .update({ last_seen_at: new Date().toISOString() })
-      .eq('id', userId);
+  async updateLastSeen(userId: string): Promise<ResultType<void>> {
+    try {
+      const { error } = await this.supabase
+        .from('users')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('id', userId);
 
-    if (error) {
-      console.error('Error updating last seen:', error);
+      if (error) {
+        const dbError = DatabaseError.fromSupabaseError(error, 'update last seen', 'User');
+        return Result.fromDatabaseError(dbError);
+      }
+
+      return Result.success(undefined);
+    } catch (error) {
+      const dbError = DatabaseError.operationFailed('update last seen', 'User', {
+        userId,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+      return Result.fromDatabaseError(dbError);
     }
   }
 
@@ -152,17 +159,18 @@ export class UserService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching users by role:', error);
-        return Result.error(`Failed to fetch users by role: ${error.message}`);
+        const dbError = DatabaseError.fromSupabaseError(error, 'fetch users by role', 'User');
+        return Result.fromDatabaseError(dbError);
       }
 
       const users = data?.map(this.mapDatabaseUserToUser) || [];
       return Result.success(users);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('Unexpected error in getUsersByRole:', error);
-      return Result.error(`Unexpected error: ${message}`);
+      const dbError = DatabaseError.operationFailed('fetch users by role', 'User', {
+        role,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+      return Result.fromDatabaseError(dbError);
     }
   }
 

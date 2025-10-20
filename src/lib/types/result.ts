@@ -1,8 +1,10 @@
+import { DatabaseError } from '@/lib/errors/database-errors';
+
 /**
  * Generic result type for operations that can fail
  * Provides explicit error handling without throwing exceptions
  */
-export type Result<T, E = string> = 
+export type Result<T, E = string> =
   | { success: true; data: T; error: null }
   | { success: false; data: null; error: E };
 
@@ -20,7 +22,7 @@ export const Result = {
   }),
 
   /**
-   * Create a failed result
+   * Create a failed result from string message
    */
   error: <T>(error: string): Result<T> => ({
     success: false,
@@ -29,18 +31,30 @@ export const Result = {
   }),
 
   /**
-   * Create a result from a Supabase response
+   * Create a failed result from DatabaseError
    */
-  fromSupabase: <T>(data: T | null, error: unknown): Result<T> => {
+  fromDatabaseError: <T>(error: DatabaseError): Result<T, string> => ({
+    success: false,
+    data: null,
+    error: error.toString(),
+  }),
+
+  /**
+   * Create a result from a Supabase response with enhanced error handling
+   */
+  fromSupabase: <T>(
+    data: T | null,
+    error: unknown,
+    operation?: string,
+    resourceType?: string
+  ): Result<T> => {
     if (error) {
-      const maybeMessage = (error as any)?.message;
-      const message = typeof maybeMessage === 'string'
-        ? maybeMessage
-        : 'Database operation failed';
-      return Result.error(message);
+      const dbError = DatabaseError.fromSupabaseError(error, operation, resourceType);
+      return Result.fromDatabaseError(dbError);
     }
     if (data === null) {
-      return Result.error('No data found');
+      const dbError = DatabaseError.notFound(resourceType || 'Resource');
+      return Result.fromDatabaseError(dbError);
     }
     return Result.success(data);
   },
