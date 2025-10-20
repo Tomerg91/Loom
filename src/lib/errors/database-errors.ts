@@ -578,6 +578,10 @@ export class DatabaseError extends Error {
       const result = await fn();
       return { success: true, data: result, error: null };
     } catch (error) {
+      if (error instanceof DatabaseError) {
+        return { success: false, data: null, error: error.toString() };
+      }
+
       const dbError = DatabaseError.fromSupabaseError(error, operation);
       return { success: false, data: null, error: dbError.toString() };
     }
