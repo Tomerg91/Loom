@@ -2,7 +2,7 @@ import { routing } from '@/i18n/routing';
 import { config } from '@/lib/config';
 import type { UserServiceOptions } from '@/lib/database/users';
 import { supabase as clientSupabase } from '@/modules/platform/supabase/client';
-import { createClient } from '@/modules/platform/supabase/server';
+import { createClient, createAdminClient } from '@/modules/platform/supabase/server';
 import type { Language, User, UserRole, UserStatus } from '@/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
@@ -406,12 +406,17 @@ export class AuthService {
           }
         : null;
 
-      // Update last seen timestamp
-      await this.userService.updateLastSeen(authData.user.id);
-
-      // Get user profile using admin client to bypass RLS since user is already authenticated
-      const { createAdminClient } = await import('@/modules/platform/supabase/server');
+      // Use admin client to fetch user profile and update last seen
+      // This bypasses RLS since we've already verified the user's identity via signInWithPassword
       const adminClient = createAdminClient();
+
+      // Update last seen timestamp using admin client
+      await adminClient
+        .from('users')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('id', authData.user.id);
+
+      // Get user profile using admin client
       const { data: profileData, error: profileError } = await adminClient
         .from('users')
         .select(
@@ -421,6 +426,10 @@ export class AuthService {
         .single();
 
       if (profileError || !profileData) {
+        console.error('[AuthService] Failed to fetch user profile after signin:', {
+          userId: authData.user.id,
+          error: profileError,
+        });
         return {
           user: null,
           error: profileError?.message || 'User profile not found',
