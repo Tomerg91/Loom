@@ -114,6 +114,33 @@ export type DatabaseErrorCode =
   (typeof DB_ERROR_CODES)[keyof typeof DB_ERROR_CODES];
 
 /**
+ * Operation-specific error messages for Resource Library RLS violations
+ * Maps operation names to user-friendly permission error messages
+ */
+export const RLS_OPERATION_MESSAGES: Record<string, string> = {
+  // Resource operations
+  uploadResource: "You don't have permission to upload resources",
+  updateResource: "You don't have permission to modify this resource",
+  deleteResource: "You don't have permission to delete this resource",
+
+  // Collection operations
+  createCollection: "You don't have permission to create collections",
+  updateCollection: "You don't have permission to modify this collection",
+  deleteCollection: "You don't have permission to delete this collection",
+  addToCollection:
+    "You don't have permission to add resources to this collection",
+  removeFromCollection:
+    "You don't have permission to remove resources from this collection",
+
+  // Sharing operations
+  shareWithAllClients: "You don't have permission to share this resource",
+  getResourceShares: "You don't have permission to view resource shares",
+
+  // Settings
+  updateSettings: "You don't have permission to update library settings",
+};
+
+/**
  * Structured error object for database operations
  */
 export interface DatabaseErrorDetails {
