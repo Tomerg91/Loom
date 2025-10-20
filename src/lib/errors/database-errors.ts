@@ -99,11 +99,19 @@ export const DB_ERROR_CODES = {
   SESSION_COMPLETED: 'DB_9006',
   PAYMENT_REQUIRED: 'DB_9007',
 
+  // Row-Level Security (9xxx)
+  RLS_VIOLATION: 'DB_9008',
+  RLS_INSERT_DENIED: 'DB_9009',
+  RLS_UPDATE_DENIED: 'DB_9010',
+  RLS_DELETE_DENIED: 'DB_9011',
+  RLS_SELECT_DENIED: 'DB_9012',
+
   // Unknown & Unexpected (9999)
   UNKNOWN_ERROR: 'DB_9999',
 } as const;
 
-export type DatabaseErrorCode = typeof DB_ERROR_CODES[keyof typeof DB_ERROR_CODES];
+export type DatabaseErrorCode =
+  (typeof DB_ERROR_CODES)[keyof typeof DB_ERROR_CODES];
 
 /**
  * Structured error object for database operations
@@ -137,13 +145,15 @@ export class DatabaseError extends Error {
     super(errorDetails.message);
     this.name = 'DatabaseError';
     this.code = errorDetails.code;
-    this.userMessage = errorDetails.userMessage || this.getDefaultUserMessage(errorDetails.code);
+    this.userMessage =
+      errorDetails.userMessage || this.getDefaultUserMessage(errorDetails.code);
     this.details = errorDetails.details;
     this.timestamp = errorDetails.timestamp || new Date().toISOString();
     this.resourceType = errorDetails.resourceType;
     this.resourceId = errorDetails.resourceId;
     this.operation = errorDetails.operation;
-    this.retryable = errorDetails.retryable ?? this.isRetryableByDefault(errorDetails.code);
+    this.retryable =
+      errorDetails.retryable ?? this.isRetryableByDefault(errorDetails.code);
 
     // Maintain proper stack trace for where error was thrown (V8)
     if (Error.captureStackTrace) {
@@ -180,10 +190,13 @@ export class DatabaseError extends Error {
    */
   private getDefaultUserMessage(code: DatabaseErrorCode): string {
     const messages: Record<DatabaseErrorCode, string> = {
-      [DB_ERROR_CODES.UNAUTHORIZED]: 'You are not authenticated. Please sign in.',
-      [DB_ERROR_CODES.FORBIDDEN]: 'You do not have permission to perform this action.',
+      [DB_ERROR_CODES.UNAUTHORIZED]:
+        'You are not authenticated. Please sign in.',
+      [DB_ERROR_CODES.FORBIDDEN]:
+        'You do not have permission to perform this action.',
       [DB_ERROR_CODES.INVALID_CREDENTIALS]: 'Invalid email or password.',
-      [DB_ERROR_CODES.SESSION_EXPIRED]: 'Your session has expired. Please sign in again.',
+      [DB_ERROR_CODES.SESSION_EXPIRED]:
+        'Your session has expired. Please sign in again.',
       [DB_ERROR_CODES.MFA_REQUIRED]: 'Multi-factor authentication is required.',
 
       [DB_ERROR_CODES.NOT_FOUND]: 'The requested resource was not found.',
@@ -205,9 +218,11 @@ export class DatabaseError extends Error {
       [DB_ERROR_CODES.INVALID_FILE_TYPE]: 'Invalid file type.',
       [DB_ERROR_CODES.FILE_TOO_LARGE]: 'File is too large.',
 
-      [DB_ERROR_CODES.CONFLICT]: 'A conflict occurred while processing your request.',
+      [DB_ERROR_CODES.CONFLICT]:
+        'A conflict occurred while processing your request.',
       [DB_ERROR_CODES.DUPLICATE_ENTRY]: 'This entry already exists.',
-      [DB_ERROR_CODES.FOREIGN_KEY_VIOLATION]: 'Cannot delete because other records depend on this.',
+      [DB_ERROR_CODES.FOREIGN_KEY_VIOLATION]:
+        'Cannot delete because other records depend on this.',
       [DB_ERROR_CODES.UNIQUE_VIOLATION]: 'This value must be unique.',
       [DB_ERROR_CODES.CHECK_VIOLATION]: 'Data constraint violation.',
       [DB_ERROR_CODES.SESSION_CONFLICT]: 'Session scheduling conflict.',
@@ -224,18 +239,23 @@ export class DatabaseError extends Error {
       [DB_ERROR_CODES.CONNECTION_ERROR]: 'Unable to connect to the database.',
       [DB_ERROR_CODES.TIMEOUT]: 'Request timed out. Please try again.',
       [DB_ERROR_CODES.NETWORK_ERROR]: 'Network error occurred.',
-      [DB_ERROR_CODES.SERVICE_UNAVAILABLE]: 'Service is temporarily unavailable.',
+      [DB_ERROR_CODES.SERVICE_UNAVAILABLE]:
+        'Service is temporarily unavailable.',
 
-      [DB_ERROR_CODES.RATE_LIMIT_EXCEEDED]: 'Too many requests. Please slow down.',
+      [DB_ERROR_CODES.RATE_LIMIT_EXCEEDED]:
+        'Too many requests. Please slow down.',
       [DB_ERROR_CODES.QUOTA_EXCEEDED]: 'Quota exceeded.',
-      [DB_ERROR_CODES.TOO_MANY_REQUESTS]: 'Too many requests. Please try again later.',
+      [DB_ERROR_CODES.TOO_MANY_REQUESTS]:
+        'Too many requests. Please try again later.',
 
       [DB_ERROR_CODES.STORAGE_ERROR]: 'Storage error occurred.',
       [DB_ERROR_CODES.UPLOAD_FAILED]: 'File upload failed.',
       [DB_ERROR_CODES.DOWNLOAD_FAILED]: 'File download failed.',
       [DB_ERROR_CODES.DELETE_FILE_FAILED]: 'Failed to delete file.',
-      [DB_ERROR_CODES.VIRUS_DETECTED]: 'File contains malware and has been blocked.',
-      [DB_ERROR_CODES.FILE_QUARANTINED]: 'File has been quarantined for security review.',
+      [DB_ERROR_CODES.VIRUS_DETECTED]:
+        'File contains malware and has been blocked.',
+      [DB_ERROR_CODES.FILE_QUARANTINED]:
+        'File has been quarantined for security review.',
 
       [DB_ERROR_CODES.BUSINESS_RULE_VIOLATION]: 'Business rule violation.',
       [DB_ERROR_CODES.INSUFFICIENT_PERMISSIONS]: 'Insufficient permissions.',
@@ -244,6 +264,17 @@ export class DatabaseError extends Error {
       [DB_ERROR_CODES.SESSION_CANCELLED]: 'This session has been cancelled.',
       [DB_ERROR_CODES.SESSION_COMPLETED]: 'This session is already completed.',
       [DB_ERROR_CODES.PAYMENT_REQUIRED]: 'Payment is required to continue.',
+
+      [DB_ERROR_CODES.RLS_VIOLATION]:
+        'You do not have permission to perform this action.',
+      [DB_ERROR_CODES.RLS_INSERT_DENIED]:
+        'You do not have permission to create this resource.',
+      [DB_ERROR_CODES.RLS_UPDATE_DENIED]:
+        'You do not have permission to modify this resource.',
+      [DB_ERROR_CODES.RLS_DELETE_DENIED]:
+        'You do not have permission to delete this resource.',
+      [DB_ERROR_CODES.RLS_SELECT_DENIED]:
+        'You do not have permission to access this resource.',
 
       [DB_ERROR_CODES.UNKNOWN_ERROR]: 'An unexpected error occurred.',
     };
@@ -270,7 +301,12 @@ export class DatabaseError extends Error {
    * Static factory methods for common error scenarios
    */
 
-  static create(code: DatabaseErrorCode, message: string, userMessage?: string, details?: Record<string, unknown>): DatabaseError {
+  static create(
+    code: DatabaseErrorCode,
+    message: string,
+    userMessage?: string,
+    details?: Record<string, unknown>
+  ): DatabaseError {
     return new DatabaseError({ code, message, userMessage, details });
   }
 
@@ -300,7 +336,10 @@ export class DatabaseError extends Error {
     });
   }
 
-  static validation(message: string, details?: Record<string, unknown>): DatabaseError {
+  static validation(
+    message: string,
+    details?: Record<string, unknown>
+  ): DatabaseError {
     return new DatabaseError({
       code: DB_ERROR_CODES.VALIDATION_ERROR,
       message,
@@ -316,7 +355,11 @@ export class DatabaseError extends Error {
     });
   }
 
-  static operationFailed(operation: string, resourceType?: string, details?: Record<string, unknown>): DatabaseError {
+  static operationFailed(
+    operation: string,
+    resourceType?: string,
+    details?: Record<string, unknown>
+  ): DatabaseError {
     return new DatabaseError({
       code: DB_ERROR_CODES.OPERATION_FAILED,
       message: `Failed to ${operation}${resourceType ? ` ${resourceType}` : ''}`,
@@ -329,7 +372,11 @@ export class DatabaseError extends Error {
   /**
    * Convert Supabase error to DatabaseError
    */
-  static fromSupabaseError(error: unknown, operation?: string, resourceType?: string): DatabaseError {
+  static fromSupabaseError(
+    error: unknown,
+    operation?: string,
+    resourceType?: string
+  ): DatabaseError {
     if (!error) {
       return new DatabaseError({
         code: DB_ERROR_CODES.UNKNOWN_ERROR,
@@ -340,7 +387,12 @@ export class DatabaseError extends Error {
     }
 
     // Handle Supabase error object
-    const supabaseError = error as { code?: string; message?: string; details?: string; hint?: string };
+    const supabaseError = error as {
+      code?: string;
+      message?: string;
+      details?: string;
+      hint?: string;
+    };
 
     // Map Supabase error codes to our error codes
     const code = mapSupabaseErrorCode(supabaseError.code);
