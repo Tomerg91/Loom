@@ -22,6 +22,8 @@
 
 import * as Sentry from '@sentry/nextjs';
 
+import type { Result } from '@/lib/types/result';
+
 /**
  * Standard database error codes for client-side handling
  * These codes are stable and can be used for programmatic error handling
@@ -559,6 +561,26 @@ export class DatabaseError extends Error {
       resourceType,
       details,
     });
+  }
+
+  /**
+   * Wrap a database operation with automatic error handling
+   *
+   * @param operation - Name of the operation (for error messages)
+   * @param fn - Async function to execute
+   * @returns Result with success data or formatted error
+   */
+  static async wrapDatabaseOperation<T>(
+    operation: string,
+    fn: () => Promise<T>
+  ): Promise<Result<T>> {
+    try {
+      const result = await fn();
+      return { success: true, data: result, error: null };
+    } catch (error) {
+      const dbError = DatabaseError.fromSupabaseError(error, operation);
+      return { success: false, data: null, error: dbError.toString() };
+    }
   }
 
   /**
