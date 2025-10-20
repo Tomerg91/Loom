@@ -46,7 +46,7 @@ const handleRequest = async (request: NextRequest): Promise<NextResponse> => {
       return ApiResponseHelper.forbidden('Admin access required for MFA management');
     }
 
-    const requestUrl = 'nextUrl' in request ? request.nextUrl : new URL(request.url);
+    const requestUrl = request.nextUrl;
     const searchParams = requestUrl.searchParams;
 
     const getParam = (key: string) => {

@@ -33,9 +33,20 @@ export interface TaskActor {
 }
 
 type SupabaseClient = ReturnType<typeof createAdminClient>;
-type TaskRow = Database['public']['Tables']['tasks']['Row'];
-type TaskCategoryRow = Database['public']['Tables']['task_categories']['Row'];
-type TaskInstanceRow = Database['public']['Tables']['task_instances']['Row'];
+
+// Use stub types if tasks tables don't exist in production database yet
+type TaskRow = 'tasks' extends keyof Database['public']['Tables']
+  ? Database['public']['Tables']['tasks']['Row']
+  : import('../types/stub-types').TaskRow;
+
+type TaskCategoryRow = 'task_categories' extends keyof Database['public']['Tables']
+  ? Database['public']['Tables']['task_categories']['Row']
+  : import('../types/stub-types').TaskCategoryRow;
+
+type TaskInstanceRow = 'task_instances' extends keyof Database['public']['Tables']
+  ? Database['public']['Tables']['task_instances']['Row']
+  : import('../types/stub-types').TaskInstanceRow;
+
 type UserRow = Database['public']['Tables']['users']['Row'];
 
 type TaskRecord = TaskRow & {
@@ -489,7 +500,11 @@ export class TaskService {
       throw accessDenied();
     }
 
-    const updates: Database['public']['Tables']['tasks']['Update'] = {};
+    type TaskUpdate = 'tasks' extends keyof Database['public']['Tables']
+      ? Database['public']['Tables']['tasks']['Update']
+      : Partial<import('../types/stub-types').TaskRow>;
+
+    const updates: TaskUpdate = {};
 
     if (payload.title !== undefined) {
       updates.title = payload.title;
