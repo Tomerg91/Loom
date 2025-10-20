@@ -141,6 +141,39 @@ export const RLS_OPERATION_MESSAGES: Record<string, string> = {
 };
 
 /**
+ * Detect if a Supabase error is an RLS violation
+ *
+ * Checks for:
+ * - PostgreSQL error code 42501 (insufficient_privilege)
+ * - Error messages containing RLS policy violation text
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function isRLSViolation(error: unknown): boolean {
+  if (!error) return false;
+
+  const errorObj = error as {
+    code?: string;
+    error_code?: string;
+    message?: string;
+  };
+  const code = errorObj.code || errorObj.error_code || '';
+  const message = errorObj.message || '';
+
+  // Check for PostgreSQL insufficient privilege error
+  if (code === '42501') return true;
+
+  // Check for RLS-specific error messages
+  const rlsPatterns = [
+    'row-level security',
+    'row level security',
+    'violates row-level security policy',
+    'new row violates row-level security',
+  ];
+
+  return rlsPatterns.some(pattern => message.toLowerCase().includes(pattern));
+}
+
+/**
  * Structured error object for database operations
  */
 export interface DatabaseErrorDetails {
