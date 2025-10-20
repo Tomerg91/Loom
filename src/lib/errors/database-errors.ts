@@ -20,6 +20,8 @@
  * ```
  */
 
+import * as Sentry from '@sentry/nextjs';
+
 /**
  * Standard database error codes for client-side handling
  * These codes are stable and can be used for programmatic error handling
@@ -171,6 +173,71 @@ function isRLSViolation(error: unknown): boolean {
   ];
 
   return rlsPatterns.some(pattern => message.toLowerCase().includes(pattern));
+}
+
+/**
+ * Log RLS violation to console and Sentry
+ *
+ * @param error - Supabase error object
+ * @param operation - Operation that triggered violation
+ * @param resourceType - Type of resource involved
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function logRLSViolation(
+  error: unknown,
+  operation?: string,
+  resourceType?: string
+): void {
+  const errorObj = error as {
+    code?: string;
+    error_code?: string;
+    message?: string;
+    details?: string;
+    hint?: string;
+  };
+
+  const logData = {
+    code: 'DB_9008',
+    operation: operation || 'unknown',
+    resourceType: resourceType || 'unknown',
+    timestamp: new Date().toISOString(),
+    supabaseError: {
+      code: errorObj.code || errorObj.error_code,
+      message: errorObj.message,
+      details: errorObj.details,
+      hint: errorObj.hint,
+    },
+  };
+
+  // Console log (structured)
+  console.error('[RLS_VIOLATION]', logData);
+
+  // Sentry capture
+  Sentry.captureException(
+    new Error(`RLS Violation: ${operation || 'unknown'}`),
+    {
+      level: 'warning', // Expected security boundary, not a bug
+      tags: {
+        errorType: 'rls_violation',
+        operation: operation || 'unknown',
+        resourceType: resourceType || 'unknown',
+      },
+      extra: {
+        supabaseErrorCode: errorObj.code || errorObj.error_code,
+        supabaseMessage: errorObj.message,
+        supabaseDetails: errorObj.details,
+        supabaseHint: errorObj.hint,
+        timestamp: logData.timestamp,
+      },
+      contexts: {
+        rls: {
+          operation,
+          resourceType,
+          errorCode: 'DB_9008',
+        },
+      },
+    }
+  );
 }
 
 /**
