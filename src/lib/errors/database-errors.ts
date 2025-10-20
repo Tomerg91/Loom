@@ -149,7 +149,6 @@ export const RLS_OPERATION_MESSAGES: Record<string, string> = {
  * - PostgreSQL error code 42501 (insufficient_privilege)
  * - Error messages containing RLS policy violation text
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function isRLSViolation(error: unknown): boolean {
   if (!error) return false;
 
@@ -182,7 +181,6 @@ function isRLSViolation(error: unknown): boolean {
  * @param operation - Operation that triggered violation
  * @param resourceType - Type of resource involved
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function logRLSViolation(
   error: unknown,
   operation?: string,
@@ -521,7 +519,31 @@ export class DatabaseError extends Error {
       hint?: string;
     };
 
-    // Map Supabase error codes to our error codes
+    // Detect and handle RLS violations
+    if (isRLSViolation(supabaseError)) {
+      logRLSViolation(supabaseError, operation, resourceType);
+
+      // Get operation-specific message or fallback
+      const userMessage =
+        operation && RLS_OPERATION_MESSAGES[operation]
+          ? RLS_OPERATION_MESSAGES[operation]
+          : undefined;
+
+      return new DatabaseError({
+        code: DB_ERROR_CODES.RLS_VIOLATION,
+        message: `RLS violation: ${operation || 'unknown operation'}`,
+        userMessage,
+        operation,
+        resourceType,
+        details: {
+          supabaseCode: supabaseError.code,
+          supabaseDetails: supabaseError.details,
+          supabaseHint: supabaseError.hint,
+        },
+      });
+    }
+
+    // Map Supabase error codes to our error codes (existing logic)
     const code = mapSupabaseErrorCode(supabaseError.code);
     const message = supabaseError.message || 'Database operation failed';
     const details = {
