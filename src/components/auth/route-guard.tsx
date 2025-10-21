@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { useUser, useAuthLoading } from '@/lib/store/auth-store';
+import { useUser, useAuthLoading, usePendingMfaUser } from '@/lib/store/auth-store';
 import { usePermission, useAnyPermission, useHasAnyRole } from '@/lib/permissions/hooks';
 import type { Permission } from '@/lib/permissions/permissions';
 import type { UserRole } from '@/types';
@@ -47,6 +47,7 @@ export function RouteGuard({
   const pathname = usePathname();
   const user = useUser();
   const isLoading = useAuthLoading();
+  const pendingMfaUser = usePendingMfaUser();
   
   // Always call hooks to avoid conditional hook calls
   const hasRequiredPermission = usePermission(requirePermission || '' as Permission);
@@ -89,7 +90,7 @@ export function RouteGuard({
       };
 
       // Check if authentication is required
-      if (requireAuth && !user) {
+      if (requireAuth && (!user || pendingMfaUser)) {
         redirectToPath(buildLoginRedirect());
         return;
       }
@@ -123,6 +124,7 @@ export function RouteGuard({
   }, [
     isLoading,
     user,
+    pendingMfaUser,
     permissionSatisfied,
     anyPermissionSatisfied,
     hasRequiredRole,
@@ -177,13 +179,15 @@ export function RouteGuard({
 
   // Check authorization after loading
   if (!isLoading) {
+    const hasPendingMfa = Boolean(pendingMfaUser);
+
     // Not authenticated but auth required
-    if (requireAuth && !user) {
+    if (requireAuth && (!user || hasPendingMfa)) {
       return null; // Will redirect in useEffect
     }
 
     // Authenticated but missing role
-    if (user && (requireRole || requireAnyRole) && !hasRequiredRole) {
+    if (user && !hasPendingMfa && (requireRole || requireAnyRole) && !hasRequiredRole) {
       return (
         <div className="min-h-screen flex items-center justify-center">
           <Card className="w-full max-w-md" role="region" aria-live="assertive">
@@ -202,7 +206,7 @@ export function RouteGuard({
     }
 
     // Authenticated but missing permission
-    if (user && (!permissionSatisfied || !anyPermissionSatisfied)) {
+    if (user && !hasPendingMfa && (!permissionSatisfied || !anyPermissionSatisfied)) {
       return (
         <div className="min-h-screen flex items-center justify-center">
           <Card className="w-full max-w-md" role="region" aria-live="assertive">

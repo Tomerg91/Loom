@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useCallback, useRef } from 'react';
 
 import type { AuthUser } from '@/lib/auth/auth';
-import { createClientAuthService } from '@/lib/auth/client-auth';
+import {
+  createClientAuthService,
+  type ClientSignInResult,
+} from '@/lib/auth/client-auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useNotificationStore } from '@/lib/store/notification-store';
 import { useSessionStore } from '@/lib/store/session-store';
@@ -26,11 +29,20 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
   const setLoading = useAuthStore(s => s.setLoading);
   const setError = useAuthStore(s => s.setError);
   const clearAuth = useAuthStore(s => s.clearAuth);
+  const setMfaRequired = useAuthStore(s => s.setMfaRequired);
+  const clearMfaState = useAuthStore(s => s.clearMfaState);
+  const setPendingMfaUser = useAuthStore(s => s.setPendingMfaUser);
+  const pendingMfaUserState = useAuthStore(s => s.pendingMfaUser);
 
   const clearSessions = useSessionStore(s => s.clearSessions);
   const clearNotifications = useNotificationStore(s => s.clearNotifications);
 
   const authService = useMemo(() => createClientAuthService(), []);
+  const pendingMfaUser = useRef<AuthUser | null>(null);
+
+  useEffect(() => {
+    pendingMfaUser.current = pendingMfaUserState;
+  }, [pendingMfaUserState]);
 
   // Immediately hydrate store with SSR user if available
   useEffect(() => {
@@ -38,12 +50,25 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
       // Always use fresh server user over potentially stale localStorage data
       setUser(initialUser);
       setLoading(false);
+      setMfaRequired(false);
+      setPendingMfaUser(null);
+      pendingMfaUser.current = null;
       return;
     }
 
     // No server-provided user; ensure loading state reflects pending validation
     setLoading(true);
-  }, [initialUser, setUser, setLoading]);
+    setMfaRequired(false);
+    setPendingMfaUser(null);
+    pendingMfaUser.current = null;
+  }, [
+    initialUser,
+    setUser,
+    setLoading,
+    setMfaRequired,
+    setPendingMfaUser,
+    pendingMfaUser,
+  ]);
 
   // Session hydration + auth state subscription
   useEffect(() => {
@@ -63,9 +88,15 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
             clearSessions();
             clearNotifications();
             setLoading(false);
+            setMfaRequired(false);
+            setPendingMfaUser(null);
+            pendingMfaUser.current = null;
           } else {
             // Session is valid, keep the initial user and stop loading
             setLoading(false);
+            setMfaRequired(false);
+            setPendingMfaUser(null);
+            pendingMfaUser.current = null;
           }
         } else {
           // No initial user, validate and hydrate session
@@ -77,11 +108,16 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
             const currentUser = await authService.getCurrentUser();
             if (!isMounted) return;
             setUser(currentUser);
+            setMfaRequired(false);
+            setPendingMfaUser(null);
+            pendingMfaUser.current = null;
           } else {
             // No valid session: clear any persisted user
             clearAuth();
             clearSessions();
             clearNotifications();
+            setPendingMfaUser(null);
+            pendingMfaUser.current = null;
           }
           setLoading(false);
         }
@@ -91,6 +127,9 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
           err instanceof Error ? err.message : 'Failed to hydrate session'
         );
         clearAuth();
+        clearMfaState();
+        setPendingMfaUser(null);
+        pendingMfaUser.current = null;
         setLoading(false);
       }
     })();
@@ -105,11 +144,17 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
         // User signed in
         setUser(u);
         setLoading(false);
+        setMfaRequired(false);
+        setPendingMfaUser(null);
+        pendingMfaUser.current = null;
       } else {
         // User signed out - always clear regardless of initial state
         clearAuth();
         clearSessions();
         clearNotifications();
+        clearMfaState();
+        setPendingMfaUser(null);
+        pendingMfaUser.current = null;
         setLoading(false);
       }
     });
@@ -127,14 +172,31 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
     clearAuth,
     clearSessions,
     clearNotifications,
+    setMfaRequired,
+    clearMfaState,
+    setPendingMfaUser,
+    pendingMfaUser,
   ]);
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string): Promise<ClientSignInResult> => {
       setLoading(true);
       try {
         const result = await authService.signIn({ email, password });
+
+        if (result.requiresMfa) {
+          const pendingUser = result.pendingUser ?? null;
+          pendingMfaUser.current = pendingUser;
+          setPendingMfaUser(pendingUser);
+          setMfaRequired(true);
+          setLoading(false);
+          return { ...result, pendingUser };
+        }
+
         if (result.user) {
+          pendingMfaUser.current = null;
+          setPendingMfaUser(null);
+          setMfaRequired(false);
           setUser(result.user);
         } else if (result.error) {
           setLoading(false);
@@ -146,7 +208,14 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
       }
       // Don't reset loading here - let the component control it after navigation
     },
-    [authService, setUser, setLoading]
+    [
+      authService,
+      setLoading,
+      setPendingMfaUser,
+      setMfaRequired,
+      setUser,
+      pendingMfaUser,
+    ]
   );
 
   const signUp = useCallback(
@@ -164,15 +233,30 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
         const result = await authService.signUp(data);
         if (result.user && result.sessionActive) {
           setUser(result.user);
+          setMfaRequired(false);
+          setPendingMfaUser(null);
+          pendingMfaUser.current = null;
         } else if (!result.sessionActive) {
           clearAuth();
+          clearMfaState();
+          setPendingMfaUser(null);
+          pendingMfaUser.current = null;
         }
         return result;
       } finally {
         setLoading(false);
       }
     },
-    [authService, setUser, setLoading, clearAuth]
+    [
+      authService,
+      setUser,
+      setLoading,
+      clearAuth,
+      setMfaRequired,
+      setPendingMfaUser,
+      pendingMfaUser,
+      clearMfaState,
+    ]
   );
 
   const signOut = useCallback(async () => {
@@ -180,13 +264,25 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
     try {
       const result = await authService.signOut();
       clearAuth();
+      clearMfaState();
+      setPendingMfaUser(null);
+      pendingMfaUser.current = null;
       clearSessions();
       clearNotifications();
       return result;
     } finally {
       setLoading(false);
     }
-  }, [authService, clearAuth, clearSessions, clearNotifications, setLoading]);
+  }, [
+    authService,
+    clearAuth,
+    clearMfaState,
+    setPendingMfaUser,
+    clearSessions,
+    clearNotifications,
+    setLoading,
+    pendingMfaUser,
+  ]);
 
   const updateProfile = useCallback(
     async (updates: Partial<AuthUser>) => {
@@ -194,6 +290,9 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
         const result = await authService.updateProfile(updates);
         if (result.user) {
           setUser(result.user);
+          setMfaRequired(false);
+          setPendingMfaUser(null);
+          pendingMfaUser.current = null;
         }
         return result;
       } catch (error) {
@@ -203,7 +302,13 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
         };
       }
     },
-    [authService, setUser]
+    [
+      authService,
+      setUser,
+      setMfaRequired,
+      setPendingMfaUser,
+      pendingMfaUser,
+    ]
   );
 
   return {
@@ -213,5 +318,6 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
     signUp,
     signOut,
     updateProfile,
+    pendingMfaUser,
   };
 }

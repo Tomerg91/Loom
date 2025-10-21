@@ -11,6 +11,7 @@ interface AuthState {
   mfaVerified: boolean;
   mfaSessionToken: string | null;
   isMfaSession: boolean;
+  pendingMfaUser: AuthUser | null;
 }
 
 interface AuthActions {
@@ -25,6 +26,7 @@ interface AuthActions {
   setMfaSessionToken: (token: string | null) => void;
   setMfaSession: (isSession: boolean) => void;
   clearMfaState: () => void;
+  setPendingMfaUser: (user: AuthUser | null) => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -41,22 +43,24 @@ export const useAuthStore = create<AuthStore>()(
       mfaVerified: false,
       mfaSessionToken: null,
       isMfaSession: false,
+      pendingMfaUser: null,
 
       // Actions
-      setUser: (user) => set({ user, error: null }),
-      
+      setUser: (user) => set({ user, error: null, pendingMfaUser: null }),
+
       setLoading: (isLoading) => set({ isLoading }),
-      
+
       setError: (error) => set({ error, isLoading: false }),
-      
-      clearAuth: () => set({ 
-        user: null, 
-        error: null, 
+
+      clearAuth: () => set({
+        user: null,
+        error: null,
         isLoading: false,
         mfaRequired: false,
         mfaVerified: false,
         mfaSessionToken: null,
         isMfaSession: false,
+        pendingMfaUser: null,
       }),
       
       updateUser: (updates) => {
@@ -74,13 +78,16 @@ export const useAuthStore = create<AuthStore>()(
       setMfaSessionToken: (mfaSessionToken) => set({ mfaSessionToken }),
       
       setMfaSession: (isMfaSession) => set({ isMfaSession }),
-      
+
       clearMfaState: () => set({
         mfaRequired: false,
         mfaVerified: false,
         mfaSessionToken: null,
         isMfaSession: false,
+        pendingMfaUser: null,
       }),
+
+      setPendingMfaUser: (pendingMfaUser) => set({ pendingMfaUser }),
     }),
     {
       name: 'auth-storage',
@@ -103,3 +110,4 @@ export const useMfaRequired = () => useAuthStore((state) => state.mfaRequired);
 export const useMfaVerified = () => useAuthStore((state) => state.mfaVerified);
 export const useMfaSessionToken = () => useAuthStore((state) => state.mfaSessionToken);
 export const useIsMfaSession = () => useAuthStore((state) => state.isMfaSession);
+export const usePendingMfaUser = () => useAuthStore((state) => state.pendingMfaUser);

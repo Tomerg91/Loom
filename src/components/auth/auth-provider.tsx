@@ -1,15 +1,16 @@
 'use client';
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, type MutableRefObject } from 'react';
 import { type AuthUser } from '@/lib/auth/auth';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useUnifiedAuth } from '@/lib/auth/use-auth';
+import type { ClientSignInResult } from '@/lib/auth/client-auth';
 
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ user: AuthUser | null; error: string | null }>;
+  signIn: (email: string, password: string) => Promise<ClientSignInResult>;
   signUp: (data: {
     email: string;
     password: string;
@@ -21,6 +22,7 @@ interface AuthContextType {
   }) => Promise<{ user: AuthUser | null; error: string | null; sessionActive: boolean }>;
   signOut: () => Promise<{ error: string | null }>;
   updateProfile: (updates: Partial<AuthUser>) => Promise<{ user: AuthUser | null; error: string | null }>;
+  pendingMfaUser: MutableRefObject<AuthUser | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,11 +33,27 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children, initialUser = null }: AuthProviderProps) {
-  const { user, loading, signIn, signUp, signOut, updateProfile } = useUnifiedAuth({ initialUser });
+  const {
+    user,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    updateProfile,
+    pendingMfaUser,
+  } = useUnifiedAuth({ initialUser });
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, signIn, signUp, signOut, updateProfile }}
+      value={{
+        user,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        updateProfile,
+        pendingMfaUser,
+      }}
     >
       {children}
     </AuthContext.Provider>
@@ -57,16 +75,16 @@ export function useUser(): AuthUser | null {
 }
 
 export function useRequireAuth(): AuthUser | null {
-  const { user, loading } = useAuth();
+  const { user, loading, pendingMfaUser } = useAuth();
   const router = useRouter();
   const locale = useLocale();
-  
+
   if (loading) {
     // Return null during loading state
     return null;
   }
   
-  if (!user) {
+  if (!user || pendingMfaUser.current) {
     // Redirect to login instead of throwing
     if (typeof window !== 'undefined') {
       const path = `/${locale}/auth/signin`;

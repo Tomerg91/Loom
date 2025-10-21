@@ -21,7 +21,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   const t = useTranslations('auth');
   const locale = useLocale();
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, pendingMfaUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,18 +43,39 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
         return;
       }
 
-      console.log('✅ Sign-in successful:', {
-        userId: result.user?.id,
-        mfaEnabled: result.user?.mfaEnabled
-      });
-
       const targetPath = resolveRedirect(locale, redirectTo || '/dashboard');
       console.log('🎯 Target path resolved:', targetPath, { locale, redirectTo });
 
       // Check if MFA is required
-      if (result.user?.mfaEnabled) {
+      if (result.requiresMfa) {
+        const userForMfa = result.pendingUser ?? pendingMfaUser.current;
+
+        if (!userForMfa) {
+          setError(t('signin.error'));
+          setIsLoading(false);
+          return;
+        }
+
+        pendingMfaUser.current = userForMfa;
+
+        if (typeof window !== 'undefined') {
+          try {
+            sessionStorage.setItem(
+              'pendingMfaUser',
+              JSON.stringify({ id: userForMfa.id, email: userForMfa.email })
+            );
+          } catch (storageError) {
+            console.warn('Unable to persist pending MFA user in sessionStorage:', storageError);
+          }
+        }
+
+        console.log('✅ Password verified, MFA required for user:', {
+          userId: userForMfa.id,
+          email: userForMfa.email,
+        });
+
         const query = new URLSearchParams({
-          userId: result.user.id,
+          userId: userForMfa.id,
           redirectTo: targetPath,
         });
         const mfaPath = resolveAuthPath(locale, `/auth/mfa-verify?${query.toString()}`);
@@ -73,7 +94,13 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
           console.error('❌ Navigation failed, using fallback:', navError);
           window.location.href = mfaPath;
         }
+
+        return;
       } else {
+        console.log('✅ Sign-in successful without MFA requirement:', {
+          userId: result.user?.id,
+          email: result.user?.email,
+        });
         console.log('➡️ Navigating to dashboard');
 
         // Await navigation with timeout fallback

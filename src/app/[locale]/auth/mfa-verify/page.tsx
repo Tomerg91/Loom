@@ -5,13 +5,17 @@ import { useLocale } from 'next-intl';
 import { useMemo } from 'react';
 
 import { MfaForm } from '@/modules/auth/components/MfaForm';
+import { useAuth } from '@/components/auth/auth-provider';
 
 export default function MfaVerifyPage() {
   const router = useRouter();
   const locale = useLocale();
   const searchParams = useSearchParams();
+  const { pendingMfaUser } = useAuth();
 
-  const userId = searchParams.get('userId');
+  const queryUserId = searchParams.get('userId');
+  const fallbackUserId = pendingMfaUser.current?.id ?? null;
+  const userId = queryUserId ?? fallbackUserId;
   const rawRedirectTo = searchParams.get('redirectTo') || '/dashboard';
   const safeRedirectTo =
     rawRedirectTo && rawRedirectTo.startsWith('/')

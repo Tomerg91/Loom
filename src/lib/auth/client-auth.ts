@@ -2,6 +2,13 @@ import { supabase as clientSupabase } from '@/modules/platform/supabase/client';
 
 import type { AuthUser, SignInData, SignUpData } from './auth';
 
+export interface ClientSignInResult {
+  user: AuthUser | null;
+  error: string | null;
+  requiresMfa: boolean;
+  pendingUser: AuthUser | null;
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Client-side only auth service - no server dependencies
@@ -101,13 +108,7 @@ export class ClientAuthService {
   /**
    * Sign in an existing user
    */
-  async signIn(
-    data: SignInData
-  ): Promise<{
-    user: AuthUser | null;
-    error: string | null;
-    requiresMFA?: boolean;
-  }> {
+  async signIn(data: SignInData): Promise<ClientSignInResult> {
     try {
       const response = await fetch('/api/auth/signin', {
         method: 'POST',
@@ -124,26 +125,27 @@ export class ClientAuthService {
 
       if (!response.ok || !payload?.success) {
         const errorMessage = payload?.error || 'Invalid email or password';
-        return { user: null, error: errorMessage };
+        return {
+          user: null,
+          error: errorMessage,
+          requiresMfa: false,
+          pendingUser: null,
+        };
       }
 
       const resultData = payload.data || {};
 
-      if (resultData.requiresMFA) {
-        const mfaUser = resultData.user as AuthUser | undefined;
-        if (mfaUser) {
-          // Ensure MFA flag is set so the UI can route appropriately
-          return {
-            user: { ...mfaUser, mfaEnabled: true },
-            error: null,
-            requiresMFA: true,
-          };
-        }
+      const requiresMfa = Boolean(resultData.requiresMFA);
 
+      if (requiresMfa) {
+        const pendingUser = (resultData.user as AuthUser | undefined) ?? null;
         return {
           user: null,
-          error: 'Multi-factor authentication required',
-          requiresMFA: true,
+          error: null,
+          requiresMfa: true,
+          pendingUser: pendingUser
+            ? { ...pendingUser, mfaEnabled: true }
+            : null,
         };
       }
 
@@ -174,11 +176,15 @@ export class ClientAuthService {
       return {
         user: user ?? null,
         error: null,
+        requiresMfa: false,
+        pendingUser: null,
       };
     } catch (error) {
       return {
         user: null,
         error: error instanceof Error ? error.message : 'Unknown error',
+        requiresMfa: false,
+        pendingUser: null,
       };
     }
   }

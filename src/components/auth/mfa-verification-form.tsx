@@ -116,6 +116,14 @@ export function MfaVerificationForm({
       // Clear pending flag set during password sign-in
       document.cookie = `mfa_pending=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`;
 
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.removeItem('pendingMfaUser');
+        } catch (storageError) {
+          console.warn('Failed to clear pending MFA user from sessionStorage:', storageError);
+        }
+      }
+
       await queryClient.invalidateQueries({ queryKey: mfaQueryKeys.status() });
 
       if (onSuccess) {
