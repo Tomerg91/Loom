@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       const { createMFAService } = await import('@/lib/services/mfa-service');
       const mfaService = createMFAService(true);
       requiresMFA = await mfaService.requiresMFA(data.user.id);
-    } catch (e) {
+    } catch (_e) {
       // If MFA service fails, proceed without MFA requirement.
       requiresMFA = false;
     }
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       console.info('[RES]', { id: reqId, path: request.nextUrl.pathname, status: 303, redirect: redirectResolved, durMs: Date.now() - start, mfa: requiresMFA });
     }
     return res;
-  } catch (err) {
+  } catch (_err) {
     const signinUrl = new URL('/auth/signin', request.url);
     signinUrl.searchParams.set('error', 'server_error');
     return NextResponse.redirect(signinUrl, { status: 303 });

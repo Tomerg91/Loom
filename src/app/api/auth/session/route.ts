@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Return the same response object so Set-Cookie headers from Supabase are preserved
     return res;
-  } catch (error) {
+  } catch (_error) {
     return createErrorResponse('Failed to establish session', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }

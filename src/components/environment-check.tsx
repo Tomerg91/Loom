@@ -38,7 +38,7 @@ function checkEnvironmentVariables(): EnvironmentError[] {
       !clientEnv.NEXT_PUBLIC_SUPABASE_URL.startsWith('INVALID_')) {
     try {
       new URL(clientEnv.NEXT_PUBLIC_SUPABASE_URL);
-    } catch (error) {
+    } catch (_error) {
       errors.push({
         variable: 'NEXT_PUBLIC_SUPABASE_URL',
         value: `Invalid URL format: ${clientEnv.NEXT_PUBLIC_SUPABASE_URL}`,

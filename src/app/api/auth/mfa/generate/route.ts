@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     // Validate request body
     try {
       await generateRequestSchema.parseAsync(await request.json().catch(() => ({})));
-    } catch (validationError) {
+    } catch (_validationError) {
       return NextResponse.json(
         { error: 'Invalid request format' },
         { status: 400 }

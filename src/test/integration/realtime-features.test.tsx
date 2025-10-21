@@ -1,5 +1,5 @@
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { renderWithProviders, mockUser, mockCoachUser, mockSupabaseClient, setupTestEnvironment } from '@/test/utils';
@@ -18,17 +18,23 @@ vi.mock('next/navigation', () => ({
 }));
 
 // Mock WebSocket
-global.WebSocket = vi.fn().mockImplementation(() => ({
+const mockWebSocketInstance = {
   close: vi.fn(),
   send: vi.fn(),
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
   readyState: 1,
-  CONNECTING: 0,
-  OPEN: 1,
-  CLOSING: 2,
-  CLOSED: 3,
-}));
+};
+
+const MockWebSocket = vi.fn().mockImplementation(() => mockWebSocketInstance) as any;
+MockWebSocket.CONNECTING = 0;
+MockWebSocket.OPEN = 1;
+MockWebSocket.CLOSING = 2;
+MockWebSocket.CLOSED = 3;
+MockWebSocket.prototype = mockWebSocketInstance;
+
+global.WebSocket = MockWebSocket;
 
 // Mock Supabase realtime
 const mockChannel = {
@@ -91,23 +97,23 @@ const RealtimeNotifications = ({ userId }: { userId: string }) => {
     channelRef.current = channel;
 
     channel
-      .on('INSERT', (payload) => {
+      .on('INSERT', (payload: any) => {
         const notification = payload.new;
-        setNotifications(prev => [notification, ...prev]);
-        
+        setNotifications((prev: any) => [notification, ...prev]);
+
         mockToast({
           title: notification.title,
           description: notification.message,
           variant: 'default',
         });
       })
-      .on('UPDATE', (payload) => {
+      .on('UPDATE', (payload: any) => {
         const updatedNotification = payload.new;
-        setNotifications(prev => 
-          prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
+        setNotifications((prev: any) =>
+          prev.map((n: any) => n.id === updatedNotification.id ? updatedNotification : n)
         );
       })
-      .subscribe((status) => {
+      .subscribe((status: any) => {
         setIsConnected(status === 'SUBSCRIBED');
       });
 
@@ -151,14 +157,14 @@ const SessionAvailability = ({ coachId }: { coachId: string }) => {
     const channel = mockRealtimeClient.channel(`coach_availability:${coachId}`);
 
     channel
-      .on('availability_update', (payload) => {
+      .on('availability_update', (payload: any) => {
         setAvailableSlots(payload.slots);
       })
-      .on('slot_booked', (payload) => {
-        setAvailableSlots(prev => 
-          prev.filter(slot => slot.id !== payload.slotId)
+      .on('slot_booked', (payload: any) => {
+        setAvailableSlots((prev: any) =>
+          prev.filter((slot: any) => slot.id !== payload.slotId)
         );
-        
+
         if (payload.bookingUserId !== mockUser.id) {
           mockToast({
             title: 'Slot No Longer Available',
@@ -167,8 +173,8 @@ const SessionAvailability = ({ coachId }: { coachId: string }) => {
           });
         }
       })
-      .on('slot_cancelled', (payload) => {
-        setAvailableSlots(prev => [...prev, payload.slot]);
+      .on('slot_cancelled', (payload: any) => {
+        setAvailableSlots((prev: any) => [...prev, payload.slot]);
       })
       .subscribe();
 
@@ -179,10 +185,10 @@ const SessionAvailability = ({ coachId }: { coachId: string }) => {
 
   const handleBookSlot = async (slotId: string) => {
     setBookingInProgress(true);
-    
+
     // Optimistic update
-    setAvailableSlots(prev => prev.filter(slot => slot.id !== slotId));
-    
+    setAvailableSlots((prev: any) => prev.filter((slot: any) => slot.id !== slotId));
+
     try {
       const response = await fetch('/api/sessions/book', {
         method: 'POST',
@@ -201,9 +207,9 @@ const SessionAvailability = ({ coachId }: { coachId: string }) => {
       });
     } catch (error) {
       // Revert optimistic update on error
-      const originalSlot = availableSlots.find(slot => slot.id === slotId);
+      const originalSlot = availableSlots.find((slot: any) => slot.id === slotId);
       if (originalSlot) {
-        setAvailableSlots(prev => [...prev, originalSlot]);
+        setAvailableSlots((prev: any) => [...prev, originalSlot]);
       }
 
       mockToast({
@@ -249,20 +255,20 @@ const SessionCollaboration = ({ sessionId, userId }: { sessionId: string; userId
     const channel = mockRealtimeClient.channel(`session:${sessionId}`);
 
     channel
-      .on('state_change', (payload) => {
-        setSessionState(prev => ({ ...prev, ...payload.changes }));
+      .on('state_change', (payload: any) => {
+        setSessionState((prev: any) => ({ ...prev, ...payload.changes }));
       })
-      .on('user_typing', (payload) => {
-        setIsTyping(prev => ({ ...prev, [payload.userId]: payload.isTyping }));
-        
+      .on('user_typing', (payload: any) => {
+        setIsTyping((prev: any) => ({ ...prev, [payload.userId]: payload.isTyping }));
+
         if (payload.isTyping) {
           setTimeout(() => {
-            setIsTyping(prev => ({ ...prev, [payload.userId]: false }));
+            setIsTyping((prev: any) => ({ ...prev, [payload.userId]: false }));
           }, 3000);
         }
       })
-      .on('user_joined', (payload) => {
-        setSessionState(prev => ({
+      .on('user_joined', (payload: any) => {
+        setSessionState((prev: any) => ({
           ...prev,
           participants: [...prev.participants, payload.user],
         }));
@@ -273,10 +279,10 @@ const SessionCollaboration = ({ sessionId, userId }: { sessionId: string; userId
           variant: 'default',
         });
       })
-      .on('user_left', (payload) => {
-        setSessionState(prev => ({
+      .on('user_left', (payload: any) => {
+        setSessionState((prev: any) => ({
           ...prev,
-          participants: prev.participants.filter(p => p.id !== payload.userId),
+          participants: prev.participants.filter((p: any) => p.id !== payload.userId),
         }));
       })
       .subscribe();
@@ -287,8 +293,8 @@ const SessionCollaboration = ({ sessionId, userId }: { sessionId: string; userId
   }, [sessionId]);
 
   const handleNotesChange = (notes: string) => {
-    setSessionState(prev => ({ ...prev, notes }));
-    
+    setSessionState((prev: any) => ({ ...prev, notes }));
+
     // Send typing indicator
     mockChannel.send({
       type: 'user_typing',
@@ -311,8 +317,8 @@ const SessionCollaboration = ({ sessionId, userId }: { sessionId: string; userId
       </div>
       
       <div data-testid="typing-indicators">
-        {Object.entries(isTyping).map(([userId, typing]: [string, boolean]) => 
-          typing && <div key={userId}>{userId} is typing...</div>
+        {Object.entries(isTyping).map(([userId, typing]) =>
+          typing ? <div key={userId}>{userId} is typing...</div> : null
         )}
       </div>
       
@@ -363,7 +369,8 @@ describe('Real-time Features Integration', () => {
       expect(mockChannel.subscribe).toHaveBeenCalled();
 
       // Simulate receiving a notification
-      const insertCallback = mockChannel.on.mock.calls.find(call => call[0] === 'INSERT')[1];
+      const insertCallback = mockChannel.on.mock.calls.find(call => call[0] === 'INSERT')?.[1];
+      expect(insertCallback).toBeDefined();
       const mockNotification = {
         new: {
           id: 'notif-123',
@@ -376,7 +383,7 @@ describe('Real-time Features Integration', () => {
       };
 
       act(() => {
-        insertCallback(mockNotification);
+        insertCallback!(mockNotification);
       });
 
       await waitFor(() => {
@@ -394,7 +401,8 @@ describe('Real-time Features Integration', () => {
       renderWithProviders(<RealtimeNotifications userId={mockUser.id} />);
 
       // Simulate notification update
-      const updateCallback = mockChannel.on.mock.calls.find(call => call[0] === 'UPDATE')[1];
+      const updateCallback = mockChannel.on.mock.calls.find(call => call[0] === 'UPDATE')?.[1];
+      expect(updateCallback).toBeDefined();
       const updatedNotification = {
         new: {
           id: 'notif-123',
@@ -405,7 +413,7 @@ describe('Real-time Features Integration', () => {
       };
 
       act(() => {
-        updateCallback(updatedNotification);
+        updateCallback!(updatedNotification);
       });
 
       await waitFor(() => {
@@ -466,10 +474,11 @@ describe('Real-time Features Integration', () => {
       expect(mockRealtimeClient.channel).toHaveBeenCalledWith(`coach_availability:${mockCoachUser.id}`);
 
       // Simulate availability update
-      const availabilityCallback = mockChannel.on.mock.calls.find(call => call[0] === 'availability_update')[1];
-      
+      const availabilityCallback = mockChannel.on.mock.calls.find(call => call[0] === 'availability_update')?.[1];
+      expect(availabilityCallback).toBeDefined();
+
       act(() => {
-        availabilityCallback({ slots: mockSlots });
+        availabilityCallback!({ slots: mockSlots });
       });
 
       await waitFor(() => {
@@ -490,10 +499,11 @@ describe('Real-time Features Integration', () => {
       setAvailableSlots(mockSlots);
 
       // Simulate another user booking the slot
-      const slotBookedCallback = mockChannel.on.mock.calls.find(call => call[0] === 'slot_booked')[1];
-      
+      const slotBookedCallback = mockChannel.on.mock.calls.find(call => call[0] === 'slot_booked')?.[1];
+      expect(slotBookedCallback).toBeDefined();
+
       act(() => {
-        slotBookedCallback({
+        slotBookedCallback!({
           slotId: 'slot-1',
           bookingUserId: 'other-user-123',
         });
@@ -619,10 +629,11 @@ describe('Real-time Features Integration', () => {
       );
 
       // Simulate another user typing
-      const typingCallback = mockChannel.on.mock.calls.find(call => call[0] === 'user_typing')[1];
-      
+      const typingCallback = mockChannel.on.mock.calls.find(call => call[0] === 'user_typing')?.[1];
+      expect(typingCallback).toBeDefined();
+
       act(() => {
-        typingCallback({
+        typingCallback!({
           userId: 'other-user-123',
           isTyping: true,
         });
@@ -648,10 +659,11 @@ describe('Real-time Features Integration', () => {
       );
 
       // Simulate user joining
-      const joinCallback = mockChannel.on.mock.calls.find(call => call[0] === 'user_joined')[1];
-      
+      const joinCallback = mockChannel.on.mock.calls.find(call => call[0] === 'user_joined')?.[1];
+      expect(joinCallback).toBeDefined();
+
       act(() => {
-        joinCallback({
+        joinCallback!({
           user: { id: 'user-456', name: 'John Doe' },
         });
       });
@@ -667,10 +679,11 @@ describe('Real-time Features Integration', () => {
       expect(screen.getByTestId('session-participants')).toHaveTextContent('Participants: 1');
 
       // Simulate user leaving
-      const leaveCallback = mockChannel.on.mock.calls.find(call => call[0] === 'user_left')[1];
-      
+      const leaveCallback = mockChannel.on.mock.calls.find(call => call[0] === 'user_left')?.[1];
+      expect(leaveCallback).toBeDefined();
+
       act(() => {
-        leaveCallback({
+        leaveCallback!({
           userId: 'user-456',
         });
       });
@@ -721,9 +734,9 @@ describe('Real-time Features Integration', () => {
         const handleReconnect = () => {
           setIsReconnecting(true);
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-          
+
           setTimeout(() => {
-            setReconnectAttempts(prev => prev + 1);
+            setReconnectAttempts((prev: any) => prev + 1);
             setIsReconnecting(false);
             // Attempt reconnection
             mockChannel.subscribe();

@@ -109,7 +109,7 @@ async function checkDatabaseHealth(supabase: any) {
       responseTime,
     };
 
-  } catch (error) {
+  } catch (_error) {
     return {
       status: 'error' as const,
       connections: 0,
@@ -178,7 +178,7 @@ async function checkCacheHealth() {
       hitRate: cacheResult.hitRate,
       memoryUsed: cacheResult.memoryUsed,
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       status: 'error' as const,
       hitRate: 0,
@@ -215,7 +215,7 @@ async function checkAnalyticsService(supabase: any): Promise<'healthy' | 'warnin
       .limit(1);
     
     return error ? 'error' : 'healthy';
-  } catch (error) {
+  } catch (_error) {
     return 'error';
   }
 }
@@ -229,7 +229,7 @@ async function checkNotificationsService(supabase: any): Promise<'healthy' | 'wa
       .limit(1);
     
     return error ? 'error' : 'healthy';
-  } catch (error) {
+  } catch (_error) {
     return 'error';
   }
 }
@@ -243,7 +243,7 @@ async function checkFileStorageService(supabase: any): Promise<'healthy' | 'warn
     
     // Storage might not be set up yet, so only error if there's a real error
     return error && error.message.includes('not found') ? 'warning' : 'healthy';
-  } catch (error) {
+  } catch (_error) {
     return 'warning'; // Non-critical if file storage isn't fully configured
   }
 }

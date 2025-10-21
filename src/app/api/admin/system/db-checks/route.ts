@@ -14,7 +14,7 @@ export const GET = compose(
         return createErrorResponse({ code: 'DB_HEALTH_RPC_ERROR', message: error.message }, HTTP_STATUS.INTERNAL_SERVER_ERROR);
       }
       return createSuccessResponse(data);
-    } catch (err) {
+    } catch (_err) {
       return createErrorResponse('Failed to run DB checks', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }, { name: 'admin:db-checks' })),

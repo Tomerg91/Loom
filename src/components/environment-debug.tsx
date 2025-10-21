@@ -73,7 +73,7 @@ export function EnvironmentDebug({ forceShow = false }: { forceShow?: boolean })
             urlStatus.issues.push('Contains placeholder value');
           }
 
-        } catch (error) {
+        } catch (_error) {
           urlStatus.issues.push('Invalid URL format');
         }
       } else {

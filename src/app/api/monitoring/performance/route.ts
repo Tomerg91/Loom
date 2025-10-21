@@ -149,8 +149,8 @@ export async function GET(request: NextRequest) {
     };
     
     return NextResponse.json(summary);
-    
-  } catch (error) {
+
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to retrieve performance metrics' },
       { status: 500 }

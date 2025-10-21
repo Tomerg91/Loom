@@ -238,7 +238,7 @@ export function AdvancedFileManager({
       const data = await response.json();
       setFiles(data.files || []);
       onFilesChange?.(data.files || []);
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to refresh files',
@@ -272,7 +272,7 @@ export function AdvancedFileManager({
   const handleDownload = useCallback(async (file: FileItem) => {
     try {
       window.open(`/api/files/${file.id}/download`, '_blank');
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to download file',

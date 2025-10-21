@@ -48,9 +48,9 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
       if (!validation.success) {
         return createErrorResponse(validation.error, HTTP_STATUS.UNPROCESSABLE_ENTITY);
       }
-      
+
       validatedData = validation.data;
-    } catch (error) {
+    } catch (_error) {
       return createErrorResponse('Invalid JSON in request body', HTTP_STATUS.BAD_REQUEST);
     }
   }

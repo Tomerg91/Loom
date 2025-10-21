@@ -10,23 +10,24 @@ export type TaskRow = {
   id: string;
   title: string;
   description: string | null;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  priority: 'low' | 'medium' | 'high';
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'OVERDUE';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
   due_date: string | null;
   coach_id: string;
-  client_id: string | null;
+  client_id: string;
   category_id: string | null;
+  visibility_to_coach: boolean;
+  recurrence_rule: unknown | null;
+  archived_at: string | null;
   created_at: string;
   updated_at: string;
 };
 
 export type TaskCategoryRow = {
   id: string;
-  name: string;
-  description: string | null;
+  label: string;
   coach_id: string;
-  color: string | null;
-  icon: string | null;
+  color_hex: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -34,9 +35,10 @@ export type TaskCategoryRow = {
 export type TaskInstanceRow = {
   id: string;
   task_id: string;
-  client_id: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  started_at: string | null;
+  scheduled_date: string | null;
+  due_date: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'OVERDUE';
+  completion_percentage: number;
   completed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -44,17 +46,23 @@ export type TaskInstanceRow = {
 
 export type TaskProgressUpdateRow = {
   id: string;
-  instance_id: string;
+  task_instance_id: string;
+  author_id: string;
+  percentage: number;
   note: string | null;
-  progress_percentage: number;
+  is_visible_to_coach: boolean;
   created_at: string;
-  updated_at: string;
 };
 
 export type TaskAttachmentRow = {
   id: string;
-  task_id: string;
-  file_id: string;
+  task_instance_id: string | null;
+  progress_update_id: string | null;
+  file_url: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string | null;
+  uploaded_by_id: string | null;
   created_at: string;
 };
 
@@ -79,8 +87,8 @@ export type Database = {
       };
       task_progress_updates: {
         Row: TaskProgressUpdateRow;
-        Insert: Omit<TaskProgressUpdateRow, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<TaskProgressUpdateRow, 'id' | 'created_at' | 'updated_at'>>;
+        Insert: Omit<TaskProgressUpdateRow, 'id' | 'created_at'>;
+        Update: Partial<Omit<TaskProgressUpdateRow, 'id' | 'created_at'>>;
       };
       task_attachments: {
         Row: TaskAttachmentRow;
