@@ -58,6 +58,8 @@ export interface MfaVerifyPayload {
   code: string;
   /** Method the user selected (TOTP or backup code). */
   method: MfaMethod;
+  /** Whether the user opted to trust the current device. */
+  rememberDevice?: boolean;
 }
 
 /**

@@ -1,39 +1,50 @@
 /**
  * MFA Verify API Endpoint
  * POST /api/auth/mfa/verify
- * 
+ *
  * Verifies MFA codes during login process.
  * Supports both TOTP codes and backup codes.
  * This endpoint is called after initial username/password authentication.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
-import { createAuthService } from '@/lib/auth/auth';
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+
+import {
+  createSuccessResponse,
+  createErrorResponse,
   withErrorHandling,
-  HTTP_STATUS
+  HTTP_STATUS,
 } from '@/lib/api/utils';
 import { rateLimit } from '@/lib/security/rate-limit';
-import { z } from 'zod';
+import {
+  createMfaService,
+  getClientIP,
+  getUserAgent,
+} from '@/lib/services/mfa-service';
+import { MFA_TRUSTED_DEVICE_COOKIE } from '@/modules/auth/constants';
 
 // Request validation schema
 const verifyRequestSchema = z.object({
   userId: z.string().uuid('Invalid user ID format'),
-  code: z.string()
+  code: z
+    .string()
     .min(6, 'Code must be at least 6 characters')
     .max(8, 'Code must be at most 8 characters')
-    .regex(/^[A-Z0-9]+$/, 'Code must contain only uppercase letters and numbers'),
+    .regex(
+      /^[A-Z0-9]+$/,
+      'Code must contain only uppercase letters and numbers'
+    ),
   method: z.enum(['totp', 'backup_code']).default('totp'),
+  rememberDevice: z.boolean().optional(),
 });
 
 // Apply strict rate limiting for MFA verification to prevent brute force attacks
-const rateLimitedHandler = rateLimit(10, 60000, { // 10 attempts per minute
+const rateLimitedHandler = rateLimit(10, 60000, {
+  // 10 attempts per minute
   blockDuration: 30 * 60 * 1000, // 30 minutes block for failed attempts
   enableSuspiciousActivityDetection: true,
-  skipSuccessfulRequests: false // Count all MFA attempts
+  skipSuccessfulRequests: false, // Count all MFA attempts
 });
 
 export const POST = withErrorHandling(
@@ -50,9 +61,12 @@ export const POST = withErrorHandling(
           ip: request.headers.get('x-forwarded-for') || 'unknown',
           userAgent: request.headers.get('user-agent'),
           timestamp: new Date().toISOString(),
-          validationError: validationError instanceof z.ZodError ? validationError.errors : validationError
+          validationError:
+            validationError instanceof z.ZodError
+              ? validationError.errors
+              : validationError,
         });
-        
+
         return createErrorResponse(
           'Invalid request format',
           HTTP_STATUS.BAD_REQUEST
@@ -69,7 +83,7 @@ export const POST = withErrorHandling(
         method: requestData.method,
         ipAddress,
         userAgent,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       // Initialize MFA service
@@ -81,9 +95,9 @@ export const POST = withErrorHandling(
         console.warn('MFA verification attempted for user without MFA:', {
           userId: requestData.userId,
           ipAddress,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-        
+
         return createErrorResponse(
           'MFA is not enabled for this user',
           HTTP_STATUS.BAD_REQUEST
@@ -107,13 +121,13 @@ export const POST = withErrorHandling(
           error: result.error,
           ipAddress,
           userAgent,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-        
+
         // Return specific error messages for different failure scenarios
         let status: number = HTTP_STATUS.BAD_REQUEST;
-        let errorMessage = result.error || 'MFA verification failed';
-        
+        const errorMessage = result.error || 'MFA verification failed';
+
         if (errorMessage.includes('Too many attempts')) {
           status = HTTP_STATUS.TOO_MANY_REQUESTS;
         } else if (errorMessage.includes('not enabled')) {
@@ -132,28 +146,74 @@ export const POST = withErrorHandling(
         method: requestData.method,
         backupCodesRemaining: mfaStatus.backupCodesRemaining,
         ipAddress,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
-      return createSuccessResponse({
-        verified: true,
-        method: requestData.method,
-        backupCodesRemaining: mfaStatus.backupCodesRemaining,
-        // Include warning if backup codes are running low
-        warning: mfaStatus.backupCodesRemaining > 0 && mfaStatus.backupCodesRemaining <= 2 
-          ? 'You have few backup codes remaining. Consider generating new ones.' 
-          : undefined,
-      }, 'MFA verification successful');
+      let trustedDeviceCookie: { value: string; maxAge: number } | null = null;
+      if (requestData.rememberDevice) {
+        const tokenResult = await mfaService.issueTrustedDeviceToken({
+          userId: requestData.userId,
+          ipAddress,
+          userAgent,
+        });
 
+        if (tokenResult.success) {
+          trustedDeviceCookie = {
+            value: `${tokenResult.deviceId}.${tokenResult.token}`,
+            maxAge: tokenResult.maxAgeSeconds,
+          };
+        } else {
+          console.warn('Trusted device token issuance failed:', {
+            userId: requestData.userId,
+            error: tokenResult.error,
+          });
+        }
+      }
+
+      const response = createSuccessResponse(
+        {
+          verified: true,
+          method: requestData.method,
+          backupCodesRemaining: mfaStatus.backupCodesRemaining,
+          // Include warning if backup codes are running low
+          warning:
+            mfaStatus.backupCodesRemaining > 0 &&
+            mfaStatus.backupCodesRemaining <= 2
+              ? 'You have few backup codes remaining. Consider generating new ones.'
+              : undefined,
+        },
+        'MFA verification successful'
+      );
+
+      if (trustedDeviceCookie) {
+        response.cookies.set({
+          name: MFA_TRUSTED_DEVICE_COOKIE,
+          value: trustedDeviceCookie.value,
+          httpOnly: true,
+          secure: true,
+          sameSite: 'strict',
+          maxAge: trustedDeviceCookie.maxAge,
+          path: '/',
+        });
+      } else {
+        response.cookies.set({
+          name: MFA_TRUSTED_DEVICE_COOKIE,
+          value: '',
+          maxAge: 0,
+          path: '/',
+        });
+      }
+
+      return response;
     } catch (error) {
       // Log error for monitoring
       console.error('MFA verify error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),
-        ip: request.headers.get('x-forwarded-for') || 'unknown'
+        ip: request.headers.get('x-forwarded-for') || 'unknown',
       });
-      
+
       return createErrorResponse(
         'Failed to verify MFA code',
         HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -180,14 +240,15 @@ export const GET = withErrorHandling(
       }
 
       // Validate UUID format
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(userId)) {
         console.warn('Invalid MFA status check attempt:', {
           userId,
           ip: request.headers.get('x-forwarded-for') || 'unknown',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-        
+
         return createErrorResponse(
           'Invalid userId format',
           HTTP_STATUS.BAD_REQUEST
@@ -198,22 +259,24 @@ export const GET = withErrorHandling(
       const requiresMFA = await mfaService.requiresMFA(userId);
       const mfaStatus = await mfaService.getMFAStatus(userId);
 
-      return createSuccessResponse({
-        requiresMFA,
-        isEnabled: mfaStatus.isEnabled,
-        isSetup: mfaStatus.isSetup,
-        backupCodesAvailable: mfaStatus.backupCodesRemaining > 0,
-      }, 'MFA status retrieved successfully');
-
+      return createSuccessResponse(
+        {
+          requiresMFA,
+          isEnabled: mfaStatus.isEnabled,
+          isSetup: mfaStatus.isSetup,
+          backupCodesAvailable: mfaStatus.backupCodesRemaining > 0,
+        },
+        'MFA status retrieved successfully'
+      );
     } catch (error) {
       // Log error for monitoring
       console.error('MFA status check error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),
-        ip: request.headers.get('x-forwarded-for') || 'unknown'
+        ip: request.headers.get('x-forwarded-for') || 'unknown',
       });
-      
+
       return createErrorResponse(
         'Failed to check MFA status',
         HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -224,9 +287,15 @@ export const GET = withErrorHandling(
 
 // Prevent other HTTP methods
 export async function PUT() {
-  return createErrorResponse('Method not allowed', HTTP_STATUS.METHOD_NOT_ALLOWED);
+  return createErrorResponse(
+    'Method not allowed',
+    HTTP_STATUS.METHOD_NOT_ALLOWED
+  );
 }
 
 export async function DELETE() {
-  return createErrorResponse('Method not allowed', HTTP_STATUS.METHOD_NOT_ALLOWED);
+  return createErrorResponse(
+    'Method not allowed',
+    HTTP_STATUS.METHOD_NOT_ALLOWED
+  );
 }
