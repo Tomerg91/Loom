@@ -1,8 +1,9 @@
-import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
-import { getServerUser } from '@/lib/auth/auth';
-import { AppLayout } from '@/components/layout/app-layout';
+import { Suspense } from 'react';
+
 import { ErrorDisplay } from '@/components/error/error-display';
+import { AppLayout } from '@/components/layout/app-layout';
+import { getServerUser } from '@/lib/auth/auth';
 import type { UserRole } from '@/types';
 
 export interface PageWrapperProps {

@@ -1,19 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { createClient } from '@/lib/supabase/server';
 
-vi.mock('@/lib/supabase/server', () => {
-  // Mock Supabase server client
-  const mockSupabaseServerClient = {
+// Mock Supabase server client
+const mockSupabaseServerClient = {
+  from: vi.fn(),
+  rpc: vi.fn(),
+  auth: {
+    getUser: vi.fn(),
+  },
+  storage: {
     from: vi.fn(),
-    rpc: vi.fn(),
-    auth: {
-      getUser: vi.fn(),
-    },
-    storage: {
-      from: vi.fn(),
-    },
-  };
+  },
+};
 
+vi.mock('@/lib/supabase/server', () => {
   return {
     createClient: vi.fn().mockResolvedValue(mockSupabaseServerClient),
   };
@@ -303,7 +304,7 @@ describe('Database Transaction Workflows', () => {
 
             return { success: true };
           } catch (error) {
-            throw new Error(`Cancellation failed: ${error.message}`);
+            throw new Error(`Cancellation failed: ${(error as Error).message}`);
           }
         }
       };
@@ -361,7 +362,7 @@ describe('Database Transaction Workflows', () => {
               .eq('role', newRole);
 
             if (rolePermissions.data?.length) {
-              const permissionInserts = rolePermissions.data.map(p => ({
+              const permissionInserts = rolePermissions.data.map((p: any) => ({
                 user_id: userId,
                 permission_id: p.permission_id,
                 granted_at: new Date().toISOString(),
@@ -406,7 +407,7 @@ describe('Database Transaction Workflows', () => {
 
             return { success: true, newRole };
           } catch (error) {
-            throw new Error(`Role change failed: ${error.message}`);
+            throw new Error(`Role change failed: ${(error as Error).message}`);
           }
         }
       };
@@ -437,7 +438,7 @@ describe('Database Transaction Workflows', () => {
       const bulkRoleService = {
         async bulkUpdateRoles(userIds: string[], newRole: string) {
           const tx = mockBulkTransaction;
-          const results = { succeeded: [], failed: [] };
+          const results: { succeeded: string[]; failed: string[] } = { succeeded: [], failed: [] };
 
           try {
             // Batch update users
@@ -475,7 +476,7 @@ describe('Database Transaction Workflows', () => {
             return results;
           } catch (error) {
             results.failed = userIds;
-            throw new Error(`Bulk role update failed: ${error.message}`);
+            throw new Error(`Bulk role update failed: ${(error as Error).message}`);
           }
         }
       };
@@ -536,11 +537,11 @@ describe('Database Transaction Workflows', () => {
 
             if (sessions.data?.length) {
               await tx.from('sessions')
-                .update({ 
+                .update({
                   status: 'cancelled',
                   cancellation_reason: 'User account deleted',
                 })
-                .in('id', sessions.data.map(s => s.id));
+                .in('id', sessions.data.map((s: any) => s.id));
             }
 
             // 2. Handle user files
@@ -576,7 +577,7 @@ describe('Database Transaction Workflows', () => {
               filesAffected: files.data?.length || 0,
             };
           } catch (error) {
-            throw new Error(`User deletion failed: ${error.message}`);
+            throw new Error(`User deletion failed: ${(error as Error).message}`);
           }
         }
       };
@@ -685,9 +686,9 @@ describe('Database Transaction Workflows', () => {
 
             // Validate foreign key relationships before restoring sessions
             if (backupData.sessions?.length) {
-              const validUserIds = backupData.users.map(u => u.id);
-              const validSessions = backupData.sessions.filter(session => 
-                validUserIds.includes(session.coachId) && 
+              const validUserIds = backupData.users.map((u: any) => u.id);
+              const validSessions = backupData.sessions.filter((session: any) =>
+                validUserIds.includes(session.coachId) &&
                 validUserIds.includes(session.clientId)
               );
 
@@ -698,13 +699,13 @@ describe('Database Transaction Workflows', () => {
 
               const invalidSessions = backupData.sessions.length - validSessions.length;
               if (invalidSessions > 0) {
-                results.errors.push(`${invalidSessions} sessions skipped due to invalid user references`);
+                (results.errors as string[]).push(`${invalidSessions} sessions skipped due to invalid user references`);
               }
             }
 
             return results;
           } catch (error) {
-            throw new Error(`Restore failed: ${error.message}`);
+            throw new Error(`Restore failed: ${(error as Error).message}`);
           }
         }
       };
@@ -745,7 +746,7 @@ describe('Database Transaction Workflows', () => {
             return { success: true };
           } catch (error) {
             // Rollback would happen here in a real transaction
-            throw new Error(`Backup restore failed due to data corruption: ${error.message}`);
+            throw new Error(`Backup restore failed due to data corruption: ${(error as Error).message}`);
           }
         }
       };
@@ -837,14 +838,14 @@ describe('Database Transaction Workflows', () => {
             // 6. Update session statistics
             await tx.from('coach_stats')
               .update({
-                total_sessions: tx.raw('total_sessions + 1'),
+                total_sessions: (tx as any).raw('total_sessions + 1'),
                 updated_at: new Date().toISOString(),
               })
               .eq('coach_id', coachId);
 
             return { success: true };
           } catch (error) {
-            throw new Error(`Session completion failed: ${error.message}`);
+            throw new Error(`Session completion failed: ${(error as Error).message}`);
           }
         }
       };

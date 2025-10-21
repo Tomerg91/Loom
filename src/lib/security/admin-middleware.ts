@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authService, type Session } from '@/lib/services/auth-service';
-import { adminSystemService } from '@/lib/database/admin-system';
+
 import { ApiResponseHelper } from '@/lib/api/types';
+import { adminSystemService } from '@/lib/database/admin-system';
 import { applyRateLimit } from '@/lib/security/rate-limit';
+import { authService, type Session } from '@/lib/services/auth-service';
 
 export interface AdminMiddlewareOptions {
   requireSuperAdmin?: boolean;

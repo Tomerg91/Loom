@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { LazyAdminAnalytics, LoadingSpinner } from '@/components/lazy-components';
+
 import { AdminRoute } from '@/components/auth/route-guard';
+import { LazyAdminAnalytics, LoadingSpinner } from '@/components/lazy-components';
 
 export default function AdminAnalyticsPageRoute() {
   return (

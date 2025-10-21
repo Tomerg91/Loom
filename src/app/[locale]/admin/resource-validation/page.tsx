@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { AdminRoute } from '@/components/auth/route-guard';
+
 import { ResourceValidationReport } from '@/components/admin/resource-validation-report';
+import { AdminRoute } from '@/components/auth/route-guard';
 import { LoadingSpinner } from '@/components/lazy-components';
 
 export const dynamic = 'force-dynamic';

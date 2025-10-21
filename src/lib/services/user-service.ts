@@ -1,5 +1,5 @@
-import { getSupabaseClient } from '@/lib/db';
 import { ApiError } from '@/lib/api/errors';
+import { getSupabaseClient } from '@/lib/db';
 import type { Database } from '@/types/supabase';
 
 type UserRole = Database['public']['Tables']['users']['Row']['role'];

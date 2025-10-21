@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+import { ApiResponse } from '@/lib/api/types';
 import { getServerUser } from '@/lib/auth/auth';
 import { createClient } from '@/lib/supabase/server';
-import { ApiResponse } from '@/lib/api/types';
 
 export interface ClientProgressData {
   clientId: string;
@@ -195,7 +196,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
           const startTime = new Date(`2000-01-01T${avail.start_time}`);
           const endTime = new Date(`2000-01-01T${avail.end_time}`);
           
-          let currentSlotTime = new Date(startTime);
+          const currentSlotTime = new Date(startTime);
           while (currentSlotTime < endTime) {
             const slotDateTime = new Date(currentDate);
             slotDateTime.setHours(currentSlotTime.getHours(), currentSlotTime.getMinutes());

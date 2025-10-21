@@ -1,6 +1,7 @@
 'use client';
 
 import { lazy, Suspense } from 'react';
+
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Lazy load Recharts components to reduce initial bundle size

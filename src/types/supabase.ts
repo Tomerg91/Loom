@@ -17,10 +17,10 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
+          operationName?: string
+          query?: string
           extensions?: Json
           variables?: Json
-          query?: string
-          operationName?: string
         }
         Returns: Json
       }
@@ -3203,120 +3203,6 @@ export type Database = {
           },
         ]
       }
-      practice_journal_entries: {
-        Row: {
-          body_areas: string[] | null
-          client_id: string
-          content: string
-          created_at: string | null
-          emotions: string[] | null
-          energy_level: number | null
-          id: string
-          insights: string | null
-          mood_rating: number | null
-          practices_done: string[] | null
-          sensations: string[] | null
-          session_id: string | null
-          shared_at: string | null
-          shared_with_coach: boolean | null
-          title: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          body_areas?: string[] | null
-          client_id: string
-          content: string
-          created_at?: string | null
-          emotions?: string[] | null
-          energy_level?: number | null
-          id?: string
-          insights?: string | null
-          mood_rating?: number | null
-          practices_done?: string[] | null
-          sensations?: string[] | null
-          session_id?: string | null
-          shared_at?: string | null
-          shared_with_coach?: boolean | null
-          title?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          body_areas?: string[] | null
-          client_id?: string
-          content?: string
-          created_at?: string | null
-          emotions?: string[] | null
-          energy_level?: number | null
-          id?: string
-          insights?: string | null
-          mood_rating?: number | null
-          practices_done?: string[] | null
-          sensations?: string[] | null
-          session_id?: string | null
-          shared_at?: string | null
-          shared_with_coach?: boolean | null
-          title?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "practice_journal_entries_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "client_progress"
-            referencedColumns: ["client_id"]
-          },
-          {
-            foreignKeyName: "practice_journal_entries_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "client_progress_summary"
-            referencedColumns: ["client_id"]
-          },
-          {
-            foreignKeyName: "practice_journal_entries_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "coach_statistics"
-            referencedColumns: ["coach_id"]
-          },
-          {
-            foreignKeyName: "practice_journal_entries_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "coach_stats"
-            referencedColumns: ["coach_id"]
-          },
-          {
-            foreignKeyName: "practice_journal_entries_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "mfa_admin_dashboard"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "practice_journal_entries_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "practice_journal_entries_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "session_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "practice_journal_entries_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       push_subscriptions: {
         Row: {
           auth_key: string
@@ -5732,9 +5618,9 @@ export type Database = {
     Functions: {
       block_ip_address: {
         Args: {
+          p_ip_address: unknown
           p_blocked_by?: string
           p_expires_at?: string
-          p_ip_address: unknown
           p_reason: string
         }
         Returns: string
@@ -5754,8 +5640,8 @@ export type Database = {
       cancel_scheduled_notifications: {
         Args: {
           filter_type?: Database["public"]["Enums"]["notification_type"]
-          filter_channel?: string
           filter_user_id?: string
+          filter_channel?: string
           filter_session_id?: string
         }
         Returns: number
@@ -5766,10 +5652,10 @@ export type Database = {
       }
       check_mfa_ip_rate_limit: {
         Args: {
-          user_uuid: string
-          ip_addr: unknown
-          time_window?: unknown
           max_attempts?: number
+          time_window?: unknown
+          ip_addr: unknown
+          user_uuid: string
         }
         Returns: boolean
       }
@@ -5778,7 +5664,7 @@ export type Database = {
         Returns: boolean
       }
       check_suspicious_activity: {
-        Args: { time_window?: unknown; user_id: string }
+        Args: { user_id: string; time_window?: unknown }
         Returns: Json
       }
       cleanup_expired_file_shares: {
@@ -5813,29 +5699,29 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           inactive_subscriptions_deleted: number
-          old_logs_deleted: number
           old_scheduled_deleted: number
+          old_logs_deleted: number
         }[]
       }
       cleanup_notification_system: {
         Args: Record<PropertyKey, never>
         Returns: {
+          jobs_cleaned: number
           scheduled_notifications_cleaned: number
           delivery_logs_cleaned: number
-          jobs_cleaned: number
         }[]
       }
       cleanup_old_logs: {
         Args: { p_dry_run?: boolean; p_days?: number }
         Returns: {
-          records_to_delete: number
-          table_name: string
           newest_record: string
           oldest_record: string
+          records_to_delete: number
+          table_name: string
         }[]
       }
       cleanup_old_mfa_data: {
-        Args: { events_retention?: unknown; attempts_retention?: unknown }
+        Args: { attempts_retention?: unknown; events_retention?: unknown }
         Returns: number
       }
       cleanup_old_notifications: {
@@ -5849,65 +5735,65 @@ export type Database = {
       cleanup_old_security_logs: {
         Args: { retention_days?: number }
         Returns: {
-          expired_blocks: number
           deleted_violations: number
           deleted_logs: number
+          expired_blocks: number
         }[]
       }
       comprehensive_database_cleanup: {
         Args: { dry_run?: boolean }
         Returns: {
-          records_affected: number
           action_taken: string
+          records_affected: number
           cleanup_type: string
         }[]
       }
       create_file_version: {
         Args: {
-          p_filename: string
-          p_file_type: string
-          p_file_size: number
-          p_file_hash: string
-          p_description?: string
           p_change_summary?: string
-          p_is_major_version?: boolean
-          p_created_by?: string
-          p_file_id: string
-          p_storage_path: string
+          p_file_hash: string
+          p_file_size: number
+          p_file_type: string
           p_original_filename: string
+          p_filename: string
+          p_storage_path: string
+          p_file_id: string
+          p_created_by?: string
+          p_is_major_version?: boolean
+          p_description?: string
         }
         Returns: string
       }
       create_notification_from_template: {
         Args: {
           input_user_id: string
-          input_type: Database["public"]["Enums"]["notification_type"]
-          input_channel?: string
           priority?: string
           scheduled_for?: string
           template_variables?: Json
+          input_channel?: string
+          input_type: Database["public"]["Enums"]["notification_type"]
         }
         Returns: string
       }
       create_session: {
         Args: {
-          description?: string
-          coach_id: string
-          title: string
           client_id: string
+          coach_id: string
           scheduled_at: string
+          title: string
+          description?: string
           duration_minutes?: number
         }
         Returns: string
       }
       create_temporary_file_share: {
         Args: {
-          p_created_by: string
-          p_max_downloads?: number
-          p_description?: string
           p_file_id: string
-          p_expires_at: string
+          p_description?: string
+          p_max_downloads?: number
           p_password_hash?: string
+          p_expires_at: string
+          p_created_by: string
         }
         Returns: {
           created_at: string | null
@@ -5934,24 +5820,24 @@ export type Database = {
         Returns: Json
       }
       decrypt_totp_secret: {
-        Args: { user_id: string; secret_salt: string; encrypted_secret: string }
+        Args: { user_id: string; encrypted_secret: string; secret_salt: string }
         Returns: string
       }
       encrypt_totp_secret: {
-        Args: { user_id: string; secret: string }
+        Args: { secret: string; user_id: string }
         Returns: {
-          salt: string
           encrypted_secret: string
+          salt: string
         }[]
       }
       generate_backup_codes: {
         Args:
-          | { code_count?: number; user_uuid: string }
           | {
-              codes_count?: number
               target_user_id: string
+              codes_count?: number
               code_length?: number
             }
+          | { user_uuid: string; code_count?: number }
         Returns: string[]
       }
       generate_share_token: {
@@ -5963,59 +5849,59 @@ export type Database = {
         Returns: number
       }
       get_available_time_slots: {
-        Args: { target_date: string; slot_duration?: number; coach_id: string }
+        Args: { coach_id: string; slot_duration?: number; target_date: string }
         Returns: {
-          is_available: boolean
           start_time: string
+          is_available: boolean
           end_time: string
         }[]
       }
       get_coach_average_rating: {
         Args:
           | { coach_uuid: string }
-          | { start_date?: string; end_date?: string; p_coach_id: string }
+          | { start_date?: string; p_coach_id: string; end_date?: string }
         Returns: number
       }
       get_coach_performance_metrics: {
-        Args: { end_date: string; start_date: string }
+        Args: { start_date: string; end_date: string }
         Returns: {
-          coach_name: string
           completed_sessions: number
           active_clients: number
           completion_rate: number
           coach_id: string
+          coach_name: string
           total_sessions: number
         }[]
       }
       get_daily_notification_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
-          total_failed: number
           total_delivered: number
-          avg_delivery_time_minutes: number
-          stat_date: string
-          total_sent: number
           delivery_rate: number
+          avg_delivery_time_minutes: number
+          total_sent: number
+          total_failed: number
+          stat_date: string
         }[]
       }
       get_daily_session_metrics: {
         Args: { start_date: string; end_date: string }
         Returns: {
-          completion_rate: number
-          scheduled_sessions: number
-          cancelled_sessions: number
-          completed_sessions: number
           total_sessions: number
+          scheduled_sessions: number
+          completed_sessions: number
+          cancelled_sessions: number
+          completion_rate: number
           date: string
         }[]
       }
       get_daily_user_growth: {
-        Args: { start_date: string; end_date: string }
+        Args: { end_date: string; start_date: string }
         Returns: {
-          total_users: number
-          date: string
-          new_users: number
           active_users: number
+          total_users: number
+          new_users: number
+          date: string
         }[]
       }
       get_database_size: {
@@ -6025,27 +5911,27 @@ export type Database = {
       get_database_statistics: {
         Args: Record<PropertyKey, never>
         Returns: {
+          table_name: string
           index_size: string
           table_size: string
           record_count: number
-          table_name: string
         }[]
       }
       get_enhanced_coach_performance_metrics: {
         Args: { end_date: string; start_date: string }
         Returns: {
-          active_clients: number
-          total_ratings: number
-          average_rating: number
-          completion_rate: number
-          completed_sessions: number
           total_sessions: number
-          coach_name: string
+          completed_sessions: number
+          active_clients: number
+          completion_rate: number
+          average_rating: number
+          total_ratings: number
           coach_id: string
+          coach_name: string
         }[]
       }
       get_file_download_stats: {
-        Args: { p_file_id: string; p_date_from?: string; p_date_to?: string }
+        Args: { p_file_id: string; p_date_to?: string; p_date_from?: string }
         Returns: Json
       }
       get_file_version_stats: {
@@ -6055,27 +5941,27 @@ export type Database = {
       get_files_shared_with_user: {
         Args: { user_uuid: string }
         Returns: {
-          shared_by_name: string
-          file_type: string
-          expires_at: string
-          file_size: number
-          created_at: string
           filename: string
           file_id: string
+          file_type: string
+          created_at: string
+          expires_at: string
           permission_type: Database["public"]["Enums"]["file_permission_type"]
+          shared_by_name: string
+          file_size: number
         }[]
       }
       get_index_usage_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
           idx_tup_read: number
+          idx_tup_fetch: number
+          usage_ratio: number
+          is_unique: boolean
+          index_size: string
           indexname: string
           tablename: string
           schemaname: string
-          is_unique: boolean
-          idx_tup_fetch: number
-          index_size: string
-          usage_ratio: number
         }[]
       }
       get_long_running_queries: {
@@ -6089,46 +5975,45 @@ export type Database = {
       get_notification_delivery_health: {
         Args: Record<PropertyKey, never>
         Returns: {
-          error_rate: number
-          total_queued: number
           processing_notifications: number
           failed_notifications: number
           avg_delivery_time: number
+          error_rate: number
+          total_queued: number
         }[]
       }
       get_notification_overview_stats: {
         Args: {
-          start_date: string
           filter_type?: Database["public"]["Enums"]["notification_type"]
           end_date: string
+          start_date: string
           filter_channel?: string
         }
         Returns: {
-          total_sent: number
           total_delivered: number
-          click_rate: number
-          open_rate: number
-          delivery_rate: number
-          total_opened: number
+          total_sent: number
           total_clicked: number
+          delivery_rate: number
+          open_rate: number
+          click_rate: number
+          total_opened: number
         }[]
       }
       get_notification_preferences_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
-          marketing_opted_in: number
-          quiet_hours_enabled: number
           avg_reminder_timing: number
-          email_enabled: number
           total_users: number
+          email_enabled: number
           push_enabled: number
           inapp_enabled: number
+          marketing_opted_in: number
+          quiet_hours_enabled: number
         }[]
       }
       get_notification_queue_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
-          processing_jobs: number
           failed_jobs: number
           oldest_pending_notification: string
           oldest_pending_job: string
@@ -6136,6 +6021,7 @@ export type Database = {
           processing_notifications: number
           failed_notifications: number
           pending_jobs: number
+          processing_jobs: number
         }[]
       }
       get_notification_time_series: {
@@ -6148,8 +6034,8 @@ export type Database = {
         }
         Returns: {
           date: string
-          opened: number
           clicked: number
+          opened: number
           delivered: number
           sent: number
         }[]
@@ -6159,28 +6045,14 @@ export type Database = {
         Returns: string
       }
       get_popular_files: {
-        Args: { p_date_from?: string; p_date_to?: string; p_limit?: number }
+        Args: { p_limit?: number; p_date_from?: string; p_date_to?: string }
         Returns: {
-          file_type: string
-          file_size: number
           file_id: string
           filename: string
+          file_type: string
+          file_size: number
           unique_downloaders: number
           total_downloads: number
-        }[]
-      }
-      get_practice_journal_stats: {
-        Args: { user_id: string }
-        Returns: {
-          most_common_emotions: string[]
-          most_common_sensations: string[]
-          average_energy: number
-          average_mood: number
-          shared_entries: number
-          entries_this_month: number
-          entries_this_week: number
-          total_entries: number
-          practice_streak_days: number
         }[]
       }
       get_recent_maintenance_operations: {
@@ -6190,29 +6062,29 @@ export type Database = {
           p_status?: Database["public"]["Enums"]["maintenance_status"]
         }
         Returns: {
-          action: Database["public"]["Enums"]["maintenance_action_type"]
-          id: string
-          result: Json
-          error_message: string
           duration_ms: number
-          completed_at: string
-          started_at: string
-          initiated_by_email: string
+          error_message: string
+          id: string
+          action: Database["public"]["Enums"]["maintenance_action_type"]
           status: Database["public"]["Enums"]["maintenance_status"]
+          initiated_by_email: string
+          started_at: string
+          completed_at: string
+          result: Json
         }[]
       }
       get_security_statistics: {
         Args: { start_date?: string; end_date?: string }
         Returns: {
-          rate_limit_violations: number
-          blocked_ips_count: number
-          top_blocked_ips: Json
           top_attack_types: Json
+          rate_limit_violations: number
           quarantined_files: number
           total_events: number
           critical_events: number
-          file_security_events: number
           high_events: number
+          blocked_ips_count: number
+          file_security_events: number
+          top_blocked_ips: Json
         }[]
       }
       get_share_statistics: {
@@ -6220,13 +6092,13 @@ export type Database = {
         Returns: Json
       }
       get_slow_queries: {
-        Args: { p_min_duration?: unknown; p_limit?: number }
+        Args: { p_limit?: number; p_min_duration?: unknown }
         Returns: {
-          query_text: string
           calls: number
           rows_returned: number
           mean_time: number
           total_time: number
+          query_text: string
         }[]
       }
       get_system_average_rating: {
@@ -6236,58 +6108,58 @@ export type Database = {
       get_system_health_stats: {
         Args: { p_hours?: number }
         Returns: {
+          avg_response_time_ms: number
+          error_count: number
+          check_type: string
           healthy_count: number
           warning_count: number
-          error_count: number
-          avg_response_time_ms: number
           last_check_at: string
-          check_type: string
         }[]
       }
       get_system_overview_metrics: {
-        Args: { end_date: string; start_date: string }
+        Args: { start_date: string; end_date: string }
         Returns: {
-          total_users: number
-          average_sessions_per_user: number
-          active_coaches: number
-          total_clients: number
-          total_coaches: number
-          completion_rate: number
-          new_users_this_month: number
-          average_rating: number
-          total_revenue: number
-          completed_sessions: number
           total_sessions: number
+          completed_sessions: number
+          total_revenue: number
+          average_rating: number
+          new_users_this_month: number
+          completion_rate: number
+          total_coaches: number
+          total_clients: number
+          active_coaches: number
+          average_sessions_per_user: number
+          total_users: number
           active_users: number
         }[]
       }
       get_system_statistics: {
         Args: Record<PropertyKey, never>
         Returns: {
-          description: string
-          metric_name: string
-          metric_value: number
           metric_unit: string
+          metric_name: string
+          description: string
+          metric_value: number
         }[]
       }
       get_table_sizes: {
         Args: { p_limit?: number }
         Returns: {
-          size_bytes: number
-          size_pretty: string
           row_count: number
+          size_pretty: string
           table_name: string
+          size_bytes: number
         }[]
       }
       get_top_performing_notifications: {
-        Args: { start_date: string; end_date: string; limit_count?: number }
+        Args: { end_date: string; start_date: string; limit_count?: number }
         Returns: {
+          click_rate: number
+          open_rate: number
+          sent_count: number
+          title: string
           type: Database["public"]["Enums"]["notification_type"]
           id: string
-          title: string
-          sent_count: number
-          open_rate: number
-          click_rate: number
         }[]
       }
       get_unread_message_count: {
@@ -6301,36 +6173,36 @@ export type Database = {
       get_upcoming_sessions: {
         Args: { user_id: string }
         Returns: {
+          client_name: string
+          meeting_url: string
+          coach_name: string
           status: Database["public"]["Enums"]["session_status"]
           duration_minutes: number
           scheduled_at: string
           title: string
-          client_name: string
-          coach_name: string
-          meeting_url: string
           id: string
         }[]
       }
       get_user_download_history: {
         Args: { p_offset?: number; p_limit?: number; p_user_id: string }
         Returns: {
-          file_id: string
-          file_type: string
           downloaded_at: string
           download_type: string
+          file_type: string
+          filename: string
+          file_id: string
+          download_id: string
           file_size: number
           success: boolean
-          filename: string
-          download_id: string
         }[]
       }
       get_user_engagement_metrics: {
         Args: { start_date: string; end_date: string }
         Returns: {
           avg_notifications_per_user: number
-          active_users: number
-          engaged_users: number
           unsubscribe_rate: number
+          engaged_users: number
+          active_users: number
         }[]
       }
       get_user_mfa_status: {
@@ -6344,25 +6216,25 @@ export type Database = {
       get_user_storage_usage: {
         Args: { user_uuid: string }
         Returns: {
-          total_files: number
-          total_size_bytes: number
           total_size_mb: number
+          total_size_bytes: number
+          total_files: number
         }[]
       }
       get_version_comparison: {
-        Args: { p_version_b: number; p_file_id: string; p_version_a: number }
+        Args: { p_version_a: number; p_file_id: string; p_version_b: number }
         Returns: Json
       }
       get_virus_scan_statistics: {
         Args: { start_date?: string; end_date?: string }
         Returns: {
-          threats_detected: number
+          top_threats: Json
+          total_scans: number
           safe_files: number
+          threats_detected: number
           quarantined_files: number
           avg_scan_duration_ms: number
           scans_by_provider: Json
-          top_threats: Json
-          total_scans: number
         }[]
       }
       increment_file_download_count: {
@@ -6387,159 +6259,159 @@ export type Database = {
       }
       is_time_slot_available: {
         Args: {
-          duration_minutes?: number
           start_time: string
           coach_id: string
+          duration_minutes?: number
         }
         Returns: boolean
       }
       log_audit_event: {
         Args:
           | {
-              p_resource?: string
-              p_user_id: string
-              p_action: Database["public"]["Enums"]["audit_action_type"]
-              p_resource_id?: string
-              p_description?: string
-              p_metadata?: Json
-              p_risk_level?: string
-              p_ip_address?: unknown
-              p_user_agent?: string
-            }
-          | {
-              resource_id_value?: string
-              action_name: string
-              resource_type_name?: string
-              details_json?: Json
               ip_addr?: unknown
               user_agent_string?: string
+              details_json?: Json
+              action_name: string
+              resource_type_name?: string
+              resource_id_value?: string
+            }
+          | {
+              p_risk_level?: string
+              p_metadata?: Json
+              p_description?: string
+              p_resource_id?: string
+              p_ip_address?: unknown
+              p_user_agent?: string
+              p_action: Database["public"]["Enums"]["audit_action_type"]
+              p_user_id: string
+              p_resource?: string
             }
         Returns: string
       }
       log_file_download: {
         Args: {
-          p_success?: boolean
-          p_file_id: string
-          p_downloaded_by?: string
-          p_download_type?: string
-          p_share_id?: string
-          p_ip_address?: unknown
-          p_user_agent?: string
-          p_country_code?: string
-          p_city?: string
-          p_file_size_at_download?: number
-          p_download_duration_ms?: number
-          p_failure_reason?: string
-          p_bandwidth_used?: number
           p_client_info?: Json
+          p_download_type?: string
+          p_downloaded_by?: string
+          p_file_id: string
+          p_country_code?: string
+          p_user_agent?: string
+          p_ip_address?: unknown
+          p_share_id?: string
+          p_bandwidth_used?: number
+          p_failure_reason?: string
+          p_success?: boolean
+          p_download_duration_ms?: number
+          p_file_size_at_download?: number
+          p_city?: string
         }
         Returns: string
       }
       log_file_security_event: {
         Args: {
+          p_user_id: string
           p_event_type: string
+          p_ip_address: unknown
           p_event_details?: Json
           p_file_name?: string
           p_file_size?: number
+          p_file_id: string
           p_file_type?: string
           p_severity?: Database["public"]["Enums"]["security_severity"]
           p_quarantined?: boolean
           p_file_hash?: string
-          p_file_id: string
-          p_user_id: string
-          p_ip_address: unknown
         }
         Returns: string
       }
       log_maintenance_action: {
         Args: {
+          p_parameters?: Json
+          p_initiated_by?: string
           p_status: Database["public"]["Enums"]["maintenance_status"]
           p_action: Database["public"]["Enums"]["maintenance_action_type"]
-          p_parameters?: Json
-          p_error_message?: string
           p_result?: Json
-          p_initiated_by?: string
+          p_error_message?: string
         }
         Returns: string
       }
       log_mfa_event: {
         Args: {
-          user_agent_val?: string
-          user_uuid: string
           ip_addr?: unknown
-          event_type_val: Database["public"]["Enums"]["mfa_event_type"]
+          user_agent_val?: string
           metadata_val?: Json
+          event_type_val: Database["public"]["Enums"]["mfa_event_type"]
+          user_uuid: string
         }
         Returns: string
       }
       log_push_delivery_status: {
         Args: {
-          input_subscription_id: string
-          input_provider_response?: Json
-          input_notification_id: string
           input_error_message?: string
+          input_notification_id: string
+          input_subscription_id: string
           input_status: string
+          input_provider_response?: Json
         }
         Returns: undefined
       }
       log_security_event: {
         Args:
           | {
-              ip_address?: unknown
-              user_agent?: string
-              user_id: string
               event_type: string
+              user_id: string
               event_details?: Json
               severity?: string
+              ip_address?: unknown
+              user_agent?: string
             }
           | {
+              p_user_id?: string
               p_ip_address: unknown
               p_activity_type: string
-              p_details?: string
-              p_user_id?: string
+              p_severity?: Database["public"]["Enums"]["security_severity"]
+              p_request_method?: string
               p_user_agent?: string
               p_referer?: string
+              p_details?: string
               p_request_path?: string
-              p_request_method?: string
-              p_severity?: Database["public"]["Enums"]["security_severity"]
             }
         Returns: string
       }
       log_share_access: {
         Args: {
-          p_access_type?: string
-          p_user_agent?: string
-          p_ip_address?: unknown
-          p_share_id: string
-          p_bytes_served?: number
-          p_failure_reason?: string
           p_success?: boolean
+          p_share_id: string
+          p_ip_address?: unknown
+          p_user_agent?: string
+          p_access_type?: string
+          p_failure_reason?: string
+          p_bytes_served?: number
         }
         Returns: string
       }
       maintenance_cleanup_old_data: {
         Args: {
+          p_table_name: string
           p_dry_run?: boolean
           p_batch_size?: number
           p_days_old: number
           p_date_column: string
-          p_table_name: string
         }
         Returns: {
-          records_deleted: number
-          batch_completed_at: string
           records_processed: number
           batch_number: number
+          records_deleted: number
+          batch_completed_at: string
         }[]
       }
       maintenance_optimize_tables: {
         Args: { p_analyze_only?: boolean }
         Returns: {
-          table_name: string
-          details: string
-          duration_ms: number
-          status: string
           operation: string
+          status: string
+          details: string
+          table_name: string
+          duration_ms: number
         }[]
       }
       mark_all_notifications_read: {
@@ -6547,36 +6419,36 @@ export type Database = {
         Returns: number
       }
       mark_conversation_as_read: {
-        Args: { p_conversation_id: string; p_user_id: string }
+        Args: { p_user_id: string; p_conversation_id: string }
         Returns: undefined
       }
       mark_notification_read: {
-        Args: { input_user_id: string; notification_id: string }
+        Args: { notification_id: string; input_user_id: string }
         Returns: boolean
       }
       mark_notifications_read: {
-        Args: { user_id: string; notification_ids?: string[] }
+        Args: { notification_ids?: string[]; user_id: string }
         Returns: number
       }
       process_notification_jobs: {
         Args: { batch_size?: number }
         Returns: {
-          processed_count: number
           failed_count: number
+          processed_count: number
           success_count: number
         }[]
       }
       quarantine_file: {
         Args: {
-          p_scan_provider: string
-          p_file_hash: string
           p_file_name: string
-          p_file_size: number
           p_file_type: string
-          p_threat_name: string
-          p_scan_details: string
-          p_uploaded_by?: string
+          p_file_size: number
+          p_file_hash: string
           p_upload_ip?: unknown
+          p_uploaded_by?: string
+          p_scan_details: string
+          p_scan_provider: string
+          p_threat_name: string
         }
         Returns: string
       }
@@ -6586,75 +6458,54 @@ export type Database = {
       }
       rollback_to_version: {
         Args: {
-          p_rollback_description?: string
-          p_target_version: number
-          p_rollback_by: string
           p_file_id: string
+          p_rollback_description?: string
+          p_rollback_by: string
+          p_target_version: number
         }
         Returns: string
       }
       schedule_session_reminders: {
         Args: {
+          session_title: string
+          participant_ids: string[]
           session_id: string
           coach_name: string
           session_datetime: string
-          session_title: string
-          participant_ids: string[]
         }
         Returns: number
       }
       send_notification: {
         Args:
           | {
+              priority?: string
+              recipient_id: string
+              notification_type: Database["public"]["Enums"]["notification_type"]
               title: string
               message: string
               data?: Json
               channel?: string
-              recipient_id: string
               scheduled_for?: string
-              priority?: string
-              notification_type: Database["public"]["Enums"]["notification_type"]
             }
           | {
-              user_id: string
-              notification_type: Database["public"]["Enums"]["notification_type"]
               title: string
               message: string
               data?: Json
               scheduled_for?: string
+              user_id: string
+              notification_type: Database["public"]["Enums"]["notification_type"]
             }
         Returns: string
       }
       send_push_notification: {
         Args: {
-          notification_title: string
           notification_data?: Json
-          notification_options?: Json
           input_user_id: string
+          notification_title: string
           notification_body: string
+          notification_options?: Json
         }
         Returns: boolean
-      }
-      share_journal_entry_with_coach: {
-        Args: { entry_id: string }
-        Returns: {
-          body_areas: string[] | null
-          client_id: string
-          content: string
-          created_at: string | null
-          emotions: string[] | null
-          energy_level: number | null
-          id: string
-          insights: string | null
-          mood_rating: number | null
-          practices_done: string[] | null
-          sensations: string[] | null
-          session_id: string | null
-          shared_at: string | null
-          shared_with_coach: boolean | null
-          title: string | null
-          updated_at: string | null
-        }
       }
       sync_user_role_to_jwt: {
         Args: { target_user_id: string }
@@ -6667,9 +6518,9 @@ export type Database = {
       test_jwt_role_setup: {
         Args: Record<PropertyKey, never>
         Returns: {
-          status: string
           details: string
           test_name: string
+          status: string
         }[]
       }
       track_file_share_access: {
@@ -6684,36 +6535,15 @@ export type Database = {
         }
         Returns: boolean
       }
-      unshare_journal_entry: {
-        Args: { entry_id: string }
-        Returns: {
-          body_areas: string[] | null
-          client_id: string
-          content: string
-          created_at: string | null
-          emotions: string[] | null
-          energy_level: number | null
-          id: string
-          insights: string | null
-          mood_rating: number | null
-          practices_done: string[] | null
-          sensations: string[] | null
-          session_id: string | null
-          shared_at: string | null
-          shared_with_coach: boolean | null
-          title: string | null
-          updated_at: string | null
-        }
-      }
       update_push_subscription_status: {
-        Args: { is_active_status: boolean; subscription_endpoint: string }
+        Args: { subscription_endpoint: string; is_active_status: boolean }
         Returns: boolean
       }
       update_system_health: {
         Args: {
-          health_status: string
           component_name: string
           health_metrics?: Json
+          health_status: string
         }
         Returns: undefined
       }
@@ -6722,7 +6552,7 @@ export type Database = {
         Returns: undefined
       }
       use_backup_code: {
-        Args: { backup_code: string; user_uuid: string }
+        Args: { user_uuid: string; backup_code: string }
         Returns: boolean
       }
       user_has_version_access: {
@@ -6738,30 +6568,30 @@ export type Database = {
         Returns: boolean
       }
       validate_security_context: {
-        Args: { p_user_id: string; p_action?: string }
+        Args: { p_action?: string; p_user_id: string }
         Returns: Json
       }
       validate_session_access: {
-        Args: { user_id: string; action?: string; session_id: string }
+        Args: { session_id: string; action?: string; user_id: string }
         Returns: boolean
       }
       validate_session_availability_with_timezone: {
         Args: {
           p_scheduled_at: string
+          p_coach_id: string
           p_coach_timezone?: string
           p_duration_minutes: number
-          p_coach_id: string
         }
         Returns: boolean
       }
       validate_temporary_share_access: {
         Args: { p_share_token: string; p_password?: string }
         Returns: {
-          file_info: Json
-          can_access: boolean
           file_id: string
-          share_id: string
+          file_info: Json
           failure_reason: string
+          can_access: boolean
+          share_id: string
         }[]
       }
       validate_user_access: {
@@ -6770,17 +6600,17 @@ export type Database = {
       }
       validate_user_role: {
         Args: {
-          expected_role: Database["public"]["Enums"]["user_role"]
           user_id: string
+          expected_role: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
       }
       verify_backup_code: {
         Args: {
-          provided_code: string
-          target_user_id: string
-          client_ip?: unknown
           client_user_agent?: string
+          target_user_id: string
+          provided_code: string
+          client_ip?: unknown
         }
         Returns: boolean
       }
@@ -6896,6 +6726,7 @@ export type Database = {
           owner: string | null
           owner_id: string | null
           public: boolean | null
+          type: Database["storage"]["Enums"]["buckettype"]
           updated_at: string | null
         }
         Insert: {
@@ -6908,6 +6739,7 @@ export type Database = {
           owner?: string | null
           owner_id?: string | null
           public?: boolean | null
+          type?: Database["storage"]["Enums"]["buckettype"]
           updated_at?: string | null
         }
         Update: {
@@ -6920,9 +6752,111 @@ export type Database = {
           owner?: string | null
           owner_id?: string | null
           public?: boolean | null
+          type?: Database["storage"]["Enums"]["buckettype"]
           updated_at?: string | null
         }
         Relationships: []
+      }
+      buckets_analytics: {
+        Row: {
+          created_at: string
+          format: string
+          id: string
+          type: Database["storage"]["Enums"]["buckettype"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          format?: string
+          id: string
+          type?: Database["storage"]["Enums"]["buckettype"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          format?: string
+          id?: string
+          type?: Database["storage"]["Enums"]["buckettype"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      iceberg_namespaces: {
+        Row: {
+          bucket_id: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iceberg_namespaces_bucket_id_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "buckets_analytics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      iceberg_tables: {
+        Row: {
+          bucket_id: string
+          created_at: string
+          id: string
+          location: string
+          name: string
+          namespace_id: string
+          updated_at: string
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string
+          id?: string
+          location: string
+          name: string
+          namespace_id: string
+          updated_at?: string
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string
+          id?: string
+          location?: string
+          name?: string
+          namespace_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iceberg_tables_bucket_id_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "buckets_analytics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iceberg_tables_namespace_id_fkey"
+            columns: ["namespace_id"]
+            isOneToOne: false
+            referencedRelation: "iceberg_namespaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       migrations: {
         Row: {
@@ -7137,11 +7071,15 @@ export type Database = {
     }
     Functions: {
       add_prefixes: {
-        Args: { _bucket_id: string; _name: string }
+        Args: { _name: string; _bucket_id: string }
         Returns: undefined
       }
       can_insert_object: {
-        Args: { bucketid: string; name: string; owner: string; metadata: Json }
+        Args: { metadata: Json; bucketid: string; name: string; owner: string }
+        Returns: undefined
+      }
+      delete_leaf_prefixes: {
+        Args: { names: string[]; bucket_ids: string[] }
         Returns: undefined
       }
       delete_prefix: {
@@ -7181,34 +7119,38 @@ export type Database = {
       }
       list_multipart_uploads_with_delimiter: {
         Args: {
-          prefix_param: string
-          max_keys?: number
-          next_key_token?: string
-          next_upload_token?: string
-          bucket_id: string
           delimiter_param: string
+          next_upload_token?: string
+          next_key_token?: string
+          max_keys?: number
+          prefix_param: string
+          bucket_id: string
         }
         Returns: {
-          key: string
-          id: string
           created_at: string
+          id: string
+          key: string
         }[]
       }
       list_objects_with_delimiter: {
         Args: {
-          delimiter_param: string
-          max_keys?: number
-          start_after?: string
           next_token?: string
+          start_after?: string
+          max_keys?: number
+          delimiter_param: string
           bucket_id: string
           prefix_param: string
         }
         Returns: {
-          name: string
-          id: string
-          metadata: Json
           updated_at: string
+          metadata: Json
+          id: string
+          name: string
         }[]
+      }
+      lock_top_prefixes: {
+        Args: { bucket_ids: string[]; names: string[] }
+        Returns: undefined
       }
       operation: {
         Args: Record<PropertyKey, never>
@@ -7216,84 +7158,88 @@ export type Database = {
       }
       search: {
         Args: {
-          bucketname: string
-          sortorder?: string
-          sortcolumn?: string
-          search?: string
           offsets?: number
-          levels?: number
-          limits?: number
+          sortcolumn?: string
           prefix: string
+          sortorder?: string
+          bucketname: string
+          limits?: number
+          levels?: number
+          search?: string
         }
         Returns: {
           name: string
           id: string
+          updated_at: string
           created_at: string
           last_accessed_at: string
           metadata: Json
-          updated_at: string
         }[]
       }
       search_legacy_v1: {
         Args: {
+          levels?: number
+          offsets?: number
+          sortorder?: string
+          sortcolumn?: string
+          search?: string
           prefix: string
           bucketname: string
           limits?: number
-          levels?: number
-          offsets?: number
-          search?: string
-          sortcolumn?: string
-          sortorder?: string
         }
         Returns: {
+          last_accessed_at: string
+          created_at: string
+          metadata: Json
+          updated_at: string
           id: string
           name: string
-          updated_at: string
-          created_at: string
-          last_accessed_at: string
-          metadata: Json
         }[]
       }
       search_v1_optimised: {
         Args: {
-          sortorder?: string
-          sortcolumn?: string
-          search?: string
-          offsets?: number
-          levels?: number
-          limits?: number
-          bucketname: string
           prefix: string
+          bucketname: string
+          limits?: number
+          levels?: number
+          offsets?: number
+          search?: string
+          sortcolumn?: string
+          sortorder?: string
         }
         Returns: {
-          id: string
           name: string
-          last_accessed_at: string
-          created_at: string
-          metadata: Json
+          id: string
           updated_at: string
+          created_at: string
+          last_accessed_at: string
+          metadata: Json
         }[]
       }
       search_v2: {
         Args: {
           prefix: string
-          bucket_name: string
-          limits?: number
           levels?: number
+          limits?: number
+          bucket_name: string
+          sort_column_after?: string
+          sort_column?: string
+          sort_order?: string
           start_after?: string
         }
         Returns: {
-          id: string
-          key: string
-          name: string
-          metadata: Json
-          created_at: string
           updated_at: string
+          id: string
+          created_at: string
+          last_accessed_at: string
+          metadata: Json
+          name: string
+          key: string
         }[]
       }
     }
     Enums: {
-      [_ in never]: never
+      buckettype: "STANDARD" | "ANALYTICS"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7506,7 +7452,9 @@ export const Constants = {
     },
   },
   storage: {
-    Enums: {},
+    Enums: {
+      buckettype: ["STANDARD", "ANALYTICS"],
+    },
   },
 } as const
 

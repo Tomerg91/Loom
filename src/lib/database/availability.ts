@@ -1,5 +1,5 @@
-import { createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@/lib/supabase/client';
+import { createServerClient } from '@/lib/supabase/server';
 
 interface TimeSlot {
   startTime: string;

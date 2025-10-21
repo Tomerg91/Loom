@@ -5,10 +5,10 @@
  * Tests: Authentication, Validation, Business Logic, Database Operations, Notifications
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { POST, OPTIONS } from '@/app/api/sessions/book/route';
-import { mockUser, mockCoachUser, mockSupabaseClient } from '@/test/utils';
 
 // Mock all dependencies
 vi.mock('@/lib/api/utils', () => ({
@@ -62,11 +62,12 @@ vi.mock('@/lib/security/cors', () => ({
 
 // Import mocked functions
 import { createSuccessResponse, createErrorResponse } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
-import { rateLimit } from '@/lib/security/rate-limit';
 import { isCoachAvailable } from '@/lib/database/availability';
 import { sessionNotificationService } from '@/lib/notifications/session-notifications';
 import { createCorsResponse } from '@/lib/security/cors';
+import { rateLimit } from '@/lib/security/rate-limit';
+import { createServerClient } from '@/lib/supabase/server';
+import { mockUser, mockCoachUser, mockSupabaseClient } from '@/test/utils';
 
 const mockCreateSuccessResponse = vi.mocked(createSuccessResponse);
 const mockCreateErrorResponse = vi.mocked(createErrorResponse);

@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { NotesManagement } from '@/components/coach/notes-management';
+
 import { CoachOrAdminRoute } from '@/components/auth/route-guard';
+import { NotesManagement } from '@/components/coach/notes-management';
 
 export default function CoachNotesPage() {
   return (

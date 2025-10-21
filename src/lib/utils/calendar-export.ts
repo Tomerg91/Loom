@@ -1,4 +1,5 @@
 import { format, addMinutes } from 'date-fns';
+
 import type { Session } from '@/types';
 
 /**

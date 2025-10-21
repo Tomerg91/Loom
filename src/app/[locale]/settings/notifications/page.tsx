@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { NotificationSettingsPage } from '@/components/settings/notification-settings-page';
+
 import { RouteGuard } from '@/components/auth/route-guard';
+import { NotificationSettingsPage } from '@/components/settings/notification-settings-page';
 
 export default function NotificationSettingsPageRoute() {
   return (

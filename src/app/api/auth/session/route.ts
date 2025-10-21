@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClientWithRequest } from '@/lib/supabase/server';
+
 import { createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
+import { createServerClientWithRequest } from '@/lib/supabase/server';
 
 // POST /api/auth/session
 // Body: { access_token: string, refresh_token: string }
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Return the same response object so Set-Cookie headers from Supabase are preserved
     return res;
-  } catch (error) {
+  } catch (_error) {
     return createErrorResponse('Failed to establish session', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }

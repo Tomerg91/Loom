@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { LazyAdminSessions, LoadingSpinner } from '@/components/lazy-components';
+
 import { AdminRoute } from '@/components/auth/route-guard';
+import { LazyAdminSessions, LoadingSpinner } from '@/components/lazy-components';
 
 // Force dynamic rendering to avoid prerender issues with event handlers
 export const dynamic = 'force-dynamic';

@@ -1,4 +1,5 @@
 import type { SessionStatus } from '@/types';
+
 import { BaseSessionService } from './base-session';
 
 /**

@@ -76,12 +76,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
+import { FileMetadata } from '@/lib/services/file-management-service';
 
 import { FilePreview } from './file-preview';
 import { FileSharingDialog } from './file-sharing-dialog';
 import { FileUploadZone } from './file-upload-zone';
 import { FileVersionHistory } from './file-version-history';
-import { FileMetadata } from '@/lib/services/file-management-service';
 
 
 // Import FileMetadata type instead of redefining
@@ -238,7 +238,7 @@ export function AdvancedFileManager({
       const data = await response.json();
       setFiles(data.files || []);
       onFilesChange?.(data.files || []);
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to refresh files',
@@ -272,7 +272,7 @@ export function AdvancedFileManager({
   const handleDownload = useCallback(async (file: FileItem) => {
     try {
       window.open(`/api/files/${file.id}/download`, '_blank');
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to download file',

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+
+import { createServerClient } from '@/lib/supabase/server';
 
 const createNoteSchema = z.object({
   clientId: z.string().min(1).optional(),

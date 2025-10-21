@@ -9,12 +9,13 @@
  * 5. Updates UI with booking status
  */
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+import { AuthProvider } from '@/components/auth/auth-provider';
 import { SessionBookingForm } from '@/components/sessions/booking';
 import { SessionCalendar } from '@/components/sessions/session-calendar';
-import { AuthProvider } from '@/components/auth/auth-provider';
 // MSW is not installed - using simple mocks instead
 // import { server } from '../mocks/server';
 // import { http, HttpResponse } from 'msw';

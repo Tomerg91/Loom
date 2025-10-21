@@ -1,7 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle, BookOpen, MessageSquare } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, BookOpen, MessageSquare } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+
 import { Goal, Milestone } from '../shared/types';
 import { getPriorityColor, getStatusColor } from '../shared/utils';
 

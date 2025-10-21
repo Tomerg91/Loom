@@ -1,7 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { UserPlus, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,11 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+
 
 interface AddClientModalProps {
   open: boolean;

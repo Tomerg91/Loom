@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import { NextRequest, NextResponse } from 'next/server';
+
 import { serverEnv } from '@/env/server';
 import { createSuccessResponse, createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
+import { createServerClient, createAdminClient } from '@/lib/supabase/server';
+import type { Database } from '@/types/supabase';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -33,22 +34,25 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Only allow users to fetch their own profile or admins to fetch any profile
     if (session.user.id !== userId) {
-      // Check if current user is admin
-      const { data: currentUserProfile } = await supabase
+      // Check if current user is admin using admin client to bypass RLS
+      const adminClient = createAdminClient();
+      const { data: currentUserProfile } = await adminClient
         .from('users')
         .select('role')
         .eq('id', session.user.id)
         .single();
-      
+
       if (!currentUserProfile || currentUserProfile.role !== 'admin') {
         return createErrorResponse('Access denied', HTTP_STATUS.FORBIDDEN);
       }
     }
 
-    // Fetch user profile
-    const { data: user, error } = await supabase
+    // Fetch user profile using admin client to bypass RLS
+    // This is safe because we've already validated the user can access this profile
+    const adminClient = createAdminClient();
+    const { data: user, error } = await adminClient
       .from('users')
-      .select('id, email, first_name, last_name, role, phone, avatar_url, timezone, language, status, created_at, updated_at, last_seen_at, mfa_enabled, mfa_setup_completed, mfa_verified_at, remember_device_enabled')
+      .select('id, email, first_name, last_name, role, phone, avatar_url, timezone, language, status, created_at, updated_at, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data, mfa_enabled, mfa_setup_completed, mfa_verified_at, remember_device_enabled')
       .eq('id', userId)
       .single();
 
@@ -71,10 +75,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       createdAt: user.created_at,
       updatedAt: user.updated_at,
       lastSeenAt: user.last_seen_at || undefined,
-      mfaEnabled: user.mfa_enabled,
-      mfaSetupCompleted: user.mfa_setup_completed,
-      mfaVerifiedAt: user.mfa_verified_at,
-      rememberDeviceEnabled: user.remember_device_enabled,
+      onboardingStatus: user.onboarding_status || 'pending',
+      onboardingStep: user.onboarding_step ?? 0,
+      onboardingCompletedAt: user.onboarding_completed_at || undefined,
+      onboardingData: user.onboarding_data || {},
+      mfaEnabled: user.mfa_enabled ?? false,
+      mfaSetupCompleted: user.mfa_setup_completed ?? false,
+      mfaVerifiedAt: user.mfa_verified_at || undefined,
+      rememberDeviceEnabled: user.remember_device_enabled ?? false,
     };
 
     return createSuccessResponse(authUser);

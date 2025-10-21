@@ -13,10 +13,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useRouter } from 'next/navigation';
+
 import {
   AnalyticsOverview,
   TopResourcesList,
@@ -24,6 +23,8 @@ import {
   AutoShareSettings,
 } from '@/components/resources';
 import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { LibraryAnalytics, ResourceLibraryItem } from '@/types/resources';
 
 // Disable static generation for this page
@@ -115,7 +116,7 @@ export default function ResourceAnalyticsPage() {
         <TabsContent value="top-performers" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
             <TopResourcesList
-              resources={resources}
+              resources={analytics?.topResources || []}
               title="Most Viewed"
               description="Resources with the highest view count"
               metric="views"
@@ -123,7 +124,7 @@ export default function ResourceAnalyticsPage() {
             />
 
             <TopResourcesList
-              resources={resources}
+              resources={analytics?.topResources || []}
               title="Most Downloaded"
               description="Resources clients download most"
               metric="downloads"
@@ -132,7 +133,7 @@ export default function ResourceAnalyticsPage() {
           </div>
 
           <TopResourcesList
-            resources={resources}
+            resources={analytics?.topResources || []}
             title="Most Completed"
             description="Resources with highest completion rate"
             metric="completions"

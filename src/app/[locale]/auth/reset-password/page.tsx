@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+
 import { ResetPasswordForm } from '@/components/auth/reset-password-form';
 
 interface ResetPasswordPageProps {

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
 import { CalendarCheck, CheckCircle2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -19,11 +19,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { formatDate } from '@/lib/utils';
 
-import type { CreateProgressUpdateInput } from '../types/progress';
-import type { TaskDto, TaskInstanceDto } from '../types/task';
 import { useCreateProgressUpdate } from '../hooks';
 import { TaskPriorityIndicator } from './task-priority-indicator';
 import { TaskStatusBadge } from './task-status-badge';
+import type { CreateProgressUpdateInput } from '../types/progress';
+import type { TaskDto, TaskInstanceDto } from '../types/task';
 
 export interface TaskProgressDialogProps {
   open: boolean;

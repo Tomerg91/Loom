@@ -1,14 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { 
   Shield,
   Smartphone,
@@ -22,9 +13,21 @@ import {
   ArrowRight,
   Loader2
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useState, useEffect } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+
+
+import { MfaBackupCodes } from './mfa-backup-codes';
 import { MfaQrCode } from './mfa-qr-code';
 import { MfaVerificationInput } from './mfa-verification-input';
-import { MfaBackupCodes } from './mfa-backup-codes';
 
 export interface MfaSetupWizardProps {
   onComplete: (data: MfaSetupData) => void;

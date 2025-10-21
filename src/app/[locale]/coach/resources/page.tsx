@@ -12,9 +12,10 @@
  */
 
 import { Suspense } from 'react';
+
 import { CoachRoute } from '@/components/auth/route-guard';
-import { ResourceLibraryPage } from '@/components/resources/resource-library-page';
 import { LoadingSpinner } from '@/components/lazy-components';
+import { ResourceLibraryPage } from '@/components/resources/resource-library-page';
 
 export const dynamic = 'force-dynamic';
 

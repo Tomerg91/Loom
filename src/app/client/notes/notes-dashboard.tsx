@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
 import { Plus, FileText, Search, AlertCircle } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useState, useMemo } from 'react';
+
+import { NoteCard } from '@/components/notes/note-card';
+import { NoteEditorModal } from '@/components/notes/note-editor-modal';
+import { NoteExport } from '@/components/notes/note-export';
+import { NotesFilters } from '@/components/notes/notes-filters';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Pagination,
   PaginationContent,
@@ -15,11 +19,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { NoteCard } from '@/components/notes/note-card';
-import { NoteEditorModal } from '@/components/notes/note-editor-modal';
-import { NotesFilters } from '@/components/notes/notes-filters';
-import { NoteExport } from '@/components/notes/note-export';
-import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   useNotes,
   useNoteTags,
@@ -34,6 +34,7 @@ import {
   CreateNoteData,
   UpdateNoteData
 } from '@/lib/queries/notes';
+import { cn } from '@/lib/utils';
 
 export function NotesDashboard() {
   // UI State

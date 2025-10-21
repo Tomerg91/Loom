@@ -58,7 +58,7 @@ export class UserService {
       const { data, error } = await this.supabase
         .from('users')
         .select(
-          'id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at'
+          'id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data, mfa_enabled, mfa_setup_completed, mfa_verified_at, remember_device_enabled'
         )
         .eq('id', userId)
         .single();
@@ -152,7 +152,7 @@ export class UserService {
       const { data, error } = await this.supabase
         .from('users')
         .select(
-          'id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at'
+          'id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data, mfa_enabled, mfa_setup_completed, mfa_verified_at, remember_device_enabled'
         )
         .eq('role', role)
         .eq('status', 'active')
@@ -1109,7 +1109,8 @@ export class UserService {
    * Map database user to application user type
    */
   private mapDatabaseUserToUser(
-    dbUser: Database['public']['Tables']['users']['Row']
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dbUser: Database['public']['Tables']['users']['Row'] | any
   ): User {
     return {
       id: dbUser.id,
@@ -1127,6 +1128,14 @@ export class UserService {
       createdAt: dbUser.created_at ?? new Date().toISOString(),
       updatedAt: dbUser.updated_at ?? new Date().toISOString(),
       lastSeenAt: dbUser.last_seen_at || undefined,
+      onboardingStatus: (dbUser.onboarding_status as 'pending' | 'in_progress' | 'completed') || 'pending',
+      onboardingStep: dbUser.onboarding_step ?? 0,
+      onboardingCompletedAt: dbUser.onboarding_completed_at || undefined,
+      onboardingData: (dbUser.onboarding_data as Record<string, unknown>) || {},
+      mfaEnabled: dbUser.mfa_enabled ?? false,
+      mfaSetupCompleted: dbUser.mfa_setup_completed ?? false,
+      mfaVerifiedAt: dbUser.mfa_verified_at || undefined,
+      rememberDeviceEnabled: dbUser.remember_device_enabled ?? false,
     };
   }
 }

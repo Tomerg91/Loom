@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense } from 'react';
-import { NavMenu } from '@/components/navigation/nav-menu';
-import { RouteGuard } from '@/components/auth/route-guard';
-import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { Suspense } from 'react';
+
+import { RouteGuard } from '@/components/auth/route-guard';
+import { NavMenu } from '@/components/navigation/nav-menu';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface AppLayoutProps {
   children: React.ReactNode;

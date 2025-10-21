@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
-import { LanguageSettingsCard } from '@/components/settings/language-settings-card';
+
 import { RouteGuard } from '@/components/auth/route-guard';
+import { LanguageSettingsCard } from '@/components/settings/language-settings-card';
 
 interface Props {
   params: Promise<{

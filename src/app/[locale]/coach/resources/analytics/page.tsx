@@ -14,9 +14,10 @@
  */
 
 import { Suspense } from 'react';
+
 import { CoachRoute } from '@/components/auth/route-guard';
-import { ResourceAnalyticsDashboard } from '@/components/resources/resource-analytics-dashboard';
 import { LoadingSpinner } from '@/components/lazy-components';
+import { ResourceAnalyticsDashboard } from '@/components/resources/resource-analytics-dashboard';
 
 export const dynamic = 'force-dynamic';
 

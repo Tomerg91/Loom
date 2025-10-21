@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { fileDatabase } from '@/lib/database/files';
-import { fileOptimizationService } from '@/lib/services/file-optimization';
-import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { z } from 'zod';
+
+import { fileDatabase } from '@/lib/database/files';
+import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
+import { fileOptimizationService } from '@/lib/services/file-optimization';
+import { createClient } from '@/lib/supabase/server';
+
 
 // Validation schema
 const optimizeSchema = z.object({

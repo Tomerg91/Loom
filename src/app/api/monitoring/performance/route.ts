@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { rateLimit } from '@/lib/security/rate-limit';
+
 import { trackBusinessMetric } from '@/lib/monitoring/sentry';
+import { rateLimit } from '@/lib/security/rate-limit';
 
 // Performance metrics collection endpoint
 const rateLimitedPerformance = rateLimit(200, 60000)( // 200 requests per minute
@@ -148,8 +149,8 @@ export async function GET(request: NextRequest) {
     };
     
     return NextResponse.json(summary);
-    
-  } catch (error) {
+
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to retrieve performance metrics' },
       { status: 500 }

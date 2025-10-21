@@ -1,10 +1,12 @@
 'use client';
 
-import { usePresence } from '@/lib/realtime/hooks';
+import { Users, Circle } from 'lucide-react';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Circle } from 'lucide-react';
+import { usePresence } from '@/lib/realtime/hooks';
+
 
 interface OnlineUser {
   user_id: string;

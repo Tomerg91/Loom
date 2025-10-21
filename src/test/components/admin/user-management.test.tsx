@@ -1,8 +1,9 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders, mockUseQuery, mockUseMutation, mockUser, mockCoachUser, mockAdminUser } from '@/test/utils';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { AdminUsersPage } from '@/components/admin/users-page';
+import { renderWithProviders, mockUseQuery, mockUseMutation, mockUser, mockCoachUser, mockAdminUser } from '@/test/utils';
 
 // Mock dependencies
 vi.mock('@tanstack/react-query', () => ({
@@ -175,6 +176,7 @@ vi.mock('@/components/dashboard', () => ({
 }));
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { useToast } from '@/components/ui/toast-provider';
 
 describe('AdminUsersPage', () => {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+
 import { getCachedData, CacheKeys, CacheTTL, CacheInvalidation } from '@/lib/performance/cache';
+import { createServerClient } from '@/lib/supabase/server';
 
 const createReflectionSchema = z.object({
   sessionId: z.string().optional(),

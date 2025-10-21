@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { sanitizeInput, containsSQLInjection, containsXSS, SQL_INJECTION_PATTERNS, XSS_PATTERNS } from './headers';
 
 // Re-export security functions for external use

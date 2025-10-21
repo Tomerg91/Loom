@@ -1,6 +1,8 @@
 'use client';
 
 import { useUser } from '@/lib/auth/use-user';
+import type { UserRole } from '@/types';
+
 import { 
   hasPermission, 
   hasAnyPermission, 
@@ -11,7 +13,6 @@ import {
   canViewClientData,
   type Permission 
 } from './permissions';
-import type { UserRole } from '@/types';
 
 // Permission hooks
 export function usePermission(permission: Permission): boolean {

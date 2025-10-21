@@ -1,12 +1,5 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Shield,
   Smartphone,
@@ -20,9 +13,17 @@ import {
   Clock,
   Globe
 } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import { useState, useMemo } from 'react';
+
 import { MfaManagementCard } from '@/components/auth/mfa/mfa-management-card';
 import type { SecurityEvent, TrustedDevice } from '@/components/auth/mfa/mfa-management-card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { formatDate } from '@/lib/utils';
 
 const connectedDevices = [
   {

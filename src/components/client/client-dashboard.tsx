@@ -1,13 +1,7 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUser } from '@/lib/auth/use-user';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import { 
   Calendar, 
   Clock, 
@@ -18,11 +12,18 @@ import {
   Heart,
   ArrowUpRight
 } from 'lucide-react';
-import { SessionList } from '@/components/sessions/session-list';
-import { SessionCalendar } from '@/components/sessions/session-calendar';
-import { ReflectionsManagement } from '@/components/client/reflections-management';
+import { useRouter } from 'next/navigation';
+import { useState, useMemo, useCallback } from 'react';
+
 import { PracticeJournal } from '@/components/client/practice-journal';
-import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { ReflectionsManagement } from '@/components/client/reflections-management';
+import { SessionCalendar } from '@/components/sessions/session-calendar';
+import { SessionList } from '@/components/sessions/session-list';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useUser } from '@/lib/auth/use-user';
 import type { Session } from '@/types';
 
 // Helper functions moved outside component to prevent re-creation

@@ -8,9 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
-import { rateLimit } from '@/lib/security/rate-limit';
 import { z } from 'zod';
+
+import { rateLimit } from '@/lib/security/rate-limit';
+import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
 
 // Request validation schema
 const verifyBackupRequestSchema = z.object({
@@ -100,7 +101,7 @@ export const POST = rateLimitedPOST(async function(request: NextRequest) {
     if (!result.success) {
       // Return specific error messages for different failure scenarios
       let status = 400;
-      let errorMessage = result.error || 'Backup code verification failed';
+      const errorMessage = result.error || 'Backup code verification failed';
       let errorCode = 'VERIFICATION_FAILED';
       
       if (errorMessage.includes('Too many attempts')) {

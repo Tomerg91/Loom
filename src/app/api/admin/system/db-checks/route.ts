@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/server';
-import { createSuccessResponse, createErrorResponse, HTTP_STATUS, withRequestLogging, withErrorHandling } from '@/lib/api/utils';
+
 import { compose, withAuth, withRole, withRateLimit } from '@/lib/api';
+import { createSuccessResponse, createErrorResponse, HTTP_STATUS, withRequestLogging, withErrorHandling } from '@/lib/api/utils';
+import { createAdminClient } from '@/lib/supabase/server';
 
 // GET /api/admin/system/db-checks
 export const GET = compose(
@@ -13,7 +14,7 @@ export const GET = compose(
         return createErrorResponse({ code: 'DB_HEALTH_RPC_ERROR', message: error.message }, HTTP_STATUS.INTERNAL_SERVER_ERROR);
       }
       return createSuccessResponse(data);
-    } catch (err) {
+    } catch (_err) {
       return createErrorResponse('Failed to run DB checks', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }, { name: 'admin:db-checks' })),

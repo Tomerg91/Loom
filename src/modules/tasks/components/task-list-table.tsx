@@ -1,6 +1,8 @@
 'use client';
 
-import { formatDate } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -9,13 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+import { formatDate } from '@/lib/utils';
 
-import type { TaskDto, TaskInstanceDto } from '../types/task';
 import { TaskPriorityIndicator } from './task-priority-indicator';
 import { TaskStatusBadge } from './task-status-badge';
+import type { TaskDto, TaskInstanceDto } from '../types/task';
 
 const getDisplayInstance = (task: TaskDto): TaskInstanceDto | null => {
   if (!task.instances || task.instances.length === 0) {

@@ -1,3 +1,5 @@
+import { RefreshCw, Download } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { 
   Select,
@@ -6,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RefreshCw, Download } from 'lucide-react';
+
 import { TimeRangeOption } from '../shared/types';
 import { DEFAULT_TIME_RANGES } from '../shared/utils';
 

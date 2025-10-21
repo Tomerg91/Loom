@@ -7,22 +7,19 @@
  * This endpoint is called after initial username/password authentication.
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import {
-  createSuccessResponse,
-  createErrorResponse,
+import { 
+  createSuccessResponse, 
+  createErrorResponse, 
   withErrorHandling,
   HTTP_STATUS,
 } from '@/lib/api/utils';
+import { createAuthService } from '@/lib/auth/auth';
 import { rateLimit } from '@/lib/security/rate-limit';
-import {
-  createMfaService,
-  getClientIP,
-  getUserAgent,
-} from '@/lib/services/mfa-service';
-import { MFA_TRUSTED_DEVICE_COOKIE } from '@/modules/auth/constants';
+import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
+
 
 // Request validation schema
 const verifyRequestSchema = z.object({
@@ -127,7 +124,7 @@ export const POST = withErrorHandling(
         // Return specific error messages for different failure scenarios
         let status: number = HTTP_STATUS.BAD_REQUEST;
         const errorMessage = result.error || 'MFA verification failed';
-
+        
         if (errorMessage.includes('Too many attempts')) {
           status = HTTP_STATUS.TOO_MANY_REQUESTS;
         } else if (errorMessage.includes('not enabled')) {

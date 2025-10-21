@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { FileMetadata } from '@/lib/services/file-management-service';
-import { toast } from '@/hooks/use-toast';
 
 interface UseFilesParams {
   ownerId?: string;

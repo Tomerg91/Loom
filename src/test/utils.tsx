@@ -1,4 +1,4 @@
-/* eslint-disable import/no-extraneous-dependencies */
+ 
 import {
   QueryClient,
   QueryClientProvider,
@@ -8,6 +8,7 @@ import {
 import { render, type RenderOptions } from '@testing-library/react';
 import { ReactElement, ReactNode } from 'react';
 import { vi } from 'vitest';
+
 import { User } from '@/types';
 
 import {

@@ -19,6 +19,7 @@ import {
   getResourceCategorySynonyms,
   normalizeResourceCategory,
 } from '@/types/resources';
+
 import { mapFileUploadToResource, mapFileUploadsToResources } from './utils';
 
 /**

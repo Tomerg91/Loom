@@ -16,9 +16,10 @@
  */
 
 import { Suspense } from 'react';
+
 import { RouteGuard } from '@/components/auth/route-guard';
-import { ClientResourceLibraryPage } from '@/components/resources/client-resource-library-page';
 import { LoadingSpinner } from '@/components/lazy-components';
+import { ClientResourceLibraryPage } from '@/components/resources/client-resource-library-page';
 
 export const dynamic = 'force-dynamic';
 

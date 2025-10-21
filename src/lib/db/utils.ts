@@ -1,6 +1,7 @@
 // Database utility functions for common operations
-import { getSupabaseClient, DatabaseError } from './index';
 import type { Database } from '@/types/supabase';
+
+import { getSupabaseClient, DatabaseError } from './index';
 
 /**
  * Executes a database operation with proper error handling

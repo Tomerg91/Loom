@@ -1,18 +1,19 @@
+import { differenceInHours, parseISO } from 'date-fns';
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
+
 import {
   createSuccessResponse,
   createErrorResponse,
   withErrorHandling,
   HTTP_STATUS
 } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
-import { getSessionById, updateSession } from '@/lib/database/sessions';
 import { isCoachAvailable } from '@/lib/database/availability';
+import { getSessionById, updateSession } from '@/lib/database/sessions';
 import { sessionNotificationService } from '@/lib/notifications/session-notifications';
-import { z } from 'zod';
-import { differenceInHours, parseISO } from 'date-fns';
-import type { Session } from '@/types';
 import { createCorsResponse } from '@/lib/security/cors';
+import { createServerClient } from '@/lib/supabase/server';
+import type { Session } from '@/types';
 
 const rescheduleSessionSchema = z.object({
   newScheduledAt: z.string().min(1, 'New scheduled time is required'),

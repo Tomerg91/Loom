@@ -1,10 +1,10 @@
-import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 
 import { RouteGuard } from '@/components/auth/route-guard';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { OnboardingContainer } from '@/components/onboarding/onboarding-container';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface OnboardingPageProps {
   params: Promise<{ locale: string }>;

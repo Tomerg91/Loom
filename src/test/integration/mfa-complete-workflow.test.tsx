@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, fireEvent, waitFor, within } from '@testing-library/react';
-import { renderWithProviders, mockUser, mockSupabaseClient, mockFetch, setupTestEnvironment } from '@/test/utils';
-import { MfaSetupWizard } from '@/components/auth/mfa-setup-wizard';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { MfaChallengeForm } from '@/components/auth/mfa-challenge-form';
+import { MfaSetupWizard } from '@/components/auth/mfa-setup-wizard';
 import { RouteGuard } from '@/components/auth/route-guard';
+import { renderWithProviders, mockUser, mockSupabaseClient, mockFetch, setupTestEnvironment } from '@/test/utils';
 
 // Mock Next.js navigation
 const mockPush = vi.fn();

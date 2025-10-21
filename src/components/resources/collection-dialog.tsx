@@ -12,11 +12,13 @@
 
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, FolderPlus } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, FolderPlus } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +38,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import type { ResourceCollection } from '@/types/resources';
 
 const collectionSchema = z.object({

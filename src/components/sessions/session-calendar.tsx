@@ -1,13 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/auth/use-user';
 import { useQuery } from '@tanstack/react-query';
-import { useRealtimeBookings } from '@/hooks/use-realtime-bookings';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Calendar, ChevronLeft, ChevronRight, Clock, User } from 'lucide-react';
 import { 
   format, 
   startOfMonth, 
@@ -22,6 +15,14 @@ import {
   parseISO,
   isToday
 } from 'date-fns';
+import { Calendar, ChevronLeft, ChevronRight, Clock, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRealtimeBookings } from '@/hooks/use-realtime-bookings';
+import { useUser } from '@/lib/auth/use-user';
 import type { Session, SessionStatus } from '@/types';
 
 interface SessionCalendarProps {

@@ -1,5 +1,5 @@
-import sharp from 'sharp';
 import { PDFDocument, rgb } from 'pdf-lib';
+import sharp from 'sharp';
 
 export interface OptimizationOptions {
   maxWidth?: number;

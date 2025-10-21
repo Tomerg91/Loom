@@ -1,11 +1,9 @@
 'use client';
 
-import { useCallback, useId, useMemo } from 'react';
 import { Filter, SlidersHorizontal, X } from 'lucide-react';
+import { useCallback, useId, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -15,6 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
 import type { TaskListFilters } from '../hooks';

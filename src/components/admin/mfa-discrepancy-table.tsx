@@ -1,6 +1,8 @@
 'use client';
 
 import { AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export interface MfaDiscrepancy {
   userId: string;

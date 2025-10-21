@@ -13,22 +13,23 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
 import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useCallback } from 'react';
+
 import {
   CollectionCard,
   CollectionDialog,
   ResourceEmptyState,
 } from '@/components/resources';
 import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
-import type { ResourceCollection } from '@/types/resources';
+import { Button } from '@/components/ui/button';
 import {
   useCollections,
   useCreateCollection,
   useUpdateCollection,
   useDeleteCollection,
 } from '@/hooks/resources';
+import type { ResourceCollection } from '@/types/resources';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';

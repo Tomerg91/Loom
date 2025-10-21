@@ -1,8 +1,9 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { createServerClient } from '@/lib/supabase/server';
+
 import { CoachOnboardingWizard } from '@/components/onboarding/coach/coach-onboarding-wizard';
+import { createServerClient } from '@/lib/supabase/server';
 
 interface CoachOnboardingPageProps {
   params: Promise<{ locale: string }>;

@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { ClientProgressPage } from '@/components/client/progress-page';
+
 import { ClientOrAdminRoute } from '@/components/auth/route-guard';
+import { ClientProgressPage } from '@/components/client/progress-page';
 
 export default function ClientProgressPageRoute() {
   return (

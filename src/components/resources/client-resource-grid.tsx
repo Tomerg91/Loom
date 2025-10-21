@@ -13,9 +13,11 @@
  */
 
 import { Download, Eye, CheckCircle2, Clock, FileText } from 'lucide-react';
+import * as Icons from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { formatFileSize } from '@/lib/utils/file-validation';
 import {
   RESOURCE_CATEGORY_LABELS,
@@ -23,7 +25,7 @@ import {
   type ClientResourceItem,
   type ProgressAction,
 } from '@/types/resources';
-import * as Icons from 'lucide-react';
+
 
 interface ClientResourceGridProps {
   resources: ClientResourceItem[];

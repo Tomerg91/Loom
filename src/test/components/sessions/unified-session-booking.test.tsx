@@ -1,6 +1,8 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+import { UnifiedSessionBooking, type UnifiedSessionBookingProps } from '@/components/sessions/unified-session-booking';
 import { 
   renderWithProviders, 
   mockFetch, 
@@ -13,7 +15,6 @@ import {
   mockUseQueryClient,
   mockQueryClient
 } from '@/test/utils';
-import { UnifiedSessionBooking, type UnifiedSessionBookingProps } from '@/components/sessions/unified-session-booking';
 
 // Mock dependencies
 vi.mock('@/lib/store/auth-store', () => ({

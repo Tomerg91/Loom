@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, fireEvent, waitFor, act, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { renderWithProviders, mockUser, mockCoachUser, setupTestEnvironment } from '@/test/utils';
 
 // Mock Next.js navigation
