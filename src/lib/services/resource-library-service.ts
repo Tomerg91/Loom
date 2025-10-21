@@ -15,6 +15,7 @@ import * as db from '@/lib/database/resources';
 import { getFileManagementService } from '@/lib/services/file-management-service';
 import { createClient } from '@/lib/supabase/server';
 import { Result } from '@/lib/types/result';
+import { DatabaseError } from '@/lib/errors/database-errors';
 import type {
   ResourceLibraryItem,
   ResourceCollection,
@@ -65,7 +66,7 @@ class ResourceLibraryService {
       addToCollection?: string;
     }
   ): Promise<Result<ResourceLibraryItem>> {
-    try {
+    return DatabaseError.wrapDatabaseOperation('uploadResource', async () => {
       // Use existing file upload service
       const fileService = getFileManagementService();
       const uploadResult = await fileService.uploadFile(file, userId, {
@@ -75,7 +76,7 @@ class ResourceLibraryService {
       });
 
       if (!uploadResult.success) {
-        return Result.error(uploadResult.error || 'File upload failed');
+        throw new Error(uploadResult.error || 'File upload failed');
       }
 
       const fileId = uploadResult.data.id;
@@ -88,7 +89,7 @@ class ResourceLibraryService {
         .eq('id', fileId);
 
       if (updateError) {
-        return Result.error(`Failed to mark as library resource: ${updateError.message}`);
+        throw DatabaseError.fromSupabaseError(updateError, 'uploadResource', 'file_uploads');
       }
 
       // Add to collection if specified
@@ -99,16 +100,11 @@ class ResourceLibraryService {
       // Get the updated resource
       const resource = await db.getResourceById(fileId, userId);
       if (!resource) {
-        return Result.error('Resource created but not found');
+        throw new Error('Resource created but not found');
       }
 
-      return Result.success(resource);
-    } catch (error) {
-      console.error('Resource upload error:', error);
-      return Result.error(
-        error instanceof Error ? error.message : 'Resource upload failed'
-      );
-    }
+      return resource;
+    });
   }
 
   /**
@@ -177,17 +173,17 @@ class ResourceLibraryService {
     userId: string,
     updates: UpdateResourceRequest
   ): Promise<Result<ResourceLibraryItem>> {
-    try {
+    return DatabaseError.wrapDatabaseOperation('updateResource', async () => {
       const supabase = await createClient();
 
       // Verify ownership
       const resource = await db.getResourceById(resourceId, userId);
       if (!resource) {
-        return Result.error('Resource not found');
+        throw DatabaseError.notFound('Resource', resourceId);
       }
 
       if (resource.userId !== userId) {
-        return Result.error('Access denied');
+        throw DatabaseError.forbidden('resource', 'update');
       }
 
       // Build update object
@@ -217,21 +213,16 @@ class ResourceLibraryService {
         .eq('id', resourceId);
 
       if (error) {
-        return Result.error(`Failed to update resource: ${error.message}`);
+        throw DatabaseError.fromSupabaseError(error, 'updateResource', 'file_uploads');
       }
 
       const updatedResource = await db.getResourceById(resourceId, userId);
       if (!updatedResource) {
-        return Result.error('Resource updated but not found');
+        throw new Error('Resource updated but not found');
       }
 
-      return Result.success(updatedResource);
-    } catch (error) {
-      console.error('Update resource error:', error);
-      return Result.error(
-        error instanceof Error ? error.message : 'Failed to update resource'
-      );
-    }
+      return updatedResource;
+    });
   }
 
   /**
@@ -245,15 +236,15 @@ class ResourceLibraryService {
     resourceId: string,
     userId: string
   ): Promise<Result<void>> {
-    try {
+    return DatabaseError.wrapDatabaseOperation('deleteResource', async () => {
       // Verify ownership
       const resource = await db.getResourceById(resourceId, userId);
       if (!resource) {
-        return Result.error('Resource not found');
+        throw DatabaseError.notFound('Resource', resourceId);
       }
 
       if (resource.userId !== userId) {
-        return Result.error('Access denied');
+        throw DatabaseError.forbidden('resource', 'delete');
       }
 
       // Use file management service to delete (handles storage cleanup)
@@ -261,16 +252,11 @@ class ResourceLibraryService {
       const deleteResult = await fileService.deleteFile(resourceId, userId);
 
       if (!deleteResult.success) {
-        return Result.error(deleteResult.error || 'Failed to delete resource');
+        throw new Error(deleteResult.error || 'Failed to delete resource');
       }
 
-      return Result.success(undefined);
-    } catch (error) {
-      console.error('Delete resource error:', error);
-      return Result.error(
-        error instanceof Error ? error.message : 'Failed to delete resource'
-      );
-    }
+      return undefined;
+    });
   }
 
   // ============================================================================
@@ -290,15 +276,15 @@ class ResourceLibraryService {
     coachId: string,
     request: ShareAllClientsRequest
   ): Promise<Result<BulkShareResponse>> {
-    try {
+    return DatabaseError.wrapDatabaseOperation('shareWithAllClients', async () => {
       // Verify ownership
       const resource = await db.getResourceById(resourceId, coachId);
       if (!resource) {
-        return Result.error('Resource not found');
+        throw DatabaseError.notFound('Resource', resourceId);
       }
 
       if (resource.userId !== coachId) {
-        return Result.error('Access denied');
+        throw DatabaseError.forbidden('resource', 'share');
       }
 
       const expiresAt = request.expiresAt ? new Date(request.expiresAt) : undefined;
@@ -312,7 +298,7 @@ class ResourceLibraryService {
 
       // TODO: Send notifications if message provided
 
-      return Result.success({
+      return {
         success: true,
         summary: {
           filesProcessed: 1,
@@ -321,13 +307,8 @@ class ResourceLibraryService {
           sharesUpdated: 0, // TODO: Track upserts
         },
         shares,
-      });
-    } catch (error) {
-      console.error('Share with all clients error:', error);
-      return Result.error(
-        error instanceof Error ? error.message : 'Failed to share resource'
-      );
-    }
+      };
+    });
   }
 
   /**
@@ -428,7 +409,7 @@ class ResourceLibraryService {
     coachId: string,
     request: CreateCollectionRequest
   ): Promise<Result<ResourceCollection>> {
-    try {
+    return DatabaseError.wrapDatabaseOperation('createCollection', async () => {
       const collection = await db.createCollection(
         coachId,
         request.name,
@@ -441,13 +422,8 @@ class ResourceLibraryService {
         await db.addResourcesToCollection(collection.id, request.resourceIds);
       }
 
-      return Result.success(collection);
-    } catch (error) {
-      console.error('Create collection error:', error);
-      return Result.error(
-        error instanceof Error ? error.message : 'Failed to create collection'
-      );
-    }
+      return collection;
+    });
   }
 
   /**
@@ -463,13 +439,13 @@ class ResourceLibraryService {
     coachId: string,
     request: UpdateCollectionRequest
   ): Promise<Result<ResourceCollection>> {
-    try {
+    return DatabaseError.wrapDatabaseOperation('updateCollection', async () => {
       const supabase = await createClient();
 
       // Verify ownership
       const collection = await db.getCollectionWithResources(collectionId, coachId);
       if (!collection) {
-        return Result.error('Collection not found');
+        throw DatabaseError.notFound('Collection', collectionId);
       }
 
       // Build update object
@@ -494,13 +470,12 @@ class ResourceLibraryService {
           .eq('id', collectionId);
 
         if (error) {
-          return Result.error(`Failed to update collection: ${error.message}`);
+          throw DatabaseError.fromSupabaseError(error, 'updateCollection', 'resource_collections');
         }
       }
 
       // Handle resource reordering if provided
       if (request.resourceOrder && request.resourceOrder.length > 0) {
-        // Update sort_order for each item
         const updates = request.resourceOrder.map((fileId, index) => ({
           collection_id: collectionId,
           file_id: fileId,
@@ -514,22 +489,17 @@ class ResourceLibraryService {
           });
 
         if (error) {
-          return Result.error(`Failed to reorder resources: ${error.message}`);
+          throw DatabaseError.fromSupabaseError(error, 'updateCollection', 'resource_collection_items');
         }
       }
 
       const updatedCollection = await db.getCollectionWithResources(collectionId, coachId);
       if (!updatedCollection) {
-        return Result.error('Collection updated but not found');
+        throw new Error('Collection updated but not found');
       }
 
-      return Result.success(updatedCollection);
-    } catch (error) {
-      console.error('Update collection error:', error);
-      return Result.error(
-        error instanceof Error ? error.message : 'Failed to update collection'
-      );
-    }
+      return updatedCollection;
+    });
   }
 
   /**
@@ -543,13 +513,13 @@ class ResourceLibraryService {
     collectionId: string,
     coachId: string
   ): Promise<Result<void>> {
-    try {
+    return DatabaseError.wrapDatabaseOperation('deleteCollection', async () => {
       const supabase = await createClient();
 
       // Verify ownership
       const collection = await db.getCollectionWithResources(collectionId, coachId);
       if (!collection) {
-        return Result.error('Collection not found');
+        throw DatabaseError.notFound('Collection', collectionId);
       }
 
       const { error } = await supabase
@@ -558,16 +528,11 @@ class ResourceLibraryService {
         .eq('id', collectionId);
 
       if (error) {
-        return Result.error(`Failed to delete collection: ${error.message}`);
+        throw DatabaseError.fromSupabaseError(error, 'deleteCollection', 'resource_collections');
       }
 
-      return Result.success(undefined);
-    } catch (error) {
-      console.error('Delete collection error:', error);
-      return Result.error(
-        error instanceof Error ? error.message : 'Failed to delete collection'
-      );
-    }
+      return undefined;
+    });
   }
 
   /**
@@ -583,22 +548,17 @@ class ResourceLibraryService {
     coachId: string,
     resourceIds: string[]
   ): Promise<Result<void>> {
-    try {
+    return DatabaseError.wrapDatabaseOperation('addToCollection', async () => {
       // Verify ownership
       const collection = await db.getCollectionWithResources(collectionId, coachId);
       if (!collection) {
-        return Result.error('Collection not found');
+        throw DatabaseError.notFound('Collection', collectionId);
       }
 
       await db.addResourcesToCollection(collectionId, resourceIds);
 
-      return Result.success(undefined);
-    } catch (error) {
-      console.error('Add to collection error:', error);
-      return Result.error(
-        error instanceof Error ? error.message : 'Failed to add resources to collection'
-      );
-    }
+      return undefined;
+    });
   }
 
   /**
@@ -614,13 +574,13 @@ class ResourceLibraryService {
     coachId: string,
     resourceId: string
   ): Promise<Result<void>> {
-    try {
+    return DatabaseError.wrapDatabaseOperation('removeFromCollection', async () => {
       const supabase = await createClient();
 
       // Verify ownership
       const collection = await db.getCollectionWithResources(collectionId, coachId);
       if (!collection) {
-        return Result.error('Collection not found');
+        throw DatabaseError.notFound('Collection', collectionId);
       }
 
       const { error } = await supabase
@@ -630,16 +590,11 @@ class ResourceLibraryService {
         .eq('file_id', resourceId);
 
       if (error) {
-        return Result.error(`Failed to remove resource: ${error.message}`);
+        throw DatabaseError.fromSupabaseError(error, 'removeFromCollection', 'resource_collection_items');
       }
 
-      return Result.success(undefined);
-    } catch (error) {
-      console.error('Remove from collection error:', error);
-      return Result.error(
-        error instanceof Error ? error.message : 'Failed to remove resource from collection'
-      );
-    }
+      return undefined;
+    });
   }
 
   // ============================================================================
@@ -730,7 +685,7 @@ class ResourceLibraryService {
     coachId: string,
     updates: Partial<ResourceLibrarySettings>
   ): Promise<Result<ResourceLibrarySettings>> {
-    try {
+    return DatabaseError.wrapDatabaseOperation('updateSettings', async () => {
       const supabase = await createClient();
 
       const updateData: any = {};
@@ -753,18 +708,13 @@ class ResourceLibraryService {
         .eq('coach_id', coachId);
 
       if (error) {
-        return Result.error(`Failed to update settings: ${error.message}`);
+        throw DatabaseError.fromSupabaseError(error, 'updateSettings', 'resource_library_settings');
       }
 
       const settings = await db.getOrCreateLibrarySettings(coachId);
 
-      return Result.success(settings);
-    } catch (error) {
-      console.error('Update settings error:', error);
-      return Result.error(
-        error instanceof Error ? error.message : 'Failed to update settings'
-      );
-    }
+      return settings;
+    });
   }
 
   /**

@@ -23,7 +23,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuthStore } from '@/lib/store/auth-store';
+import type { AuthUser } from '@/lib/auth/auth';
+import { completeMfa } from '@/modules/auth/api/mfa';
 import { mfaQueryKeys, useMfaVerification } from '@/modules/auth/hooks/useMfa';
+import { supabase } from '@/modules/platform/supabase/client';
 import type { MfaMethod } from '@/modules/auth/types';
 
 const mfaVerificationSchema = z.object({
@@ -61,6 +65,19 @@ export function MfaVerificationForm({
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const verificationMutation = useMfaVerification();
+  const {
+    setUser,
+    setMfaRequired,
+    setMfaVerified,
+    setMfaSessionToken,
+    setMfaSession,
+  } = useAuthStore(state => ({
+    setUser: state.setUser,
+    setMfaRequired: state.setMfaRequired,
+    setMfaVerified: state.setMfaVerified,
+    setMfaSessionToken: state.setMfaSessionToken,
+    setMfaSession: state.setMfaSession,
+  }));
   const [error, setError] = useState<string | null>(null);
   const [activeMethod, setActiveMethod] = useState<MfaMethod>('totp');
   const [attempts, setAttempts] = useState(0);
@@ -109,7 +126,34 @@ export function MfaVerificationForm({
         userId,
         code: data.code.toUpperCase(),
         method: activeMethod,
+        rememberDevice: data.rememberDevice,
       });
+
+      const completion = await completeMfa({
+        userId,
+        rememberDevice: data.rememberDevice,
+      });
+
+      if (completion.session?.accessToken && completion.session?.refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: completion.session.accessToken,
+          refresh_token: completion.session.refreshToken,
+        });
+
+        if (sessionError) {
+          console.warn('Failed to hydrate Supabase session after MFA completion:', sessionError);
+        }
+      }
+
+      const completedUser = completion.user as AuthUser | undefined;
+      if (completedUser) {
+        setUser(completedUser);
+      }
+
+      setMfaVerified(true);
+      setMfaRequired(false);
+      setMfaSessionToken(null);
+      setMfaSession(false);
 
       // Mark MFA complete for this browser session
       document.cookie = `mfa_verified=true; path=/; secure; samesite=strict; max-age=3600`;
@@ -127,6 +171,12 @@ export function MfaVerificationForm({
 
       if (result.warning) {
         console.warn('MFA verification warning:', result.warning);
+      }
+
+      if (completion.mfa?.warnings?.length) {
+        completion.mfa.warnings.forEach(message => {
+          console.warn('MFA completion warning:', message);
+        });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('verificationFailed'));

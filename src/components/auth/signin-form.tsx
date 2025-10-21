@@ -25,6 +25,31 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+
+  const logDebug = (...args: Parameters<typeof console.log>) => {
+    if (isDevelopment) {
+      console.log(...args);
+    }
+  };
+
+  const logDebugError = (...args: Parameters<typeof console.error>) => {
+    if (isDevelopment) {
+      console.error(...args);
+    }
+  };
+
+  const navigateWithRefresh = async (path: string) => {
+    try {
+      await router.push(path);
+      router.refresh();
+    } catch (navError) {
+      logDebugError('Navigation failed, using location fallback:', navError);
+      if (typeof window !== 'undefined') {
+        window.location.href = path;
+      }
+    }
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -44,13 +69,13 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
         return;
       }
 
-      console.log('✅ Sign-in successful:', {
+      logDebug('✅ Sign-in successful:', {
         userId: result.user?.id,
         mfaEnabled: result.user?.mfaEnabled
       });
 
       const targetPath = resolveRedirect(locale, redirectTo || '/dashboard');
-      console.log('🎯 Target path resolved:', targetPath, { locale, redirectTo });
+      logDebug('🎯 Target path resolved:', targetPath, { locale, redirectTo });
 
       // Check if MFA is required
       if (result.user?.mfaEnabled) {
@@ -59,37 +84,11 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
           redirectTo: targetPath,
         });
         const mfaPath = resolveAuthPath(locale, `/auth/mfa-verify?${query.toString()}`);
-        console.log('🔐 MFA required, navigating to:', mfaPath);
-
-        // Await navigation with timeout fallback
-        try {
-          await Promise.race([
-            router.push(mfaPath),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Navigation timeout')), 5000)
-            )
-          ]);
-          console.log('✅ MFA navigation initiated');
-        } catch (navError) {
-          console.error('❌ Navigation failed, using fallback:', navError);
-          window.location.href = mfaPath;
-        }
+        logDebug('🔐 MFA required, navigating to:', mfaPath);
+        await navigateWithRefresh(mfaPath);
       } else {
-        console.log('➡️ Navigating to dashboard');
-
-        // Await navigation with timeout fallback
-        try {
-          await Promise.race([
-            router.push(targetPath),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Navigation timeout')), 5000)
-            )
-          ]);
-          console.log('✅ Navigation initiated');
-        } catch (navError) {
-          console.error('❌ Navigation failed, using fallback:', navError);
-          window.location.href = targetPath;
-        }
+        logDebug('➡️ Navigating to dashboard');
+        await navigateWithRefresh(targetPath);
       }
       // Loading state stays true during navigation
     } catch (err) {
