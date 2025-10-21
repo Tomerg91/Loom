@@ -406,61 +406,127 @@ export class AuthService {
           }
         : null;
 
-      // Use admin client to fetch user profile and update last seen
-      // This bypasses RLS since we've already verified the user's identity via signInWithPassword
-      const adminClient = createAdminClient();
+      let authUser: AuthUser | null = null;
 
-      // Update last seen timestamp using admin client
-      await adminClient
-        .from('users')
-        .update({ last_seen_at: new Date().toISOString() })
-        .eq('id', authData.user.id);
+      // Prefer the service-role client when available but gracefully degrade when
+      // the environment is missing the key (e.g., local dev without secrets).
+      try {
+        const adminClient = createAdminClient();
 
-      // Get user profile using admin client
-      const { data: profileData, error: profileError } = await adminClient
-        .from('users')
-        .select(
-          'id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data, mfa_enabled, mfa_setup_completed, mfa_verified_at, remember_device_enabled'
-        )
-        .eq('id', authData.user.id)
-        .single();
+        const timestamp = new Date().toISOString();
+        const { error: lastSeenError } = await adminClient
+          .from('users')
+          .update({ last_seen_at: timestamp })
+          .eq('id', authData.user.id);
 
-      if (profileError || !profileData) {
-        console.error('[AuthService] Failed to fetch user profile after signin:', {
+        if (lastSeenError) {
+          console.warn('[AuthService] Failed to update last_seen_at with admin client:', {
+            userId: authData.user.id,
+            error: lastSeenError.message,
+          });
+        }
+
+        const { data: profileData, error: profileError } = await adminClient
+          .from('users')
+          .select(
+            'id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data, mfa_enabled, mfa_setup_completed, mfa_verified_at, remember_device_enabled'
+          )
+          .eq('id', authData.user.id)
+          .single();
+
+        if (!profileError && profileData) {
+          authUser = {
+            id: profileData.id,
+            email: profileData.email,
+            role: profileData.role as any,
+            firstName: profileData.first_name || '',
+            lastName: profileData.last_name || '',
+            phone: profileData.phone || '',
+            avatarUrl: profileData.avatar_url || '',
+            timezone: profileData.timezone || '',
+            language: profileData.language as any,
+            status: profileData.status as any,
+            createdAt: profileData.created_at || new Date().toISOString(),
+            updatedAt: profileData.updated_at || new Date().toISOString(),
+            lastSeenAt: profileData.last_seen_at || undefined,
+            onboardingStatus:
+              (profileData.onboarding_status as 'pending' | 'in_progress' | 'completed') ||
+              'pending',
+            onboardingStep: profileData.onboarding_step ?? 0,
+            onboardingCompletedAt: profileData.onboarding_completed_at || undefined,
+            onboardingData: (profileData.onboarding_data as Record<string, unknown>) || {},
+            mfaEnabled: profileData.mfa_enabled ?? false,
+            mfaSetupCompleted: profileData.mfa_setup_completed ?? false,
+            mfaVerifiedAt: profileData.mfa_verified_at || undefined,
+            rememberDeviceEnabled: profileData.remember_device_enabled ?? false,
+          };
+        } else if (profileError) {
+          console.warn('[AuthService] Admin client profile fetch failed after signin:', {
+            userId: authData.user.id,
+            error: profileError.message,
+          });
+        }
+      } catch (adminError) {
+        console.warn('[AuthService] Admin client unavailable during signin:', {
           userId: authData.user.id,
-          error: profileError,
+          error: adminError instanceof Error ? adminError.message : adminError,
         });
-        return {
-          user: null,
-          error: profileError?.message || 'User profile not found',
-          session: sessionTokens,
+      }
+
+      if (!authUser) {
+        const updateResult = await this.userService.updateLastSeen(authData.user.id);
+        if (!updateResult.success) {
+          console.warn('[AuthService] updateLastSeen fallback failed after signin:', {
+            userId: authData.user.id,
+            error: updateResult.error,
+          });
+        }
+
+        const profileResult = await this.userService.getUserProfile(authData.user.id);
+        if (profileResult.success) {
+          authUser = this.mapUserProfileToAuthUser(profileResult.data);
+        } else {
+          console.warn('[AuthService] getUserProfile fallback failed after signin:', {
+            userId: authData.user.id,
+            error: profileResult.error,
+          });
+        }
+      }
+
+      if (!authUser) {
+        authUser = {
+          id: authData.user.id,
+          email: authData.user.email ?? data.email,
+          role: (authData.user.user_metadata?.role as UserRole) || 'client',
+          firstName: authData.user.user_metadata?.first_name,
+          lastName: authData.user.user_metadata?.last_name,
+          phone: authData.user.user_metadata?.phone,
+          avatarUrl: authData.user.user_metadata?.avatar_url,
+          timezone: authData.user.user_metadata?.timezone,
+          language:
+            (authData.user.user_metadata?.language as Language) ||
+            (routing.defaultLocale as Language),
+          status: 'active',
+          createdAt: authData.user.created_at ?? new Date().toISOString(),
+          updatedAt:
+            authData.user.updated_at ??
+            authData.user.created_at ??
+            new Date().toISOString(),
+          lastSeenAt: authData.user.last_sign_in_at || undefined,
+          onboardingStatus: 'pending',
+          onboardingStep: 0,
+          onboardingCompletedAt: undefined,
+          onboardingData: {},
+          mfaEnabled: authData.user.user_metadata?.mfa_enabled ?? false,
+          mfaSetupCompleted: authData.user.user_metadata?.mfa_setup_completed ?? false,
+          mfaVerifiedAt: authData.user.user_metadata?.mfa_verified_at ?? undefined,
+          rememberDeviceEnabled:
+            authData.user.user_metadata?.remember_device_enabled ?? false,
         };
       }
 
       return {
-        user: {
-          id: profileData.id,
-          email: profileData.email,
-          role: profileData.role as any,
-          firstName: profileData.first_name || '',
-          lastName: profileData.last_name || '',
-          phone: profileData.phone || '',
-          avatarUrl: profileData.avatar_url || '',
-          timezone: profileData.timezone || '',
-          language: profileData.language as any,
-          status: profileData.status as any,
-          createdAt: profileData.created_at || new Date().toISOString(),
-          updatedAt: profileData.updated_at || new Date().toISOString(),
-          lastSeenAt: profileData.last_seen_at || undefined,
-          onboardingStatus: (profileData.onboarding_status as 'pending' | 'in_progress' | 'completed') || 'pending',
-          onboardingStep: profileData.onboarding_step ?? 0,
-          onboardingCompletedAt: profileData.onboarding_completed_at || undefined,
-          onboardingData: (profileData.onboarding_data as Record<string, unknown>) || {},
-          mfaEnabled: profileData.mfa_enabled ?? false,
-          mfaSetupCompleted: profileData.mfa_setup_completed ?? false,
-          mfaVerifiedAt: profileData.mfa_verified_at || undefined,
-          rememberDeviceEnabled: profileData.remember_device_enabled ?? false,
-        },
+        user: authUser,
         error: null,
         session: sessionTokens,
       };
