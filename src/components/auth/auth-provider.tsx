@@ -9,7 +9,11 @@ import { useUnifiedAuth } from '@/lib/auth/use-auth';
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ user: AuthUser | null; error: string | null }>;
+  signIn: (
+    email: string,
+    password: string,
+    rememberMe?: boolean
+  ) => Promise<{ user: AuthUser | null; error: string | null }>;
   signUp: (data: {
     email: string;
     password: string;

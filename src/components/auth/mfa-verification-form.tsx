@@ -66,6 +66,12 @@ export function MfaVerificationForm({
   const [attempts, setAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
 
+  const rememberMeParam = searchParams.get('rememberMe');
+  const rememberMe = useMemo(
+    () => rememberMeParam === '1' || rememberMeParam === 'true',
+    [rememberMeParam]
+  );
+
   const rawRedirectTo =
     redirectTo || searchParams.get('redirectTo') || '/dashboard';
   const safeRedirectTo =
@@ -109,6 +115,7 @@ export function MfaVerificationForm({
         userId,
         code: data.code.toUpperCase(),
         method: activeMethod,
+        rememberMe,
       });
 
       // Mark MFA complete for this browser session

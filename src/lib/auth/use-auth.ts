@@ -130,10 +130,14 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
   ]);
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, rememberMe = false) => {
       setLoading(true);
       try {
-        const result = await authService.signIn({ email, password });
+        const result = await authService.signIn({
+          email,
+          password,
+          rememberMe,
+        });
         if (result.user) {
           setUser(result.user);
         } else if (result.error) {

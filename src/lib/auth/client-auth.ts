@@ -1,6 +1,12 @@
 import { supabase as clientSupabase } from '@/modules/platform/supabase/client';
 
-import type { AuthUser, SignInData, SignUpData } from './auth';
+import {
+  DEFAULT_SESSION_MAX_AGE,
+  REMEMBER_ME_SESSION_MAX_AGE,
+  type AuthUser,
+  type SignInData,
+  type SignUpData,
+} from './auth';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**

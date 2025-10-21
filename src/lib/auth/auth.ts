@@ -78,6 +78,9 @@ export interface SignUpData {
   language: Language;
 }
 
+export const DEFAULT_SESSION_MAX_AGE = 60 * 60 * 12; // 12 hours
+export const REMEMBER_ME_SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+
 export interface SignInData {
   email: string;
   password: string;
@@ -366,6 +369,12 @@ export class AuthService {
     session: AuthSessionTokens | null;
   }> {
     try {
+      const rememberMe = data.rememberMe ?? false;
+      const sessionLifetimeSeconds = rememberMe
+        ? REMEMBER_ME_SESSION_MAX_AGE
+        : DEFAULT_SESSION_MAX_AGE;
+      const sessionExpiresAt = Math.floor(Date.now() / 1000) + sessionLifetimeSeconds;
+
       const { data: authData, error: authError } =
         await this.supabase.auth.signInWithPassword({
           email: data.email,
@@ -398,11 +407,15 @@ export class AuthService {
         }
       }
 
-      const sessionTokens: AuthSessionTokens | null = activeSession
+      const effectiveSession = activeSession ?? authData.session ?? null;
+
+      const sessionTokens: AuthSessionTokens | null = effectiveSession
         ? {
-            accessToken: activeSession.access_token,
-            refreshToken: activeSession.refresh_token,
-            expiresAt: activeSession.expires_at ?? null,
+            accessToken: effectiveSession.access_token,
+            refreshToken: effectiveSession.refresh_token,
+            expiresAt: rememberMe
+              ? sessionExpiresAt
+              : effectiveSession.expires_at ?? sessionExpiresAt,
           }
         : null;
 

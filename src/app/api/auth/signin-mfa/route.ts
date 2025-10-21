@@ -7,19 +7,53 @@
  * when the user needs to provide MFA verification.
  */
 
-import { NextRequest } from 'next/server';
-import { createAuthService } from '@/lib/auth/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import {
+  createAuthService,
+  DEFAULT_SESSION_MAX_AGE,
+  REMEMBER_ME_SESSION_MAX_AGE,
+} from '@/lib/auth/auth';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
+import {
+  createSuccessResponse,
+  createErrorResponse,
   withErrorHandling,
   validateRequestBody,
   rateLimit,
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { z } from 'zod';
+import { createServerClientWithRequest } from '@/lib/supabase/server';
+
+const SESSION_COOKIE_NAMES = new Set(['sb-access-token', 'sb-refresh-token']);
+
+function applySessionCookies(
+  destination: NextResponse,
+  source: NextResponse,
+  rememberMe: boolean
+) {
+  const lifetimeSeconds = rememberMe
+    ? REMEMBER_ME_SESSION_MAX_AGE
+    : DEFAULT_SESSION_MAX_AGE;
+  const expiresAt = new Date(Date.now() + lifetimeSeconds * 1000);
+
+  source.cookies.getAll().forEach(cookie => {
+    const isSessionCookie = SESSION_COOKIE_NAMES.has(cookie.name);
+    destination.cookies.set({
+      name: cookie.name,
+      value: cookie.value,
+      domain: cookie.domain,
+      path: cookie.path,
+      expires: isSessionCookie ? expiresAt : cookie.expires,
+      httpOnly: cookie.httpOnly,
+      maxAge: isSessionCookie ? lifetimeSeconds : cookie.maxAge,
+      sameSite: cookie.sameSite,
+      secure: cookie.secure,
+      priority: cookie.priority,
+    });
+  });
+}
 
 // MFA signin completion schema
 const mfaSignInSchema = z.object({
@@ -119,8 +153,19 @@ export const POST = withErrorHandling(
         );
       }
 
-      const { userId, code, method = 'totp', rememberMe } = validation.data;
-      
+      const { userId, code, method = 'totp' } = validation.data;
+      const rememberMe = validation.data.rememberMe ?? false;
+
+      const supabaseResponse = NextResponse.next();
+      const supabaseClient = createServerClientWithRequest(
+        request,
+        supabaseResponse
+      );
+      const authService = createAuthService({
+        isServer: true,
+        supabaseClient,
+      });
+
       // Check additional MFA rate limiting
       const mfaRateLimit = checkMFARateLimit(userId);
       if (mfaRateLimit.blocked) {
@@ -180,7 +225,6 @@ export const POST = withErrorHandling(
       clearFailedMFAAttempts(userId);
 
       // Get user data to complete signin
-      const authService = createAuthService(true);
       const user = await authService.getCurrentUser();
 
       if (!user || user.id !== userId) {
@@ -235,6 +279,34 @@ export const POST = withErrorHandling(
       }
 
       // Return complete user data (signin successful)
+      const lifetimeSeconds = rememberMe
+        ? REMEMBER_ME_SESSION_MAX_AGE
+        : DEFAULT_SESSION_MAX_AGE;
+
+      const { data: currentSession, error: sessionError } =
+        await supabaseClient.auth.getSession();
+
+      if (sessionError) {
+        console.warn('Failed to load Supabase session during MFA completion:', {
+          error: sessionError.message,
+        });
+      }
+
+      const session = currentSession?.session;
+
+      if (session?.access_token && session?.refresh_token) {
+        const { error: setSessionError } = await supabaseClient.auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        });
+
+        if (setSessionError) {
+          console.warn('Failed to extend Supabase session during MFA completion:', {
+            error: setSessionError.message,
+          });
+        }
+      }
+
       const response = createSuccessResponse({
         user: {
           id: user.id,
@@ -255,6 +327,8 @@ export const POST = withErrorHandling(
         },
         message: 'Successfully signed in with MFA'
       }, 'MFA authentication successful');
+
+      applySessionCookies(response, supabaseResponse, rememberMe);
 
       return applyCorsHeaders(response, request);
 

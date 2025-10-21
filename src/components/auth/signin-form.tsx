@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/components/auth/auth-provider';
 import { Loader2 } from 'lucide-react';
@@ -24,6 +25,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,7 +37,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
     const password = formData.get('password') as string;
 
     try {
-      const result = await signIn(email, password);
+      const result = await signIn(email, password, rememberMe);
 
       if (result.error) {
         setError(result.error);
@@ -56,6 +58,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
         const query = new URLSearchParams({
           userId: result.user.id,
           redirectTo: targetPath,
+          rememberMe: rememberMe ? '1' : '0',
         });
         const mfaPath = resolveAuthPath(locale, `/auth/mfa-verify?${query.toString()}`);
         console.log('🔐 MFA required, navigating to:', mfaPath);
@@ -142,6 +145,19 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
               variant="default"
               inputSize="md"
             />
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <input type="hidden" name="rememberMe" value={rememberMe ? 'on' : ''} />
+            <Checkbox
+              id="remember-me"
+              checked={rememberMe}
+              onCheckedChange={checked => setRememberMe(checked === true)}
+              data-testid="remember-me-checkbox"
+            />
+            <Label htmlFor="remember-me" className="text-sm font-medium text-neutral-900">
+              {t('signin.rememberMe')}
+            </Label>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-6 px-8 pb-8">

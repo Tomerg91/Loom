@@ -58,6 +58,8 @@ export interface MfaVerifyPayload {
   code: string;
   /** Method the user selected (TOTP or backup code). */
   method: MfaMethod;
+  /** Whether the user opted into the extended session. */
+  rememberMe?: boolean;
 }
 
 /**

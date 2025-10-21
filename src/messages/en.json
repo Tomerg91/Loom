@@ -948,6 +948,7 @@
       "link": "Sign in here",
       "loading": "Signing in...",
       "error": "An error occurred during sign in. Please try again.",
+      "rememberMe": "Keep me signed in",
       "sessionExpired": {
         "title": "Session Expired",
         "description": "Your session has expired. Please sign in again to continue."
