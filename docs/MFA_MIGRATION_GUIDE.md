@@ -17,6 +17,12 @@ The database migration (`20251021000003_mfa_unified_source_non_destructive.sql`)
 
 **Important**: The legacy `users.mfa_enabled` column still works and is automatically synced. You can deploy the database migration without breaking existing code.
 
+## Trusted Device Tokens
+
+- Successful MFA challenges can now persist a trusted-device token when the user enables "Remember this device". The API issues a random 32-byte token, stores its SHA-256 hash in `trusted_devices`, and returns the raw token inside an HTTP-only `mfa_trusted_device` cookie with `SameSite=strict`.
+- Tokens expire after 30 days by default (`MFA_TRUSTED_DEVICE_TTL_DAYS` overrides the window). Each verification request mints a new token so the cookie rotates automatically; opting out of "Remember this device" clears the cookie immediately.
+- Middleware validates the cookie on every request. Invalid or expired tokens are deleted server-side and the request falls back to the standard MFA enforcement path, so stale devices never bypass MFA.
+
 ## Application Code Patterns
 
 ### Pattern 1: Simple Boolean Check

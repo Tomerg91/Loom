@@ -203,6 +203,31 @@ export const POST = withErrorHandling(
         mfaEnabled: user.mfaEnabled ?? false,
       } as const;
 
+      const sessionPayload = session?.accessToken && session?.refreshToken
+        ? {
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+            expiresAt: session.expiresAt ?? null,
+          }
+        : null;
+
+      const forwardSupabaseCookies = (target: NextResponse) => {
+        supabaseResponse.cookies.getAll().forEach(cookie => {
+          target.cookies.set({
+            name: cookie.name,
+            value: cookie.value,
+            domain: cookie.domain,
+            path: cookie.path,
+            expires: cookie.expires,
+            httpOnly: cookie.httpOnly,
+            maxAge: cookie.maxAge,
+            sameSite: cookie.sameSite,
+            secure: cookie.secure,
+            priority: cookie.priority,
+          });
+        });
+      };
+
       if (requiresMFA) {
         // Log MFA required for auditing
         console.info('User signin - MFA required:', {
@@ -216,9 +241,11 @@ export const POST = withErrorHandling(
         const response = createSuccessResponse({
           requiresMFA: true,
           user: { ...sanitizedUser, mfaEnabled: true },
+          session: sessionPayload,
           message: 'MFA verification required to complete signin'
         }, 'MFA verification required');
 
+        forwardSupabaseCookies(response);
         return applyCorsHeaders(response, request);
       }
 
@@ -233,19 +260,7 @@ export const POST = withErrorHandling(
         ip: request.headers.get('x-forwarded-for') || 'unknown'
       });
 
-      let sessionPayload: {
-        accessToken: string;
-        refreshToken: string;
-        expiresAt: number | null;
-      } | null = null;
-
-      if (session?.accessToken && session?.refreshToken) {
-        sessionPayload = {
-          accessToken: session.accessToken,
-          refreshToken: session.refreshToken,
-          expiresAt: session.expiresAt ?? null,
-        };
-      } else {
+      if (!sessionPayload) {
         console.warn('Sign-in succeeded but no session tokens were returned for user', {
           userId: user.id,
         });
@@ -257,20 +272,7 @@ export const POST = withErrorHandling(
         message: 'Successfully signed in'
       }, 'Authentication successful');
 
-      supabaseResponse.cookies.getAll().forEach(cookie => {
-        response.cookies.set({
-          name: cookie.name,
-          value: cookie.value,
-          domain: cookie.domain,
-          path: cookie.path,
-          expires: cookie.expires,
-          httpOnly: cookie.httpOnly,
-          maxAge: cookie.maxAge,
-          sameSite: cookie.sameSite,
-          secure: cookie.secure,
-          priority: cookie.priority,
-        });
-      });
+      forwardSupabaseCookies(response);
 
       return applyCorsHeaders(response, request);
       

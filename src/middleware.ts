@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
 
+import { createMfaService, getClientIP } from '@/lib/services/mfa-service';
 import { resolveRedirect } from '@/lib/utils/redirect';
 import {
   AUTH_ROUTES,
   DEFAULT_DASHBOARD_ROUTE,
   MFA_PENDING_COOKIE,
+  MFA_TRUSTED_DEVICE_COOKIE,
   MFA_VERIFY_ROUTE,
   PROTECTED_ROUTES,
   PUBLIC_ROUTES,
@@ -60,6 +62,31 @@ function matchesRoute(path: string, candidates: readonly string[]): boolean {
   });
 }
 
+function readCookie(request: NextRequest, name: string): string | null {
+  const cookieStore = request.cookies as
+    | { get?: (key: string) => { value?: string } | undefined }
+    | undefined;
+
+  const cookieValue = cookieStore?.get?.(name)?.value;
+  if (cookieValue !== undefined) {
+    return cookieValue ?? null;
+  }
+
+  const header = request.headers.get('cookie');
+  if (!header) {
+    return null;
+  }
+
+  for (const segment of header.split(';')) {
+    const [key, ...rest] = segment.trim().split('=');
+    if (key === name) {
+      return rest.join('=') || '';
+    }
+  }
+
+  return null;
+}
+
 async function refreshSessionOnResponse(
   request: NextRequest,
   response: NextResponse
@@ -110,8 +137,10 @@ export async function middleware(request: NextRequest) {
       status: 204,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        'Access-Control-Allow-Methods':
+          'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers':
+          'Content-Type, Authorization, X-Requested-With',
         'Access-Control-Max-Age': '86400',
       },
     });
@@ -193,11 +222,36 @@ export async function middleware(request: NextRequest) {
   }
 
   const sessionContext = await getSessionContext(request);
-  const hasSession = Boolean(sessionContext.session?.user);
-  const mfaPendingCookie =
-    request.cookies.get(MFA_PENDING_COOKIE)?.value === 'true';
+  const sessionUser = sessionContext.session?.user ?? null;
+  const hasSession = Boolean(sessionUser);
+  const mfaPendingCookie = readCookie(request, MFA_PENDING_COOKIE) === 'true';
+  let trustedDeviceValid = false;
+
+  if (hasSession) {
+    const trustedCookie = readCookie(request, MFA_TRUSTED_DEVICE_COOKIE);
+    if (trustedCookie) {
+      const [deviceId, token] = trustedCookie.split('.');
+      if (deviceId && token) {
+        try {
+          const mfaService = createMfaService(true);
+          trustedDeviceValid = await mfaService.verifyTrustedDeviceToken(
+            sessionUser!.id,
+            deviceId,
+            token,
+            {
+              ipAddress: getClientIP(request) ?? undefined,
+              userAgent: userAgent || undefined,
+            }
+          );
+        } catch (error) {
+          console.warn('Failed to validate trusted device token:', error);
+        }
+      }
+    }
+  }
   const mfaPending =
     hasSession &&
+    !trustedDeviceValid &&
     (mfaPendingCookie ||
       (sessionContext.mfaEnabled && !sessionContext.mfaVerified));
 

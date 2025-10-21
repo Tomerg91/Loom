@@ -2,7 +2,6 @@ import * as crypto from 'crypto';
 import { NextRequest } from 'next/server';
 import * as speakeasy from 'speakeasy';
 
-import { createUserService } from '@/lib/database';
 import { supabase as clientSupabase } from '@/lib/supabase/client';
 
 // Secure environment validation - NO FALLBACKS ALLOWED
@@ -73,6 +72,30 @@ const getMfaConfig = () => {
 
 const MFA_CONFIG = getMfaConfig();
 
+type TrustedDeviceRow = {
+  id: string;
+  user_id: string;
+  device_name: string | null;
+  device_fingerprint: string;
+  ip_address: string | null;
+  user_agent: string | null;
+  location?: string | null;
+  last_used_at: string | null;
+  created_at: string | null;
+  expires_at: string | null;
+};
+
+type SecurityEventRow = {
+  id: string;
+  user_id: string;
+  type: string;
+  timestamp: string;
+  ip_address: string | null;
+  location: string | null;
+  device_info: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
 export interface MfaSecret {
   secret: string;
   qrCodeUrl: string;
@@ -88,13 +111,14 @@ export interface MfaVerificationResult {
 export interface TrustedDevice {
   id: string;
   userId: string;
-  deviceName: string;
-  deviceType: 'desktop' | 'mobile' | 'browser';
-  fingerprint: string;
-  ipAddress: string;
+  deviceName?: string;
+  deviceFingerprint: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
   location?: string;
-  lastUsed: string;
+  lastUsedAt: string;
   createdAt: string;
+  expiresAt: string;
 }
 
 export interface SecurityEvent {
@@ -131,14 +155,11 @@ export interface MfaSetupData {
 export class MfaService {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private supabase: any;
-  private userService: ReturnType<typeof createUserService>;
-  private isServer: boolean;
 
   constructor(isServer = true) {
     // Validate environment only during actual runtime operations
     validateMfaEnvironment();
 
-    this.isServer = isServer;
     if (isServer) {
       // Lazy import to avoid server-only code in client bundles
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -147,7 +168,6 @@ export class MfaService {
     } else {
       this.supabase = clientSupabase;
     }
-    this.userService = createUserService(isServer);
   }
 
   // Helper to use the correct Supabase client in both server and client contexts
@@ -656,31 +676,38 @@ export class MfaService {
     deviceInfo: Partial<TrustedDevice>
   ): Promise<{ device: TrustedDevice | null; error: string | null }> {
     try {
+      const now = new Date();
       const device: TrustedDevice = {
         id: this.generateId(),
         userId,
-        deviceName: deviceInfo.deviceName || 'Unknown Device',
-        deviceType: deviceInfo.deviceType || 'browser',
-        fingerprint: deviceInfo.fingerprint || this.generateDeviceFingerprint(),
-        ipAddress: deviceInfo.ipAddress || '127.0.0.1',
+        deviceName:
+          deviceInfo.deviceName || this.deriveDeviceName(deviceInfo.userAgent),
+        deviceFingerprint:
+          deviceInfo.deviceFingerprint ||
+          this.generateDeviceFingerprint(deviceInfo.userAgent ?? undefined),
+        ipAddress: deviceInfo.ipAddress ?? null,
+        userAgent: deviceInfo.userAgent ?? null,
         location: deviceInfo.location,
-        lastUsed: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
+        lastUsedAt: now.toISOString(),
+        createdAt: now.toISOString(),
+        expiresAt: new Date(
+          now.getTime() + this.getTrustedDeviceTtlMs()
+        ).toISOString(),
       };
 
-      // Save trusted device to database
       const supabase = this.getSupabaseClient();
       const { error: saveError } = await supabase
-        .from('user_trusted_devices')
-        .insert({
+        .from('trusted_devices')
+        .upsert({
           id: device.id,
           user_id: device.userId,
           device_name: device.deviceName,
-          device_type: device.deviceType,
-          fingerprint: device.fingerprint,
+          device_fingerprint: device.deviceFingerprint,
           ip_address: device.ipAddress,
+          user_agent: device.userAgent,
           location: device.location,
-          last_used: device.lastUsed,
+          last_used_at: device.lastUsedAt,
+          expires_at: device.expiresAt,
           created_at: device.createdAt,
         });
 
@@ -694,7 +721,7 @@ export class MfaService {
         userId,
         type: 'device_trusted',
         timestamp: new Date().toISOString(),
-        ipAddress: device.ipAddress,
+        ipAddress: device.ipAddress ?? undefined,
         location: device.location,
         deviceInfo: device.deviceName,
       });
@@ -720,7 +747,7 @@ export class MfaService {
       // Remove trusted device from database
       const supabase = this.getSupabaseClient();
       const { error: deleteError } = await supabase
-        .from('user_trusted_devices')
+        .from('trusted_devices')
         .delete()
         .eq('user_id', userId)
         .eq('id', deviceId);
@@ -745,37 +772,173 @@ export class MfaService {
   /**
    * Check if device is trusted
    */
-  async isDeviceTrusted(
-    userId: string,
-    deviceFingerprint: string
-  ): Promise<boolean> {
+  async isDeviceTrusted(userId: string, deviceToken: string): Promise<boolean> {
     try {
-      // Check if device is trusted by querying database
-      const supabase = this.getSupabaseClient();
-      const { data: device, error: fetchError } = await supabase
-        .from('user_trusted_devices')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('fingerprint', deviceFingerprint)
-        .single();
-
-      if (fetchError) {
-        // Device not found or database error
+      if (!userId || !deviceToken) {
         return false;
       }
 
-      // Update last_used timestamp for the trusted device
-      if (device) {
-        await supabase
-          .from('user_trusted_devices')
-          .update({ last_used: new Date().toISOString() })
-          .eq('user_id', userId)
-          .eq('fingerprint', deviceFingerprint);
+      const supabase = this.getSupabaseClient();
+      const tokenHash = this.hashTrustedDeviceToken(deviceToken);
+      const { data: device, error: fetchError } = await supabase
+        .from('trusted_devices')
+        .select('id, expires_at')
+        .eq('user_id', userId)
+        .eq('device_fingerprint', tokenHash)
+        .single();
+
+      if (fetchError || !device) {
+        return false;
       }
 
-      return !!device;
+      if (device.expires_at && new Date(device.expires_at) <= new Date()) {
+        await supabase.from('trusted_devices').delete().eq('id', device.id);
+        return false;
+      }
+
+      await supabase
+        .from('trusted_devices')
+        .update({ last_used_at: new Date().toISOString() })
+        .eq('id', device.id);
+
+      return true;
     } catch (error) {
       console.error('Error checking trusted device:', error);
+      return false;
+    }
+  }
+
+  async issueTrustedDeviceToken({
+    userId,
+    ipAddress,
+    userAgent,
+  }: {
+    userId: string;
+    ipAddress?: string | null;
+    userAgent?: string | null;
+  }): Promise<
+    | {
+        success: true;
+        deviceId: string;
+        token: string;
+        expiresAt: string;
+        maxAgeSeconds: number;
+      }
+    | { success: false; error: string }
+  > {
+    try {
+      if (!userId) {
+        return { success: false, error: 'User ID is required' };
+      }
+
+      const supabase = this.getSupabaseClient();
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + this.getTrustedDeviceTtlMs());
+      const token = crypto.randomBytes(32).toString('hex');
+      const tokenHash = this.hashTrustedDeviceToken(token);
+      const deviceId = this.generateId();
+      const deviceName = this.deriveDeviceName(userAgent);
+
+      const { error: upsertError } = await supabase
+        .from('trusted_devices')
+        .upsert({
+          id: deviceId,
+          user_id: userId,
+          device_name: deviceName,
+          device_fingerprint: tokenHash,
+          ip_address: ipAddress ?? null,
+          user_agent: userAgent ?? null,
+          last_used_at: now.toISOString(),
+          expires_at: expiresAt.toISOString(),
+          created_at: now.toISOString(),
+        });
+
+      if (upsertError) {
+        console.error('Failed to persist trusted device token:', upsertError);
+        return {
+          success: false,
+          error: 'Failed to persist trusted device token',
+        };
+      }
+
+      await this.logSecurityEvent({
+        userId,
+        type: 'device_trusted',
+        timestamp: now.toISOString(),
+        ipAddress: ipAddress ?? undefined,
+        deviceInfo: deviceName,
+      });
+
+      return {
+        success: true,
+        deviceId,
+        token,
+        expiresAt: expiresAt.toISOString(),
+        maxAgeSeconds: Math.max(
+          1,
+          Math.floor((expiresAt.getTime() - now.getTime()) / 1000)
+        ),
+      };
+    } catch (error) {
+      console.error('Error issuing trusted device token:', error);
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to issue trusted device token',
+      };
+    }
+  }
+
+  async verifyTrustedDeviceToken(
+    userId: string,
+    deviceId: string,
+    token: string,
+    metadata?: { ipAddress?: string | null; userAgent?: string | null }
+  ): Promise<boolean> {
+    try {
+      if (!userId || !deviceId || !token) {
+        return false;
+      }
+
+      const supabase = this.getSupabaseClient();
+      const tokenHash = this.hashTrustedDeviceToken(token);
+      const { data: device, error } = await supabase
+        .from('trusted_devices')
+        .select('id, expires_at')
+        .eq('id', deviceId)
+        .eq('user_id', userId)
+        .eq('device_fingerprint', tokenHash)
+        .single();
+
+      if (error || !device) {
+        return false;
+      }
+
+      if (device.expires_at && new Date(device.expires_at) <= new Date()) {
+        await supabase.from('trusted_devices').delete().eq('id', deviceId);
+        return false;
+      }
+
+      const updatePayload: Record<string, string | null> = {
+        last_used_at: new Date().toISOString(),
+      };
+      if (metadata?.ipAddress !== undefined) {
+        updatePayload.ip_address = metadata.ipAddress;
+      }
+      if (metadata?.userAgent !== undefined) {
+        updatePayload.user_agent = metadata.userAgent;
+      }
+
+      await supabase
+        .from('trusted_devices')
+        .update(updatePayload)
+        .eq('id', deviceId);
+
+      return true;
+    } catch (error) {
+      console.error('Error validating trusted device token:', error);
       return false;
     }
   }
@@ -795,10 +958,10 @@ export class MfaService {
 
       // Fetch trusted devices from database
       const { data: devices, error: fetchError } = await supabase
-        .from('user_trusted_devices')
+        .from('trusted_devices')
         .select('*')
         .eq('user_id', userId)
-        .order('last_used', { ascending: false });
+        .order('last_used_at', { ascending: false });
 
       if (fetchError) {
         console.error('Failed to fetch trusted devices:', fetchError);
@@ -806,17 +969,20 @@ export class MfaService {
       }
 
       // Map database records to TrustedDevice interface
-      const trustedDevices: TrustedDevice[] = (devices || []).map(device => ({
-        id: device.id,
-        userId: device.user_id,
-        deviceName: device.device_name,
-        deviceType: device.device_type,
-        fingerprint: device.fingerprint,
-        ipAddress: device.ip_address,
-        location: device.location,
-        lastUsed: device.last_used,
-        createdAt: device.created_at,
-      }));
+      const trustedDevices: TrustedDevice[] = (devices || []).map(
+        (device: TrustedDeviceRow) => ({
+          id: device.id,
+          userId: device.user_id,
+          deviceName: device.device_name ?? undefined,
+          deviceFingerprint: device.device_fingerprint,
+          ipAddress: device.ip_address,
+          userAgent: device.user_agent,
+          location: device.location ?? undefined,
+          lastUsedAt: device.last_used_at,
+          createdAt: device.created_at,
+          expiresAt: device.expires_at,
+        })
+      );
 
       return { devices: trustedDevices, error: null };
     } catch (error) {
@@ -859,16 +1025,18 @@ export class MfaService {
       }
 
       // Map database records to SecurityEvent interface
-      const securityEvents: SecurityEvent[] = (events || []).map(event => ({
-        id: event.id,
-        userId: event.user_id,
-        type: event.type,
-        timestamp: event.timestamp,
-        ipAddress: event.ip_address,
-        location: event.location,
-        deviceInfo: event.device_info,
-        metadata: event.metadata,
-      }));
+      const securityEvents: SecurityEvent[] = (events || []).map(
+        (event: SecurityEventRow) => ({
+          id: event.id,
+          userId: event.user_id,
+          type: event.type,
+          timestamp: event.timestamp,
+          ipAddress: event.ip_address,
+          location: event.location,
+          deviceInfo: event.device_info,
+          metadata: event.metadata,
+        })
+      );
 
       return { events: securityEvents, error: null };
     } catch (error) {
@@ -977,9 +1145,7 @@ export class MfaService {
    */
   private generateId(): string {
     try {
-      // Generate 16 cryptographically secure random bytes (128 bits)
-      const randomBytes = crypto.randomBytes(16);
-      return randomBytes.toString('hex');
+      return crypto.randomUUID();
     } catch (error) {
       console.error('Failed to generate secure ID:', error);
       throw new Error('Failed to generate secure ID');
@@ -1009,6 +1175,46 @@ export class MfaService {
       console.error('Failed to generate secure device fingerprint:', error);
       throw new Error('Failed to generate secure device fingerprint');
     }
+  }
+
+  private getTrustedDeviceTtlMs(): number {
+    const fallbackDays = 30;
+    const raw = process.env.MFA_TRUSTED_DEVICE_TTL_DAYS;
+    const parsed = raw ? Number.parseInt(raw, 10) : fallbackDays;
+    const days =
+      Number.isFinite(parsed) && parsed > 0 && parsed <= 365
+        ? parsed
+        : fallbackDays;
+    return days * 24 * 60 * 60 * 1000;
+  }
+
+  private hashTrustedDeviceToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  private deriveDeviceName(userAgent?: string | null): string {
+    if (!userAgent) {
+      return 'Trusted device';
+    }
+
+    const ua = userAgent.toLowerCase();
+    if (ua.includes('iphone') || ua.includes('ipad')) {
+      return 'iOS device';
+    }
+    if (ua.includes('android')) {
+      return 'Android device';
+    }
+    if (ua.includes('mac os') || ua.includes('macintosh')) {
+      return 'macOS device';
+    }
+    if (ua.includes('windows')) {
+      return 'Windows device';
+    }
+    if (ua.includes('linux')) {
+      return 'Linux device';
+    }
+
+    return userAgent.slice(0, 64);
   }
 
   /**
@@ -1303,8 +1509,8 @@ export class MfaService {
     userId: string,
     code: string,
     method: 'totp' | 'backup_code',
-    ipAddress?: string | null,
-    userAgent?: string | null
+    _ipAddress?: string | null,
+    _userAgent?: string | null
   ): Promise<{ success: boolean; error?: string }> {
     try {
       if (method === 'totp') {
@@ -1348,9 +1554,7 @@ export class MfaService {
   /**
    * Validate MFA session
    */
-  async validateMfaSession(
-    sessionToken: string
-  ): Promise<{
+  async validateMfaSession(sessionToken: string): Promise<{
     session?: {
       sessionToken: string;
       mfaVerified: boolean;
@@ -1552,6 +1756,7 @@ export class MfaService {
             userId,
             code: options.code,
             method: options.method,
+            rememberDevice: options.rememberDevice,
           }),
         });
 
@@ -1581,8 +1786,8 @@ export class MfaService {
   async regenerateBackupCodesWithVerification(
     userId: string,
     totpCode: string,
-    ipAddress?: string | null,
-    userAgent?: string | null
+    _ipAddress?: string | null,
+    _userAgent?: string | null
   ): Promise<{ success: boolean; backupCodes?: string[]; error?: string }> {
     try {
       if (!userId || !totpCode) {

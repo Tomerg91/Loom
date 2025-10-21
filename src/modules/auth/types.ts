@@ -58,6 +58,8 @@ export interface MfaVerifyPayload {
   code: string;
   /** Method the user selected (TOTP or backup code). */
   method: MfaMethod;
+  /** Whether the user opted to trust the current device. */
+  rememberDevice?: boolean;
 }
 
 /**
@@ -72,6 +74,54 @@ export interface MfaVerifyResponse {
   backupCodesRemaining: number;
   /** Optional warning message provided by the API. */
   warning?: string;
+}
+
+/**
+ * Payload sent to finalize the MFA flow and refresh Supabase session tokens.
+ */
+export interface MfaCompletePayload {
+  /** Identifier for the authenticated user completing MFA. */
+  userId: string;
+  /** Whether the device should be remembered for subsequent sign-ins. */
+  rememberDevice?: boolean;
+  /** Whether the original sign-in request asked to extend the session. */
+  rememberMe?: boolean;
+}
+
+/**
+ * Session tokens returned after MFA completion so the client can hydrate Supabase.
+ */
+export interface MfaSessionTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number | null;
+}
+
+/**
+ * Response returned from `/api/auth/mfa/complete` once the session is refreshed.
+ */
+export interface MfaCompleteResponse {
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    avatarUrl?: string | null;
+    language: string;
+    status: string;
+    lastSeenAt?: string | null;
+    onboardingStatus?: string | null;
+    onboardingStep?: number | null;
+    onboardingCompletedAt?: string | null;
+    mfaEnabled?: boolean;
+  };
+  session: MfaSessionTokens | null;
+  mfa?: {
+    backupCodesRemaining?: number;
+    warnings?: string[];
+  };
+  message?: string;
 }
 
 /**
