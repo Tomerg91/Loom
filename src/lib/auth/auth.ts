@@ -1,3 +1,5 @@
+import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
+
 import { routing } from '@/i18n/routing';
 import { config } from '@/lib/config';
 import type { UserServiceOptions } from '@/lib/database/users';
@@ -7,6 +9,137 @@ import {
   createAdminClient,
 } from '@/modules/platform/supabase/server';
 import type { Language, User, UserRole, UserStatus } from '@/types';
+
+type AuthMetadata = Record<string, unknown> | null | undefined;
+
+const isUserRole = (value: unknown): value is UserRole =>
+  value === 'admin' || value === 'coach' || value === 'client';
+
+const coerceUserRole = (
+  ...values: (unknown | (() => unknown))[]
+): UserRole | null => {
+  for (const candidate of values) {
+    const value = typeof candidate === 'function' ? candidate() : candidate;
+    if (isUserRole(value)) {
+      return value;
+    }
+    if (typeof value === 'string' && isUserRole(value.toLowerCase())) {
+      return value.toLowerCase() as UserRole;
+    }
+  }
+  return null;
+};
+
+const coerceUserStatus = (
+  ...values: (unknown | (() => unknown))[]
+): UserStatus | null => {
+  for (const candidate of values) {
+    const value = typeof candidate === 'function' ? candidate() : candidate;
+    if (typeof value === 'string') {
+      const normalized = value.toLowerCase();
+      if (
+        normalized === 'active' ||
+        normalized === 'inactive' ||
+        normalized === 'suspended'
+      ) {
+        return normalized as UserStatus;
+      }
+
+      if (normalized === 'onboarding') {
+        return 'active';
+      }
+      if (normalized === 'disabled' || normalized === 'deactivated') {
+        return 'inactive';
+      }
+    }
+
+    if (typeof value === 'boolean') {
+      return value ? 'active' : 'inactive';
+    }
+  }
+
+  return null;
+};
+
+const coerceBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.toLowerCase();
+    if (['true', '1', 'yes'].includes(normalized)) {
+      return true;
+    }
+    if (['false', '0', 'no'].includes(normalized)) {
+      return false;
+    }
+  }
+  if (typeof value === 'number') {
+    return value !== 0;
+  }
+  return undefined;
+};
+
+const coerceNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+};
+
+const coerceString = (value: unknown): string | undefined => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  return undefined;
+};
+
+const coerceLanguage = (
+  ...values: (unknown | (() => unknown))[]
+): Language | null => {
+  for (const candidate of values) {
+    const value = typeof candidate === 'function' ? candidate() : candidate;
+    if (typeof value !== 'string') {
+      continue;
+    }
+
+    const normalized = value.toLowerCase();
+    if (normalized === 'en' || normalized === 'he') {
+      return normalized as Language;
+    }
+
+    if (normalized.startsWith('en')) {
+      return 'en';
+    }
+    if (normalized.startsWith('he')) {
+      return 'he';
+    }
+  }
+
+  return null;
+};
+
+const getMetadataValue = (metadata: AuthMetadata, keys: string[]): unknown => {
+  if (!metadata) {
+    return undefined;
+  }
+
+  const record = metadata as Record<string, unknown>;
+
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(record, key)) {
+      return record[key];
+    }
+  }
+  return undefined;
+};
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
 
@@ -135,10 +268,10 @@ export class AuthService {
       return AuthService.create({ isServer: options });
     }
 
-    const { isServer = true } = options;
+    const { isServer = true, supabaseClient } = options;
 
     if (isServer) {
-      const supabase = createClient();
+      const supabase = supabaseClient ?? createClient();
       return new AuthService(true, supabase);
     }
 
@@ -195,6 +328,199 @@ export class AuthService {
       mfaSetupCompleted: userProfile.mfaSetupCompleted,
       mfaVerifiedAt: userProfile.mfaVerifiedAt,
       rememberDeviceEnabled: userProfile.rememberDeviceEnabled,
+    };
+  }
+
+  private buildAuthUserFromAuthMetadata(
+    supabaseUser: SupabaseAuthUser
+  ): AuthUser {
+    const userMetadata = (supabaseUser.user_metadata ?? {}) as Record<
+      string,
+      any
+    >;
+    const appMetadata = (supabaseUser.app_metadata ?? {}) as Record<
+      string,
+      any
+    >;
+
+    const role =
+      coerceUserRole(
+        userMetadata.role,
+        appMetadata.role,
+        userMetadata.role_id,
+        userMetadata.user_role,
+        getMetadataValue(userMetadata, ['roleName', 'userRole']),
+        getMetadataValue(appMetadata, ['roleName', 'userRole'])
+      ) || 'client';
+
+    let status = coerceUserStatus(
+      userMetadata.status,
+      appMetadata.status,
+      getMetadataValue(userMetadata, ['account_status', 'user_status']),
+      getMetadataValue(appMetadata, ['account_status', 'user_status']),
+      getMetadataValue(userMetadata, [`${role}_status`]),
+      getMetadataValue(appMetadata, [`${role}_status`])
+    );
+
+    if (!status) {
+      const suspendedFlags = [
+        getMetadataValue(userMetadata, [
+          'is_suspended',
+          'suspended',
+          'suspension_status',
+        ]),
+        getMetadataValue(appMetadata, [
+          'is_suspended',
+          'suspended',
+          'suspension_status',
+        ]),
+      ];
+
+      for (const flag of suspendedFlags) {
+        if (coerceBoolean(flag)) {
+          status = 'suspended';
+          break;
+        }
+      }
+    }
+
+    if (!status) {
+      const activeFlags = [
+        getMetadataValue(userMetadata, ['is_active', 'active']),
+        getMetadataValue(appMetadata, ['is_active', 'active']),
+      ];
+
+      for (const flag of activeFlags) {
+        const bool = coerceBoolean(flag);
+        if (typeof bool === 'boolean') {
+          status = bool ? 'active' : 'inactive';
+          break;
+        }
+      }
+    }
+
+    if (!status) {
+      status = 'active';
+      console.warn(
+        '[AuthService] Falling back to active status from auth metadata due to missing profile data.',
+        {
+          userId: supabaseUser.id,
+        }
+      );
+    }
+
+    const language =
+      coerceLanguage(
+        userMetadata.language,
+        appMetadata.language,
+        getMetadataValue(userMetadata, ['preferred_language', 'locale']),
+        getMetadataValue(appMetadata, ['preferred_language', 'locale'])
+      ) || (routing.defaultLocale as Language);
+
+    const onboardingStatusValue = coerceString(
+      getMetadataValue(userMetadata, ['onboarding_status']) ??
+        getMetadataValue(appMetadata, ['onboarding_status'])
+    );
+
+    const onboardingStatus = onboardingStatusValue
+      ? ['pending', 'in_progress', 'completed'].includes(onboardingStatusValue)
+        ? (onboardingStatusValue as 'pending' | 'in_progress' | 'completed')
+        : 'pending'
+      : 'pending';
+
+    const onboardingStep =
+      coerceNumber(
+        getMetadataValue(userMetadata, ['onboarding_step']) ??
+          getMetadataValue(appMetadata, ['onboarding_step'])
+      ) ?? 0;
+
+    const mfaEnabled = coerceBoolean(
+      getMetadataValue(userMetadata, ['mfa_enabled', 'mfaEnabled']) ??
+        getMetadataValue(appMetadata, ['mfa_enabled', 'mfaEnabled'])
+    );
+
+    const mfaSetupCompleted = coerceBoolean(
+      getMetadataValue(userMetadata, ['mfa_setup_completed']) ??
+        getMetadataValue(appMetadata, ['mfa_setup_completed'])
+    );
+
+    const rememberDeviceEnabled = coerceBoolean(
+      getMetadataValue(userMetadata, ['remember_device_enabled']) ??
+        getMetadataValue(appMetadata, ['remember_device_enabled'])
+    );
+
+    const onboardingData = getMetadataValue(userMetadata, ['onboarding_data']);
+
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email ?? '',
+      role,
+      firstName:
+        coerceString(
+          getMetadataValue(userMetadata, [
+            'first_name',
+            'firstName',
+            'given_name',
+          ]) ?? getMetadataValue(appMetadata, ['first_name', 'firstName'])
+        ) || undefined,
+      lastName:
+        coerceString(
+          getMetadataValue(userMetadata, [
+            'last_name',
+            'lastName',
+            'family_name',
+          ]) ?? getMetadataValue(appMetadata, ['last_name', 'lastName'])
+        ) || undefined,
+      phone:
+        coerceString(
+          getMetadataValue(userMetadata, ['phone', 'phone_number']) ??
+            getMetadataValue(appMetadata, ['phone', 'phone_number'])
+        ) || undefined,
+      avatarUrl:
+        coerceString(
+          getMetadataValue(userMetadata, ['avatar_url', 'avatar']) ??
+            getMetadataValue(appMetadata, ['avatar_url', 'avatar'])
+        ) || undefined,
+      timezone:
+        coerceString(
+          getMetadataValue(userMetadata, ['timezone', 'time_zone']) ??
+            getMetadataValue(appMetadata, ['timezone', 'time_zone'])
+        ) || undefined,
+      language,
+      status,
+      createdAt: supabaseUser.created_at ?? new Date().toISOString(),
+      updatedAt:
+        supabaseUser.updated_at ??
+        supabaseUser.created_at ??
+        new Date().toISOString(),
+      lastSeenAt:
+        coerceString(
+          getMetadataValue(userMetadata, ['last_seen_at', 'lastSeenAt']) ??
+            getMetadataValue(appMetadata, ['last_seen_at', 'lastSeenAt'])
+        ) || undefined,
+      onboardingStatus,
+      onboardingStep,
+      onboardingCompletedAt:
+        coerceString(
+          getMetadataValue(userMetadata, ['onboarding_completed_at']) ??
+            getMetadataValue(appMetadata, ['onboarding_completed_at'])
+        ) || undefined,
+      onboardingData:
+        onboardingData && typeof onboardingData === 'object'
+          ? (onboardingData as Record<string, unknown>)
+          : {},
+      mfaEnabled: mfaEnabled ?? undefined,
+      mfaSetupCompleted: mfaSetupCompleted ?? undefined,
+      mfaVerifiedAt:
+        coerceString(
+          getMetadataValue(userMetadata, ['mfa_verified_at']) ??
+            getMetadataValue(appMetadata, ['mfa_verified_at'])
+        ) || undefined,
+      rememberDeviceEnabled: rememberDeviceEnabled ?? undefined,
+      metadata: {
+        ...appMetadata,
+        ...userMetadata,
+      },
     };
   }
 
@@ -517,12 +843,13 @@ export class AuthService {
       }
 
       if (!authUser) {
-        return {
-          user: null,
-          error:
-            'Unable to load user profile after sign-in. Please try again later.',
-          session: null,
-        };
+        console.warn(
+          '[AuthService] Falling back to auth metadata after profile lookups failed during signin',
+          {
+            userId: authData.user.id,
+          }
+        );
+        authUser = this.buildAuthUserFromAuthMetadata(authData.user);
       }
 
       return {
