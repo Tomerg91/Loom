@@ -1,9 +1,10 @@
 'use client';
 
+import { Calendar } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Loading skeleton for session calendar

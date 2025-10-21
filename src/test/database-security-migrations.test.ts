@@ -14,10 +14,12 @@
  * 7. Session and Rating System
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+
+import type { Database } from '@/types/supabase';
+
 
 // Test constants
 const TEST_EMAIL = 'test-security-migration@example.com';

@@ -1,6 +1,5 @@
 'use client';
 
-import React, { createContext, useContext, useCallback, useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { 
   CheckCircle, 
@@ -13,6 +12,8 @@ import {
   Clock,
   Loader2
 } from 'lucide-react';
+import React, { createContext, useContext, useCallback, useState, useEffect, useRef } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';

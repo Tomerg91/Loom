@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useState, useEffect, useCallback, useRef } from 'react';
+
 import { useUser } from '@/lib/auth/use-user';
 import { useRealtimeAvailability, useRealtimeConnection } from '@/lib/realtime/hooks';
 import { realtimeClient } from '@/lib/realtime/realtime-client';
-import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+
 
 export interface TimeSlot {
   startTime: string;

@@ -5,10 +5,10 @@
  * Tests: Admin Authentication, System Monitoring, Service Health Checks, Performance
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { GET, POST, PUT, DELETE } from '@/app/api/admin/system-health/route';
-import { mockUser, mockAdminUser, mockCoachUser, mockSupabaseClient } from '@/test/utils';
 
 // Mock all dependencies
 vi.mock('@/lib/services/auth-service', () => ({
@@ -68,10 +68,11 @@ Object.defineProperty(global, 'process', {
 });
 
 // Import mocked functions
-import { authService } from '@/lib/services/auth-service';
-import { createServerClient } from '@/lib/supabase/server';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { authService } from '@/lib/services/auth-service';
+import { createServerClient } from '@/lib/supabase/server';
+import { mockUser, mockAdminUser, mockCoachUser, mockSupabaseClient } from '@/test/utils';
 
 const mockAuthService = vi.mocked(authService);
 const mockCreateServerClient = vi.mocked(createServerClient);

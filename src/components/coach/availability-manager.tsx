@@ -1,18 +1,20 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Clock, Plus, Trash2, Calendar, Save, Globe } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import React, { useState, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/auth/use-user';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Clock, Plus, Trash2, Calendar, Save, Globe } from 'lucide-react';
+import { useUser } from '@/lib/auth/use-user';
+
 
 // Validation schema for availability with timezone support
 const timeSlotSchema = z.object({

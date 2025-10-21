@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
 import { 
   Search, 
   Filter, 
@@ -15,16 +14,10 @@ import {
   ArrowUpDown,
   X
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import React, { useState, useMemo } from 'react';
+
 import { Badge } from '@/components/ui/badge';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,15 +28,23 @@ import {
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 import { NotesFilter } from '@/lib/queries/notes';
+import { cn } from '@/lib/utils';
 
 interface NotesFiltersProps {
   filters: NotesFilter;

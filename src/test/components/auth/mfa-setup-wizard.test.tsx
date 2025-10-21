@@ -1,8 +1,9 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders, mockFetch, mockApiResponse, waitForNextTick } from '@/test/utils';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { MfaSetupWizard, type MfaSetupWizardProps } from '@/components/auth/mfa/mfa-setup-wizard';
+import { renderWithProviders, mockFetch, mockApiResponse, waitForNextTick } from '@/test/utils';
 
 // Mock MFA sub-components
 vi.mock('@/components/auth/mfa/mfa-qr-code', () => ({

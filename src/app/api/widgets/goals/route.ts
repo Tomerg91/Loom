@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+import { ApiResponse } from '@/lib/api/types';
 import { getServerUser } from '@/lib/auth/auth';
 import { createClient } from '@/lib/supabase/server';
-import { ApiResponse } from '@/lib/api/types';
 
 export interface GoalData {
   goal: string;

@@ -40,7 +40,7 @@ CREATE POLICY "Coaches can create collections"
   WITH CHECK (
     auth.uid() = coach_id
     AND (
-      SELECT user_metadata->>'role' FROM users WHERE id = auth.uid()
+      SELECT role FROM users WHERE id = auth.uid()
     ) IN ('coach', 'admin')
   );
 
@@ -91,7 +91,7 @@ CREATE POLICY "Coaches can add items to their collections"
     )
     AND EXISTS (
       SELECT 1 FROM file_uploads
-      WHERE id = resource_collection_items.resource_id
+      WHERE id = resource_collection_items.file_id
       AND user_id = auth.uid()
     )
   );
@@ -146,7 +146,7 @@ CREATE POLICY "Coaches can create their own library settings"
   WITH CHECK (
     auth.uid() = coach_id
     AND (
-      SELECT user_metadata->>'role' FROM users WHERE id = auth.uid()
+      SELECT role FROM users WHERE id = auth.uid()
     ) IN ('coach', 'admin')
   );
 
@@ -180,7 +180,7 @@ CREATE POLICY "Coaches can view progress for their resources"
   USING (
     EXISTS (
       SELECT 1 FROM file_uploads
-      WHERE id = resource_client_progress.resource_id
+      WHERE id = resource_client_progress.file_id
       AND user_id = auth.uid()
     )
   );
@@ -192,7 +192,7 @@ CREATE POLICY "Clients can create their own progress"
   WITH CHECK (
     auth.uid() = client_id
     AND (
-      SELECT user_metadata->>'role' FROM users WHERE id = auth.uid()
+      SELECT role FROM users WHERE id = auth.uid()
     ) = 'client'
   );
 
@@ -286,10 +286,10 @@ GRANT EXECUTE ON FUNCTION mark_resource_completed(UUID, UUID) TO authenticated;
 -- Add indexes for RLS policy performance
 CREATE INDEX IF NOT EXISTS idx_resource_collections_coach_id ON resource_collections(coach_id);
 CREATE INDEX IF NOT EXISTS idx_resource_collection_items_collection_id ON resource_collection_items(collection_id);
-CREATE INDEX IF NOT EXISTS idx_resource_collection_items_resource_id ON resource_collection_items(resource_id);
+CREATE INDEX IF NOT EXISTS idx_resource_collection_items_file_id ON resource_collection_items(file_id);
 CREATE INDEX IF NOT EXISTS idx_resource_library_settings_coach_id ON resource_library_settings(coach_id);
 CREATE INDEX IF NOT EXISTS idx_resource_client_progress_client_id ON resource_client_progress(client_id);
-CREATE INDEX IF NOT EXISTS idx_resource_client_progress_resource_id ON resource_client_progress(resource_id);
+CREATE INDEX IF NOT EXISTS idx_resource_client_progress_file_id ON resource_client_progress(file_id);
 CREATE INDEX IF NOT EXISTS idx_file_uploads_library_resource ON file_uploads(is_library_resource) WHERE is_library_resource = true;
 CREATE INDEX IF NOT EXISTS idx_file_uploads_shared_all ON file_uploads(shared_with_all_clients, user_id) WHERE shared_with_all_clients = true;
 

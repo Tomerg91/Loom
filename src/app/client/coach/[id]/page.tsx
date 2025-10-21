@@ -1,43 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Avatar, 
-  AvatarImage, 
-  AvatarFallback 
-} from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
-import { 
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from '@/components/ui/tabs';
-import { 
-  Skeleton,
-  SkeletonAvatar,
-  SkeletonText,
-  SkeletonCard
-} from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Star,
   Clock,
@@ -57,6 +20,44 @@ import {
   ExternalLink,
   AlertCircle
 } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { useState } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Avatar, 
+  AvatarImage, 
+  AvatarFallback 
+} from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Skeleton,
+  SkeletonAvatar,
+  SkeletonText,
+  SkeletonCard
+} from '@/components/ui/skeleton';
+import { 
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from '@/components/ui/tabs';
 import { formatDateTime, createUserProcessor } from '@/lib/utils';
 import type { User, Session } from '@/types';
 

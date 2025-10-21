@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
-import { useUser } from '@/lib/auth/use-user';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+
+import { useUser } from '@/lib/auth/use-user';
+import { createClient } from '@/lib/supabase/client';
+
 
 /**
  * Hook for real-time session booking updates

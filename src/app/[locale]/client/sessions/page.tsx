@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { SessionsListPage } from '@/components/client/sessions-list-page';
+
 import { ClientOrAdminRoute } from '@/components/auth/route-guard';
+import { SessionsListPage } from '@/components/client/sessions-list-page';
 
 export default function ClientSessionsPage() {
   return (

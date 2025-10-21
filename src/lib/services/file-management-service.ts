@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { Result } from '@/lib/types/result';
 import { Database } from '@/types/supabase';
+
 import { fileService } from './file-service';
 
 // Type definitions
@@ -299,7 +300,7 @@ class FileManagementService {
     try {
       const supabase = await createClient();
 
-      let query = supabase
+      const query = supabase
         .from('file_uploads')
         .select(
           `

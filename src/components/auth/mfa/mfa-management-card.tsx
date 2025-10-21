@@ -1,14 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { 
   Shield,
   Smartphone,
@@ -26,9 +17,20 @@ import {
   MapPin,
   Calendar
 } from 'lucide-react';
-import { MfaSetupWizard } from './mfa-setup-wizard';
-import { MfaBackupCodes } from './mfa-backup-codes';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { formatDate } from '@/lib/utils';
+
+import { MfaBackupCodes } from './mfa-backup-codes';
+import { MfaSetupWizard } from './mfa-setup-wizard';
 
 export interface MfaManagementCardProps {
   isEnabled: boolean;

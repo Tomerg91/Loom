@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface MfaVerificationInputProps {

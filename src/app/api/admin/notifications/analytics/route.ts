@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -7,9 +9,8 @@ import {
   HTTP_STATUS,
   handlePreflight
 } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/security/rate-limit';
-import { z } from 'zod';
+import { createServerClient } from '@/lib/supabase/server';
 
 const AnalyticsQuerySchema = z.object({
   range: z.enum(['1d', '7d', '30d', '90d']).default('7d'),

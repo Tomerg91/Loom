@@ -1,6 +1,13 @@
 'use client';
 
+import {
+  CalendarCheck,
+  CheckCircle2,
+  CircleDot,
+  RefreshCcw,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
+
 import {
   Alert,
   AlertDescription,
@@ -11,20 +18,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  CalendarCheck,
-  CheckCircle2,
-  CircleDot,
-  RefreshCcw,
-} from 'lucide-react';
-
 import { formatDate } from '@/lib/utils';
 
 import { useClientTaskList, type TaskApiError } from '../hooks';
-import type { TaskDto, TaskInstanceDto } from '../types/task';
 import { TaskPriorityIndicator } from './task-priority-indicator';
-import { TaskStatusBadge } from './task-status-badge';
 import { TaskProgressDialog } from './task-progress-dialog';
+import { TaskStatusBadge } from './task-status-badge';
+import type { TaskDto, TaskInstanceDto } from '../types/task';
 
 const DEFAULT_PAGE_SIZE = 50;
 

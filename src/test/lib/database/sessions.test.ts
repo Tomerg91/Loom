@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { SessionService } from '@/lib/database/sessions';
 import { createMockSession, mockSupabaseClient } from '@/test/utils';
 

@@ -1,14 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/auth/use-user';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format, parseISO, isFuture } from 'date-fns';
 import { 
   Calendar, 
   Clock, 
@@ -20,6 +13,14 @@ import {
   Filter,
   Search
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import React, { useState, useMemo, useCallback } from 'react';
+
+
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +29,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { format, parseISO, isFuture } from 'date-fns';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useUser } from '@/lib/auth/use-user';
 import type { Session, SessionStatus } from '@/types';
 
 // Memoized SessionCard component for better performance

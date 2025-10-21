@@ -1,9 +1,10 @@
 // Server component for environment validation
-import { clientEnv } from '@/env/client';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink, Settings } from 'lucide-react';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { clientEnv } from '@/env/client';
 
 interface EnvironmentError {
   variable: string;
@@ -37,7 +38,7 @@ function checkEnvironmentVariables(): EnvironmentError[] {
       !clientEnv.NEXT_PUBLIC_SUPABASE_URL.startsWith('INVALID_')) {
     try {
       new URL(clientEnv.NEXT_PUBLIC_SUPABASE_URL);
-    } catch (error) {
+    } catch (_error) {
       errors.push({
         variable: 'NEXT_PUBLIC_SUPABASE_URL',
         value: `Invalid URL format: ${clientEnv.NEXT_PUBLIC_SUPABASE_URL}`,

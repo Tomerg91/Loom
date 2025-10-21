@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { createAuthHelper, testConstants, testUtils, getTestUserByEmail } from '../../../tests/helpers';
 
 test.describe('Accessibility Tests', () => {
@@ -299,7 +300,7 @@ test.describe('Accessibility Tests', () => {
       
       if (await modal.isVisible()) {
         // Test focus trap
-        let focusedElements: string[] = [];
+        const focusedElements: string[] = [];
         let tabCount = 0;
         
         while (tabCount < 10) {

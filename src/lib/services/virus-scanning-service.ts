@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
+
+import { createClient } from '@/lib/supabase/server';
 
 export interface VirusScanResult {
   safe: boolean;
@@ -463,7 +464,7 @@ class VirusScanningService {
     }
 
     let entropy = 0;
-    for (let freq of frequencies) {
+    for (const freq of frequencies) {
       if (freq > 0) {
         const p = freq / buffer.length;
         entropy -= p * Math.log2(p);

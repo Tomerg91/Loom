@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createAuthService } from '@/lib/auth/auth';
 import { z } from 'zod';
+
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -10,6 +10,7 @@ import {
   HTTP_STATUS,
   withRequestLogging,
 } from '@/lib/api/utils';
+import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 const resendSchema = z.object({

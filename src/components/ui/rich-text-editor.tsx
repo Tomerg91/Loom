@@ -1,7 +1,5 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { 
   Bold, 
   Italic, 
@@ -13,6 +11,9 @@ import {
   Type,
   Strikethrough
 } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
+
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface RichTextEditorProps {

@@ -1,19 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from '@/i18n/routing';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { 
   Palette,
   Globe,
@@ -26,6 +12,21 @@ import {
   Layout,
   Accessibility
 } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { usePathname, useRouter } from '@/i18n/routing';
 import { routing } from '@/i18n/routing';
 
 export function PreferencesSettingsCard() {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { compose, withRateLimit } from '@/lib/api';
 import { createPublicCorsResponse } from '@/lib/security/cors';
+import { createClient } from '@/lib/supabase/server';
 
 async function baseHealthHandler(request: NextRequest) {
   const start = Date.now();
@@ -218,7 +219,7 @@ async function checkSystemResources() {
     let loadAverage;
     try {
       loadAverage = require('os').loadavg();
-    } catch (e) {
+    } catch (_e) {
       loadAverage = null;
     }
     
@@ -242,10 +243,10 @@ async function checkSystemResources() {
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       status: 'unhealthy',
-      error: error instanceof Error ? error.message : 'System check failed',
+      error: 'System check failed',
       timestamp: new Date().toISOString(),
     };
   }
@@ -298,10 +299,10 @@ async function checkCacheHealth() {
       hitRate: 'unknown', // Would be calculated from cache metrics
       timestamp: new Date().toISOString(),
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       status: 'unhealthy',
-      error: error instanceof Error ? error.message : 'Cache check failed',
+      error: 'Cache check failed',
       timestamp: new Date().toISOString(),
     };
   }
@@ -316,7 +317,7 @@ async function getDatabasePoolStats(supabase: any) {
       idle: 8,
       waiting: 0,
     };
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }

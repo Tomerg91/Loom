@@ -34,19 +34,10 @@ export interface TaskActor {
 
 type SupabaseClient = ReturnType<typeof createAdminClient>;
 
-// Use stub types if tasks tables don't exist in production database yet
-type TaskRow = 'tasks' extends keyof Database['public']['Tables']
-  ? Database['public']['Tables']['tasks']['Row']
-  : import('../types/stub-types').TaskRow;
-
-type TaskCategoryRow = 'task_categories' extends keyof Database['public']['Tables']
-  ? Database['public']['Tables']['task_categories']['Row']
-  : import('../types/stub-types').TaskCategoryRow;
-
-type TaskInstanceRow = 'task_instances' extends keyof Database['public']['Tables']
-  ? Database['public']['Tables']['task_instances']['Row']
-  : import('../types/stub-types').TaskInstanceRow;
-
+// Use stub types - tasks tables will be added to production database after migration
+type TaskRow = import('../types/stub-types').TaskRow;
+type TaskCategoryRow = import('../types/stub-types').TaskCategoryRow;
+type TaskInstanceRow = import('../types/stub-types').TaskInstanceRow;
 type UserRow = Database['public']['Tables']['users']['Row'];
 
 type TaskRecord = TaskRow & {
@@ -124,12 +115,12 @@ export const serializeTaskRecord = (task: TaskRecord): TaskDto => {
   return {
     id: task.id,
     coachId: task.coach_id,
-    clientId: task.client_id,
+    clientId: task.client_id ?? '',
     client: buildTaskClient(task),
     category,
     title: task.title,
     description: task.description,
-    priority: task.priority,
+    priority: task.priority as TaskPriority,
     status: (task.status ?? 'PENDING') as TaskStatus,
     visibilityToCoach: task.visibility_to_coach,
     dueDate: toISOStringOrNull(task.due_date),
@@ -500,9 +491,7 @@ export class TaskService {
       throw accessDenied();
     }
 
-    type TaskUpdate = 'tasks' extends keyof Database['public']['Tables']
-      ? Database['public']['Tables']['tasks']['Update']
-      : Partial<import('../types/stub-types').TaskRow>;
+    type TaskUpdate = Partial<Omit<TaskRow, 'id' | 'created_at' | 'updated_at'>>;
 
     const updates: TaskUpdate = {};
 
@@ -519,7 +508,7 @@ export class TaskService {
     }
 
     if (payload.priority !== undefined) {
-      updates.priority = payload.priority as TaskPriority;
+      updates.priority = payload.priority;
     }
 
     if (payload.visibilityToCoach !== undefined) {
@@ -531,7 +520,7 @@ export class TaskService {
     }
 
     if (payload.status !== undefined) {
-      updates.status = payload.status as TaskStatus;
+      updates.status = payload.status;
     }
 
     const shouldRebuildInstances =

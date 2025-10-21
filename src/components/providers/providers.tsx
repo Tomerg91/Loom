@@ -1,14 +1,18 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { NextIntlClientProvider } from 'next-intl';
-import { QueryProvider } from './query-provider';
-import { StoreProvider } from './store-provider';
+import { Suspense, useEffect, useState } from 'react';
+
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { ErrorBoundary } from '@/components/error-boundary';
-import dynamic from 'next/dynamic';
-import { Suspense, useEffect, useState } from 'react';
-import { webVitalsMonitor } from '@/lib/performance';
 import type { AuthUser } from '@/lib/auth/auth';
+import { webVitalsMonitor } from '@/lib/performance';
+
+import { QueryProvider } from './query-provider';
+import { StoreProvider } from './store-provider';
+
+
 
 // Lazy load non-critical providers with increased delay for better LCP
 const RealtimeProvider = dynamic(() => import('./realtime-provider').then(mod => ({ default: mod.RealtimeProvider })), {

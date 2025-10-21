@@ -1,16 +1,7 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslations, useLocale } from 'next-intl';
-import { useUser } from '@/lib/auth/use-user';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRealtimeNotifications } from '@/lib/realtime/hooks';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
+import { format, parseISO, isToday, isYesterday, formatDistanceToNow, startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
 import { 
   Bell, 
   BellRing, 
@@ -40,22 +31,10 @@ import {
   SortAsc,
   SortDesc
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
+import { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,6 +46,27 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -74,16 +74,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useToast } from '@/components/ui/toast-provider';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { format, parseISO, isToday, isYesterday, formatDistanceToNow, startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
-import { useToast } from '@/components/ui/toast-provider';
-import { useOfflineNotificationQueue } from '@/lib/notifications/offline-queue';
+import { useUser } from '@/lib/auth/use-user';
 import { useDebounce } from '@/lib/hooks/use-debounce';
+import { useOfflineNotificationQueue } from '@/lib/notifications/offline-queue';
+import { useRealtimeNotifications } from '@/lib/realtime/hooks';
 import type { Notification, NotificationType } from '@/types';
 
 interface NotificationsResponse {

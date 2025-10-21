@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { cn } from '@/lib/utils';
 

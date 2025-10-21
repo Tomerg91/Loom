@@ -1,17 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/auth/use-user';
-import { useFilteredSessions } from '@/lib/queries/sessions';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format, parseISO, subMonths, addMonths } from 'date-fns';
 import { 
   Calendar, 
   Clock, 
@@ -30,7 +19,19 @@ import {
   ChevronDown,
   X
 } from 'lucide-react';
-import { format, parseISO, subMonths, addMonths } from 'date-fns';
+import { useTranslations } from 'next-intl';
+import { useState, useMemo } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useUser } from '@/lib/auth/use-user';
+import { useFilteredSessions } from '@/lib/queries/sessions';
 import type { 
   Session, 
   SessionStatus, 
@@ -41,8 +42,9 @@ import type {
   SortOrder,
   ViewMode
 } from '@/types';
-import { SessionCard } from './session-card';
+
 import { SessionCalendarView } from './session-calendar-view';
+import { SessionCard } from './session-card';
 import { SessionTimelineView } from './session-timeline-view';
 
 interface EnhancedSessionListProps {

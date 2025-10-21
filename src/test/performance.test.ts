@@ -5,8 +5,8 @@
  * and is optimized for production deployment.
  */
 
-import { describe, it, expect, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { describe, it, expect, vi } from 'vitest';
 
 // Mock modules that may not exist yet
 vi.mock('@/lib/performance/optimization', () => {

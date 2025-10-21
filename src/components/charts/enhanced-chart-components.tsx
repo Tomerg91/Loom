@@ -1,5 +1,6 @@
 'use client';
 
+import { Download, TrendingUp, TrendingDown } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   LineChart,
@@ -18,16 +19,16 @@ import {
   ReferenceLine,
   Brush,
 } from 'recharts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Download, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Theme colors for consistent styling

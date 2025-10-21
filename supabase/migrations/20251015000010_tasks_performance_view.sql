@@ -20,7 +20,7 @@ BEGIN
     WHERE schemaname = 'public'
       AND viewname = 'coach_task_overview'
   ) THEN
-    EXECUTE $$
+    EXECUTE $view$
       CREATE VIEW public.coach_task_overview AS
       SELECT
         t.coach_id,
@@ -32,7 +32,7 @@ BEGIN
       FROM public.tasks t
       WHERE t.archived_at IS NULL
       GROUP BY t.coach_id, t.client_id
-    $$;
+    $view$;
   END IF;
 END$$;
 

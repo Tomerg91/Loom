@@ -1,19 +1,22 @@
 'use client';
 
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import { useUser } from '@/lib/auth/use-user';
-import { SessionInformationForm } from './forms/session-information-form';
-import { SessionTypeSelector } from './forms/session-type-selector';
-import { ParticipantSelector } from './forms/participant-selector';
-import { SessionGoalsManager } from './forms/session-goals-manager';
-import { SessionNotesEditor } from './forms/session-notes-editor';
-import { SessionFormActions } from './forms/session-form-actions';
 import { User, SessionFormData, SessionFormField } from '@/types';
+
+import { ParticipantSelector } from './forms/participant-selector';
+import { SessionFormActions } from './forms/session-form-actions';
+import { SessionGoalsManager } from './forms/session-goals-manager';
+import { SessionInformationForm } from './forms/session-information-form';
+import { SessionNotesEditor } from './forms/session-notes-editor';
+import { SessionTypeSelector } from './forms/session-type-selector';
+
 
 export function SessionCreatePage() {
   const router = useRouter();

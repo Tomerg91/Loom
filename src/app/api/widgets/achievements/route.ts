@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+import { ApiResponse } from '@/lib/api/types';
 import { getServerUser } from '@/lib/auth/auth';
 import { createClient } from '@/lib/supabase/server';
-import { ApiResponse } from '@/lib/api/types';
 
 export interface Achievement {
   id: string;
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
       // Calculate streak (simplified - consecutive weeks with at least one session)
       if (sessions && sessions.length > 0) {
-        let currentStreak = 0;
+        const currentStreak = 0;
         const weeksSeen = new Set<string>();
         
         for (const session of sessions) {

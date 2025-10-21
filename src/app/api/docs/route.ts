@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { compose, withRateLimit } from '@/lib/api';
 import { openApiSpec } from '@/lib/api/openapi';
 import { getCorsHeadersForPublicEndpoint, createPublicCorsResponse } from '@/lib/security/cors';

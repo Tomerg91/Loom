@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { SessionCreatePage } from '@/components/sessions/session-create-page';
+
 import { RouteGuard } from '@/components/auth/route-guard';
+import { SessionCreatePage } from '@/components/sessions/session-create-page';
 
 export default function SessionCreateRoute() {
   return (

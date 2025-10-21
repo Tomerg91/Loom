@@ -168,7 +168,7 @@ export function requirePermission(
 /**
  * Role guard for API routes
  */
-export function requireRole(userRole: Role | undefined, requiredRole: Role) {
+export function assertRole(userRole: Role | undefined, requiredRole: Role) {
   if (!userRole || !hasRoleAccess(userRole, requiredRole)) {
     throw new Error(`Access denied. Required role: ${requiredRole}`);
   }

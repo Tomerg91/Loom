@@ -1,8 +1,8 @@
 'use client';
 
-import { ClientOnly } from '@/components/wrappers/client-only';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { OnboardingContainer } from '@/components/onboarding/onboarding-container';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ClientOnly } from '@/components/wrappers/client-only';
 
 export default function OnboardingPage() {
   return (

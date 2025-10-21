@@ -12,13 +12,13 @@ BEGIN
     FROM pg_type
     WHERE typname = 'session_request_status'
   ) THEN
-    EXECUTE $$
+    EXECUTE $enum$
       CREATE TYPE public.session_request_status AS ENUM (
         'pending',
         'approved',
         'declined'
       )
-    $$;
+    $enum$;
   END IF;
 END$$;
 
@@ -85,13 +85,13 @@ BEGIN
       AND tablename = 'session_requests'
       AND policyname = 'Participants can view related requests'
   ) THEN
-    EXECUTE $$
+    EXECUTE $policy$
       CREATE POLICY "Participants can view related requests" ON public.session_requests
       FOR SELECT
       USING (
         auth.uid() IN (coach_id, client_id, requested_by)
       )
-    $$;
+    $policy$;
   END IF;
 
   IF NOT EXISTS (
@@ -101,14 +101,14 @@ BEGIN
       AND tablename = 'session_requests'
       AND policyname = 'Clients can create their own requests'
   ) THEN
-    EXECUTE $$
+    EXECUTE $policy$
       CREATE POLICY "Clients can create their own requests" ON public.session_requests
       FOR INSERT
       WITH CHECK (
         auth.uid() = requested_by
         AND auth.uid() = client_id
       )
-    $$;
+    $policy$;
   END IF;
 
   IF NOT EXISTS (
@@ -118,12 +118,12 @@ BEGIN
       AND tablename = 'session_requests'
       AND policyname = 'Coaches manage their request queue'
   ) THEN
-    EXECUTE $$
+    EXECUTE $policy$
       CREATE POLICY "Coaches manage their request queue" ON public.session_requests
       FOR ALL
       USING (auth.uid() = coach_id)
       WITH CHECK (auth.uid() = coach_id)
-    $$;
+    $policy$;
   END IF;
 END$$;
 
@@ -136,7 +136,7 @@ BEGIN
     WHERE schemaname = 'public'
       AND viewname = 'coach_pending_session_requests'
   ) THEN
-    EXECUTE $$
+    EXECUTE $view$
       CREATE VIEW public.coach_pending_session_requests AS
       SELECT
         r.id,
@@ -152,6 +152,6 @@ BEGIN
         r.requested_by
       FROM public.session_requests r
       WHERE r.status = 'pending'
-    $$;
+    $view$;
   END IF;
 END$$;

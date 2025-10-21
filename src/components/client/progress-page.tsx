@@ -1,16 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
 import { 
   TrendingUp,
   Target,
@@ -20,6 +10,14 @@ import {
   BarChart3,
   Plus
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+import { 
+  ProgressChart,
+  GoalProgressChart,
+  CompletionRateChart
+} from '@/components/charts/chart-components';
 import { 
   DashboardHeader,
   LoadingState,
@@ -31,11 +29,16 @@ import {
   AchievementGrid,
   useFormattedDates
 } from '@/components/dashboard';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  ProgressChart,
-  GoalProgressChart,
-  CompletionRateChart
-} from '@/components/charts/chart-components';
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+
+
 
 interface ProgressData {
   overview: {

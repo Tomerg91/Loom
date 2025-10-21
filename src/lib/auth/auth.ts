@@ -2,7 +2,7 @@ import { routing } from '@/i18n/routing';
 import { config } from '@/lib/config';
 import type { UserServiceOptions } from '@/lib/database/users';
 import { supabase as clientSupabase } from '@/modules/platform/supabase/client';
-import { createClient } from '@/modules/platform/supabase/server';
+import { createClient, createAdminClient } from '@/modules/platform/supabase/server';
 import type { Language, User, UserRole, UserStatus } from '@/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
@@ -406,45 +406,62 @@ export class AuthService {
           }
         : null;
 
-      // Update last seen timestamp
-      await this.userService.updateLastSeen(authData.user.id);
+      // Use admin client to fetch user profile and update last seen
+      // This bypasses RLS since we've already verified the user's identity via signInWithPassword
+      const adminClient = createAdminClient();
 
-      // Get user profile
-      const userProfileResult = await this.userService.getUserProfile(
-        authData.user.id
-      );
+      // Update last seen timestamp using admin client
+      await adminClient
+        .from('users')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('id', authData.user.id);
 
-      if (userProfileResult.success) {
-        const userProfile = userProfileResult.data;
+      // Get user profile using admin client
+      const { data: profileData, error: profileError } = await adminClient
+        .from('users')
+        .select(
+          'id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data, mfa_enabled, mfa_setup_completed, mfa_verified_at, remember_device_enabled'
+        )
+        .eq('id', authData.user.id)
+        .single();
+
+      if (profileError || !profileData) {
+        console.error('[AuthService] Failed to fetch user profile after signin:', {
+          userId: authData.user.id,
+          error: profileError,
+        });
         return {
-          user: {
-            id: userProfile.id,
-            email: userProfile.email,
-            role: userProfile.role,
-            firstName: userProfile.firstName,
-            lastName: userProfile.lastName,
-            phone: userProfile.phone,
-            avatarUrl: userProfile.avatarUrl,
-            timezone: userProfile.timezone,
-            language: userProfile.language,
-            status: userProfile.status,
-            createdAt: userProfile.createdAt,
-            updatedAt: userProfile.updatedAt,
-            lastSeenAt: userProfile.lastSeenAt,
-            // MFA fields
-            mfaEnabled: userProfile.mfaEnabled,
-            mfaSetupCompleted: userProfile.mfaSetupCompleted,
-            mfaVerifiedAt: userProfile.mfaVerifiedAt,
-            rememberDeviceEnabled: userProfile.rememberDeviceEnabled,
-          },
-          error: null,
+          user: null,
+          error: profileError?.message || 'User profile not found',
           session: sessionTokens,
         };
       }
 
       return {
-        user: null,
-        error: userProfileResult.error || 'User profile not found',
+        user: {
+          id: profileData.id,
+          email: profileData.email,
+          role: profileData.role as any,
+          firstName: profileData.first_name || '',
+          lastName: profileData.last_name || '',
+          phone: profileData.phone || '',
+          avatarUrl: profileData.avatar_url || '',
+          timezone: profileData.timezone || '',
+          language: profileData.language as any,
+          status: profileData.status as any,
+          createdAt: profileData.created_at || new Date().toISOString(),
+          updatedAt: profileData.updated_at || new Date().toISOString(),
+          lastSeenAt: profileData.last_seen_at || undefined,
+          onboardingStatus: (profileData.onboarding_status as 'pending' | 'in_progress' | 'completed') || 'pending',
+          onboardingStep: profileData.onboarding_step ?? 0,
+          onboardingCompletedAt: profileData.onboarding_completed_at || undefined,
+          onboardingData: (profileData.onboarding_data as Record<string, unknown>) || {},
+          mfaEnabled: profileData.mfa_enabled ?? false,
+          mfaSetupCompleted: profileData.mfa_setup_completed ?? false,
+          mfaVerifiedAt: profileData.mfa_verified_at || undefined,
+          rememberDeviceEnabled: profileData.remember_device_enabled ?? false,
+        },
+        error: null,
         session: sessionTokens,
       };
     } catch (error) {

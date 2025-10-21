@@ -1,8 +1,9 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders, mockFetch, mockApiResponse } from '@/test/utils';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { ResetPasswordForm } from '@/components/auth/reset-password-form';
+import { renderWithProviders, mockFetch, mockApiResponse } from '@/test/utils';
 
 // Mock react-hook-form
 vi.mock('react-hook-form', async () => {

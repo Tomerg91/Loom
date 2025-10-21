@@ -1,10 +1,11 @@
 'use client';
 
+import { Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Component prop interfaces
 // Note: Dashboard components don't accept props - they manage their own state

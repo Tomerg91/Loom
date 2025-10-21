@@ -7,9 +7,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
-import { createAuthService } from '@/lib/auth/auth';
 import { z } from 'zod';
+
+import { createAuthService } from '@/lib/auth/auth';
+import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
 
 // Request validation schema
 const setupRequestSchema = z.object({
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     // Validate request body (empty for this endpoint)
     try {
       await setupRequestSchema.parseAsync(await request.json().catch(() => ({})));
-    } catch (validationError) {
+    } catch (_validationError) {
       return NextResponse.json(
         { error: 'Invalid request format' },
         { status: 400 }

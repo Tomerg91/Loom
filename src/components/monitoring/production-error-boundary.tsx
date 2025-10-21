@@ -1,11 +1,12 @@
 'use client';
 
+import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { captureError, addBreadcrumb } from '@/lib/monitoring/sentry';
-import { alertManager } from '@/lib/monitoring/alerting';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
+import { alertManager } from '@/lib/monitoring/alerting';
+import { captureError, addBreadcrumb } from '@/lib/monitoring/sentry';
 
 // Error boundary props
 interface ProductionErrorBoundaryProps {

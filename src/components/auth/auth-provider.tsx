@@ -4,6 +4,9 @@ import { createContext, useContext, type MutableRefObject } from 'react';
 import { type AuthUser } from '@/lib/auth/auth';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import { createContext, useContext } from 'react';
+
+import { type AuthUser } from '@/lib/auth/auth';
 import { useUnifiedAuth } from '@/lib/auth/use-auth';
 import type { ClientSignInResult } from '@/lib/auth/client-auth';
 

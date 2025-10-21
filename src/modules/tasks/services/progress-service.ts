@@ -19,22 +19,11 @@ import type { TaskStatus } from '../types/task';
 
 type SupabaseClient = ReturnType<typeof createAdminClient>;
 
-// Use stub types if tasks tables don't exist in production database yet
-type TaskRow = 'tasks' extends keyof Database['public']['Tables']
-  ? Database['public']['Tables']['tasks']['Row']
-  : import('../types/stub-types').TaskRow;
-
-type TaskInstanceRow = 'task_instances' extends keyof Database['public']['Tables']
-  ? Database['public']['Tables']['task_instances']['Row']
-  : import('../types/stub-types').TaskInstanceRow;
-
-type ProgressRow = 'task_progress_updates' extends keyof Database['public']['Tables']
-  ? Database['public']['Tables']['task_progress_updates']['Row']
-  : import('../types/stub-types').TaskProgressUpdateRow;
-
-type AttachmentRow = 'task_attachments' extends keyof Database['public']['Tables']
-  ? Database['public']['Tables']['task_attachments']['Row']
-  : import('../types/stub-types').TaskAttachmentRow;
+// Use stub types - tasks tables will be added to production database after migration
+type TaskRow = import('../types/stub-types').TaskRow;
+type TaskInstanceRow = import('../types/stub-types').TaskInstanceRow;
+type ProgressRow = import('../types/stub-types').TaskProgressUpdateRow;
+type AttachmentRow = import('../types/stub-types').TaskAttachmentRow;
 
 type TaskInstanceRecord = TaskInstanceRow & {
   task: Pick<TaskRow, 'id' | 'coach_id' | 'client_id' | 'status'>;
@@ -264,7 +253,7 @@ export class ProgressService {
       throw instanceNotFound();
     }
 
-    const record = data as TaskInstanceRow & {
+    const record = data as unknown as TaskInstanceRow & {
       task:
         | Pick<TaskRow, 'id' | 'coach_id' | 'client_id' | 'status'>
         | (Pick<TaskRow, 'id' | 'coach_id' | 'client_id' | 'status'> | null)[]

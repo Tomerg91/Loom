@@ -1,8 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { format, parseISO } from 'date-fns';
+import { Star, Calendar, Clock, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useRateSession } from '@/lib/queries/sessions';
+import { useState } from 'react';
+
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -11,14 +17,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Star, Calendar, Clock, User } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { useRateSession } from '@/lib/queries/sessions';
 import type { Session, SessionRating } from '@/types';
 
 interface SessionRatingDialogProps {

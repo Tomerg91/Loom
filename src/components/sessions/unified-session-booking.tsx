@@ -1,27 +1,30 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, memo } from 'react';
-import Image from 'next/image';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/auth/use-user';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRealtimeBookings } from '@/hooks/use-realtime-bookings';
-import { useRealtimeBooking } from '@/hooks/use-realtime-booking';
+import { format, addDays, startOfTomorrow } from 'date-fns';
+import { Calendar, Clock, User, AlertCircle, CheckCircle, Wifi, WifiOff, RefreshCw, Loader2, Users, XCircle } from 'lucide-react';
+import Image from 'next/image';
+import { useTranslations } from 'next-intl';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { BookingConfirmationDialog } from './booking-confirmation-dialog';
-import { Calendar, Clock, User, AlertCircle, CheckCircle, Wifi, WifiOff, RefreshCw, Loader2, Users, XCircle } from 'lucide-react';
-import { format, addDays, startOfTomorrow } from 'date-fns';
+import { useRealtimeBooking } from '@/hooks/use-realtime-booking';
+import { useRealtimeBookings } from '@/hooks/use-realtime-bookings';
+import { useUser } from '@/lib/auth/use-user';
 import { cn } from '@/lib/utils';
 import type { Session } from '@/types';
+
+import { BookingConfirmationDialog } from './booking-confirmation-dialog';
+
 
 // Validation schema
 const bookingSchema = z.object({

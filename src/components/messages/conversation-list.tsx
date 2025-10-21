@@ -1,11 +1,12 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
+import { MessageCircle, Users } from 'lucide-react';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
-import { MessageCircle, Users } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { Conversation } from '@/types';
 
 interface ConversationListProps {

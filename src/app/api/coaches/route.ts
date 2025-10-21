@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authService } from '@/lib/services/auth-service';
-import { ApiResponseHelper } from '@/lib/api/types';
+
 import { ApiError } from '@/lib/api/errors';
-import { createServerClient } from '@/lib/supabase/server';
+import { ApiResponseHelper } from '@/lib/api/types';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { authService } from '@/lib/services/auth-service';
+import { createServerClient } from '@/lib/supabase/server';
 
 interface Coach {
   id: string;

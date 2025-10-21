@@ -1,8 +1,11 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import { renderWithProviders, mockUser, mockCoachUser, mockAdminUser } from '@/test/utils';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { RouteGuard, AdminRoute, CoachRoute, ClientRoute, CoachOrAdminRoute, ClientOrAdminRoute } from '@/components/auth/route-guard';
+import { usePermission, useAnyPermission, useHasAnyRole } from '@/lib/permissions/hooks';
 import type { Permission } from '@/lib/permissions/permissions';
+import { useUser, useAuthLoading } from '@/lib/store/auth-store';
+import { renderWithProviders, mockUser, mockCoachUser, mockAdminUser } from '@/test/utils';
 import type { UserRole } from '@/types';
 
 // Mock the auth store
@@ -38,8 +41,6 @@ vi.mock('next-intl', () => ({
 }));
 
 // Import mocked dependencies
-import { useUser, useAuthLoading } from '@/lib/store/auth-store';
-import { usePermission, useAnyPermission, useHasAnyRole } from '@/lib/permissions/hooks';
 
 const TestComponent = () => <div data-testid="protected-content">Protected Content</div>;
 

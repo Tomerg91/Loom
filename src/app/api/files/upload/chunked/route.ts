@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { fileService } from '@/lib/services/file-service';
-import { fileUploadRateLimit } from '@/lib/security/file-rate-limit';
-import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
+
+import { fileUploadRateLimit } from '@/lib/security/file-rate-limit';
+import { fileService } from '@/lib/services/file-service';
+import { createClient } from '@/lib/supabase/server';
+
 
 // Validation schema for chunked upload initialization
 const chunkedUploadInitSchema = z.object({

@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import { authService } from '@/lib/services/auth-service';
-import { ApiResponseHelper } from '@/lib/api/types';
+
 import { ApiError } from '@/lib/api/errors';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { authService } from '@/lib/services/auth-service';
 import { createServerClient } from '@/lib/supabase/server';
 
 export interface PracticeJournalStats {

@@ -6,8 +6,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
 import { type TaskApiError, type TaskListFilters, useTaskList } from '../hooks';
-import { TaskListFilterState, TaskListFiltersBar } from './task-filters-bar';
 import { TaskCreateDialog } from './task-create-dialog';
+import { TaskListFilterState, TaskListFiltersBar } from './task-filters-bar';
 import { TaskListSkeleton, TaskListTable } from './task-list-table';
 
 const DEFAULT_PAGE_SIZE = 10;

@@ -2,15 +2,18 @@
  * RBAC enforcement tests for client-facing APIs
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import {
   GET as getClientReflections,
   POST as postClientReflections,
 } from '@/app/api/client/reflections/route';
-import { GET as getClientStats } from '@/app/api/client/stats/route';
 import { GET as getClientSessionNotes } from '@/app/api/client/sessions/[id]/notes/route';
+import { GET as getClientStats } from '@/app/api/client/stats/route';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { authService } from '@/lib/services/auth-service';
+import { createServerClient } from '@/lib/supabase/server';
 import {
   mockUser,
   mockCoachUser,
@@ -76,9 +79,6 @@ vi.mock('@/lib/api/errors', () => ({
   },
 }));
 
-import { authService } from '@/lib/services/auth-service';
-import { createServerClient } from '@/lib/supabase/server';
-import { ApiResponseHelper } from '@/lib/api/types';
 
 const mockAuthService = vi.mocked(authService);
 const mockCreateServerClient = vi.mocked(createServerClient);

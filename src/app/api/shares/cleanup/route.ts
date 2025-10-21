@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { headers } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
+import { createClient } from '@/lib/supabase/server';
 
 // POST /api/shares/cleanup - Cleanup expired temporary shares
 // This endpoint should be called by a cron job or scheduled task

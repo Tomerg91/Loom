@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { CoachClientsPage } from '@/components/coach/clients-page';
+
 import { CoachOrAdminRoute } from '@/components/auth/route-guard';
+import { CoachClientsPage } from '@/components/coach/clients-page';
 
 export default function CoachClientsPageRoute() {
   return (

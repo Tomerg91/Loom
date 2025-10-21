@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { fileService } from '@/lib/services/file-service';
+import { z } from 'zod';
+
 import { ApiError } from '@/lib/api/errors';
 import { fileUploadRateLimit } from '@/lib/security/file-rate-limit';
-import { z } from 'zod';
+import { fileService } from '@/lib/services/file-service';
+import { createClient } from '@/lib/supabase/server';
+
 
 // Validation schema for file upload
 const fileUploadSchema = z.object({

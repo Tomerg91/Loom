@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authService } from '@/lib/services/auth-service';
-import { getMfaEnforcementSettings, saveMfaEnforcementSettings } from '@/lib/database/mfa-admin';
-import { ApiResponseHelper } from '@/lib/api/types';
-import { ApiError } from '@/lib/api/errors';
-import { rateLimit } from '@/lib/security/rate-limit';
 import { z } from 'zod';
+
+import { ApiError } from '@/lib/api/errors';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { getMfaEnforcementSettings, saveMfaEnforcementSettings } from '@/lib/database/mfa-admin';
+import { rateLimit } from '@/lib/security/rate-limit';
+import { authService } from '@/lib/services/auth-service';
+
 
 const mfaSettingsSchema = z.object({
   globalRequirement: z.enum(['disabled', 'optional', 'required', 'required_new_users']),

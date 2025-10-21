@@ -1,15 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useUser, useAuthLoading, usePendingMfaUser } from '@/lib/store/auth-store';
 import { usePermission, useAnyPermission, useHasAnyRole } from '@/lib/permissions/hooks';
 import type { Permission } from '@/lib/permissions/permissions';
-import type { UserRole } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { useUser, useAuthLoading } from '@/lib/store/auth-store';
 import { resolveRedirect } from '@/lib/utils/redirect';
+import type { UserRole } from '@/types';
 
 interface RouteGuardProps {
   children: React.ReactNode;

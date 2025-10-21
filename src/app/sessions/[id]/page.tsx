@@ -4,12 +4,13 @@
 export const dynamic = 'force-dynamic';
 
 import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { format } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/routing';
 import type { Session } from '@/types';
 

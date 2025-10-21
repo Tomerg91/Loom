@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { getMfaDiscrepancies } from '@/lib/database/mfa-admin';
 
 /**

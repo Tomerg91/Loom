@@ -1,5 +1,8 @@
+import { Mail, CheckCircle, ArrowRight, RefreshCw } from 'lucide-react';
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -7,8 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Mail, CheckCircle, ArrowRight, RefreshCw } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 
 interface VerifyEmailPageProps {

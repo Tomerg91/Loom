@@ -1,14 +1,15 @@
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
+
 import {
   createSuccessResponse,
   createErrorResponse,
   withErrorHandling,
   HTTP_STATUS
 } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
 import { getSessionById } from '@/lib/database/sessions';
-import { z } from 'zod';
 import { createCorsResponse } from '@/lib/security/cors';
+import { createServerClient } from '@/lib/supabase/server';
 
 const rateSessionSchema = z.object({
   rating: z.number().min(1, 'Rating must be at least 1').max(5, 'Rating must be at most 5'),

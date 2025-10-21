@@ -1,21 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/auth/use-user';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { format, parseISO, isFuture, isPast, isToday, differenceInMinutes, differenceInHours } from 'date-fns';
 import { 
   Calendar, 
   Clock, 
@@ -38,8 +23,25 @@ import {
   Calendar as CalendarIcon,
   ExternalLink
 } from 'lucide-react';
-import { format, parseISO, isFuture, isPast, isToday, differenceInMinutes, differenceInHours } from 'date-fns';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Progress } from '@/components/ui/progress';
+import { useUser } from '@/lib/auth/use-user';
 import type { Session, SessionStatus, SessionType } from '@/types';
+
 import { SessionActionDialog } from './session-action-dialog';
 import { SessionRatingDialog } from './session-rating-dialog';
 

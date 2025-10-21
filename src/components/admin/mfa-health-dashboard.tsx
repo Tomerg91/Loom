@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
 import { AlertTriangle, CheckCircle, Shield, RefreshCw, TrendingUp } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState, useCallback } from 'react';
+
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { MfaDiscrepancyTable, type MfaDiscrepancy } from './mfa-discrepancy-table';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+
+import { MfaDiscrepancyTable, type MfaDiscrepancy } from './mfa-discrepancy-table';
 
 interface MfaHealthStats {
   totalDiscrepancies: number;

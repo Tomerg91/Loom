@@ -16,23 +16,10 @@
  * @module components/resources/resource-analytics-dashboard
  */
 
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, Download, Calendar, TrendingUp, Users, Target } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
+import { useState } from 'react';
 
-import { AnalyticsOverview } from '@/components/resources/analytics-overview';
 import {
   TopResourcesChart,
   CategoryPerformanceChart,
@@ -40,8 +27,20 @@ import {
   CompletionRateChart,
   ResourceROIChart,
 } from '@/components/resources/analytics-charts';
+import { AnalyticsOverview } from '@/components/resources/analytics-overview';
 import { TopResourcesList } from '@/components/resources/top-resources-list';
-
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
 import type { LibraryAnalytics } from '@/types/resources';
 
 type TimeRange = '7d' | '30d' | '90d' | 'all';

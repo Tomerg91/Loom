@@ -1,25 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { format, parseISO, differenceInHours } from 'date-fns';
 import {
   Calendar,
   Clock,
@@ -43,11 +25,31 @@ import {
   Archive,
   Star,
 } from 'lucide-react';
-import { format, parseISO, differenceInHours } from 'date-fns';
-import type { Session } from '@/types';
-import { RescheduleSessionDialog } from './reschedule-session-dialog';
-import { RateSessionDialog } from './rate-session-dialog';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { useState } from 'react';
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { downloadICS, generateGoogleCalendarURL, generateOutlookCalendarURL } from '@/lib/utils/calendar-export';
+import type { Session } from '@/types';
+
+import { RateSessionDialog } from './rate-session-dialog';
+import { RescheduleSessionDialog } from './reschedule-session-dialog';
 
 interface SessionDetailViewProps {
   sessionId: string;

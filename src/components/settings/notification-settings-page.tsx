@@ -1,9 +1,11 @@
 'use client';
 
-import { NotificationSettingsCard } from './notification-settings-card';
-import { Button } from '@/components/ui/button';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+import { Button } from '@/components/ui/button';
+
+import { NotificationSettingsCard } from './notification-settings-card';
 
 export function NotificationSettingsPage() {
   const router = useRouter();

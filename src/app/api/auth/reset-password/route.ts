@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAuthService } from '@/lib/auth/auth';
+import { z } from 'zod';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -7,9 +8,11 @@ import {
   validateRequestBody,
   HTTP_STATUS
 } from '@/lib/api/utils';
-import { rateLimit } from '@/lib/security/rate-limit';
-import { z } from 'zod';
+import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { rateLimit } from '@/lib/security/rate-limit';
+
+
 
 const resetPasswordSchema = z.object({
   email: z.string()
