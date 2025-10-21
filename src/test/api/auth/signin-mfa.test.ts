@@ -5,9 +5,14 @@
  * Tests: Authentication, Input Validation, Rate Limiting, Security
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { POST, OPTIONS, GET, PUT, DELETE } from '@/app/api/auth/signin-mfa/route';
+import { validateRequestBody, createSuccessResponse, createErrorResponse } from '@/lib/api/utils';
+import { createAuthService } from '@/lib/auth/auth';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
 import { mockSupabaseClient, mockUser, mockAdminUser, mockCoachUser } from '@/test/utils';
 
 // Mock all dependencies
@@ -64,10 +69,6 @@ vi.mock('@/lib/api/utils', () => ({
 }));
 
 // Import mocked functions
-import { createAuthService } from '@/lib/auth/auth';
-import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
-import { validateRequestBody, createSuccessResponse, createErrorResponse } from '@/lib/api/utils';
 
 const mockAuthService = vi.mocked(createAuthService);
 const mockMfaService = vi.mocked(createMfaService);

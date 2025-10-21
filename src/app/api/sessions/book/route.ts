@@ -1,17 +1,18 @@
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
   withErrorHandling,
   HTTP_STATUS
 } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
-import { rateLimit } from '@/lib/security/rate-limit';
-import { z } from 'zod';
 import { isCoachAvailable } from '@/lib/database/availability';
 import { sessionNotificationService } from '@/lib/notifications/session-notifications';
-import type { Session } from '@/types';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { rateLimit } from '@/lib/security/rate-limit';
+import { createServerClient } from '@/lib/supabase/server';
+import type { Session } from '@/types';
 
 const bookSessionSchema = z.object({
   coachId: z.string().uuid('Invalid coach ID format'),

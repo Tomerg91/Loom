@@ -1,14 +1,7 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { useUser } from '@/lib/auth/use-user';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import {
   Calendar,
   Users,
@@ -19,14 +12,22 @@ import {
   ArrowUpRight,
   UserPlus,
 } from 'lucide-react';
-import { SessionList } from '@/components/sessions/session-list';
-import { SessionCalendar } from '@/components/sessions/session-calendar';
-import { CoachClientsPage } from '@/components/coach/clients-page';
-import { ReflectionSpaceWidget } from '@/components/coach/reflection-space-widget';
-import { EmptyState } from '@/components/coach/empty-state';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useState, useMemo, useCallback } from 'react';
+
 import { AddClientModal } from '@/components/coach/add-client-modal';
 import { AddSessionModal } from '@/components/coach/add-session-modal';
-import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { CoachClientsPage } from '@/components/coach/clients-page';
+import { EmptyState } from '@/components/coach/empty-state';
+import { ReflectionSpaceWidget } from '@/components/coach/reflection-space-widget';
+import { SessionCalendar } from '@/components/sessions/session-calendar';
+import { SessionList } from '@/components/sessions/session-list';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useUser } from '@/lib/auth/use-user';
 import type { Session } from '@/types';
 
 // Helper function moved outside component to prevent re-creation

@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { ReflectionsManagement } from '@/components/client/reflections-management';
+
 import { ClientOrAdminRoute } from '@/components/auth/route-guard';
+import { ReflectionsManagement } from '@/components/client/reflections-management';
 
 export default function ClientReflectionsPage() {
   return (

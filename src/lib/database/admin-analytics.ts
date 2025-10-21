@@ -1,5 +1,5 @@
-import { createServerClient } from '@/lib/supabase/server';
 import { ANALYTICS_CONFIG, getSessionRate, getDefaultCoachRating } from '@/lib/config/analytics-constants';
+import { createServerClient } from '@/lib/supabase/server';
 
 export interface AdminAnalyticsOverview {
   totalUsers: number;

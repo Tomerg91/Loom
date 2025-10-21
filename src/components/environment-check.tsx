@@ -1,9 +1,10 @@
 // Server component for environment validation
-import { clientEnv } from '@/env/client';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink, Settings } from 'lucide-react';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { clientEnv } from '@/env/client';
 
 interface EnvironmentError {
   variable: string;

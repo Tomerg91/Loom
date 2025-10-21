@@ -1,8 +1,9 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders, mockUseQuery, mockUseMutation, mockUser, createMockReflection } from '@/test/utils';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { ReflectionsManagement } from '@/components/client/reflections-management';
+import { renderWithProviders, mockUseQuery, mockUseMutation, mockUser, createMockReflection } from '@/test/utils';
 
 // Mock dependencies
 vi.mock('@tanstack/react-query', () => ({

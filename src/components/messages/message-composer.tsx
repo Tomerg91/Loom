@@ -1,12 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTypingIndicators } from '@/lib/realtime/hooks';
-import { OptimizedThumbnailImage } from '@/components/ui/optimized-image';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   Send, 
   Paperclip, 
@@ -17,12 +11,19 @@ import {
   File,
   Image as ImageIcon
 } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { OptimizedThumbnailImage } from '@/components/ui/optimized-image';
 import { 
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast-provider';
+import { useTypingIndicators } from '@/lib/realtime/hooks';
+import { cn } from '@/lib/utils';
 
 interface MessageComposerProps {
   conversationId: string;

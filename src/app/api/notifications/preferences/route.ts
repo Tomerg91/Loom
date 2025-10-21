@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+
+import { createClient } from '@/lib/supabase/server'
 
 // Validation schema for notification preferences
 const notificationPreferencesSchema = z.object({

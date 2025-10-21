@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { 
   File, 
   Image, 
@@ -16,6 +15,9 @@ import {
   Trash2,
   Edit3
 } from 'lucide-react';
+import React from 'react';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -25,7 +27,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,

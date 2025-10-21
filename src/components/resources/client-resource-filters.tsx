@@ -12,12 +12,12 @@
  * @module components/resources/client-resource-filters
  */
 
-import { useState } from 'react';
 import { Search, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
   RESOURCE_CATEGORY_VALUES,
   RESOURCE_CATEGORY_LABELS,

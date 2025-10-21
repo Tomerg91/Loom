@@ -1,8 +1,9 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { AppLayout } from '@/components/layout/app-layout';
+
 import { RouteGuard } from '@/components/auth/route-guard';
 import { DashboardContent } from '@/components/dashboard/dashboard-content';
+import { AppLayout } from '@/components/layout/app-layout';
 
 interface DashboardPageProps {
   params: Promise<{ locale: string }>;

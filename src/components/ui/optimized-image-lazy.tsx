@@ -2,6 +2,7 @@
 
 import Image, { ImageProps } from 'next/image';
 import { useState, useRef, useEffect } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface OptimizedImageProps extends Omit<ImageProps, 'onLoad' | 'onError'> {

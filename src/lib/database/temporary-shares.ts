@@ -1,6 +1,7 @@
+import bcrypt from 'bcryptjs';
+
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/supabase';
-import bcrypt from 'bcryptjs';
 
 type TemporaryFileShare = Database['public']['Tables']['temporary_file_shares']['Row'];
 type TemporaryShareAccessLog = Database['public']['Tables']['temporary_share_access_logs']['Row'];
@@ -115,7 +116,7 @@ class TemporarySharesDatabase {
   ): Promise<TemporaryShareWithStats[]> {
     const supabase = await createClient();
     
-    let query = supabase
+    const query = supabase
       .from('temporary_file_shares')
       .select(`
         *,

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import {
   getCoachLibraryResources,
   createCollection,
 } from '@/lib/database/resources';
+import { createClient } from '@/lib/supabase/server';
 import type { ResourceListParams } from '@/types/resources';
 
 export const dynamic = 'force-dynamic';

@@ -1,9 +1,11 @@
-import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
+
 import { SignupForm } from '@/components/auth/signup-form';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+
 
 interface SignupPageProps {
   params: Promise<{ locale: string }>;

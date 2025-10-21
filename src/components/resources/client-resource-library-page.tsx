@@ -13,19 +13,19 @@
  * @module components/resources/client-resource-library-page
  */
 
-import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileText, Grid3x3, List, Loader2, BookOpen } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useState, useCallback } from 'react';
 
-import { ClientResourceGrid } from '@/components/resources/client-resource-grid';
+
 import { ClientResourceFilters } from '@/components/resources/client-resource-filters';
+import { ClientResourceGrid } from '@/components/resources/client-resource-grid';
 import { ClientResourceProgressCard } from '@/components/resources/client-resource-progress-card';
 import { ResourceEmptyState } from '@/components/resources/resource-empty-state';
-
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
 import type {
   ClientResourceItem,
   ResourceListParams,

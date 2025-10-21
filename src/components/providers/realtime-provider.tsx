@@ -1,11 +1,12 @@
 'use client';
 
+import { Wifi, WifiOff, RotateCcw } from 'lucide-react';
 import { createContext, useContext, useEffect, useState } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useUser } from '@/lib/auth/use-user';
 import { useRealtimeSubscriptions } from '@/lib/realtime/hooks';
-import { Badge } from '@/components/ui/badge';
-import { Wifi, WifiOff, RotateCcw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface RealtimeContextType {
   isConnected: boolean;

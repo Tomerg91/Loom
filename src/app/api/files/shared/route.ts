@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fileManagementService } from '@/lib/services/file-management-service';
+
 import { createAuthService } from '@/lib/auth/auth';
+import { fileManagementService } from '@/lib/services/file-management-service';
 
 /**
  * GET /api/files/shared - Get files shared with the current user

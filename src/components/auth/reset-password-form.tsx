@@ -1,19 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { PasswordInput } from '@/components/ui/password-input';
 import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { commonValidators } from '@/lib/validation/common';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
 import { config } from '@/lib/config';
+import { commonValidators } from '@/lib/validation/common';
 
 const AUTH_ENDPOINTS = config.endpoints.auth;
 const HTTP_CONFIG = config.http;

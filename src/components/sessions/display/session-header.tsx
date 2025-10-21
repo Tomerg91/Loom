@@ -1,6 +1,7 @@
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Edit } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Session, User } from '@/types';
 
 interface SessionHeaderProps {

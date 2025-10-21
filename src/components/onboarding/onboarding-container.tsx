@@ -1,15 +1,16 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import { CheckCircle2, ClipboardList, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 
-import { useAuthLoading, useUser, useAuthStore } from '@/lib/store/auth-store';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/routing';
+import { useAuthLoading, useUser, useAuthStore } from '@/lib/store/auth-store';
+
 import { ClientOnboardingForm } from './client-onboarding-form';
 import { CoachOnboardingForm } from './coach-onboarding-form';
 

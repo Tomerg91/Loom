@@ -67,7 +67,7 @@ export function resolveRedirect(locale: string, redirectTo?: string | null, opti
  */
 export function resolveAuthPath(locale: string, authPath: string): string {
   const safeLocale = routing.locales.includes(locale as any) ? locale : routing.defaultLocale;
-  let path = authPath.startsWith('/') ? authPath : `/${authPath}`;
+  const path = authPath.startsWith('/') ? authPath : `/${authPath}`;
   const alreadyPrefixed = routing.locales.some(l => path.startsWith(`/${l}/`) || path === `/${l}`);
   if (alreadyPrefixed) return path;
   return `/${safeLocale}${path}`;

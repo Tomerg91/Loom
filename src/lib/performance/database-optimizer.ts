@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+
 import { getCachedData, CacheKeys, CacheTTL } from './cache';
 
 // Connection pool configuration

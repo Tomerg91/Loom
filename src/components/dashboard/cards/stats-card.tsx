@@ -1,7 +1,9 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DashboardStats } from '../shared/types';
 import { LucideIcon } from 'lucide-react';
+import React from 'react';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { DashboardStats } from '../shared/types';
 
 interface StatsCardProps {
   title: string;

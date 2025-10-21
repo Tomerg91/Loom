@@ -13,6 +13,7 @@ import type {
   ResourceCollectionItem,
   ResourceLibraryItem,
 } from '@/types/resources';
+
 import { mapFileUploadToResource } from './utils';
 
 /**

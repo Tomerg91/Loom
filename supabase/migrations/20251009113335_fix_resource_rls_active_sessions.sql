@@ -50,8 +50,8 @@ CREATE POLICY "Clients can view shared library resources"
           AND s.client_id = auth.uid()
           -- Check session is not cancelled or no-show
           AND s.status NOT IN ('cancelled', 'no_show')
-          -- Check client is active or onboarding (not inactive/churned)
-          AND COALESCE(u.user_metadata->>'client_status', 'active') IN ('active', 'onboarding')
+          -- Check client is active (not inactive/suspended)
+          AND u.status = 'active'
           -- For completed sessions, only show if resource was created before session end
           AND (
             s.status != 'completed'
@@ -80,9 +80,9 @@ CREATE INDEX IF NOT EXISTS idx_sessions_client_coach_status
   WHERE status NOT IN ('cancelled', 'no_show');
 
 -- Add index for file_shares expiration check
+-- Note: Cannot use NOW() in partial index as it's not immutable
 CREATE INDEX IF NOT EXISTS idx_file_shares_shared_with_expires
-  ON file_shares(shared_with, file_id)
-  WHERE expires_at IS NULL OR expires_at > NOW();
+  ON file_shares(shared_with, file_id, expires_at);
 
 -- Verify the policy was created successfully
 DO $$

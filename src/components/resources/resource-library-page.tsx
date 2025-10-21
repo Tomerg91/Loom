@@ -13,26 +13,26 @@
  * @module components/resources/resource-library-page
  */
 
-import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FolderPlus, Upload, Loader2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useCallback } from 'react';
+
 
 // Resource components
-import { ResourceGrid } from '@/components/resources/resource-grid';
+import { AnalyticsOverview } from '@/components/resources/analytics-overview';
+import { AutoShareSettings } from '@/components/resources/auto-share-settings';
+import { CollectionCard } from '@/components/resources/collection-card';
+import { CollectionDialog } from '@/components/resources/collection-dialog';
+import { ResourceEmptyState } from '@/components/resources/resource-empty-state';
 import { ResourceFilters } from '@/components/resources/resource-filters';
+import { ResourceGrid } from '@/components/resources/resource-grid';
 import { ResourceShareDialog } from '@/components/resources/resource-share-dialog';
 import { ResourceUploadDialog } from '@/components/resources/resource-upload-dialog';
-import { CollectionDialog } from '@/components/resources/collection-dialog';
-import { CollectionCard } from '@/components/resources/collection-card';
-import { AnalyticsOverview } from '@/components/resources/analytics-overview';
 import { TopResourcesList } from '@/components/resources/top-resources-list';
-import { AutoShareSettings } from '@/components/resources/auto-share-settings';
-import { ResourceEmptyState } from '@/components/resources/resource-empty-state';
-
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
 import type {
   ResourceLibraryItem,
   ResourceCollection,
@@ -56,6 +56,10 @@ export function ResourceLibraryPage() {
     sortBy: 'created_at',
     sortOrder: 'desc',
   });
+
+  // Auto-share settings state
+  const [autoShareEnabled, setAutoShareEnabled] = useState(false);
+  const [autoSharePermission, setAutoSharePermission] = useState<'view' | 'download'>('view');
 
   // Active tab
   const [activeTab, setActiveTab] = useState<'all' | 'collections' | 'analytics'>('all');
@@ -160,7 +164,18 @@ export function ResourceLibraryPage() {
   });
 
   // Handlers
-  const handleUploadSuccess = useCallback(() => {
+  const handleUpload = useCallback(async (file: File, metadata: any) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('metadata', JSON.stringify(metadata));
+
+    const response = await fetch('/api/coach/resources', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) throw new Error('Failed to upload resource');
+
     setUploadDialogOpen(false);
     queryClient.invalidateQueries({ queryKey: ['coach-resources'] });
     queryClient.invalidateQueries({ queryKey: ['coach-library-analytics'] });
@@ -170,7 +185,19 @@ export function ResourceLibraryPage() {
     });
   }, [queryClient, toast]);
 
-  const handleCollectionSuccess = useCallback(() => {
+  const handleSaveCollection = useCallback(async (data: any) => {
+    const url = selectedCollection
+      ? `/api/coach/collections/${selectedCollection.id}`
+      : '/api/coach/collections';
+
+    const response = await fetch(url, {
+      method: selectedCollection ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) throw new Error('Failed to save collection');
+
     setCollectionDialogOpen(false);
     setSelectedCollection(null);
     queryClient.invalidateQueries({ queryKey: ['coach-collections'] });
@@ -180,7 +207,15 @@ export function ResourceLibraryPage() {
     });
   }, [queryClient, toast, selectedCollection]);
 
-  const handleShareSuccess = useCallback(() => {
+  const handleShare = useCallback(async (resourceId: string, data: any) => {
+    const response = await fetch(`/api/coach/resources/${resourceId}/share`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) throw new Error('Failed to share resource');
+
     setShareDialogOpen(false);
     setSelectedResource(null);
     queryClient.invalidateQueries({ queryKey: ['coach-resources'] });
@@ -190,14 +225,32 @@ export function ResourceLibraryPage() {
     });
   }, [queryClient, toast]);
 
+  const handleSaveAutoShare = useCallback(async () => {
+    const response = await fetch('/api/coach/resources/auto-share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        enabled: autoShareEnabled,
+        permission: autoSharePermission,
+      }),
+    });
+
+    if (!response.ok) throw new Error('Failed to save auto-share settings');
+
+    toast({
+      title: 'Success',
+      description: 'Auto-share settings saved successfully',
+    });
+  }, [autoShareEnabled, autoSharePermission, toast]);
+
   const handleShareResource = useCallback((resource: ResourceLibraryItem) => {
     setSelectedResource(resource);
     setShareDialogOpen(true);
   }, []);
 
-  const handleDeleteResource = useCallback((resourceId: string) => {
+  const handleDeleteResource = useCallback((resource: ResourceLibraryItem) => {
     if (confirm('Are you sure you want to delete this resource? This action cannot be undone.')) {
-      deleteResourceMutation.mutate(resourceId);
+      deleteResourceMutation.mutate(resource.id);
     }
   }, [deleteResourceMutation]);
 
@@ -206,9 +259,9 @@ export function ResourceLibraryPage() {
     setCollectionDialogOpen(true);
   }, []);
 
-  const handleDeleteCollection = useCallback((collectionId: string) => {
+  const handleDeleteCollection = useCallback((collection: ResourceCollection) => {
     if (confirm('Are you sure you want to delete this collection? Resources will not be deleted.')) {
-      deleteCollectionMutation.mutate(collectionId);
+      deleteCollectionMutation.mutate(collection.id);
     }
   }, [deleteCollectionMutation]);
 
@@ -250,8 +303,8 @@ export function ResourceLibraryPage() {
         <TabsContent value="all" className="space-y-6">
           {/* Filters */}
           <ResourceFilters
-            filters={filters}
-            onFilterChange={handleFilterChange}
+            initialFilters={filters}
+            onFiltersChange={handleFilterChange}
             availableTags={[]} // TODO: Get from resources
           />
 
@@ -269,7 +322,15 @@ export function ResourceLibraryPage() {
               </CardContent>
             </Card>
           ) : !resources || resources.length === 0 ? (
-            <ResourceEmptyState onUpload={() => setUploadDialogOpen(true)} />
+            <ResourceEmptyState
+              variant="no-resources"
+              action={
+                <Button onClick={() => setUploadDialogOpen(true)}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Resource
+                </Button>
+              }
+            />
           ) : (
             <ResourceGrid
               resources={resources}
@@ -356,7 +417,13 @@ export function ResourceLibraryPage() {
                     <CardDescription>Automatically share resources with new clients</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <AutoShareSettings />
+                    <AutoShareSettings
+                      enabled={autoShareEnabled}
+                      permission={autoSharePermission}
+                      onEnabledChange={setAutoShareEnabled}
+                      onPermissionChange={setAutoSharePermission}
+                      onSave={handleSaveAutoShare}
+                    />
                   </CardContent>
                 </Card>
               </div>
@@ -369,14 +436,14 @@ export function ResourceLibraryPage() {
       <ResourceUploadDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
-        onSuccess={handleUploadSuccess}
+        onUpload={handleUpload}
         collections={collections || []}
       />
 
       <CollectionDialog
         open={collectionDialogOpen}
         onOpenChange={setCollectionDialogOpen}
-        onSuccess={handleCollectionSuccess}
+        onSave={handleSaveCollection}
         collection={selectedCollection}
       />
 
@@ -384,7 +451,7 @@ export function ResourceLibraryPage() {
         <ResourceShareDialog
           open={shareDialogOpen}
           onOpenChange={setShareDialogOpen}
-          onSuccess={handleShareSuccess}
+          onShare={handleShare}
           resource={selectedResource}
         />
       )}

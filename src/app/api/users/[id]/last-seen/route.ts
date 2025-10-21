@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import { NextRequest, NextResponse } from 'next/server';
+
 import { serverEnv } from '@/env/server';
 import { createSuccessResponse, createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
+import { createServerClient } from '@/lib/supabase/server';
+import type { Database } from '@/types/supabase';
 
 interface RouteParams {
   params: Promise<{ id: string }>;

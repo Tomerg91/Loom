@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAuthService } from '@/lib/auth/auth';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
   withErrorHandling,
   HTTP_STATUS
 } from '@/lib/api/utils';
-import { rateLimit } from '@/lib/security/rate-limit';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createAuthService } from '@/lib/auth/auth';
 import { withApiOptimization, optimizeQuery } from '@/lib/performance/api-optimization';
 import { CacheTTL } from '@/lib/performance/cache';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { rateLimit } from '@/lib/security/rate-limit';
 
 // Apply rate limiting to prevent user enumeration attacks
 const rateLimitedHandler = rateLimit(120, 60000, { // 120 requests per minute for better UX

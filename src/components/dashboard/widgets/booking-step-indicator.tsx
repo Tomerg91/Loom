@@ -1,5 +1,6 @@
-import { Card, CardContent } from '@/components/ui/card';
 import { Check, ChevronRight } from 'lucide-react';
+
+import { Card, CardContent } from '@/components/ui/card';
 
 interface BookingStepIndicatorProps {
   currentStep: number;

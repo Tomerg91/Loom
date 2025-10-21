@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+
+import { toast } from '@/components/ui/use-toast';
 import { FileMetadata } from '@/lib/services/file-management-service';
-import { toast } from '@/hooks/use-toast';
 
 interface UseFilesParams {
   ownerId?: string;

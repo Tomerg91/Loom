@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createServerClientWithRequest } from '@/lib/supabase/server';
 import { resolveRedirect } from '@/lib/utils/redirect';
 

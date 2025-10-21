@@ -12,9 +12,6 @@
 
 'use client';
 
-import { use, useState, useCallback, useMemo, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
 import {
   DndContext,
   closestCenter,
@@ -32,13 +29,17 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Edit, GripVertical, Trash2, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { use, useState, useCallback, useMemo, useEffect } from 'react';
+
 import { ResourceEmptyState, CollectionDialog } from '@/components/resources';
 import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import type { ResourceLibraryItem, ResourceCollection } from '@/types/resources';
 import { cn } from '@/lib/utils';
+import type { ResourceLibraryItem, ResourceCollection } from '@/types/resources';
 
 /**
  * Fetch collection with resources

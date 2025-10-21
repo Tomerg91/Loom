@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import type { Database } from '@/types/supabase';
 import type {
   Conversation,
   Message,
@@ -10,6 +9,7 @@ import type {
   MessageStatus,
   AttachmentType,
 } from '@/types';
+import type { Database } from '@/types/supabase';
 
 interface SendMessageParams {
   conversationId: string;

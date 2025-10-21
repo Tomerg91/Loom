@@ -1,8 +1,8 @@
 // Database service classes
-import { UserService, type UserServiceOptions } from './users';
-import { SessionService } from './sessions';
 import { NotificationService } from './notifications';
 import { PaymentService } from './payments';
+import { SessionService } from './sessions';
+import { UserService, type UserServiceOptions } from './users';
 
 export { UserService, SessionService, NotificationService };
 

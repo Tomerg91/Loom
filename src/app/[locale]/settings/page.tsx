@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { SettingsPage } from '@/components/settings/settings-page';
+
 import { RouteGuard } from '@/components/auth/route-guard';
+import { SettingsPage } from '@/components/settings/settings-page';
 
 export default function SettingsPageRoute() {
   return (

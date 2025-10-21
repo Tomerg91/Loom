@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, forwardRef } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState, forwardRef } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 export interface PasswordInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   showToggle?: boolean;

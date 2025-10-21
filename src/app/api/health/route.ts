@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { compose, withRateLimit } from '@/lib/api';
 import { createPublicCorsResponse } from '@/lib/security/cors';
+import { createClient } from '@/lib/supabase/server';
 
 async function baseHealthHandler(request: NextRequest) {
   const start = Date.now();

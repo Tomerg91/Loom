@@ -13,10 +13,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useRouter } from 'next/navigation';
+
 import {
   AnalyticsOverview,
   TopResourcesList,
@@ -24,6 +23,8 @@ import {
   AutoShareSettings,
 } from '@/components/resources';
 import { ResourceErrorBoundary } from '@/components/resources/resource-error-boundary';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { LibraryAnalytics, ResourceLibraryItem } from '@/types/resources';
 
 // Disable static generation for this page

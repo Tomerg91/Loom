@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { AdminRoute } from '@/components/auth/route-guard';
+
 import { MfaHealthDashboard } from '@/components/admin/mfa-health-dashboard';
+import { AdminRoute } from '@/components/auth/route-guard';
 import { LoadingSpinner } from '@/components/lazy-components';
 
 export const dynamic = 'force-dynamic';

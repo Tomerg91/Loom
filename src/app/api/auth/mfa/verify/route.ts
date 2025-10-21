@@ -8,16 +8,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
-import { createAuthService } from '@/lib/auth/auth';
+import { z } from 'zod';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
   withErrorHandling,
   HTTP_STATUS
 } from '@/lib/api/utils';
+import { createAuthService } from '@/lib/auth/auth';
 import { rateLimit } from '@/lib/security/rate-limit';
-import { z } from 'zod';
+import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
+
 
 // Request validation schema
 const verifyRequestSchema = z.object({
@@ -112,7 +114,7 @@ export const POST = withErrorHandling(
         
         // Return specific error messages for different failure scenarios
         let status: number = HTTP_STATUS.BAD_REQUEST;
-        let errorMessage = result.error || 'MFA verification failed';
+        const errorMessage = result.error || 'MFA verification failed';
         
         if (errorMessage.includes('Too many attempts')) {
           status = HTTP_STATUS.TOO_MANY_REQUESTS;

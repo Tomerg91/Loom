@@ -1,6 +1,8 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { ClientProgress } from '../shared/types';
 
 interface ClientProgressOverviewProps {

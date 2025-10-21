@@ -1,9 +1,12 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders, mockUseQuery, mockUser, createMockSession } from '@/test/utils';
-import { SessionCalendar } from '@/components/sessions/session-calendar';
 import { format, addDays, subDays } from 'date-fns';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+import { SessionCalendar } from '@/components/sessions/session-calendar';
+import { useRealtimeBookings } from '@/hooks/use-realtime-bookings';
+import { useUser } from '@/lib/store/auth-store';
+import { renderWithProviders, mockUseQuery, mockUser, createMockSession } from '@/test/utils';
 
 // Mock dependencies
 vi.mock('@/lib/store/auth-store', () => ({
@@ -44,8 +47,7 @@ vi.mock('date-fns', async () => {
   };
 });
 
-import { useUser } from '@/lib/store/auth-store';
-import { useRealtimeBookings } from '@/hooks/use-realtime-bookings';
+
 import { useQuery } from '@tanstack/react-query';
 
 describe('SessionCalendar', () => {

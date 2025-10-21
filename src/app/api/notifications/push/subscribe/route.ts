@@ -1,4 +1,6 @@
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
+
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -7,9 +9,8 @@ import {
   HTTP_STATUS,
   handlePreflight
 } from '@/lib/api/utils';
-import { PushNotificationService } from '@/lib/services/push-notification-service';
 import { rateLimit } from '@/lib/security/rate-limit';
-import { z } from 'zod';
+import { PushNotificationService } from '@/lib/services/push-notification-service';
 
 const SubscribeSchema = z.object({
   subscription: z.object({

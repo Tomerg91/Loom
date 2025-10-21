@@ -1,23 +1,5 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileBrowser, FileItem } from './file-browser';
-import { FileUploadZone, UploadFile } from './file-upload-zone';
-import { FileOrganizationPanel, VirtualFolder, TagInfo } from './file-organization-panel';
-import { FileSharingDialog } from './file-sharing-dialog';
 import { 
   FolderIcon, 
   UploadIcon, 
@@ -35,6 +17,27 @@ import {
   SortAscIcon,
   XIcon,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useState, useEffect, useMemo } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+import { FileBrowser, FileItem } from './file-browser';
+import { FileOrganizationPanel, VirtualFolder, TagInfo } from './file-organization-panel';
+import { FileSharingDialog } from './file-sharing-dialog';
+import { FileUploadZone, UploadFile } from './file-upload-zone';
+
 
 interface FileManagementPageProps {
   userId: string;

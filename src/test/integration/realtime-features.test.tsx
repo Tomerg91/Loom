@@ -1,7 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { renderWithProviders, mockUser, mockCoachUser, mockSupabaseClient, setupTestEnvironment } from '@/test/utils';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { renderWithProviders, mockUser, mockCoachUser, mockSupabaseClient, setupTestEnvironment } from '@/test/utils';
+
 
 // Mock Next.js navigation
 const mockPush = vi.fn();

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+
 import type { Notification, NotificationType } from '@/types';
 
 // Enhanced notification preferences interface

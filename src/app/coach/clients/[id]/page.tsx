@@ -1,11 +1,12 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/routing';
 import type { User } from '@/types';
 

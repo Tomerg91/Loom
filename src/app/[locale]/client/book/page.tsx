@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { ClientBookPage } from '@/components/client/book-page';
+
 import { ClientOrAdminRoute } from '@/components/auth/route-guard';
+import { ClientBookPage } from '@/components/client/book-page';
 
 export default function ClientBookPageRoute() {
   return (

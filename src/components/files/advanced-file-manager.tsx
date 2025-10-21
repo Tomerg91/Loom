@@ -76,12 +76,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
+import { FileMetadata } from '@/lib/services/file-management-service';
 
 import { FilePreview } from './file-preview';
 import { FileSharingDialog } from './file-sharing-dialog';
 import { FileUploadZone } from './file-upload-zone';
 import { FileVersionHistory } from './file-version-history';
-import { FileMetadata } from '@/lib/services/file-management-service';
 
 
 // Import FileMetadata type instead of redefining

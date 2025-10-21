@@ -1,8 +1,10 @@
 'use client';
 
-import { Suspense, lazy, ComponentType } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { Suspense, lazy, ComponentType } from 'react';
+import React from 'react';
+
+import { Card, CardContent } from '@/components/ui/card';
 
 // Ultra-lazy chart loading - only load on user interaction or viewport entry
 const RechartsComponents = {
@@ -195,4 +197,3 @@ export function OptimizedPieChart(props: Omit<OptimizedChartProps, 'type'>) {
 export { RechartsComponents };
 
 // React import for hooks
-import React from 'react';

@@ -1,10 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   RefreshCw,
   TrendingUp,
@@ -15,6 +10,7 @@ import {
   Zap,
   Activity,
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -25,6 +21,12 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 interface PerformanceMetric {
   category: string;
@@ -149,7 +151,7 @@ export function PerformanceDashboard() {
 
   useEffect(() => {
     fetchPerformanceData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [slowQueryThreshold]);
 
   if (isLoading) {

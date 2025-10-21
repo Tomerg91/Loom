@@ -1,21 +1,5 @@
 // Main configuration module - provides easy access to all app configuration
 import {
-  CACHE_CONFIG,
-  RATE_LIMIT_CONFIG,
-  TIER_LIMITS,
-  SESSION_CONFIG,
-  API_CONFIG,
-  FILE_CONFIG,
-  VALIDATION_CONFIG,
-  REALTIME_CONFIG,
-  SECURITY_URLS,
-  DEFAULTS,
-  ENV_CONFIG,
-  UI_CONFIG,
-  FEATURE_FLAGS,
-} from './constants';
-
-import {
   AUTH_ENDPOINTS,
   SESSION_ENDPOINTS,
   USER_ENDPOINTS,
@@ -31,6 +15,22 @@ import {
   CONTENT_TYPES,
   HTTP_METHODS,
 } from './api-endpoints';
+import {
+  CACHE_CONFIG,
+  RATE_LIMIT_CONFIG,
+  TIER_LIMITS,
+  SESSION_CONFIG,
+  API_CONFIG,
+  FILE_CONFIG,
+  VALIDATION_CONFIG,
+  REALTIME_CONFIG,
+  SECURITY_URLS,
+  DEFAULTS,
+  ENV_CONFIG,
+  UI_CONFIG,
+  FEATURE_FLAGS,
+} from './constants';
+
 
 /**
  * Application Configuration

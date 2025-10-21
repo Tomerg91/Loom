@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { Calendar, List, Plus, Clock, Users, CheckCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useUser } from '@/lib/auth/use-user';
+import { useState } from 'react';
+
 import { AppLayout } from '@/components/layout/app-layout';
+import { LazySessionBooking, LazySessionList, LazySessionCalendar } from '@/components/lazy-components';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { LazySessionBooking, LazySessionList, LazySessionCalendar } from '@/components/lazy-components';
-import { Calendar, List, Plus, Clock, Users, CheckCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useUser } from '@/lib/auth/use-user';
 import type { Session } from '@/types';
 
 interface SessionsPageClientProps {

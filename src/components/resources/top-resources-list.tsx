@@ -12,15 +12,16 @@
 
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Eye, Download, CheckCircle2, TrendingUp } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { ResourceLibraryItem } from '@/types/resources';
+import type { ResourcePerformanceSummary } from '@/types/resources';
 
 export interface TopResourcesListProps {
-  resources: ResourceLibraryItem[];
+  resources: ResourcePerformanceSummary[];
   title?: string;
   description?: string;
   metric?: 'views' | 'downloads' | 'completions';
@@ -41,7 +42,7 @@ export function TopResourcesList({
 }: TopResourcesListProps) {
   const router = useRouter();
 
-  const getMetricValue = (resource: ResourceLibraryItem) => {
+  const getMetricValue = (resource: ResourcePerformanceSummary) => {
     switch (metric) {
       case 'downloads':
         return resource.downloadCount;

@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { renderWithProviders, mockUseQuery, mockUseMutation, createMockNotification } from '@/test/utils';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { NotificationCenter } from '@/components/notifications/notification-center';
+import { renderWithProviders, mockUseQuery, mockUseMutation, createMockNotification } from '@/test/utils';
 
 vi.mock('@/lib/realtime/hooks', () => ({
   useRealtimeNotifications: vi.fn(() => ({
