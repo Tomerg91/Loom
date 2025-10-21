@@ -42,6 +42,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   const navigateWithRefresh = async (path: string) => {
     try {
       router.push(path);
+      router.refresh();
     } catch (navError) {
       logDebugError('Navigation failed, using location fallback:', navError);
       if (typeof window !== 'undefined') {
