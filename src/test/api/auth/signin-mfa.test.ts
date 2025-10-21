@@ -33,9 +33,36 @@ vi.mock('@/lib/security/cors', () => ({
   applyCorsHeaders: vi.fn((response) => response),
 }));
 
+const createServerClientWithRequestMock = vi.fn(() => ({
+  auth: {
+    getSession: vi.fn().mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access',
+          refresh_token: 'refresh',
+        },
+      },
+      error: null,
+    }),
+    setSession: vi.fn().mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access',
+          refresh_token: 'refresh',
+        },
+      },
+      error: null,
+    }),
+  },
+}));
+
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClientWithRequest: createServerClientWithRequestMock,
+}));
+
 vi.mock('@/lib/api/utils', () => ({
-  createSuccessResponse: vi.fn((data, message = 'Success') => 
-    new Response(JSON.stringify({ success: true, data, message }), { 
+  createSuccessResponse: vi.fn((data, message = 'Success') =>
+    new Response(JSON.stringify({ success: true, data, message }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     })

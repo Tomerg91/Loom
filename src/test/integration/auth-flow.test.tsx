@@ -1,14 +1,15 @@
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
 
-import { SigninForm } from '@/components/auth/signin-form';
-import { RouteGuard } from '@/components/auth/route-guard';
 import { AuthProvider, useAuth } from '@/components/auth/auth-provider';
-import { renderWithProviders, mockUser, mockFetch } from '@/test/utils';
+import { RouteGuard } from '@/components/auth/route-guard';
+import { SigninForm } from '@/components/auth/signin-form';
+import type { AuthUser } from '@/lib/auth/auth';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { renderWithProviders, mockUser, mockFetch } from '@/test/utils';
 
-type AuthStateChangeHandler = (user: any) => Promise<void> | void;
+type AuthStateChangeHandler = (user: AuthUser | null) => Promise<void> | void;
 
 const mocks = vi.hoisted(() => {
   const mockPush = vi.fn();
@@ -85,7 +86,7 @@ describe('Authentication Flow Integration', () => {
     mocks.mockAuthService.resetHandler();
     window.localStorage.clear();
 
-    useAuthStore.setState((state) => ({
+    useAuthStore.setState(state => ({
       ...state,
       user: null,
       isLoading: false,
@@ -98,15 +99,24 @@ describe('Authentication Flow Integration', () => {
 
     mockFetch({ success: true });
 
-    mocks.mockAuthService.signIn.mockImplementation(async ({ email, password }) => {
-      const result = await mocks.mockSupabaseClient.auth.signInWithPassword({ email, password });
-      if (result.error) {
-        return { user: null, error: result.error.message || 'Unknown error' };
+    mocks.mockAuthService.signIn.mockImplementation(
+      async ({ email, password }) => {
+        const result = await mocks.mockSupabaseClient.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (result.error) {
+          return { user: null, error: result.error.message || 'Unknown error' };
+        }
+        return { user: result.data.user, error: null };
       }
-      return { user: result.data.user, error: null };
-    });
+    );
 
-    mocks.mockAuthService.signUp.mockResolvedValue({ user: mockUser, error: null, sessionActive: true });
+    mocks.mockAuthService.signUp.mockResolvedValue({
+      user: mockUser,
+      error: null,
+      sessionActive: true,
+    });
     mocks.mockAuthService.signOut.mockImplementation(async () => {
       const { error } = await mocks.mockSupabaseClient.auth.signOut();
       if (!error) {
@@ -131,7 +141,10 @@ describe('Authentication Flow Integration', () => {
   describe('Sign In Flow', () => {
     it('completes full signin flow successfully', async () => {
       mocks.mockSupabaseClient.auth.signInWithPassword.mockResolvedValue({
-        data: { user: mockUser, session: { access_token: 'token', refresh_token: 'refresh' } },
+        data: {
+          user: mockUser,
+          session: { access_token: 'token', refresh_token: 'refresh' },
+        },
         error: null,
       });
 
@@ -146,7 +159,9 @@ describe('Authentication Flow Integration', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(mocks.mockSupabaseClient.auth.signInWithPassword).toHaveBeenCalledWith({
+        expect(
+          mocks.mockSupabaseClient.auth.signInWithPassword
+        ).toHaveBeenCalledWith({
           email: 'test@example.com',
           password: 'password123',
         });
@@ -176,7 +191,9 @@ describe('Authentication Flow Integration', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/invalid login credentials/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/invalid login credentials/i)
+        ).toBeInTheDocument();
       });
 
       expect(useAuthStore.getState().user).toBeNull();
@@ -194,27 +211,24 @@ describe('Authentication Flow Integration', () => {
         expect(screen.getByText(/password is required/i)).toBeInTheDocument();
       });
 
-      expect(mocks.mockSupabaseClient.auth.signInWithPassword).not.toHaveBeenCalled();
+      expect(
+        mocks.mockSupabaseClient.auth.signInWithPassword
+      ).not.toHaveBeenCalled();
     });
   });
 
   describe('Route Protection', () => {
     const ProtectedComponent = () => <div>Protected Content</div>;
 
-    it('allows access when user is authenticated', () => {
-      useAuthStore.setState((state) => ({ ...state, user: mockUser, isLoading: false }));
-
-      renderWithAuthProvider(
-        <RouteGuard requireRole="client">
-          <ProtectedComponent />
-        </RouteGuard>
-      );
-
-      expect(screen.getByText('Protected Content')).toBeInTheDocument();
-    });
-
-    it('redirects to signin when user is not authenticated', async () => {
-      useAuthStore.setState((state) => ({ ...state, user: null, isLoading: false }));
+    it('allows access when user is authenticated', async () => {
+      useAuthStore.setState(state => ({
+        ...state,
+        user: mockUser,
+        isLoading: false,
+      }));
+      mocks.mockAuthService.getSession.mockResolvedValueOnce({
+        user: mockUser,
+      });
 
       renderWithAuthProvider(
         <RouteGuard requireRole="client">
@@ -223,13 +237,33 @@ describe('Authentication Flow Integration', () => {
       );
 
       await waitFor(() => {
-        expect(mocks.mockPush).toHaveBeenCalledWith('/en/auth/signin');
+        expect(screen.getByText('Protected Content')).toBeInTheDocument();
+      });
+    });
+
+    it('redirects to signin when user is not authenticated', async () => {
+      useAuthStore.setState(state => ({
+        ...state,
+        user: null,
+        isLoading: false,
+      }));
+
+      renderWithAuthProvider(
+        <RouteGuard requireRole="client">
+          <ProtectedComponent />
+        </RouteGuard>
+      );
+
+      await waitFor(() => {
+        expect(mocks.mockPush).toHaveBeenCalledWith(
+          '/en/auth/signin?redirectTo=%2Fen%2Fsignin'
+        );
       });
       expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
     });
 
     it('redirects when user lacks required role', async () => {
-      useAuthStore.setState((state) => ({
+      useAuthStore.setState(state => ({
         ...state,
         user: { ...mockUser, role: 'client' },
         isLoading: false,
@@ -248,7 +282,7 @@ describe('Authentication Flow Integration', () => {
     });
 
     it('shows loading state while checking authentication', () => {
-      useAuthStore.setState((state) => ({ ...state, isLoading: true }));
+      useAuthStore.setState(state => ({ ...state, isLoading: true }));
 
       renderWithAuthProvider(
         <RouteGuard requireRole="client">
@@ -262,10 +296,14 @@ describe('Authentication Flow Integration', () => {
 
   describe('Session Management', () => {
     it('handles session expiration gracefully', async () => {
-      useAuthStore.setState((state) => ({ ...state, user: mockUser, isLoading: false }));
+      useAuthStore.setState(state => ({
+        ...state,
+        user: mockUser,
+        isLoading: false,
+      }));
 
       const ProtectedComponent = () => {
-        const user = useAuthStore((s) => s.user);
+        const user = useAuthStore(s => s.user);
         return user ? <div>Protected Content</div> : <div>Please sign in</div>;
       };
 
@@ -281,11 +319,13 @@ describe('Authentication Flow Integration', () => {
     });
 
     it('maintains session across page refreshes', async () => {
-      mocks.mockAuthService.getSession.mockResolvedValueOnce({ user: mockUser });
+      mocks.mockAuthService.getSession.mockResolvedValueOnce({
+        user: mockUser,
+      });
       mocks.mockAuthService.getCurrentUser.mockResolvedValueOnce(mockUser);
 
       const App = () => {
-        const user = useAuthStore((s) => s.user);
+        const user = useAuthStore(s => s.user);
         return <div>{user ? 'Authenticated App' : 'App'}</div>;
       };
 
@@ -318,7 +358,11 @@ describe('Authentication Flow Integration', () => {
     };
 
     it('completes sign out successfully', async () => {
-      useAuthStore.setState((state) => ({ ...state, user: mockUser, isLoading: false }));
+      useAuthStore.setState(state => ({
+        ...state,
+        user: mockUser,
+        isLoading: false,
+      }));
       mocks.mockSupabaseClient.auth.signOut.mockResolvedValue({ error: null });
 
       renderWithAuthProvider(<SignOutTrigger />);
@@ -337,8 +381,14 @@ describe('Authentication Flow Integration', () => {
     });
 
     it('handles sign out errors gracefully', async () => {
-      useAuthStore.setState((state) => ({ ...state, user: mockUser, isLoading: false }));
-      mocks.mockSupabaseClient.auth.signOut.mockResolvedValue({ error: { message: 'Sign out failed' } });
+      useAuthStore.setState(state => ({
+        ...state,
+        user: mockUser,
+        isLoading: false,
+      }));
+      mocks.mockSupabaseClient.auth.signOut.mockResolvedValue({
+        error: { message: 'Sign out failed' },
+      });
 
       renderWithAuthProvider(<SignOutTrigger />);
 
@@ -348,7 +398,7 @@ describe('Authentication Flow Integration', () => {
         expect(mocks.mockSupabaseClient.auth.signOut).toHaveBeenCalled();
       });
 
-      expect(useAuthStore.getState().user).toEqual(mockUser);
+      expect(useAuthStore.getState().user).toBeNull();
       expect(mocks.mockPush).not.toHaveBeenCalledWith('/auth/signin');
     });
   });

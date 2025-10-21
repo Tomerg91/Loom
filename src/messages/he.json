@@ -247,7 +247,14 @@
     },
     "socialProof": {
       "title": "בשימוש על ידי מטפלים ומרכזים מובילים",
-      "logos": ["מרכז סאטיה", "תודעה חדשה", "Balance Studio", "MindfulFlow", "לב פתוח", "המסע הפנימי"]
+      "logos": [
+        "מרכז סאטיה",
+        "תודעה חדשה",
+        "Balance Studio",
+        "MindfulFlow",
+        "לב פתוח",
+        "המסע הפנימי"
+      ]
     },
     "features": {
       "title": "פלטפורמה אחת, אינסוף אפשרויות.",
@@ -325,10 +332,26 @@
         }
       ],
       "social": [
-        { "label": "LinkedIn", "href": "https://www.linkedin.com/company/loom-app", "icon": "linkedin" },
-        { "label": "Facebook", "href": "https://www.facebook.com/loom-app", "icon": "facebook" },
-        { "label": "Instagram", "href": "https://www.instagram.com/loom-app", "icon": "instagram" },
-        { "label": "YouTube", "href": "https://www.youtube.com/@loom-app", "icon": "youtube" }
+        {
+          "label": "LinkedIn",
+          "href": "https://www.linkedin.com/company/loom-app",
+          "icon": "linkedin"
+        },
+        {
+          "label": "Facebook",
+          "href": "https://www.facebook.com/loom-app",
+          "icon": "facebook"
+        },
+        {
+          "label": "Instagram",
+          "href": "https://www.instagram.com/loom-app",
+          "icon": "instagram"
+        },
+        {
+          "label": "YouTube",
+          "href": "https://www.youtube.com/@loom-app",
+          "icon": "youtube"
+        }
       ],
       "legal": "© {year} Loom-app. כל הזכויות שמורות.",
       "madeWith": "מעוצב באהבה עבור קהילת שיטת סאטיה",
@@ -1141,9 +1164,15 @@
       "link": "התחבר כאן",
       "loading": "מתחבר...",
       "error": "אירעה שגיאה במהלך ההתחברות. אנא נסה שוב.",
+      "rememberMe": "השאר אותי מחובר",
       "sessionExpired": {
         "title": "תוקף ההתחברות פג",
         "description": "תוקף ההתחברות שלך פג. אנא התחברו מחדש כדי להמשיך."
+      },
+      "validation": {
+        "emailRequired": "יש להזין כתובת אימייל",
+        "invalidEmail": "יש להזין כתובת אימייל תקינה",
+        "passwordRequired": "יש להזין סיסמה"
       }
     },
     "signup": {

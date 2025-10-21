@@ -10,10 +10,43 @@ import {
   withErrorHandling,
   withRequestLogging,
 } from '@/lib/api/utils';
-import { createAuthService } from '@/lib/auth/auth';
+import {
+  createAuthService,
+  DEFAULT_SESSION_MAX_AGE,
+  REMEMBER_ME_SESSION_MAX_AGE,
+} from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { basicPasswordSchema } from '@/lib/security/password';
 import { createServerClientWithRequest } from '@/lib/supabase/server';
+
+const SESSION_COOKIE_NAMES = new Set(['sb-access-token', 'sb-refresh-token']);
+
+function applySessionCookies(
+  destination: NextResponse,
+  source: NextResponse,
+  rememberMe: boolean
+) {
+  const lifetimeSeconds = rememberMe
+    ? REMEMBER_ME_SESSION_MAX_AGE
+    : DEFAULT_SESSION_MAX_AGE;
+  const expiresAt = new Date(Date.now() + lifetimeSeconds * 1000);
+
+  source.cookies.getAll().forEach(cookie => {
+    const isSessionCookie = SESSION_COOKIE_NAMES.has(cookie.name);
+    destination.cookies.set({
+      name: cookie.name,
+      value: cookie.value,
+      domain: cookie.domain,
+      path: cookie.path,
+      expires: isSessionCookie ? expiresAt : cookie.expires,
+      httpOnly: cookie.httpOnly,
+      maxAge: isSessionCookie ? lifetimeSeconds : cookie.maxAge,
+      sameSite: cookie.sameSite,
+      secure: cookie.secure,
+      priority: cookie.priority,
+    });
+  });
+}
 
 // Enhanced signin schema with security validations
 const signInSchema = z.object({
@@ -114,7 +147,8 @@ export const POST = withErrorHandling(
         );
       }
 
-      const { email, password, rememberMe } = validation.data;
+      const { email, password } = validation.data;
+      const rememberMe = validation.data.rememberMe ?? false;
       
       // Check email-specific rate limiting
       const emailRateLimit = checkEmailRateLimit(email);
@@ -141,7 +175,11 @@ export const POST = withErrorHandling(
         isServer: true,
         supabaseClient: supabase,
       });
-      const { user, error, session } = await authService.signIn({ email, password, rememberMe });
+      const { user, error, session } = await authService.signIn({
+        email,
+        password,
+        rememberMe,
+      });
 
       if (error || !user) {
         // Record failed attempt for this email
@@ -219,6 +257,8 @@ export const POST = withErrorHandling(
           message: 'MFA verification required to complete signin'
         }, 'MFA verification required');
 
+        applySessionCookies(response, supabaseResponse, rememberMe);
+
         return applyCorsHeaders(response, request);
       }
 
@@ -257,20 +297,7 @@ export const POST = withErrorHandling(
         message: 'Successfully signed in'
       }, 'Authentication successful');
 
-      supabaseResponse.cookies.getAll().forEach(cookie => {
-        response.cookies.set({
-          name: cookie.name,
-          value: cookie.value,
-          domain: cookie.domain,
-          path: cookie.path,
-          expires: cookie.expires,
-          httpOnly: cookie.httpOnly,
-          maxAge: cookie.maxAge,
-          sameSite: cookie.sameSite,
-          secure: cookie.secure,
-          priority: cookie.priority,
-        });
-      });
+      applySessionCookies(response, supabaseResponse, rememberMe);
 
       return applyCorsHeaders(response, request);
       

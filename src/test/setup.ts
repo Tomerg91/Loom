@@ -107,6 +107,19 @@ Object.defineProperty(window, 'location', {
   writable: true,
 });
 
+// Provide ResizeObserver for components that rely on it (e.g., Radix UI)
+class MockResizeObserver {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+
+const globalWithResizeObserver = globalThis as typeof globalThis & {
+  ResizeObserver: typeof MockResizeObserver;
+};
+
+globalWithResizeObserver.ResizeObserver = MockResizeObserver;
+
 // Mock fetch globally to handle API calls in tests
 global.fetch = vi.fn();
 
@@ -147,7 +160,9 @@ export const mockQueryClient = {
 
 // Mock @tanstack/react-query with consistent mock instances
 vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query');
+  const actual = await vi.importActual<typeof import('@tanstack/react-query')>(
+    '@tanstack/react-query'
+  );
   return {
     ...actual,
     QueryClient: vi.fn(() => mockQueryClient),
@@ -171,10 +186,10 @@ Object.defineProperty(process, 'env', {
 beforeEach(() => {
   // Reset all mocks
   vi.clearAllMocks();
-  
+
   // Setup default mock implementations
   mockUseQueryClient.mockReturnValue(mockQueryClient);
-  
+
   // Mock fetch with proper response structure
   global.fetch = vi.fn().mockResolvedValue({
     ok: true,

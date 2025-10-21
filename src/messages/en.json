@@ -361,10 +361,26 @@
         }
       ],
       "social": [
-        { "label": "LinkedIn", "href": "https://www.linkedin.com/company/loom-app", "icon": "linkedin" },
-        { "label": "Facebook", "href": "https://www.facebook.com/loom-app", "icon": "facebook" },
-        { "label": "Instagram", "href": "https://www.instagram.com/loom-app", "icon": "instagram" },
-        { "label": "YouTube", "href": "https://www.youtube.com/@loom-app", "icon": "youtube" }
+        {
+          "label": "LinkedIn",
+          "href": "https://www.linkedin.com/company/loom-app",
+          "icon": "linkedin"
+        },
+        {
+          "label": "Facebook",
+          "href": "https://www.facebook.com/loom-app",
+          "icon": "facebook"
+        },
+        {
+          "label": "Instagram",
+          "href": "https://www.instagram.com/loom-app",
+          "icon": "instagram"
+        },
+        {
+          "label": "YouTube",
+          "href": "https://www.youtube.com/@loom-app",
+          "icon": "youtube"
+        }
       ],
       "madeWith": "Made with ❤️ for the Satya community",
       "followLabel": "Follow us",
@@ -948,9 +964,15 @@
       "link": "Sign in here",
       "loading": "Signing in...",
       "error": "An error occurred during sign in. Please try again.",
+      "rememberMe": "Keep me signed in",
       "sessionExpired": {
         "title": "Session Expired",
         "description": "Your session has expired. Please sign in again to continue."
+      },
+      "validation": {
+        "emailRequired": "Email is required",
+        "invalidEmail": "Enter a valid email address",
+        "passwordRequired": "Password is required"
       }
     },
     "signup": {

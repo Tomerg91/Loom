@@ -1,16 +1,25 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
+import { useState, FormEvent } from 'react';
+
+import { useAuth } from '@/components/auth/auth-provider';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/components/auth/auth-provider';
-import { Loader2 } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 import { resolveAuthPath, resolveRedirect } from '@/lib/utils/redirect';
 
 interface SigninFormProps {
@@ -24,18 +33,68 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+
+  const logDebug = (...args: Parameters<typeof console.log>) => {
+    if (isDevelopment) {
+      console.log(...args);
+    }
+  };
+
+  const logDebugError = (...args: Parameters<typeof console.error>) => {
+    if (isDevelopment) {
+      console.error(...args);
+    }
+  };
+
+  const navigateWithRefresh = async (path: string) => {
+    try {
+      await router.push(path);
+      router.refresh();
+    } catch (navError) {
+      logDebugError('Navigation failed, using location fallback:', navError);
+      if (typeof window !== 'undefined') {
+        window.location.href = path;
+      }
+    }
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setFieldErrors({});
 
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
+    const nextFieldErrors: { email?: string; password?: string } = {};
+
+    if (!email) {
+      nextFieldErrors.email = t('signin.validation.emailRequired');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      nextFieldErrors.email = t('signin.validation.invalidEmail');
+    }
+
+    if (!password) {
+      nextFieldErrors.password = t('signin.validation.passwordRequired');
+    }
+
+    if (nextFieldErrors.email || nextFieldErrors.password) {
+      logDebug('Validation errors detected:', nextFieldErrors);
+      setFieldErrors(nextFieldErrors);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const result = await signIn(email, password);
+      const result = await signIn(email, password, rememberMe);
 
       if (result.error) {
         setError(result.error);
@@ -43,52 +102,30 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
         return;
       }
 
-      console.log('✅ Sign-in successful:', {
+      logDebug('✅ Sign-in successful:', {
         userId: result.user?.id,
-        mfaEnabled: result.user?.mfaEnabled
+        mfaEnabled: result.user?.mfaEnabled,
       });
 
       const targetPath = resolveRedirect(locale, redirectTo || '/dashboard');
-      console.log('🎯 Target path resolved:', targetPath, { locale, redirectTo });
+      logDebug('🎯 Target path resolved:', targetPath, { locale, redirectTo });
 
       // Check if MFA is required
       if (result.user?.mfaEnabled) {
         const query = new URLSearchParams({
           userId: result.user.id,
           redirectTo: targetPath,
+          rememberMe: rememberMe ? '1' : '0',
         });
-        const mfaPath = resolveAuthPath(locale, `/auth/mfa-verify?${query.toString()}`);
-        console.log('🔐 MFA required, navigating to:', mfaPath);
-
-        // Await navigation with timeout fallback
-        try {
-          await Promise.race([
-            router.push(mfaPath),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Navigation timeout')), 5000)
-            )
-          ]);
-          console.log('✅ MFA navigation initiated');
-        } catch (navError) {
-          console.error('❌ Navigation failed, using fallback:', navError);
-          window.location.href = mfaPath;
-        }
+        const mfaPath = resolveAuthPath(
+          locale,
+          `/auth/mfa-verify?${query.toString()}`
+        );
+        logDebug('🔐 MFA required, navigating to:', mfaPath);
+        await navigateWithRefresh(mfaPath);
       } else {
-        console.log('➡️ Navigating to dashboard');
-
-        // Await navigation with timeout fallback
-        try {
-          await Promise.race([
-            router.push(targetPath),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Navigation timeout')), 5000)
-            )
-          ]);
-          console.log('✅ Navigation initiated');
-        } catch (navError) {
-          console.error('❌ Navigation failed, using fallback:', navError);
-          window.location.href = targetPath;
-        }
+        logDebug('➡️ Navigating to dashboard');
+        await navigateWithRefresh(targetPath);
       }
       // Loading state stays true during navigation
     } catch (err) {
@@ -100,12 +137,14 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
   return (
     <Card className="w-full max-w-md mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
       <CardHeader className="space-y-4 text-center px-8 pt-8 pb-6">
-        <CardTitle className="text-3xl font-light text-neutral-900">{t('signin.title')}</CardTitle>
+        <CardTitle className="text-3xl font-light text-neutral-900">
+          {t('signin.title')}
+        </CardTitle>
         <CardDescription className="text-base font-light text-neutral-600">
           {t('signin.description')}
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <CardContent className="space-y-6 px-8">
           {error && (
             <div
@@ -117,7 +156,12 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
             </div>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-neutral-900">{t('email')}</Label>
+            <Label
+              htmlFor="email"
+              className="text-sm font-medium text-neutral-900"
+            >
+              {t('email')}
+            </Label>
             <Input
               id="email"
               type="email"
@@ -127,11 +171,17 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
               data-testid="email-input"
               variant="default"
               inputSize="md"
+              error={fieldErrors.email}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium text-neutral-900">{t('password')}</Label>
+            <Label
+              htmlFor="password"
+              className="text-sm font-medium text-neutral-900"
+            >
+              {t('password')}
+            </Label>
             <Input
               id="password"
               type="password"
@@ -141,7 +191,28 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
               data-testid="password-input"
               variant="default"
               inputSize="md"
+              error={fieldErrors.password}
             />
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <input
+              type="hidden"
+              name="rememberMe"
+              value={rememberMe ? 'on' : ''}
+            />
+            <Checkbox
+              id="remember-me"
+              checked={rememberMe}
+              onCheckedChange={checked => setRememberMe(checked === true)}
+              data-testid="remember-me-checkbox"
+            />
+            <Label
+              htmlFor="remember-me"
+              className="text-sm font-medium text-neutral-900"
+            >
+              {t('signin.rememberMe')}
+            </Label>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-6 px-8 pb-8">
@@ -162,7 +233,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
               t('signin.button')
             )}
           </Button>
-          
+
           <div className="text-center space-y-3">
             <Link
               href="/auth/reset-password"
@@ -171,7 +242,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
             >
               {t('forgotPassword')}
             </Link>
-            
+
             <div className="text-sm font-light text-neutral-600">
               {t('noAccount')}{' '}
               <Link
