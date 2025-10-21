@@ -2,7 +2,10 @@ import { routing } from '@/i18n/routing';
 import { config } from '@/lib/config';
 import type { UserServiceOptions } from '@/lib/database/users';
 import { supabase as clientSupabase } from '@/modules/platform/supabase/client';
-import { createClient, createAdminClient } from '@/modules/platform/supabase/server';
+import {
+  createClient,
+  createAdminClient,
+} from '@/modules/platform/supabase/server';
 import type { Language, User, UserRole, UserStatus } from '@/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
@@ -420,10 +423,13 @@ export class AuthService {
           .eq('id', authData.user.id);
 
         if (lastSeenError) {
-          console.warn('[AuthService] Failed to update last_seen_at with admin client:', {
-            userId: authData.user.id,
-            error: lastSeenError.message,
-          });
+          console.warn(
+            '[AuthService] Failed to update last_seen_at with admin client:',
+            {
+              userId: authData.user.id,
+              error: lastSeenError.message,
+            }
+          );
         }
 
         const { data: profileData, error: profileError } = await adminClient
@@ -450,21 +456,28 @@ export class AuthService {
             updatedAt: profileData.updated_at || new Date().toISOString(),
             lastSeenAt: profileData.last_seen_at || undefined,
             onboardingStatus:
-              (profileData.onboarding_status as 'pending' | 'in_progress' | 'completed') ||
-              'pending',
+              (profileData.onboarding_status as
+                | 'pending'
+                | 'in_progress'
+                | 'completed') || 'pending',
             onboardingStep: profileData.onboarding_step ?? 0,
-            onboardingCompletedAt: profileData.onboarding_completed_at || undefined,
-            onboardingData: (profileData.onboarding_data as Record<string, unknown>) || {},
+            onboardingCompletedAt:
+              profileData.onboarding_completed_at || undefined,
+            onboardingData:
+              (profileData.onboarding_data as Record<string, unknown>) || {},
             mfaEnabled: profileData.mfa_enabled ?? false,
             mfaSetupCompleted: profileData.mfa_setup_completed ?? false,
             mfaVerifiedAt: profileData.mfa_verified_at || undefined,
             rememberDeviceEnabled: profileData.remember_device_enabled ?? false,
           };
         } else if (profileError) {
-          console.warn('[AuthService] Admin client profile fetch failed after signin:', {
-            userId: authData.user.id,
-            error: profileError.message,
-          });
+          console.warn(
+            '[AuthService] Admin client profile fetch failed after signin:',
+            {
+              userId: authData.user.id,
+              error: profileError.message,
+            }
+          );
         }
       } catch (adminError) {
         console.warn('[AuthService] Admin client unavailable during signin:', {
@@ -474,54 +487,41 @@ export class AuthService {
       }
 
       if (!authUser) {
-        const updateResult = await this.userService.updateLastSeen(authData.user.id);
+        const updateResult = await this.userService.updateLastSeen(
+          authData.user.id
+        );
         if (!updateResult.success) {
-          console.warn('[AuthService] updateLastSeen fallback failed after signin:', {
-            userId: authData.user.id,
-            error: updateResult.error,
-          });
+          console.warn(
+            '[AuthService] updateLastSeen fallback failed after signin:',
+            {
+              userId: authData.user.id,
+              error: updateResult.error,
+            }
+          );
         }
 
-        const profileResult = await this.userService.getUserProfile(authData.user.id);
+        const profileResult = await this.userService.getUserProfile(
+          authData.user.id
+        );
         if (profileResult.success) {
           authUser = this.mapUserProfileToAuthUser(profileResult.data);
         } else {
-          console.warn('[AuthService] getUserProfile fallback failed after signin:', {
-            userId: authData.user.id,
-            error: profileResult.error,
-          });
+          console.warn(
+            '[AuthService] getUserProfile fallback failed after signin:',
+            {
+              userId: authData.user.id,
+              error: profileResult.error,
+            }
+          );
         }
       }
 
       if (!authUser) {
-        authUser = {
-          id: authData.user.id,
-          email: authData.user.email ?? data.email,
-          role: (authData.user.user_metadata?.role as UserRole) || 'client',
-          firstName: authData.user.user_metadata?.first_name,
-          lastName: authData.user.user_metadata?.last_name,
-          phone: authData.user.user_metadata?.phone,
-          avatarUrl: authData.user.user_metadata?.avatar_url,
-          timezone: authData.user.user_metadata?.timezone,
-          language:
-            (authData.user.user_metadata?.language as Language) ||
-            (routing.defaultLocale as Language),
-          status: 'active',
-          createdAt: authData.user.created_at ?? new Date().toISOString(),
-          updatedAt:
-            authData.user.updated_at ??
-            authData.user.created_at ??
-            new Date().toISOString(),
-          lastSeenAt: authData.user.last_sign_in_at || undefined,
-          onboardingStatus: 'pending',
-          onboardingStep: 0,
-          onboardingCompletedAt: undefined,
-          onboardingData: {},
-          mfaEnabled: authData.user.user_metadata?.mfa_enabled ?? false,
-          mfaSetupCompleted: authData.user.user_metadata?.mfa_setup_completed ?? false,
-          mfaVerifiedAt: authData.user.user_metadata?.mfa_verified_at ?? undefined,
-          rememberDeviceEnabled:
-            authData.user.user_metadata?.remember_device_enabled ?? false,
+        return {
+          user: null,
+          error:
+            'Unable to load user profile after sign-in. Please try again later.',
+          session: null,
         };
       }
 
