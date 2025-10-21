@@ -29,6 +29,7 @@ export const AUTH_ENDPOINTS = {
   MFA_ENABLE: '/api/auth/mfa/enable',
   MFA_DISABLE: '/api/auth/mfa/disable',
   MFA_BACKUP_CODES: '/api/auth/mfa/backup-codes',
+  MFA_COMPLETE: '/api/auth/mfa/complete',
   SIGNIN_MFA: '/api/auth/signin-mfa',
   
   // Additional auth endpoints

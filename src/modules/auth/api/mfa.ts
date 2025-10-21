@@ -8,6 +8,8 @@
  */
 
 import type {
+  MfaCompletePayload,
+  MfaCompleteResponse,
   MfaEnablePayload,
   MfaEnableResponse,
   MfaSetupResponse,
@@ -87,6 +89,25 @@ export async function verifyMfa(
   return parseResponse<MfaVerifyResponse>(
     response,
     'Unable to verify MFA code'
+  );
+}
+
+/**
+ * Finalizes the MFA flow by refreshing the Supabase session and returning tokens.
+ */
+export async function completeMfa(
+  payload: MfaCompletePayload
+): Promise<MfaCompleteResponse> {
+  const response = await fetch(`${MFA_API_BASE}/complete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+
+  return parseResponse<MfaCompleteResponse>(
+    response,
+    'Unable to finalize MFA session'
   );
 }
 
