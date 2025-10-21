@@ -126,6 +126,7 @@ export function MfaVerificationForm({
         userId,
         code: data.code.toUpperCase(),
         method: activeMethod,
+        rememberDevice: data.rememberDevice,
       });
 
       const completion = await completeMfa({

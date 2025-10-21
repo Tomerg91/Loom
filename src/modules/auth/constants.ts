@@ -10,6 +10,9 @@ import type { UserRole } from '@/types';
 /** Name of the cookie set while a user is completing multi-factor auth. */
 export const MFA_PENDING_COOKIE = 'mfa_pending';
 
+/** Name of the cookie used to persist trusted-device verification state. */
+export const MFA_TRUSTED_DEVICE_COOKIE = 'mfa_trusted_device';
+
 /** Route segment used for the MFA verification page. */
 export const MFA_VERIFY_ROUTE = '/auth/mfa-verify';
 
