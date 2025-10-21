@@ -336,7 +336,6 @@ export function ResourceLibraryPage() {
               resources={resources}
               onShare={handleShareResource}
               onDelete={handleDeleteResource}
-              collections={collections || []}
             />
           )}
         </TabsContent>

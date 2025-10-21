@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-
-import { toast } from '@/components/ui/use-toast';
 import { FolderMetadata } from '@/lib/services/file-management-service';
 
 interface UseFoldersParams {

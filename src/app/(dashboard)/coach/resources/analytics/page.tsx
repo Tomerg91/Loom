@@ -116,7 +116,7 @@ export default function ResourceAnalyticsPage() {
         <TabsContent value="top-performers" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
             <TopResourcesList
-              resources={resources}
+              resources={analytics?.topResources || []}
               title="Most Viewed"
               description="Resources with the highest view count"
               metric="views"
@@ -124,7 +124,7 @@ export default function ResourceAnalyticsPage() {
             />
 
             <TopResourcesList
-              resources={resources}
+              resources={analytics?.topResources || []}
               title="Most Downloaded"
               description="Resources clients download most"
               metric="downloads"
@@ -133,7 +133,7 @@ export default function ResourceAnalyticsPage() {
           </div>
 
           <TopResourcesList
-            resources={resources}
+            resources={analytics?.topResources || []}
             title="Most Completed"
             description="Resources with highest completion rate"
             metric="completions"
