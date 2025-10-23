@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
 
-import { createMfaService, getClientIP } from '@/lib/services/mfa-service';
+import { getClientIP } from '@/lib/services/edge-helpers';
 import { resolveRedirect } from '@/lib/utils/redirect';
 import {
   AUTH_ROUTES,
@@ -233,6 +233,8 @@ export async function middleware(request: NextRequest) {
       const [deviceId, token] = trustedCookie.split('.');
       if (deviceId && token) {
         try {
+          // Dynamic import to avoid loading Node.js modules in Edge Runtime
+          const { createMfaService } = await import('@/lib/services/mfa-service');
           const mfaService = createMfaService(true);
           trustedDeviceValid = await mfaService.verifyTrustedDeviceToken(
             sessionUser!.id,
