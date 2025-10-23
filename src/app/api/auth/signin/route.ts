@@ -141,7 +141,8 @@ export const POST = withErrorHandling(
         }
 
         // Create a request-scoped Supabase client so session cookies are persisted
-        const supabaseResponse = NextResponse.next();
+        // Use an empty JSON response as a cookie container (NextResponse.next() not allowed in API routes)
+        const supabaseResponse = NextResponse.json({}, { status: 200 });
         const supabase = createServerClientWithRequest(
           request,
           supabaseResponse
