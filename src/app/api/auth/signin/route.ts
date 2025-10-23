@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 import {
   createErrorResponse,
-  createSuccessResponse,
   HTTP_STATUS,
   rateLimit,
   validateRequestBody,
@@ -211,23 +210,6 @@ export const POST = withErrorHandling(
           }
         : null;
 
-      const forwardSupabaseCookies = (target: NextResponse) => {
-        supabaseResponse.cookies.getAll().forEach(cookie => {
-          target.cookies.set({
-            name: cookie.name,
-            value: cookie.value,
-            domain: cookie.domain,
-            path: cookie.path,
-            expires: cookie.expires,
-            httpOnly: cookie.httpOnly,
-            maxAge: cookie.maxAge,
-            sameSite: cookie.sameSite,
-            secure: cookie.secure,
-            priority: cookie.priority,
-          });
-        });
-      };
-
       if (requiresMFA) {
         // Log MFA required for auditing
         console.info('User signin - MFA required:', {
@@ -237,15 +219,29 @@ export const POST = withErrorHandling(
           ip: request.headers.get('x-forwarded-for') || 'unknown'
         });
 
-        // Return MFA challenge response (don't complete signin yet)
-        const response = createSuccessResponse({
-          requiresMFA: true,
-          user: { ...sanitizedUser, mfaEnabled: true },
-          session: sessionPayload,
-          message: 'MFA verification required to complete signin'
-        }, 'MFA verification required');
+        // Use supabaseResponse as base to preserve auth cookies
+        const responseData = {
+          success: true,
+          data: {
+            requiresMFA: true,
+            user: { ...sanitizedUser, mfaEnabled: true },
+            session: sessionPayload,
+            message: 'MFA verification required to complete signin'
+          },
+          message: 'MFA verification required'
+        };
 
-        forwardSupabaseCookies(response);
+        // Set JSON body and status on the existing supabaseResponse
+        const response = NextResponse.json(responseData, {
+          status: HTTP_STATUS.OK,
+          headers: supabaseResponse.headers,
+        });
+
+        // Copy cookies from supabaseResponse to new response
+        supabaseResponse.cookies.getAll().forEach(cookie => {
+          response.cookies.set(cookie);
+        });
+
         return applyCorsHeaders(response, request);
       }
 
@@ -266,13 +262,27 @@ export const POST = withErrorHandling(
         });
       }
 
-      const response = createSuccessResponse({
-        user: sanitizedUser,
-        session: sessionPayload,
-        message: 'Successfully signed in'
-      }, 'Authentication successful');
+      // Use supabaseResponse as base to preserve auth cookies
+      const responseData = {
+        success: true,
+        data: {
+          user: sanitizedUser,
+          session: sessionPayload,
+          message: 'Successfully signed in'
+        },
+        message: 'Authentication successful'
+      };
 
-      forwardSupabaseCookies(response);
+      // Set JSON body and status on the existing supabaseResponse
+      const response = NextResponse.json(responseData, {
+        status: HTTP_STATUS.OK,
+        headers: supabaseResponse.headers,
+      });
+
+      // Copy cookies from supabaseResponse to new response
+      supabaseResponse.cookies.getAll().forEach(cookie => {
+        response.cookies.set(cookie);
+      });
 
       return applyCorsHeaders(response, request);
       
