@@ -14,6 +14,9 @@ import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { basicPasswordSchema } from '@/lib/security/password';
 import { createServerClientWithRequest } from '@/lib/supabase/server';
 
+// Force Node.js runtime (required for crypto/speakeasy in MFA service)
+export const runtime = 'nodejs';
+
 // Enhanced signin schema with security validations
 const signInSchema = z.object({
   email: z
@@ -198,10 +201,26 @@ export const POST = withErrorHandling(
         // Clear failed attempts on successful signin
         clearFailedAttempts(email);
 
-        // Check if MFA is required for this user (using dynamic import for Edge Runtime compatibility)
-        const { createMFAService } = await import('@/lib/services/mfa-service');
-        const mfaService = createMFAService(true);
-        const requiresMFA = await mfaService.requiresMFA(user.id);
+        // Check if MFA is required for this user with timeout protection
+        let requiresMFA = false;
+        try {
+          const { createMFAService } = await Promise.race([
+            import('@/lib/services/mfa-service'),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('MFA service import timeout')), 3000)
+            )
+          ]);
+          const mfaService = createMFAService(true);
+          requiresMFA = await Promise.race([
+            mfaService.requiresMFA(user.id),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('MFA check timeout')), 2000)
+            )
+          ]);
+        } catch (error) {
+          console.warn('MFA check failed, proceeding without MFA:', error);
+          requiresMFA = false;
+        }
 
         const sanitizedUser = {
           id: user.id,
