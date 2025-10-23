@@ -197,27 +197,25 @@ export const POST = withErrorHandling(
         // Clear failed attempts on successful signin
         clearFailedAttempts(email);
 
-        // TEMPORARY: Bypass MFA check for debugging 500 error
-        // const { createMFAService } = await import('@/lib/services/mfa-service');
-        // const mfaService = createMFAService(true);
-        // const requiresMFA = await mfaService.requiresMFA(user.id);
-        const _requiresMFA = false; // Force to false for testing and satisfy ESLint
+        // Check if MFA is required for this user (using dynamic import for Edge Runtime compatibility)
+        const { createMFAService } = await import('@/lib/services/mfa-service');
+        const mfaService = createMFAService(true);
+        const requiresMFA = await mfaService.requiresMFA(user.id);
 
         const sanitizedUser = {
           id: user.id,
           email: user.email,
           role: user.role,
-          // Temporarily commented out for debugging 500 error
-          // firstName: user.firstName,
-          // lastName: user.lastName,
-          // avatarUrl: user.avatarUrl,
-          // language: user.language,
-          // status: user.status,
-          // lastSeenAt: user.lastSeenAt,
-          // onboardingStatus: user.onboardingStatus,
-          // onboardingStep: user.onboardingStep,
-          // onboardingCompletedAt: user.onboardingCompletedAt,
-          // mfaEnabled: user.mfaEnabled ?? false,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          avatarUrl: user.avatarUrl,
+          language: user.language,
+          status: user.status,
+          lastSeenAt: user.lastSeenAt,
+          onboardingStatus: user.onboardingStatus,
+          onboardingStep: user.onboardingStep,
+          onboardingCompletedAt: user.onboardingCompletedAt,
+          mfaEnabled: user.mfaEnabled ?? false,
         } as const;
 
         const sessionPayload =
@@ -229,8 +227,8 @@ export const POST = withErrorHandling(
               }
             : null;
 
-        // Log successful signin for auditing (MFA bypassed)
-        console.info('User signin successful (MFA bypassed):', {
+        // Log successful signin for auditing (non-MFA)
+        console.info('User signin successful:', {
           userId: user.id,
           email: user.email,
           role: user.role,
