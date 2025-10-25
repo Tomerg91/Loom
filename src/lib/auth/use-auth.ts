@@ -136,6 +136,9 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
         const result = await authService.signIn({ email, password });
         if (result.user) {
           setUser(result.user);
+          // Reset loading immediately after successful user auth
+          // The auth state subscription may not fire if setSession times out on Edge Runtime
+          setLoading(false);
         } else if (result.error) {
           setLoading(false);
         }
@@ -144,7 +147,6 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
         setLoading(false);
         throw error;
       }
-      // Don't reset loading here - let the component control it after navigation
     },
     [authService, setUser, setLoading]
   );
@@ -169,6 +171,7 @@ export function useUnifiedAuth(options: UseUnifiedAuthOptions = {}) {
         }
         return result;
       } finally {
+        // Always reset loading after signup attempt
         setLoading(false);
       }
     },
