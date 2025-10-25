@@ -44,19 +44,28 @@ interface AssignTasksInput {
 
 interface CreateProgressInput {
   notes?: string;
-  completionPercentage?: number;
+  progressPercentage?: number;
   attachments?: string[];
 }
 
 interface UpdateProgressInput {
   notes?: string;
-  completionPercentage?: number;
+  progressPercentage?: number;
 }
 
 interface TaskInstance {
   id: string;
   taskId: string;
+  clientId?: string;
   status: 'pending' | 'in_progress' | 'completed';
+}
+
+type BulkAssignedInstance = TaskInstance & { clientId: string };
+
+interface BulkAssignResult {
+  created: number;
+  failed: number;
+  instances: BulkAssignedInstance[];
 }
 
 /**
@@ -86,7 +95,7 @@ export function useCreateTask(): UseMutationResult<
       const data = await response.json();
       return data.data as TaskDto;
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Invalidate task lists
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       queryClient.invalidateQueries({
@@ -95,7 +104,7 @@ export function useCreateTask(): UseMutationResult<
 
       success('Task created', 'Task has been created successfully');
     },
-    onError: (err) => {
+    onError: err => {
       error('Failed to create task', err.message);
     },
   });
@@ -115,7 +124,7 @@ export function useUpdateTask(): UseMutationResult<
   return useMutation({
     mutationFn: async ({ taskId, data }) => {
       const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
@@ -140,7 +149,7 @@ export function useUpdateTask(): UseMutationResult<
 
       success('Task updated', 'Task has been updated successfully');
     },
-    onError: (err) => {
+    onError: err => {
       error('Failed to update task', err.message);
     },
   });
@@ -174,7 +183,7 @@ export function useDeleteTask(): UseMutationResult<void, Error, string> {
 
       success('Task deleted', 'Task has been deleted successfully');
     },
-    onError: (err) => {
+    onError: err => {
       error('Failed to delete task', err.message);
     },
   });
@@ -184,7 +193,7 @@ export function useDeleteTask(): UseMutationResult<void, Error, string> {
  * Assign a task to one or more clients.
  */
 export function useAssignTasks(): UseMutationResult<
-  TaskInstance[],
+  BulkAssignResult,
   Error,
   { taskId: string; data: AssignTasksInput }
 > {
@@ -205,13 +214,62 @@ export function useAssignTasks(): UseMutationResult<
       }
 
       const responseData = await response.json();
-      return responseData.data as TaskInstance[];
+      const rawResult = responseData.data as {
+        created?: number;
+        failed?: number;
+        instances?: Array<Record<string, unknown>>;
+      };
+
+      const instances: BulkAssignedInstance[] = Array.isArray(
+        rawResult.instances
+      )
+        ? rawResult.instances
+            .map(instance => {
+              const idValue = instance.id;
+              const id =
+                typeof idValue === 'string'
+                  ? idValue
+                  : idValue !== undefined
+                    ? String(idValue)
+                    : '';
+              const clientId =
+                typeof instance.clientId === 'string'
+                  ? instance.clientId
+                  : typeof instance.client_id === 'string'
+                    ? instance.client_id
+                    : '';
+              const taskId =
+                typeof instance.taskId === 'string'
+                  ? instance.taskId
+                  : typeof instance.task_id === 'string'
+                    ? instance.task_id
+                    : '';
+
+              return {
+                id,
+                taskId,
+                clientId,
+                status:
+                  (instance.status as TaskInstance['status']) ?? 'pending',
+              };
+            })
+            .filter((instance): instance is BulkAssignedInstance =>
+              Boolean(instance.id && instance.taskId && instance.clientId)
+            )
+        : [];
+
+      return {
+        created: rawResult.created ?? instances.length,
+        failed: rawResult.failed ?? 0,
+        instances,
+      } satisfies BulkAssignResult;
     },
-    onSuccess: (instances, variables) => {
+    onSuccess: (result, variables) => {
+      const { instances } = result;
       // Invalidate assigned tasks for each client
-      instances.forEach((instance) => {
+      instances.forEach(instance => {
         queryClient.invalidateQueries({
-          queryKey: taskKeys.assigned(instance.id, undefined),
+          queryKey: taskKeys.assigned(instance.clientId, undefined),
         });
       });
 
@@ -226,7 +284,7 @@ export function useAssignTasks(): UseMutationResult<
         `Task assigned to ${clientCount} client${clientCount > 1 ? 's' : ''}`
       );
     },
-    onError: (err) => {
+    onError: err => {
       error('Failed to assign task', err.message);
     },
   });
@@ -259,15 +317,18 @@ export function useCreateCategory(): UseMutationResult<
       const data = await response.json();
       return data.data as TaskCategory;
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Invalidate categories
       queryClient.invalidateQueries({
         queryKey: taskKeys.categories(data.coachId),
       });
 
-      success('Category created', 'Task category has been created successfully');
+      success(
+        'Category created',
+        'Task category has been created successfully'
+      );
     },
-    onError: (err) => {
+    onError: err => {
       error('Failed to create category', err.message);
     },
   });
@@ -300,7 +361,7 @@ export function useUpdateCategory(): UseMutationResult<
       const responseData = await response.json();
       return responseData.data as TaskCategory;
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Invalidate categories
       queryClient.invalidateQueries({
         queryKey: taskKeys.categories(data.coachId),
@@ -309,9 +370,12 @@ export function useUpdateCategory(): UseMutationResult<
       // Invalidate tasks that might use this category
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
 
-      success('Category updated', 'Task category has been updated successfully');
+      success(
+        'Category updated',
+        'Task category has been updated successfully'
+      );
     },
-    onError: (err) => {
+    onError: err => {
       error('Failed to update category', err.message);
     },
   });
@@ -348,9 +412,12 @@ export function useDeleteCategory(): UseMutationResult<
       // Invalidate tasks that might have used this category
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
 
-      success('Category deleted', 'Task category has been deleted successfully');
+      success(
+        'Category deleted',
+        'Task category has been deleted successfully'
+      );
     },
-    onError: (err) => {
+    onError: err => {
       error('Failed to delete category', err.message);
     },
   });
@@ -397,7 +464,7 @@ export function useCreateProgress(): UseMutationResult<
 
       success('Progress saved', 'Your progress has been saved successfully');
     },
-    onError: (err) => {
+    onError: err => {
       error('Failed to save progress', err.message);
     },
   });
@@ -439,9 +506,12 @@ export function useUpdateProgress(): UseMutationResult<
         queryKey: taskKeys.instance(variables.instanceId),
       });
 
-      success('Progress updated', 'Your progress has been updated successfully');
+      success(
+        'Progress updated',
+        'Your progress has been updated successfully'
+      );
     },
-    onError: (err) => {
+    onError: err => {
       error('Failed to update progress', err.message);
     },
   });
@@ -475,7 +545,7 @@ export function useCompleteTask(): UseMutationResult<
       const data = await response.json();
       return data.data as TaskInstance;
     },
-    onMutate: async (instanceId) => {
+    onMutate: async instanceId => {
       // Cancel outgoing queries
       await queryClient.cancelQueries({
         queryKey: taskKeys.instance(instanceId),
