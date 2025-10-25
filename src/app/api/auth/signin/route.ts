@@ -141,7 +141,14 @@ export const POST = withErrorHandling(
         isServer: true,
         supabaseClient: supabase,
       });
+      console.log('[signin] Calling authService.signIn with email:', email);
       const { user, error, session } = await authService.signIn({ email, password, rememberMe });
+      console.log('[signin] authService.signIn returned:', {
+        hasUser: !!user,
+        hasError: !!error,
+        hasSession: !!session,
+        sessionKeys: session ? Object.keys(session) : null
+      });
 
       if (error || !user) {
         // Record failed attempt for this email

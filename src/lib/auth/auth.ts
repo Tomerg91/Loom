@@ -717,13 +717,26 @@ export class AuthService {
       }
 
       let activeSession = authData.session ?? null;
+      console.log('[AuthService] signIn: authData.session check', {
+        hasAuthDataSession: !!authData.session,
+        hasAccessToken: !!authData.session?.access_token,
+        hasRefreshToken: !!authData.session?.refresh_token,
+        authDataSessionType: typeof authData.session
+      });
 
       if (authData.session?.access_token && authData.session?.refresh_token) {
+        console.log('[AuthService] signIn: Calling setSession with tokens');
         const { data: sessionData, error: sessionError } =
           await this.supabase.auth.setSession({
             access_token: authData.session.access_token,
             refresh_token: authData.session.refresh_token,
           });
+
+        console.log('[AuthService] signIn: setSession result', {
+          hasError: !!sessionError,
+          hasSessionData: !!sessionData,
+          errorMessage: sessionError?.message
+        });
 
         if (sessionError) {
           console.error('Failed to hydrate Supabase session after sign-in:', {
@@ -731,7 +744,10 @@ export class AuthService {
           });
         } else if (sessionData?.session) {
           activeSession = sessionData.session;
+          console.log('[AuthService] signIn: Updated activeSession from setSession');
         }
+      } else {
+        console.warn('[AuthService] signIn: authData.session missing tokens');
       }
 
       const sessionTokens: AuthSessionTokens | null = activeSession
@@ -881,6 +897,12 @@ export class AuthService {
         );
         authUser = this.buildAuthUserFromAuthMetadata(authData.user);
       }
+
+      console.log('[AuthService] signIn: Returning with session tokens', {
+        hasSessionTokens: !!sessionTokens,
+        sessionTokensKeys: sessionTokens ? Object.keys(sessionTokens) : null,
+        activeSessionExists: !!activeSession
+      });
 
       return {
         user: authUser,
