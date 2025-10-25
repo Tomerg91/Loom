@@ -1,6 +1,7 @@
 'use client';
 
 import { Calendar, ExternalLink } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -8,13 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
 
-import type { DashboardTranslations } from '../dashboard-types';
 
 interface ClientUpcomingSessionsProps {
   userId: string;
-  locale: string;
-  translations: DashboardTranslations;
-}
+  locale: string;}
 
 interface UpcomingSession {
   id: string;
@@ -25,8 +23,9 @@ interface UpcomingSession {
 
 const UPCOMING_LIMIT = 2;
 
-export function ClientUpcomingSessions({ userId, locale, translations }: ClientUpcomingSessionsProps) {
-  const { dashboard: t, common: commonT } = translations;
+export function ClientUpcomingSessions({ userId, locale }: ClientUpcomingSessionsProps) {
+  const t = useTranslations('dashboard.clientSections.upcomingSessions');
+  const commonT = useTranslations('common');
 
   const [sessions, setSessions] = useState<UpcomingSession[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -111,9 +110,9 @@ export function ClientUpcomingSessions({ userId, locale, translations }: ClientU
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
-          {t('clientSections.upcomingSessions.title')}
+          {t('title')}
         </CardTitle>
-        <CardDescription>{t('clientSections.upcomingSessions.subtitle')}</CardDescription>
+        <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading && (
@@ -124,7 +123,7 @@ export function ClientUpcomingSessions({ userId, locale, translations }: ClientU
 
         {errorMessage && !isLoading && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            <p>{t('clientSections.upcomingSessions.error')}</p>
+            <p>{t('error')}</p>
             <p className="mt-2 text-xs text-destructive/80">{errorMessage}</p>
           </div>
         )}
@@ -132,10 +131,10 @@ export function ClientUpcomingSessions({ userId, locale, translations }: ClientU
         {!isLoading && !errorMessage && sessions.length === 0 && (
           <div className="rounded-lg border border-dashed border-muted-foreground/40 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
             <Calendar className="mx-auto mb-4 h-10 w-10 opacity-50" />
-            <p>{t('clientSections.upcomingSessions.empty')}</p>
+            <p>{t('empty')}</p>
             <Button asChild variant="outline" className="mt-4">
               <Link href="/client/book" locale={locale}>
-                {t('clientSections.upcomingSessions.cta')}
+                {t('cta')}
               </Link>
             </Button>
           </div>
@@ -165,7 +164,7 @@ export function ClientUpcomingSessions({ userId, locale, translations }: ClientU
                     {session.meetingUrl && (
                       <Button asChild size="sm">
                         <a href={session.meetingUrl} target="_blank" rel="noopener noreferrer">
-                          {t('clientSections.upcomingSessions.join')}
+                          {t('join')}
                         </a>
                       </Button>
                     )}

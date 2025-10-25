@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Activity, CheckCircle2, Clock, FileText, Users } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from '@/i18n/routing';
 
-import type { DashboardTranslations } from '../dashboard-types';
 
 type ActivityType = 'session_completed' | 'note_added' | 'client_joined' | 'session_scheduled';
 
@@ -49,8 +49,9 @@ function resolveIcon(type: ActivityType) {
   }
 }
 
-export function CoachRecentActivityFeed({ locale, translations }: { locale: string; translations: DashboardTranslations }) {
-  const { dashboard: t, common: commonT } = translations;
+export function CoachRecentActivityFeed({ locale }: { locale: string }) {
+  const t = useTranslations('dashboard.coachSections.activityFeed');
+  const commonT = useTranslations('common');
 
   const timeFormatter = useMemo(
     () =>
@@ -76,9 +77,9 @@ export function CoachRecentActivityFeed({ locale, translations }: { locale: stri
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5" />
-          {t('coachSections.activityFeed.title')}
+          {t('title')}
         </CardTitle>
-        <CardDescription>{t('coachSections.activityFeed.subtitle')}</CardDescription>
+        <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading && (
@@ -97,7 +98,7 @@ export function CoachRecentActivityFeed({ locale, translations }: { locale: stri
 
         {isError && !isLoading && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            <p>{t('coachSections.activityFeed.error')}</p>
+            <p>{t('error')}</p>
             <Button onClick={() => refetch()} size="sm" variant="outline" className="mt-3">
               {commonT('retry')}
             </Button>
@@ -107,7 +108,7 @@ export function CoachRecentActivityFeed({ locale, translations }: { locale: stri
         {!isLoading && !isError && items.length === 0 && (
           <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
             <Activity className="mx-auto mb-3 h-10 w-10 opacity-40" />
-            <p>{t('coachSections.activityFeed.empty')}</p>
+            <p>{t('empty')}</p>
           </div>
         )}
 
@@ -124,7 +125,7 @@ export function CoachRecentActivityFeed({ locale, translations }: { locale: stri
                     <p className="text-sm font-medium text-foreground">{item.description}</p>
                     {item.clientName && (
                       <p className="text-xs text-muted-foreground">
-                        {t('coachSections.activityFeed.with', { name: item.clientName })}
+                        {t('with', { name: item.clientName })}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
@@ -132,7 +133,7 @@ export function CoachRecentActivityFeed({ locale, translations }: { locale: stri
                     </p>
                   </div>
                   <Button asChild size="sm" variant="ghost" className="px-0 text-primary">
-                    <Link href="/coach/clients">{t('coachSections.activityFeed.viewClient')}</Link>
+                    <Link href="/coach/clients">{t('viewClient')}</Link>
                   </Button>
                 </li>
               );

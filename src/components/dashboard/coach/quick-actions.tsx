@@ -1,15 +1,13 @@
 'use client';
 
 import { Calendar, PlusCircle, Settings } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/routing';
 
-import type { DashboardTranslations } from '../dashboard-types';
-
 interface CoachQuickActionsProps {
-  translations: DashboardTranslations;
   userName: string;
 }
 
@@ -18,33 +16,33 @@ const coachActions = [
     key: 'add-client',
     icon: PlusCircle,
     href: '/coach/clients',
-    labelKey: 'coachSections.quickActions.addClient',
+    labelKey: 'addClient',
   },
   {
     key: 'view-calendar',
     icon: Calendar,
     href: '/sessions',
-    labelKey: 'coachSections.quickActions.viewCalendar',
+    labelKey: 'viewCalendar',
   },
   {
     key: 'manage-availability',
     icon: Settings,
     href: '/coach/availability',
-    labelKey: 'coachSections.quickActions.manageAvailability',
+    labelKey: 'manageAvailability',
   },
 ] as const;
 
-export function CoachQuickActions({ translations, userName }: CoachQuickActionsProps) {
-  const { dashboard: t } = translations;
+export function CoachQuickActions({ userName }: CoachQuickActionsProps) {
+  const t = useTranslations('dashboard.coachSections.quickActions');
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
-          {t('coachSections.quickActions.title', { name: userName.split(' ')[0] || userName })}
+          {t('title', { name: userName.split(' ')[0] || userName })}
         </CardTitle>
-        <CardDescription>{t('coachSections.quickActions.subtitle')}</CardDescription>
+        <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {coachActions.map((action) => (

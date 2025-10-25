@@ -1,49 +1,47 @@
 'use client';
 
 import { Calendar, FileText, MessageCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/routing';
 
-import type { DashboardTranslations } from '../dashboard-types';
 
-interface ClientQuickActionsProps {
-  translations: DashboardTranslations;
-}
+interface ClientQuickActionsProps {}
 
 const clientActions = [
   {
     key: 'schedule-session',
     icon: Calendar,
     href: '/client/book',
-    labelKey: 'clientSections.quickActions.schedule',
+    labelKey: 'schedule',
   },
   {
     key: 'view-files',
     icon: FileText,
     href: '/files',
-    labelKey: 'clientSections.quickActions.files',
+    labelKey: 'files',
   },
   {
     key: 'contact-coach',
     icon: MessageCircle,
     href: '/messages',
-    labelKey: 'clientSections.quickActions.contact',
+    labelKey: 'contact',
   },
 ] as const;
 
-export function ClientQuickActions({ translations }: ClientQuickActionsProps) {
-  const { dashboard: t } = translations;
+export function ClientQuickActions() {
+  const t = useTranslations('dashboard.clientSections.quickActions');
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
-          {t('clientSections.quickActions.title')}
+          {t('title')}
         </CardTitle>
-        <CardDescription>{t('clientSections.quickActions.subtitle')}</CardDescription>
+        <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {clientActions.map((action) => (

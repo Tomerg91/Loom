@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle, Users } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from '@/i18n/routing';
 
-import type { DashboardTranslations } from '../dashboard-types';
 
 interface CoachStats {
   totalSessions: number;
@@ -62,8 +62,9 @@ async function fetchClientSnapshot(): Promise<ClientSnapshotData> {
   return { stats, clients };
 }
 
-export function CoachClientSnapshot({ translations }: { translations: DashboardTranslations }) {
-  const { dashboard: t, common: commonT } = translations;
+export function CoachClientSnapshot(()) {
+  const t = useTranslations('dashboard.coachSections.clientSnapshot');
+  const commonT = useTranslations('common');
 
   const { data, isLoading, isError, refetch } = useQuery<ClientSnapshotData>({
     queryKey: ['coach-client-snapshot'],
@@ -87,9 +88,9 @@ export function CoachClientSnapshot({ translations }: { translations: DashboardT
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5" />
-          {t('coachSections.clientSnapshot.title')}
+          {t('title')}
         </CardTitle>
-        <CardDescription>{t('coachSections.clientSnapshot.subtitle')}</CardDescription>
+        <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading && (
@@ -105,7 +106,7 @@ export function CoachClientSnapshot({ translations }: { translations: DashboardT
 
         {isError && !isLoading && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            <p>{t('coachSections.clientSnapshot.error')}</p>
+            <p>{t('error')}</p>
             <Button onClick={() => refetch()} size="sm" variant="outline" className="mt-3">
               {commonT('retry')}
             </Button>
@@ -117,25 +118,25 @@ export function CoachClientSnapshot({ translations }: { translations: DashboardT
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-border/60 bg-muted/10 p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {t('coachSections.clientSnapshot.activeClients')}
+                  {t('activeClients')}
                 </p>
                 <p className="text-2xl font-semibold text-foreground">{data.stats.activeClients}</p>
               </div>
               <div className="rounded-lg border border-border/60 bg-muted/10 p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {t('coachSections.clientSnapshot.totalClients')}
+                  {t('totalClients')}
                 </p>
                 <p className="text-2xl font-semibold text-foreground">{data.stats.totalClients}</p>
               </div>
               <div className="rounded-lg border border-border/60 bg-muted/10 p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {t('coachSections.clientSnapshot.pendingRequests')}
+                  {t('pendingRequests')}
                 </p>
                 <p className="text-2xl font-semibold text-foreground">{pendingClients.length}</p>
               </div>
               <div className="rounded-lg border border-border/60 bg-muted/10 p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {t('coachSections.clientSnapshot.completedSessions')}
+                  {t('completedSessions')}
                 </p>
                 <p className="text-2xl font-semibold text-foreground">{data.stats.completedSessions}</p>
               </div>
@@ -144,16 +145,16 @@ export function CoachClientSnapshot({ translations }: { translations: DashboardT
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-foreground">
-                  {t('coachSections.clientSnapshot.nextSessions')}
+                  {t('nextSessions')}
                 </h3>
                 <Button asChild size="sm" variant="ghost" className="px-0 text-primary">
-                  <Link href="/coach/clients">{t('coachSections.clientSnapshot.viewAll')}</Link>
+                  <Link href="/coach/clients">{t('viewAll')}</Link>
                 </Button>
               </div>
 
               {nextSessions.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-4 text-xs text-muted-foreground">
-                  {t('coachSections.clientSnapshot.noUpcoming')}
+                  {t('noUpcoming')}
                 </p>
               ) : (
                 <ul className="space-y-2 text-sm">
@@ -172,7 +173,7 @@ export function CoachClientSnapshot({ translations }: { translations: DashboardT
                           <p className="font-medium text-foreground">{name}</p>
                           {scheduledAt && (
                             <p className="text-xs text-muted-foreground">
-                              {t('coachSections.clientSnapshot.sessionScheduled', {
+                              {t('sessionScheduled', {
                                 date: scheduledAt.toLocaleDateString(),
                               })}
                             </p>
@@ -181,7 +182,7 @@ export function CoachClientSnapshot({ translations }: { translations: DashboardT
                         <Button asChild size="sm" variant="outline">
                           <Link href={`/coach/clients/${client.id}`}>
                             <CheckCircle className="mr-2 h-4 w-4" />
-                            {t('coachSections.clientSnapshot.openProfile')}
+                            {t('openProfile')}
                           </Link>
                         </Button>
                       </li>
