@@ -62,7 +62,7 @@ async function fetchClientSnapshot(): Promise<ClientSnapshotData> {
   return { stats, clients };
 }
 
-export function CoachClientSnapshot(()) {
+export function CoachClientSnapshot() {
   const t = useTranslations('dashboard.coachSections.clientSnapshot');
   const commonT = useTranslations('common');
 
