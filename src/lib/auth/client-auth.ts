@@ -13,6 +13,8 @@ export class ClientAuthService {
     string,
     { data: AuthUser; expires: number }
   >();
+  // Store access token from signin as fallback for API calls if setSession times out
+  private fallbackAccessToken: string | null = null;
 
   private getCachedUserProfile(userId: string): AuthUser | null {
     const cached = this.userProfileCache.get(`user_profile_${userId}`);
@@ -170,6 +172,10 @@ export class ClientAuthService {
       });
 
       if (session?.accessToken && session?.refreshToken) {
+        // Store access token as fallback for profile fetches if setSession times out
+        this.fallbackAccessToken = session.accessToken;
+        console.log('[ClientAuthService.signIn] Stored access token as fallback');
+
         console.log('[ClientAuthService.signIn] Calling setSession with timeout...');
 
         // Set session with a timeout to prevent hanging on Vercel Edge Runtime
@@ -198,7 +204,7 @@ export class ClientAuthService {
         } catch (timeoutError) {
           console.warn('[ClientAuthService.signIn] setSession timed out:', timeoutError);
           // Don't fail signin just because setSession timed out
-          // The tokens from API response will be used for navigation
+          // The tokens from API response will be used for navigation and API calls
         }
       } else {
         console.warn('[ClientAuthService.signIn] No session tokens in API response');
@@ -265,8 +271,8 @@ export class ClientAuthService {
         return cached;
       }
 
-      // Fetch from API
-      const userProfile = await this.fetchUserProfileFromAPI(user.id);
+      // Fetch from API - pass fallback token in case setSession timed out
+      const userProfile = await this.fetchUserProfileFromAPI(user.id, this.fallbackAccessToken ?? undefined);
 
       if (userProfile) {
         // Cache for 2 minutes
@@ -455,20 +461,25 @@ export class ClientAuthService {
    * Fetch user profile from API endpoint
    */
   private async fetchUserProfileFromAPI(
-    userId: string
+    userId: string,
+    fallbackAccessToken?: string
   ): Promise<AuthUser | null> {
     try {
       const {
         data: { session },
       } = await this.supabase.auth.getSession();
       const headers: Record<string, string> = {};
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
+
+      // Use session token if available, otherwise use fallback token (from signin response)
+      const accessToken = session?.access_token || fallbackAccessToken;
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
       console.log('[ClientAuthService] Fetching user profile:', {
         userId,
-        hasAccessToken: !!session?.access_token,
+        hasAccessToken: !!accessToken,
+        usingFallbackToken: !session?.access_token && !!fallbackAccessToken,
       });
 
       const response = await fetch(`/api/users/${userId}/profile`, { headers });
