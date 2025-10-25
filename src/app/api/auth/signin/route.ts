@@ -239,15 +239,25 @@ export const POST = withErrorHandling(
           message: 'MFA verification required'
         };
 
-        // Set JSON body and status on the existing supabaseResponse
+        // Create response with JSON body and status
         const response = NextResponse.json(responseData, {
           status: HTTP_STATUS.OK,
-          headers: supabaseResponse.headers,
         });
 
-        // Copy cookies from supabaseResponse to new response
+        // Copy ALL cookies from supabaseResponse to ensure auth cookies are included
+        console.log('[signin] MFA: Copying cookies from supabaseResponse:', {
+          cookieCount: supabaseResponse.cookies.getAll().length,
+          cookies: supabaseResponse.cookies.getAll().map(c => c.name)
+        });
+
         supabaseResponse.cookies.getAll().forEach(cookie => {
+          console.log('[signin] MFA: Setting cookie:', cookie.name);
           response.cookies.set(cookie);
+        });
+
+        // Copy headers from supabaseResponse
+        supabaseResponse.headers.forEach((value, key) => {
+          response.headers.set(key, value);
         });
 
         return applyCorsHeaders(response, request);
@@ -281,15 +291,26 @@ export const POST = withErrorHandling(
         message: 'Authentication successful'
       };
 
-      // Set JSON body and status on the existing supabaseResponse
+      // Important: Create response using NextResponse and explicitly set the body and status
+      // This ensures cookies set by Supabase are preserved in the response
       const response = NextResponse.json(responseData, {
         status: HTTP_STATUS.OK,
-        headers: supabaseResponse.headers,
       });
 
-      // Copy cookies from supabaseResponse to new response
+      // Copy ALL cookies from supabaseResponse to ensure auth cookies are included
+      console.log('[signin] Copying cookies from supabaseResponse:', {
+        cookieCount: supabaseResponse.cookies.getAll().length,
+        cookies: supabaseResponse.cookies.getAll().map(c => c.name)
+      });
+
       supabaseResponse.cookies.getAll().forEach(cookie => {
+        console.log('[signin] Setting cookie:', cookie.name);
         response.cookies.set(cookie);
+      });
+
+      // Copy headers from supabaseResponse
+      supabaseResponse.headers.forEach((value, key) => {
+        response.headers.set(key, value);
       });
 
       return applyCorsHeaders(response, request);
