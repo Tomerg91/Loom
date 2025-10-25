@@ -68,7 +68,7 @@ completed_at (timestamptz, nullable)
 created_at (timestamptz)
 updated_at (timestamptz)
 
-Unique constraint: (task_id, client_id) per coach
+Unique constraint: (task_id, client_id) ensures each task assigned only once per client
 RLS: Clients see only their instances, coaches see instances for their tasks
 ```
 
@@ -218,6 +218,26 @@ RLS: Clients see only their updates, coaches see updates for their assigned task
 
 ---
 
+## File Attachments & Storage
+
+**Supabase Storage Bucket:**
+
+- Bucket name: `task-attachments`
+- Path structure: `/tasks/{coachId}/{instanceId}/{updateId}/{filename}`
+- Policies:
+  - Clients can upload to their own instance paths
+  - Coaches can view all progress updates for their tasks
+  - Presigned URLs generated with 1-hour expiration for downloads
+
+**Implementation Details:**
+
+- File upload in progress form uses `src/lib/supabase/storage-client.ts`
+- attachments stored as JSONB array: `[{ id, url, filename, size }]`
+- Cleanup: Implement monthly cron to delete orphaned files
+- Max file size: 50MB per file, 5 files per update
+
+---
+
 ## State Management
 
 **Data Fetching (TanStack Query):**
@@ -342,11 +362,35 @@ RLS: Clients see only their updates, coaches see updates for their assigned task
 **New Files to Create:**
 
 - Database migration: `20251025000000_add_tasks_domain.sql`
-- API routes: `/app/api/tasks/*`, `/app/api/task-categories/*`
-- Services: `/lib/database/tasks.ts`, `/lib/services/task-service.ts`
-- Components: `/components/tasks/*` (coach and client subdirs)
+- Storage setup: Supabase bucket `task-attachments` with RLS policies
+- API routes:
+  - `/app/api/tasks/route.ts` - GET, POST tasks
+  - `/app/api/tasks/[taskId]/route.ts` - GET, PUT, DELETE single task
+  - `/app/api/tasks/[taskId]/assign/route.ts` - POST bulk assign
+  - `/app/api/task-categories/route.ts` - GET, POST categories
+  - `/app/api/task-categories/[categoryId]/route.ts` - PUT, DELETE category
+  - `/app/api/tasks/assigned/route.ts` - GET assigned instances
+  - `/app/api/tasks/assigned/[instanceId]/route.ts` - GET instance detail
+  - `/app/api/tasks/assigned/[instanceId]/progress/route.ts` - POST progress
+  - `/app/api/tasks/assigned/[instanceId]/progress/[updateId]/route.ts` - PUT, DELETE progress
+  - `/app/api/tasks/assigned/[instanceId]/complete/route.ts` - PATCH complete
+- Services:
+  - `/lib/database/tasks.ts` - Database queries
+  - `/lib/services/task-service.ts` - Business logic
+  - `/lib/supabase/storage-client.ts` - File upload/download
+- Components:
+  - `/components/tasks/coach/task-manager-page.tsx` - Coach task list
+  - `/components/tasks/coach/task-form.tsx` - Task creation/edit
+  - `/components/tasks/coach/category-manager.tsx` - Category CRUD
+  - `/components/tasks/coach/assign-tasks-modal.tsx` - Bulk assignment
+  - `/components/tasks/client/tasks-dashboard.tsx` - Client task list
+  - `/components/tasks/client/task-detail.tsx` - Task detail view
+  - `/components/tasks/progress-entry-form.tsx` - Progress tracking
+  - `/components/tasks/task-list.tsx` - Shared task list component
 - Types: Auto-generated from Supabase schema
-- Hooks: `/lib/hooks/use-tasks.ts`, `/lib/hooks/use-task-progress.ts`
+- Hooks:
+  - `/lib/hooks/use-tasks.ts` - Query hooks
+  - `/lib/hooks/use-tasks-mutations.ts` - Mutation hooks
 
 ---
 

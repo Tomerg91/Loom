@@ -166,6 +166,43 @@ CREATE POLICY "Clients can delete their own progress updates"
 - [ ] Verify tables in Supabase dashboard
 - [ ] Test RLS policies with different user roles
 
+### Task 1.2: Setup Supabase Storage Bucket
+
+Create bucket for task attachments:
+
+```bash
+# Using Supabase CLI or dashboard
+supabase storage create-bucket task-attachments --public false
+```
+
+**Storage RLS Policies:**
+
+```sql
+-- Clients can upload to their own progress updates
+CREATE POLICY "Clients can upload to progress"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'task-attachments' AND
+    (storage.foldername(name))[1] = (
+      SELECT client_id FROM task_instances ti
+      JOIN task_progress_updates tpu ON ti.id = tpu.instance_id
+      WHERE tpu.id = (storage.foldername(name))[3]
+    )
+  );
+
+-- Anyone can read if authorized via RLS
+CREATE POLICY "Users can read authorized files"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'task-attachments');
+```
+
+**Verification:**
+
+- [ ] Bucket created in Supabase dashboard
+- [ ] RLS policies applied
+- [ ] Test upload from client account
+- [ ] Test presigned URL generation
+
 ---
 
 ## Phase 2: Type Generation & Service Layer
@@ -295,7 +332,10 @@ POST /api/tasks/:taskId/assign
 
 ### Task 3.2: Create Task Category Endpoints
 
-**File:** `src/app/api/task-categories/route.ts`
+**Files:**
+
+- `src/app/api/task-categories/route.ts` - GET, POST
+- `src/app/api/task-categories/[categoryId]/route.ts` - PUT, DELETE
 
 ```
 GET /api/task-categories
@@ -305,11 +345,11 @@ POST /api/task-categories
   Body: { name, color }
   Response: Created category
 
-PUT /api/task-categories/:categoryId
+PUT /api/task-categories/[categoryId]
   Body: { name?, color? }
   Response: Updated category
 
-DELETE /api/task-categories/:categoryId
+DELETE /api/task-categories/[categoryId]
   Response: { success: true }
 ```
 
@@ -361,7 +401,7 @@ PATCH /api/tasks/assigned/:instanceId/complete
 
 ### Task 4.1: Create Task Manager Page
 
-**File:** `src/app/coach/tasks/page.tsx`
+**File:** `src/app/coach/tasks/page.tsx` (router page)
 
 Features:
 
@@ -378,7 +418,7 @@ Features:
 
 ### Task 4.2: Create Task Form Component
 
-**File:** `src/components/tasks/task-form.tsx`
+**File:** `src/components/tasks/coach/task-form.tsx`
 
 Inputs:
 
@@ -396,7 +436,7 @@ Inputs:
 
 ### Task 4.3: Create Category Manager Component
 
-**File:** `src/components/tasks/category-manager.tsx`
+**File:** `src/components/tasks/coach/category-manager.tsx`
 
 Modal/dropdown with:
 
@@ -412,7 +452,7 @@ Modal/dropdown with:
 
 ### Task 4.4: Create Assign Tasks Modal
 
-**File:** `src/components/tasks/assign-tasks-modal.tsx`
+**File:** `src/components/tasks/coach/assign-tasks-modal.tsx`
 
 Modal for bulk assignment:
 
@@ -432,7 +472,7 @@ Modal for bulk assignment:
 
 ### Task 5.1: Create Tasks Dashboard Page
 
-**File:** `src/app/client/tasks/page.tsx`
+**File:** `src/app/client/tasks/page.tsx` (router page)
 
 Features:
 
@@ -450,7 +490,7 @@ Features:
 
 ### Task 5.2: Create Task Detail Component
 
-**File:** `src/components/tasks/task-detail.tsx`
+**File:** `src/components/tasks/client/task-detail.tsx`
 
 Modal/expandable showing:
 
