@@ -170,19 +170,35 @@ export class ClientAuthService {
       });
 
       if (session?.accessToken && session?.refreshToken) {
-        console.log('[ClientAuthService.signIn] Calling setSession...');
-        const { error: sessionError } = await this.supabase.auth.setSession({
+        console.log('[ClientAuthService.signIn] Calling setSession with timeout...');
+
+        // Set session with a timeout to prevent hanging on Vercel Edge Runtime
+        const setSessionPromise = this.supabase.auth.setSession({
           access_token: session.accessToken,
           refresh_token: session.refreshToken,
         });
 
-        if (sessionError) {
-          console.warn(
-            '[ClientAuthService.signIn] Failed to hydrate Supabase session:',
-            sessionError
-          );
-        } else {
-          console.log('[ClientAuthService.signIn] Session set successfully');
+        const timeoutPromise = new Promise<{ error: any }>((_, reject) =>
+          setTimeout(
+            () => reject(new Error('setSession timeout after 3 seconds')),
+            3000
+          )
+        );
+
+        try {
+          const result = await Promise.race([setSessionPromise, timeoutPromise]);
+          if (result?.error) {
+            console.warn(
+              '[ClientAuthService.signIn] Failed to hydrate Supabase session:',
+              result.error
+            );
+          } else {
+            console.log('[ClientAuthService.signIn] Session set successfully');
+          }
+        } catch (timeoutError) {
+          console.warn('[ClientAuthService.signIn] setSession timed out:', timeoutError);
+          // Don't fail signin just because setSession timed out
+          // The tokens from API response will be used for navigation
         }
       } else {
         console.warn('[ClientAuthService.signIn] No session tokens in API response');
