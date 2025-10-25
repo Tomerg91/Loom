@@ -2,8 +2,7 @@
 
 import { useLocale } from 'next-intl';
 
-import { usePathname, useRouter } from '@/i18n/routing';
-import { routing } from '@/i18n/routing';
+import { usePathname, useRouter, buildLocalizedPath } from '@/i18n/routing';
 
 interface LanguageOption {
   code: string;
@@ -24,27 +23,10 @@ export function useLanguageSwitcher() {
   const router = useRouter();
 
   const switchLanguage = (newLocale: string) => {
-    if (!routing.locales.includes(newLocale as 'en' | 'he')) {
-      console.warn(`Locale ${newLocale} is not supported`);
-      return;
-    }
-
-    const segments = pathname.split('/').filter(Boolean);
-    const currentLocale = segments[0];
-    
-    const isLocaleInPath = routing.locales.includes(currentLocale as 'en' | 'he');
-    
-    let newPathname;
-    if (isLocaleInPath) {
-      // Replace current locale with new locale
-      segments[0] = newLocale;
-      newPathname = `/${segments.join('/')}`;
-    } else {
-      // Add new locale to the beginning
-      newPathname = `/${newLocale}${pathname}`;
-    }
-    
-    router.push(newPathname as any);
+    // usePathname() from next-intl returns path without locale prefix
+    // buildLocalizedPath adds the correct locale prefix
+    const newPathname = buildLocalizedPath(pathname, newLocale);
+    router.push(newPathname);
   };
 
   const getCurrentLanguage = () => {

@@ -26,8 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { usePathname, useRouter } from '@/i18n/routing';
-import { routing } from '@/i18n/routing';
+import { usePathname, useRouter, buildLocalizedPath } from '@/i18n/routing';
 
 export function PreferencesSettingsCard() {
   const locale = useLocale();
@@ -38,20 +37,10 @@ export function PreferencesSettingsCard() {
   const [compactMode, setCompactMode] = useState(false);
 
   const switchLanguage = (newLocale: string) => {
-    const segments = pathname.split('/').filter(Boolean);
-    const currentLocale = segments[0];
-    
-    const isLocaleInPath = routing.locales.includes(currentLocale as 'en' | 'he');
-    
-    let newPathname;
-    if (isLocaleInPath) {
-      segments[0] = newLocale;
-      newPathname = `/${segments.join('/')}`;
-    } else {
-      newPathname = `/${newLocale}${pathname}`;
-    }
-    
-    router.push(newPathname as any);
+    // usePathname() from next-intl returns path without locale prefix
+    // buildLocalizedPath adds the correct locale prefix
+    const newPathname = buildLocalizedPath(pathname, newLocale);
+    router.push(newPathname);
   };
 
   const themes = [
