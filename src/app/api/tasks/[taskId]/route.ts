@@ -154,3 +154,38 @@ export const PATCH = async (request: NextRequest, context: RouteContext) => {
     );
   }
 };
+
+export const DELETE = async (_request: NextRequest, context: RouteContext) => {
+  const authResult = await getAuthenticatedActor();
+  if ('response' in authResult) {
+    return authResult.response;
+  }
+
+  const { actor } = authResult;
+
+  if (actor.role !== 'coach' && actor.role !== 'admin') {
+    return createErrorResponse(
+      'Access denied. Required role: coach',
+      HTTP_STATUS.FORBIDDEN
+    );
+  }
+
+  const { taskId } = paramsSchema.parse(await context.params);
+
+  try {
+    await taskService.deleteTask(taskId, {
+      id: actor.id,
+      role: mapRole(actor.role),
+    });
+    return createSuccessResponse(null, 'Task deleted successfully');
+  } catch (error) {
+    if (error instanceof TaskServiceError) {
+      return createErrorResponse(error.message, error.status);
+    }
+    console.error('Task deletion error:', error);
+    return createErrorResponse(
+      'Internal server error',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
+  }
+};
