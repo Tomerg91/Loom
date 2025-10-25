@@ -695,11 +695,18 @@ export class AuthService {
     session: AuthSessionTokens | null;
   }> {
     try {
+      console.log('[AuthService] signIn: Starting authentication...');
+
       const { data: authData, error: authError } =
         await this.supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password,
         });
+
+      console.log('[AuthService] signIn: Supabase auth completed', {
+        success: !authError,
+        hasUser: !!authData?.user
+      });
 
       if (authError) {
         return { user: null, error: authError.message, session: null };
@@ -710,13 +717,26 @@ export class AuthService {
       }
 
       let activeSession = authData.session ?? null;
+      console.log('[AuthService] signIn: authData.session check', {
+        hasAuthDataSession: !!authData.session,
+        hasAccessToken: !!authData.session?.access_token,
+        hasRefreshToken: !!authData.session?.refresh_token,
+        authDataSessionType: typeof authData.session
+      });
 
       if (authData.session?.access_token && authData.session?.refresh_token) {
+        console.log('[AuthService] signIn: Calling setSession with tokens');
         const { data: sessionData, error: sessionError } =
           await this.supabase.auth.setSession({
             access_token: authData.session.access_token,
             refresh_token: authData.session.refresh_token,
           });
+
+        console.log('[AuthService] signIn: setSession result', {
+          hasError: !!sessionError,
+          hasSessionData: !!sessionData,
+          errorMessage: sessionError?.message
+        });
 
         if (sessionError) {
           console.error('Failed to hydrate Supabase session after sign-in:', {
@@ -724,7 +744,10 @@ export class AuthService {
           });
         } else if (sessionData?.session) {
           activeSession = sessionData.session;
+          console.log('[AuthService] signIn: Updated activeSession from setSession');
         }
+      } else {
+        console.warn('[AuthService] signIn: authData.session missing tokens');
       }
 
       const sessionTokens: AuthSessionTokens | null = activeSession
@@ -739,34 +762,45 @@ export class AuthService {
 
       // Prefer the service-role client when available but gracefully degrade when
       // the environment is missing the key (e.g., local dev without secrets).
-      try {
-        const adminClient = createAdminClient();
+      // IMPORTANT: Skip admin client in browser - service role key should only be used server-side
+      const isBrowser = typeof window !== 'undefined';
+      console.log('[AuthService] signIn: Environment check', { isBrowser, isServer: this.isServer });
 
-        const timestamp = new Date().toISOString();
-        const { error: lastSeenError } = await adminClient
-          .from('users')
-          .update({ last_seen_at: timestamp })
-          .eq('id', authData.user.id);
+      if (this.isServer && !isBrowser) {
+        console.log('[AuthService] signIn: Using admin client (server-side)');
+        try {
+          const adminClient = createAdminClient();
 
-        if (lastSeenError) {
-          console.warn(
-            '[AuthService] Failed to update last_seen_at with admin client:',
-            {
-              userId: authData.user.id,
-              error: lastSeenError.message,
-            }
-          );
-        }
+          const timestamp = new Date().toISOString();
+          const { error: lastSeenError } = await adminClient
+            .from('users')
+            .update({ last_seen_at: timestamp })
+            .eq('id', authData.user.id);
 
-        const { data: profileData, error: profileError } = await adminClient
-          .from('users')
-          .select(
-            'id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data, mfa_enabled, mfa_setup_completed, mfa_verified_at, remember_device_enabled'
-          )
-          .eq('id', authData.user.id)
-          .single();
+          if (lastSeenError) {
+            console.warn(
+              '[AuthService] Failed to update last_seen_at with admin client:',
+              {
+                userId: authData.user.id,
+                error: lastSeenError.message,
+              }
+            );
+          }
 
-        if (!profileError && profileData) {
+          const { data: profileData, error: profileError } = await adminClient
+            .from('users')
+            .select(
+              'id, email, first_name, last_name, role, language, status, created_at, updated_at, avatar_url, phone, timezone, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data, mfa_enabled, mfa_setup_completed, mfa_verified_at, remember_device_enabled'
+            )
+            .eq('id', authData.user.id)
+            .single();
+
+          console.log('[AuthService] signIn: Admin profile fetch completed', {
+            success: !profileError,
+            hasData: !!profileData
+          });
+
+          if (!profileError && profileData) {
           authUser = {
             id: profileData.id,
             email: profileData.email,
@@ -796,26 +830,33 @@ export class AuthService {
             mfaVerifiedAt: profileData.mfa_verified_at || undefined,
             rememberDeviceEnabled: profileData.remember_device_enabled ?? false,
           };
-        } else if (profileError) {
-          console.warn(
-            '[AuthService] Admin client profile fetch failed after signin:',
-            {
-              userId: authData.user.id,
-              error: profileError.message,
-            }
-          );
+          } else if (profileError) {
+            console.warn(
+              '[AuthService] Admin client profile fetch failed after signin:',
+              {
+                userId: authData.user.id,
+                error: profileError.message,
+              }
+            );
+          }
+        } catch (adminError) {
+          console.warn('[AuthService] Admin client unavailable during signin:', {
+            userId: authData.user.id,
+            error: adminError instanceof Error ? adminError.message : adminError,
+          });
         }
-      } catch (adminError) {
-        console.warn('[AuthService] Admin client unavailable during signin:', {
-          userId: authData.user.id,
-          error: adminError instanceof Error ? adminError.message : adminError,
-        });
+      } else {
+        console.log('[AuthService] signIn: Skipping admin client (browser-side or isServer=false)');
       }
 
       if (!authUser) {
+        console.log('[AuthService] signIn: Using fallback user profile fetch');
+
         const updateResult = await this.userService.updateLastSeen(
           authData.user.id
         );
+        console.log('[AuthService] signIn: updateLastSeen completed', { success: updateResult.success });
+
         if (!updateResult.success) {
           console.warn(
             '[AuthService] updateLastSeen fallback failed after signin:',
@@ -826,9 +867,12 @@ export class AuthService {
           );
         }
 
+        console.log('[AuthService] signIn: Fetching user profile...');
         const profileResult = await this.userService.getUserProfile(
           authData.user.id
         );
+        console.log('[AuthService] signIn: getUserProfile completed', { success: profileResult.success });
+
         if (profileResult.success) {
           authUser = this.mapUserProfileToAuthUser(profileResult.data);
         } else {
@@ -842,6 +886,8 @@ export class AuthService {
         }
       }
 
+      console.log('[AuthService] signIn: Final auth user check', { hasAuthUser: !!authUser });
+
       if (!authUser) {
         console.warn(
           '[AuthService] Falling back to auth metadata after profile lookups failed during signin',
@@ -851,6 +897,12 @@ export class AuthService {
         );
         authUser = this.buildAuthUserFromAuthMetadata(authData.user);
       }
+
+      console.log('[AuthService] signIn: Returning with session tokens', {
+        hasSessionTokens: !!sessionTokens,
+        sessionTokensKeys: sessionTokens ? Object.keys(sessionTokens) : null,
+        activeSessionExists: !!activeSession
+      });
 
       return {
         user: authUser,

@@ -59,10 +59,19 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
+    console.log('[SigninForm] Starting signin for:', email);
+
     try {
+      console.log('[SigninForm] Calling signIn...');
       const result = await signIn(email, password);
+      console.log('[SigninForm] SignIn returned:', {
+        hasUser: !!result.user,
+        hasError: !!result.error,
+        mfaEnabled: result.user?.mfaEnabled
+      });
 
       if (result.error) {
+        console.error('[SigninForm] SignIn error:', result.error);
         setError(result.error);
         setIsLoading(false);
         return;
@@ -75,6 +84,7 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
 
       const targetPath = resolveRedirect(locale, redirectTo || '/dashboard');
       logDebug('🎯 Target path resolved:', targetPath, { locale, redirectTo });
+      console.log('[SigninForm] Target path:', targetPath);
 
       // Check if MFA is required
       if (result.user?.mfaEnabled) {
@@ -84,13 +94,16 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
         });
         const mfaPath = resolveAuthPath(locale, `/auth/mfa-verify?${query.toString()}`);
         logDebug('🔐 MFA required, navigating to:', mfaPath);
+        console.log('[SigninForm] Navigating to MFA:', mfaPath);
         await navigateWithRefresh(mfaPath);
       } else {
         logDebug('➡️ Navigating to dashboard');
+        console.log('[SigninForm] Navigating to:', targetPath);
         await navigateWithRefresh(targetPath);
       }
       // Loading state stays true during navigation
     } catch (err) {
+      console.error('[SigninForm] Caught error:', err);
       setError(err instanceof Error ? err.message : t('signin.error'));
       setIsLoading(false);
     }

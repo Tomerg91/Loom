@@ -47,12 +47,13 @@ type NextCookieStore = {
 
 /**
  * Validates the required server-side environment variables.
+ * Uses process.env directly to work in Edge Runtime (Vercel)
  */
 function validateSupabaseEnv(): void {
-  const {
-    NEXT_PUBLIC_SUPABASE_URL: url,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey,
-  } = serverEnv;
+  // Use process.env directly instead of serverEnv wrapper to avoid
+  // ENVIRONMENT_FALLBACK errors in Vercel's Edge Runtime
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (
     !url ||
@@ -89,10 +90,11 @@ export const createServerClient = (): ServerSupabaseClient => {
     return serverClientInstance;
   }
 
-  const supabaseUrl = serverEnv.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = serverEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  // Use process.env directly to work in Edge Runtime (Vercel)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-   
+
   serverClientInstance = createSupabaseServerClient<any>(
     supabaseUrl,
     supabaseKey,
@@ -112,6 +114,8 @@ export const createServerClient = (): ServerSupabaseClient => {
  * Creates a cookie-aware Supabase server client tied to the incoming request
  * and outgoing response. Middleware and API routes should use this so token
  * rotation can set cookies on the fly.
+ *
+ * Uses process.env directly to work in Vercel's Edge Runtime
  */
 export const createServerClientWithRequest = (
   request: NextRequest,
@@ -119,10 +123,12 @@ export const createServerClientWithRequest = (
 ): ServerSupabaseClient => {
   validateSupabaseEnv();
 
-  const supabaseUrl = serverEnv.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = serverEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  // Use process.env directly instead of serverEnv wrapper to avoid
+  // ENVIRONMENT_FALLBACK errors in Vercel's Edge Runtime
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-   
+
   return createSupabaseServerClient<any>(supabaseUrl, supabaseKey, {
     cookies: {
       getAll: () => request.cookies.getAll(),

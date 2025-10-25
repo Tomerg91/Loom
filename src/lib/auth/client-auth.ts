@@ -109,6 +109,8 @@ export class ClientAuthService {
     requiresMFA?: boolean;
   }> {
     try {
+      console.log('[ClientAuthService.signIn] Starting signin for:', data.email);
+
       const response = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,10 +122,19 @@ export class ClientAuthService {
         }),
       });
 
+      console.log('[ClientAuthService.signIn] API response status:', response.status);
+
       const payload = await response.json().catch(() => null);
+      console.log('[ClientAuthService.signIn] API payload:', {
+        success: payload?.success,
+        requiresMFA: payload?.data?.requiresMFA,
+        hasUser: !!payload?.data?.user,
+        hasSession: !!payload?.data?.session,
+      });
 
       if (!response.ok || !payload?.success) {
         const errorMessage = payload?.error || 'Invalid email or password';
+        console.error('[ClientAuthService.signIn] API error:', errorMessage);
         return { user: null, error: errorMessage };
       }
 
@@ -131,6 +142,7 @@ export class ClientAuthService {
 
       if (resultData.requiresMFA) {
         const mfaUser = resultData.user as AuthUser | undefined;
+        console.log('[ClientAuthService.signIn] MFA required');
         if (mfaUser) {
           // Ensure MFA flag is set so the UI can route appropriately
           return {
@@ -152,30 +164,59 @@ export class ClientAuthService {
         | { accessToken?: string | null; refreshToken?: string | null }
         | undefined;
 
+      console.log('[ClientAuthService.signIn] Setting session, hasTokens:', {
+        hasAccessToken: !!session?.accessToken,
+        hasRefreshToken: !!session?.refreshToken,
+      });
+
       if (session?.accessToken && session?.refreshToken) {
-        const { error: sessionError } = await this.supabase.auth.setSession({
+        console.log('[ClientAuthService.signIn] Calling setSession with timeout...');
+
+        // Set session with a timeout to prevent hanging on Vercel Edge Runtime
+        const setSessionPromise = this.supabase.auth.setSession({
           access_token: session.accessToken,
           refresh_token: session.refreshToken,
         });
 
-        if (sessionError) {
-          console.warn(
-            '[ClientAuthService] Failed to hydrate Supabase session:',
-            sessionError
-          );
+        const timeoutPromise = new Promise<{ error: any }>((_, reject) =>
+          setTimeout(
+            () => reject(new Error('setSession timeout after 3 seconds')),
+            3000
+          )
+        );
+
+        try {
+          const result = await Promise.race([setSessionPromise, timeoutPromise]);
+          if (result?.error) {
+            console.warn(
+              '[ClientAuthService.signIn] Failed to hydrate Supabase session:',
+              result.error
+            );
+          } else {
+            console.log('[ClientAuthService.signIn] Session set successfully');
+          }
+        } catch (timeoutError) {
+          console.warn('[ClientAuthService.signIn] setSession timed out:', timeoutError);
+          // Don't fail signin just because setSession timed out
+          // The tokens from API response will be used for navigation
         }
+      } else {
+        console.warn('[ClientAuthService.signIn] No session tokens in API response');
       }
 
       if (user) {
         // Cache for subsequent getCurrentUser calls
         this.cacheUserProfile(user.id, user, 120000);
+        console.log('[ClientAuthService.signIn] Cached user profile');
       }
 
+      console.log('[ClientAuthService.signIn] Returning success with user:', !!user);
       return {
         user: user ?? null,
         error: null,
       };
     } catch (error) {
+      console.error('[ClientAuthService.signIn] Caught error:', error);
       return {
         user: null,
         error: error instanceof Error ? error.message : 'Unknown error',
