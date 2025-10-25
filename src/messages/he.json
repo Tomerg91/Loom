@@ -25,7 +25,8 @@
     "language": "שפה",
     "selectLanguage": "בחר שפה",
     "show": "הצג",
-    "hide": "הסתר"
+    "hide": "הסתר",
+    "retry": "נסה שוב"
   },
   "navigation": {
     "home": "בית",
@@ -247,7 +248,14 @@
     },
     "socialProof": {
       "title": "בשימוש על ידי מטפלים ומרכזים מובילים",
-      "logos": ["מרכז סאטיה", "תודעה חדשה", "Balance Studio", "MindfulFlow", "לב פתוח", "המסע הפנימי"]
+      "logos": [
+        "מרכז סאטיה",
+        "תודעה חדשה",
+        "Balance Studio",
+        "MindfulFlow",
+        "לב פתוח",
+        "המסע הפנימי"
+      ]
     },
     "features": {
       "title": "פלטפורמה אחת, אינסוף אפשרויות.",
@@ -325,10 +333,26 @@
         }
       ],
       "social": [
-        { "label": "LinkedIn", "href": "https://www.linkedin.com/company/loom-app", "icon": "linkedin" },
-        { "label": "Facebook", "href": "https://www.facebook.com/loom-app", "icon": "facebook" },
-        { "label": "Instagram", "href": "https://www.instagram.com/loom-app", "icon": "instagram" },
-        { "label": "YouTube", "href": "https://www.youtube.com/@loom-app", "icon": "youtube" }
+        {
+          "label": "LinkedIn",
+          "href": "https://www.linkedin.com/company/loom-app",
+          "icon": "linkedin"
+        },
+        {
+          "label": "Facebook",
+          "href": "https://www.facebook.com/loom-app",
+          "icon": "facebook"
+        },
+        {
+          "label": "Instagram",
+          "href": "https://www.instagram.com/loom-app",
+          "icon": "instagram"
+        },
+        {
+          "label": "YouTube",
+          "href": "https://www.youtube.com/@loom-app",
+          "icon": "youtube"
+        }
       ],
       "legal": "© {year} Loom-app. כל הזכויות שמורות.",
       "madeWith": "מעוצב באהבה עבור קהילת שיטת סאטיה",
