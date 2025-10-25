@@ -1608,6 +1608,109 @@
       }
     }
   },
+  "tasks": {
+    "title": "Action Items",
+    "myTasks": "My Action Items",
+    "taskManagement": "Task Management",
+    "templates": "Task Templates",
+    "createTask": "Create Task",
+    "editTask": "Edit Task",
+    "deleteTask": "Delete Task",
+    "assignTasks": "Assign Tasks",
+    "addProgress": "Add Progress",
+    "markComplete": "Mark as Complete",
+    "viewDetails": "View Details",
+    "filters": {
+      "all": "All Tasks",
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "overdue": "Overdue"
+    },
+    "fields": {
+      "title": "Task Title",
+      "titlePlaceholder": "Enter task title",
+      "description": "Description",
+      "descriptionPlaceholder": "Provide task details (optional)",
+      "category": "Category",
+      "categoryPlaceholder": "Select a category",
+      "dueDate": "Due Date",
+      "dueDatePlaceholder": "Select due date",
+      "progress": "Progress",
+      "progressPlaceholder": "Track completion percentage",
+      "notes": "Notes",
+      "notesPlaceholder": "Add notes about this task",
+      "attachments": "Attachments",
+      "attachmentsPlaceholder": "Upload relevant files",
+      "priority": "Priority",
+      "priorityPlaceholder": "Select priority",
+      "assignedTo": "Assigned To",
+      "assignedToPlaceholder": "Select clients",
+      "status": "Status"
+    },
+    "status": {
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "overdue": "Overdue",
+      "cancelled": "Cancelled"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "categories": {
+      "preparation": "Session Preparation",
+      "followup": "Follow-up",
+      "reflection": "Reflection",
+      "practice": "Practice",
+      "reading": "Reading",
+      "other": "Other"
+    },
+    "errors": {
+      "titleRequired": "Task title is required",
+      "invalidDate": "Please select a valid due date",
+      "noClientsSelected": "Please select at least one client",
+      "loadFailed": "Failed to load tasks. Please try again.",
+      "createFailed": "Failed to create task. Please try again.",
+      "updateFailed": "Failed to update task. Please try again.",
+      "deleteFailed": "Failed to delete task. Please try again."
+    },
+    "success": {
+      "created": "Task created successfully",
+      "updated": "Task updated successfully",
+      "deleted": "Task deleted successfully",
+      "progressAdded": "Progress updated successfully",
+      "completed": "Task marked as complete"
+    },
+    "empty": {
+      "title": "No tasks yet",
+      "description": "Create your first task to get started",
+      "coachDescription": "Assign tasks to your clients to track their progress",
+      "clientDescription": "Your coach will assign tasks to help you reach your goals"
+    },
+    "loading": {
+      "tasks": "Loading tasks...",
+      "details": "Loading task details...",
+      "progress": "Updating progress..."
+    },
+    "confirmDelete": {
+      "title": "Delete Task",
+      "description": "Are you sure you want to delete this task? This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "progressDialog": {
+      "title": "Update Progress",
+      "description": "Track your progress on this task",
+      "noteLabel": "Progress Note",
+      "notePlaceholder": "What have you accomplished?",
+      "percentageLabel": "Completion Percentage",
+      "submit": "Update Progress",
+      "submitting": "Updating..."
+    }
+  },
   "sessions": {
     "tasks": {
       "form": {

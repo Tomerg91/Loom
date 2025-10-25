@@ -6,6 +6,7 @@ import {
   CircleDot,
   RefreshCcw,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 import {
@@ -95,6 +96,9 @@ const categorizeTask = (task: TaskDto): TaskBucket => {
 const formatCompletion = (value?: number) => `${Math.round(value ?? 0)}%`;
 
 export function ClientTaskBoard() {
+  const t = useTranslations('tasks');
+  const tCommon = useTranslations('common');
+
   const {
     data,
     isLoading,
@@ -166,11 +170,10 @@ export function ClientTaskBoard() {
       <header className="space-y-3">
         <div className="space-y-1">
           <h2 className="text-2xl font-semibold text-neutral-900">
-            Action Items & Homework
+            {t('myTasks')}
           </h2>
           <p className="text-sm text-neutral-600">
-            Track your somatic practices between sessions. Log how each assignment
-            felt in your body so your coach can support the unfolding journey.
+            {t('empty.clientDescription')}
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-medium text-neutral-600">
@@ -182,11 +185,11 @@ export function ClientTaskBoard() {
 
       {isError ? (
         <Alert variant="destructive">
-          <AlertTitle>Unable to load your action items</AlertTitle>
+          <AlertTitle>{t('errors.loadFailed')}</AlertTitle>
           <AlertDescription className="space-y-3">
             <p>
               {(error as TaskApiError | undefined)?.message ??
-                'Something went wrong while loading your practices.'}
+                t('errors.loadFailed')}
             </p>
             <Button
               size="sm"
@@ -194,7 +197,7 @@ export function ClientTaskBoard() {
               onClick={() => refetch()}
               className="gap-2"
             >
-              <RefreshCcw className="h-4 w-4" aria-hidden /> Try again
+              <RefreshCcw className="h-4 w-4" aria-hidden /> {tCommon('retry')}
             </Button>
           </AlertDescription>
         </Alert>
@@ -344,14 +347,15 @@ function ClientTaskBoardSkeleton() {
 }
 
 function ClientTaskEmptyState() {
+  const t = useTranslations('tasks');
+
   return (
     <div className="rounded-3xl border border-dashed border-neutral-200 bg-neutral-50 p-10 text-center">
       <h3 className="text-lg font-semibold text-neutral-800">
-        No action items yet
+        {t('empty.title')}
       </h3>
       <p className="mt-2 text-sm text-neutral-600">
-        Your coach will assign new somatic practices after your next session. When
-        they do, you will be able to log sensations and reflections here.
+        {t('empty.clientDescription')}
       </p>
     </div>
   );

@@ -1808,6 +1808,109 @@
       }
     }
   },
+  "tasks": {
+    "title": "משימות תרגול",
+    "myTasks": "המשימות שלי",
+    "taskManagement": "ניהול משימות",
+    "templates": "תבניות משימות",
+    "createTask": "צור משימה",
+    "editTask": "ערוך משימה",
+    "deleteTask": "מחק משימה",
+    "assignTasks": "הקצה משימות",
+    "addProgress": "הוסף התקדמות",
+    "markComplete": "סמן כהושלם",
+    "viewDetails": "צפה בפרטים",
+    "filters": {
+      "all": "כל המשימות",
+      "pending": "בהמתנה",
+      "inProgress": "בתהליך",
+      "completed": "הושלם",
+      "overdue": "באיחור"
+    },
+    "fields": {
+      "title": "כותרת משימה",
+      "titlePlaceholder": "הזן כותרת משימה",
+      "description": "תיאור",
+      "descriptionPlaceholder": "פרטי המשימה (לא חובה)",
+      "category": "קטגוריה",
+      "categoryPlaceholder": "בחר קטגוריה",
+      "dueDate": "תאריך יעד",
+      "dueDatePlaceholder": "בחר תאריך יעד",
+      "progress": "התקדמות",
+      "progressPlaceholder": "עקוב אחר אחוז ההשלמה",
+      "notes": "הערות",
+      "notesPlaceholder": "הוסף הערות על משימה זו",
+      "attachments": "קבצים מצורפים",
+      "attachmentsPlaceholder": "העלה קבצים רלוונטיים",
+      "priority": "עדיפות",
+      "priorityPlaceholder": "בחר עדיפות",
+      "assignedTo": "הוקצה ל",
+      "assignedToPlaceholder": "בחר מתאמנים",
+      "status": "סטטוס"
+    },
+    "status": {
+      "pending": "בהמתנה",
+      "inProgress": "בתהליך",
+      "completed": "הושלם",
+      "overdue": "באיחור",
+      "cancelled": "בוטל"
+    },
+    "priority": {
+      "low": "נמוכה",
+      "medium": "בינונית",
+      "high": "גבוהה"
+    },
+    "categories": {
+      "preparation": "הכנה לפגישה",
+      "followup": "מעקב",
+      "reflection": "רפלקציה",
+      "practice": "תרגול",
+      "reading": "קריאה",
+      "other": "אחר"
+    },
+    "errors": {
+      "titleRequired": "כותרת המשימה היא שדה חובה",
+      "invalidDate": "אנא בחר תאריך יעד תקין",
+      "noClientsSelected": "אנא בחר לפחות מתאמן אחד",
+      "loadFailed": "נכשל בטעינת המשימות. אנא נסה שוב.",
+      "createFailed": "נכשל ביצירת המשימה. אנא נסה שוב.",
+      "updateFailed": "נכשל בעדכון המשימה. אנא נסה שוב.",
+      "deleteFailed": "נכשל במחיקת המשימה. אנא נסה שוב."
+    },
+    "success": {
+      "created": "המשימה נוצרה בהצלחה",
+      "updated": "המשימה עודכנה בהצלחה",
+      "deleted": "המשימה נמחקה בהצלחה",
+      "progressAdded": "ההתקדמות עודכנה בהצלחה",
+      "completed": "המשימה סומנה כהושלמה"
+    },
+    "empty": {
+      "title": "אין משימות עדיין",
+      "description": "צור את המשימה הראשונה שלך כדי להתחיל",
+      "coachDescription": "הקצה משימות למתאמנים שלך כדי לעקוב אחר ההתקדמות שלהם",
+      "clientDescription": "המאמן שלך יקצה לך משימות כדי לעזור לך להגיע למטרות שלך"
+    },
+    "loading": {
+      "tasks": "טוען משימות...",
+      "details": "טוען פרטי משימה...",
+      "progress": "מעדכן התקדמות..."
+    },
+    "confirmDelete": {
+      "title": "מחק משימה",
+      "description": "האם אתה בטוח שברצונך למחוק משימה זו? פעולה זו אינה ניתנת לביטול.",
+      "confirm": "מחק",
+      "cancel": "ביטול"
+    },
+    "progressDialog": {
+      "title": "עדכן התקדמות",
+      "description": "עקוב אחר ההתקדמות שלך במשימה זו",
+      "noteLabel": "הערת התקדמות",
+      "notePlaceholder": "מה השגת?",
+      "percentageLabel": "אחוז השלמה",
+      "submit": "עדכן התקדמות",
+      "submitting": "מעדכן..."
+    }
+  },
   "sessions": {
     "tasks": {
       "form": {

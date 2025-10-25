@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -190,14 +192,15 @@ export function TaskListTable({ tasks }: TaskListTableProps) {
 }
 
 export function TaskListEmptyState() {
+  const t = useTranslations('tasks');
+
   return (
     <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-200 bg-neutral-50 py-16 text-center">
       <p className="text-lg font-semibold text-neutral-800">
-        No tasks match these filters yet
+        {t('empty.title')}
       </p>
       <p className="max-w-md text-sm text-neutral-500">
-        Try adjusting the filters above or assigning a new action item to your
-        client. Fresh assignments will appear here instantly once created.
+        {t('empty.coachDescription')}
       </p>
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -51,6 +52,8 @@ const sanitizeFilters = (
 };
 
 export function TaskListView() {
+  const t = useTranslations('tasks');
+  const tCommon = useTranslations('common');
   const [filters, setFilters] = useState<TaskListFilterState>(INITIAL_FILTERS);
   const deferredSearch = useDeferredValue(filters.search);
 
@@ -113,11 +116,10 @@ export function TaskListView() {
       <header className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-neutral-900">
-            Action Items & Homework
+            {t('title')}
           </h1>
           <p className="text-sm text-neutral-600">
-            Monitor client assignments, track progress, and follow up on overdue
-            work from a single dashboard.
+            {t('empty.coachDescription')}
           </p>
         </div>
         <TaskCreateDialog onCreated={handleTaskCreated} />
@@ -131,14 +133,14 @@ export function TaskListView() {
 
       {isError ? (
         <Alert variant="destructive">
-          <AlertTitle>Unable to load tasks</AlertTitle>
+          <AlertTitle>{t('errors.loadFailed')}</AlertTitle>
           <AlertDescription className="space-y-3">
             <p>
               {(error as TaskApiError | undefined)?.message ??
-                'An unexpected error occurred while loading the task list.'}
+                t('errors.loadFailed')}
             </p>
             <Button onClick={() => refetch()} size="sm" variant="outline">
-              Try again
+              {tCommon('retry')}
             </Button>
           </AlertDescription>
         </Alert>
@@ -150,7 +152,7 @@ export function TaskListView() {
         <div className="space-y-4">
           {isFetching ? (
             <p className="text-xs font-medium uppercase tracking-widest text-neutral-400">
-              Refreshing results…
+              {t('loading.tasks')}
             </p>
           ) : null}
           <TaskListTable tasks={data?.data ?? []} />
