@@ -2,10 +2,11 @@
 
 import dynamic from 'next/dynamic';
 import { NextIntlClientProvider } from 'next-intl';
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { ToastProvider } from '@/components/ui/toast-provider';
 import type { AuthUser } from '@/lib/auth/auth';
 import { webVitalsMonitor } from '@/lib/performance';
 
@@ -15,29 +16,29 @@ import { StoreProvider } from './store-provider';
 
 
 // Lazy load non-critical providers with increased delay for better LCP
-const RealtimeProvider = dynamic(() => import('./realtime-provider').then(mod => ({ default: mod.RealtimeProvider })), {
+const _RealtimeProvider = dynamic(() => import('./realtime-provider').then(mod => ({ default: mod.RealtimeProvider })), {
   ssr: false,
   loading: () => null,
 });
 
-const AnalyticsProvider = dynamic(() => import('./analytics-provider').then(mod => ({ default: mod.AnalyticsProvider })), {
+const _AnalyticsProvider = dynamic(() => import('./analytics-provider').then(mod => ({ default: mod.AnalyticsProvider })), {
   ssr: false,
   loading: () => null,
 });
 
 // Lazy load performance monitor - only load after interaction or 3 seconds
-const PerformanceMonitor = dynamic(
+const _PerformanceMonitor = dynamic(
   () => import('@/components/monitoring/performance-monitor').then(mod => ({ default: mod.PerformanceMonitorComponent })),
-  { 
+  {
     ssr: false,
     loading: () => null,
   }
 );
 
 // Layout stabilizer to prevent CLS
-const LayoutStabilizer = () => (
-  <div 
-    style={{ 
+const _LayoutStabilizer = () => (
+  <div
+    style={{
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column'
@@ -54,12 +55,12 @@ interface ProvidersProps {
 }
 
 export function Providers({ children, locale, messages, initialUser }: ProvidersProps) {
-  const [mounted, setMounted] = useState(false);
-  const [loadAnalytics, setLoadAnalytics] = useState(false);
-  
+  const [_mounted, _setMounted] = useState(false);
+  const [_loadAnalytics, _setLoadAnalytics] = useState(false);
+
   // Initialize performance monitoring and preloading
   useEffect(() => {
-    setMounted(true);
+    _setMounted(true);
     
     if (initialUser) {
       // Set user ID for performance tracking
@@ -73,7 +74,7 @@ export function Providers({ children, locale, messages, initialUser }: Providers
       const load = () => {
         if (!loaded) {
           loaded = true;
-          setLoadAnalytics(true);
+          _setLoadAnalytics(true);
         }
       };
       
@@ -111,19 +112,23 @@ export function Providers({ children, locale, messages, initialUser }: Providers
               <StoreProvider initialUser={initialUser}>
                 <ErrorBoundary>
                   <AuthProvider initialUser={initialUser}>
-                    {/* Load realtime and analytics after critical path */}
-                    {/* <Suspense fallback={mounted ? null : <LayoutStabilizer />}> */}
-                      {/* <RealtimeProvider> */}
-                        {/* {mounted && loadAnalytics && (
-                          <AnalyticsProvider>
-                            <Suspense fallback={null}>
-                              <PerformanceMonitor />
-                            </Suspense>
-                          </AnalyticsProvider>
-                        )} */}
-                        {children}
-                      {/* </RealtimeProvider> */}
-                    {/* </Suspense> */}
+                    <ErrorBoundary>
+                      <ToastProvider>
+                        {/* Load realtime and analytics after critical path */}
+                        {/* <Suspense fallback={mounted ? null : <LayoutStabilizer />}> */}
+                          {/* <RealtimeProvider> */}
+                            {/* {mounted && loadAnalytics && (
+                              <AnalyticsProvider>
+                                <Suspense fallback={null}>
+                                  <PerformanceMonitor />
+                                </Suspense>
+                              </AnalyticsProvider>
+                            )} */}
+                            {children}
+                          {/* </RealtimeProvider> */}
+                        {/* </Suspense> */}
+                      </ToastProvider>
+                    </ErrorBoundary>
                   </AuthProvider>
                 </ErrorBoundary>
               </StoreProvider>
