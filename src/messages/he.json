@@ -482,8 +482,6 @@
   },
   "dashboard": {
     "title": "מרחב התרגול",
-    "coachTitle": "מרחב התרגול",
-    "clientTitle": "המסע הסומטי שלך",
     "description": "סקירה כללית של מסע התרגול",
     "welcome": "שלום {name}",
     "subtitle": "הנה מה מתרחש במרחב התרגול שלך",
@@ -497,13 +495,9 @@
       "upcomingSessions": "פגישות קרובות",
       "completedSessions": "פגישות שהושלמו",
       "activeClients": "מתאמנים פעילים",
-      "totalClients": "סך מתאמנים",
       "notifications": "התראות",
-      "thisWeekSessions": "פגישות השבוע",
-      "totalPractices": "סך תרגולים",
-      "recentPractices": "תרגולים אחרונים",
-      "somaticDiscoveries": "גילויים סומטיים",
-      "awarenessShifts": "שינויי מודעות",
+      "averageRating": "דירוג ממוצע",
+      "totalRevenue": "הכנסה כוללת",
       "totalReflections": "רפלקציות",
       "averageMood": "מצב רוח ממוצע",
       "goalsAchieved": "יעדים שהושגו",
@@ -515,8 +509,7 @@
       "thisWeek": "השבוע",
       "thisMonth": "החודש",
       "total": "סך הכל",
-      "unread": "לא נקראו",
-      "of": "מתוך"
+      "unread": "לא נקראו"
     },
     "upcomingSessions": {
       "title": "פגישות קרובות",
@@ -528,47 +521,6 @@
       "emptyAction": "צור מפגש חדש",
       "viewAll": "צפה בכל הפגישות",
       "duration": "משך"
-    },
-    "recentActivity": {
-      "title": "פעילות אחרונה",
-      "description": "הפעילות האחרונה במרחב התרגול",
-      "empty": "אין פעילות אחרונה",
-      "types": {
-        "sessionCompleted": "{clientName} השלים/ה תרגול",
-        "noteAdded": "הערות מפגישה התווספו",
-        "clientJoined": "{clientName} הצטרף/ה למרחב",
-        "sessionScheduled": "פגישה חדשה נקבעה עם {clientName}",
-        "messageReceived": "הודעה חדשה מ{clientName}",
-        "practiceLogged": "{clientName} תיעד/ה תרגול חדש"
-      }
-    },
-    "reflectionSpace": {
-      "title": "מרחב להתבוננות",
-      "description": "מקום לשאלות והרהורים יומיים",
-      "defaultPrompts": [
-        "מה עלה בגוף שלי היום?",
-        "איפה הרגשתי נוכחות?",
-        "אילו תחושות מתעוררות עכשיו?",
-        "מה מבקש תשומת לב?",
-        "איך נושם הגוף שלי?"
-      ],
-      "customPrompt": "הגדר שאלה אישית",
-      "edit": "ערוך",
-      "save": "שמור"
-    },
-    "recentClients": {
-      "title": "מתאמנים אחרונים",
-      "description": "מתאמנים שעבדת איתם לאחרונה",
-      "empty": "אין מתאמנים אחרונים",
-      "emptyTitle": "אין מתאמנים עדיין",
-      "emptyDescription": "הוסף את המתאמן הראשון שלך וצור את מרחב התרגול המשותף",
-      "emptyAction": "הוסף מתאמן",
-      "sessions": "פגישות",
-      "lastSession": "פגישה אחרונה",
-      "status": {
-        "active": "פעיל",
-        "inactive": "לא פעיל"
-      }
     },
     "loadError": "לא הצלחנו לטעון את הנתונים. נסו לרענן את הדף.",
     "quickActions": {
@@ -831,14 +783,6 @@
         "title": "לא הצלחנו לטעון את הסקירה",
         "description": "נסו לרענן את הדף כדי לקבל את הנתונים העדכניים."
       }
-    },
-    "tabs": {
-      "overview": "סקירה",
-      "sessions": "פגישות",
-      "clients": "מתאמנים",
-      "practiceJournal": "יומן תרגול",
-      "resources": "תרגולים ומקורות",
-      "messages": "הודעות"
     }
   },
   "practiceJournal": {
@@ -1964,6 +1908,277 @@
           "no_show": "לא הגיע"
         }
       }
+    }
+  },
+  "tasks": {
+    "title": "משימות תרגול ושיעורי בית",
+    "myTasks": "המשימות שלי",
+    "templates": "תבניות",
+    "createTask": "צור משימה",
+    "editTask": "ערוך משימה",
+    "deleteTask": "מחק משימה",
+    "assignTasks": "הקצה משימות",
+    "addProgress": "הוסף התקדמות",
+    "markComplete": "סמן כהושלם",
+    "category": "קטגוריה",
+    "categories": "קטגוריות",
+    "dueDate": "תאריך יעד",
+    "progress": "התקדמות",
+    "status": "סטטוס",
+    "priority": "עדיפות",
+    "description": "תיאור",
+    "assignedTo": "הוקצה ל",
+    "assignedBy": "הוקצה על ידי",
+    "createdAt": "נוצר",
+    "updatedAt": "עודכן לאחרונה",
+    "completedAt": "הושלם",
+    "listView": {
+      "title": "משימות תרגול ושיעורי בית",
+      "subtitle": "עקוב אחר הקצאות לקוחות, התקדמות ומעקב אחר עבודה באיחור ממקום אחד.",
+      "count": "{count, plural, =0 {אין משימות} one {משימה אחת} other {# משימות}}",
+      "loading": "טוען משימות...",
+      "loadingMore": "טוען משימות נוספות...",
+      "empty": "אין משימות התואמות את הסינון שנבחר.",
+      "emptySubtitle": "צור משימה חדשה כדי להתחיל.",
+      "error": {
+        "title": "לא ניתן לטעון משימות",
+        "description": "אירעה שגיאה בלתי צפויה בעת טעינת רשימת המשימות.",
+        "retry": "נסה שוב"
+      }
+    },
+    "clientBoard": {
+      "title": "התרגולים שלי",
+      "subtitle": "המאמן שלך עיצב תרגולים אלה לתמיכה בצמיחה שלך.",
+      "sections": {
+        "overdue": {
+          "title": "דורש תשומת לב",
+          "description": "תרגולים שמחכים לטיפול ונוכחות.",
+          "empty": "אין תרגולים באיחור. עבודה נהדרת בשמירה על עדכניות."
+        },
+        "active": {
+          "title": "התחייבויות פעילות",
+          "description": "מה שאתה מטפח השבוע.",
+          "empty": "אין תרגולים פעילים כרגע. חזור בקרוב."
+        },
+        "completed": {
+          "title": "הישגים אחרונים",
+          "description": "אבני דרך שהשגת ב-30 הימים האחרונים.",
+          "empty": "השלם תרגול כדי לחגוג את ההתקדמות שלך כאן."
+        }
+      },
+      "loading": "טוען את התרגולים שלך...",
+      "error": {
+        "title": "לא ניתן לטעון תרגולים",
+        "description": "נסה שוב או פנה למאמן שלך לתמיכה.",
+        "retry": "נסה שוב"
+      }
+    },
+    "form": {
+      "title": {
+        "create": "צור משימה חדשה",
+        "edit": "ערוך משימה"
+      },
+      "fields": {
+        "title": {
+          "label": "כותרת המשימה",
+          "placeholder": "הזן שם משימה",
+          "required": "נדרש כותרת למשימה",
+          "minLength": "כותרת המשימה חייבת להכיל לפחות 3 תווים",
+          "maxLength": "כותרת המשימה חייבת להכיל פחות מ-200 תווים"
+        },
+        "description": {
+          "label": "תיאור",
+          "placeholder": "ספק פרטים תומכים (אופציונלי)"
+        },
+        "client": {
+          "label": "הקצה ללקוח",
+          "placeholder": "בחר לקוח",
+          "required": "אנא בחר לקוח"
+        },
+        "category": {
+          "label": "קטגוריה",
+          "placeholder": "בחר קטגוריה (אופציונלי)"
+        },
+        "dueDate": {
+          "label": "תאריך יעד",
+          "placeholder": "בחר תאריך יעד",
+          "invalid": "פורמט תאריך לא תקין",
+          "past": "תאריך היעד לא יכול להיות בעבר"
+        },
+        "priority": {
+          "label": "עדיפות",
+          "placeholder": "בחר עדיפות",
+          "options": {
+            "low": "נמוכה",
+            "medium": "בינונית",
+            "high": "גבוהה"
+          }
+        },
+        "saveAsTemplate": {
+          "label": "שמור כתבנית",
+          "help": "השתמש במבנה משימה זה שוב להקצאות עתידיות"
+        }
+      },
+      "actions": {
+        "cancel": "בטל",
+        "create": "צור משימה",
+        "save": "שמור שינויים",
+        "creating": "יוצר...",
+        "saving": "שומר..."
+      },
+      "messages": {
+        "createSuccess": "המשימה נוצרה בהצלחה",
+        "updateSuccess": "המשימה עודכנה בהצלחה",
+        "createError": "יצירת המשימה נכשלה. אנא נסה שוב.",
+        "updateError": "עדכון המשימה נכשל. אנא נסה שוב.",
+        "genericError": "לא ניתן היה לשמור את המשימה. אנא נסה שוב."
+      }
+    },
+    "progress": {
+      "title": "עדכן התקדמות",
+      "subtitle": "שתף את ההרהורים שלך ועקוב אחר המסע שלך.",
+      "fields": {
+        "percentage": {
+          "label": "אחוז התקדמות",
+          "placeholder": "0-100",
+          "invalid": "ההתקדמות חייבת להיות בין 0 ל-100",
+          "required": "נדרש אחוז התקדמות"
+        },
+        "notes": {
+          "label": "הערות רפלקציה",
+          "placeholder": "אילו תובנות עלו? מה היה מאתגר?",
+          "help": "המאמן שלך יראה הערות אלה"
+        },
+        "attachments": {
+          "label": "קבצים מצורפים",
+          "help": "העלה קבצים הקשורים לעדכון התקדמות זה",
+          "button": "העלה קבצים"
+        }
+      },
+      "actions": {
+        "cancel": "בטל",
+        "submit": "שלח התקדמות",
+        "submitting": "שולח..."
+      },
+      "messages": {
+        "success": "ההתקדמות עודכנה בהצלחה",
+        "error": "עדכון ההתקדמות נכשל. אנא נסה שוב.",
+        "autoComplete": "המשימה סומנה אוטומטית כהושלמה"
+      },
+      "history": {
+        "title": "היסטוריית התקדמות",
+        "empty": "אין עדכוני התקדמות עדיין",
+        "at": "ב",
+        "by": "על ידי"
+      }
+    },
+    "filters": {
+      "search": {
+        "label": "חפש משימות",
+        "placeholder": "חפש לפי כותרת או תיאור..."
+      },
+      "status": {
+        "label": "סטטוס",
+        "placeholder": "כל הסטטוסים",
+        "options": {
+          "pending": "ממתין",
+          "in_progress": "בתהליך",
+          "completed": "הושלם",
+          "overdue": "באיחור"
+        }
+      },
+      "priority": {
+        "label": "עדיפות",
+        "placeholder": "כל העדיפויות",
+        "options": {
+          "low": "נמוכה",
+          "medium": "בינונית",
+          "high": "גבוהה"
+        }
+      },
+      "category": {
+        "label": "קטגוריה",
+        "placeholder": "כל הקטגוריות"
+      },
+      "includeArchived": {
+        "label": "כלול משימות מאוחסנות"
+      },
+      "reset": "אפס סינון",
+      "apply": "החל סינון"
+    },
+    "status": {
+      "pending": "ממתין",
+      "in_progress": "בתהליך",
+      "completed": "הושלם",
+      "overdue": "באיחור",
+      "archived": "באחסון"
+    },
+    "priority": {
+      "low": "נמוכה",
+      "medium": "בינונית",
+      "high": "גבוהה"
+    },
+    "actions": {
+      "view": "הצג פרטים",
+      "edit": "ערוך",
+      "delete": "מחק",
+      "archive": "העבר לאחסון",
+      "unarchive": "שחזר מאחסון",
+      "duplicate": "שכפל",
+      "addProgress": "הוסף התקדמות",
+      "viewProgress": "הצג התקדמות",
+      "markComplete": "סמן כהושלם",
+      "reopen": "פתח מחדש",
+      "refresh": "רענן"
+    },
+    "table": {
+      "columns": {
+        "title": "כותרת",
+        "client": "לקוח",
+        "category": "קטגוריה",
+        "priority": "עדיפות",
+        "status": "סטטוס",
+        "progress": "התקדמות",
+        "dueDate": "תאריך יעד",
+        "actions": "פעולות"
+      },
+      "unknownClient": "לקוח לא מוקצה",
+      "noCategory": "אין קטגוריה",
+      "overdueBadge": "באיחור של {days} ימים"
+    },
+    "pagination": {
+      "previous": "הקודם",
+      "next": "הבא",
+      "page": "עמוד {current} מתוך {total}",
+      "showing": "מציג {from}-{to} מתוך {total}"
+    },
+    "delete": {
+      "title": "מחק משימה",
+      "description": "האם אתה בטוח שברצונך למחוק משימה זו? פעולה זו לא ניתנת לביטול.",
+      "confirm": "מחק",
+      "cancel": "בטל",
+      "success": "המשימה נמחקה בהצלחה",
+      "error": "מחיקת המשימה נכשלה. אנא נסה שוב."
+    },
+    "errors": {
+      "loadFailed": "טעינת המשימות נכשלה",
+      "createFailed": "יצירת המשימה נכשלה",
+      "updateFailed": "עדכון המשימה נכשל",
+      "deleteFailed": "מחיקת המשימה נכשלה",
+      "progressFailed": "עדכון ההתקדמות נכשל",
+      "unauthorized": "אין לך הרשאה לבצע פעולה זו",
+      "notFound": "המשימה לא נמצאה",
+      "validation": "אנא בדוק את הטופס לשגיאות",
+      "network": "שגיאת רשת. אנא בדוק את החיבור שלך.",
+      "unknown": "אירעה שגיאה בלתי צפויה"
+    },
+    "empty": {
+      "noTasks": "אין משימות עדיין",
+      "noTasksDescription": "צור את המשימה הראשונה שלך כדי להתחיל",
+      "noResults": "לא נמצאו משימות",
+      "noResultsDescription": "נסה לשנות את החיפוש או הסינון",
+      "noProgress": "אין עדכוני התקדמות עדיין",
+      "noProgressDescription": "הוסף את עדכון ההתקדמות הראשון שלך כדי לעקוב אחר המסע שלך"
     }
   }
 }
