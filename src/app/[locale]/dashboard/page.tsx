@@ -21,23 +21,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function DashboardPage({ params }: DashboardPageProps) {
   const { locale } = await params;
-  
-  // Load translations for the page
-  const [translationsResult, commonTranslationsResult] = await Promise.allSettled([
-    getTranslations({ locale, namespace: 'dashboard' }),
-    getTranslations({ locale, namespace: 'common' }),
-  ]);
 
   return (
     <RouteGuard requireAuth={true}>
       <AppLayout>
-        <DashboardContent
-          translations={{
-            dashboard: translationsResult.status === 'fulfilled' ? translationsResult.value : ((key: string) => key) as any,
-            common: commonTranslationsResult.status === 'fulfilled' ? commonTranslationsResult.value : ((key: string) => key) as any,
-          }}
-          locale={locale}
-        />
+        <DashboardContent locale={locale} />
       </AppLayout>
     </RouteGuard>
   );
