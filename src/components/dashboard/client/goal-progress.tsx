@@ -1,6 +1,7 @@
 'use client';
 
 import { CheckCircle2, Flag, TrendingUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -9,13 +10,10 @@ import { Progress } from '@/components/ui/progress';
 import { Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
 
-import type { DashboardTranslations } from '../dashboard-types';
 
 interface GoalProgressProps {
   userId: string;
-  locale: string;
-  translations: DashboardTranslations;
-}
+  locale: string;}
 
 interface GoalRecord {
   id: string;
@@ -32,8 +30,9 @@ interface GoalStats {
   inProgress: number;
 }
 
-export function ClientGoalProgress({ userId, locale, translations }: GoalProgressProps) {
-  const { dashboard: t, common: commonT } = translations;
+export function ClientGoalProgress({ userId, locale }: GoalProgressProps) {
+  const t = useTranslations('dashboard.clientSections.goalProgress');
+  const commonT = useTranslations('common');
 
   const [goals, setGoals] = useState<GoalRecord[]>([]);
   const [stats, setStats] = useState<GoalStats>({ total: 0, completed: 0, inProgress: 0 });
@@ -130,9 +129,9 @@ export function ClientGoalProgress({ userId, locale, translations }: GoalProgres
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />
-          {t('clientSections.goalProgress.title')}
+          {t('title')}
         </CardTitle>
-        <CardDescription>{t('clientSections.goalProgress.subtitle')}</CardDescription>
+        <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading && (
@@ -143,7 +142,7 @@ export function ClientGoalProgress({ userId, locale, translations }: GoalProgres
 
         {errorMessage && !isLoading && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            <p>{t('clientSections.goalProgress.error')}</p>
+            <p>{t('error')}</p>
             <p className="mt-2 text-xs text-destructive/80">{errorMessage}</p>
           </div>
         )}
@@ -151,10 +150,10 @@ export function ClientGoalProgress({ userId, locale, translations }: GoalProgres
         {!isLoading && !errorMessage && goals.length === 0 && (
           <div className="rounded-lg border border-dashed border-muted-foreground/40 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
             <Flag className="mx-auto mb-3 h-10 w-10 opacity-40" />
-            <p>{t('clientSections.goalProgress.empty')}</p>
+            <p>{t('empty')}</p>
             <Button asChild variant="secondary" className="mt-4">
               <Link href="/client/progress">
-                {t('clientSections.goalProgress.cta')}
+                {t('cta')}
               </Link>
             </Button>
           </div>
@@ -164,15 +163,15 @@ export function ClientGoalProgress({ userId, locale, translations }: GoalProgres
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-lg border border-border/60 bg-muted/10 p-4 text-center">
-                <p className="text-sm text-muted-foreground">{t('clientSections.goalProgress.total')}</p>
+                <p className="text-sm text-muted-foreground">{t('total')}</p>
                 <p className="text-2xl font-semibold text-foreground">{stats.total}</p>
               </div>
               <div className="rounded-lg border border-border/60 bg-muted/10 p-4 text-center">
-                <p className="text-sm text-muted-foreground">{t('clientSections.goalProgress.completed')}</p>
+                <p className="text-sm text-muted-foreground">{t('completed')}</p>
                 <p className="text-2xl font-semibold text-foreground">{stats.completed}</p>
               </div>
               <div className="rounded-lg border border-border/60 bg-muted/10 p-4 text-center">
-                <p className="text-sm text-muted-foreground">{t('clientSections.goalProgress.inProgress')}</p>
+                <p className="text-sm text-muted-foreground">{t('inProgress')}</p>
                 <p className="text-2xl font-semibold text-foreground">{stats.inProgress}</p>
               </div>
             </div>
@@ -196,7 +195,7 @@ export function ClientGoalProgress({ userId, locale, translations }: GoalProgres
                       {isCompleted && (
                         <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-600">
                           <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
-                          {t('clientSections.goalProgress.completedLabel')}
+                          {t('completedLabel')}
                         </span>
                       )}
                     </div>

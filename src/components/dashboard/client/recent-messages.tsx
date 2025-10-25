@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowRight, MessageSquare, UserCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -8,13 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
 
-import type { DashboardTranslations } from '../dashboard-types';
 
 interface ClientRecentMessagesProps {
   userId: string;
-  locale: string;
-  translations: DashboardTranslations;
-}
+  locale: string;}
 
 interface MessageItem {
   id: string;
@@ -27,8 +25,9 @@ interface MessageItem {
 
 const MESSAGE_LIMIT = 4;
 
-export function ClientRecentMessages({ userId, locale, translations }: ClientRecentMessagesProps) {
-  const { dashboard: t, common: commonT } = translations;
+export function ClientRecentMessages({ userId, locale }: ClientRecentMessagesProps) {
+  const t = useTranslations('dashboard.clientSections.recentMessages');
+  const commonT = useTranslations('common');
 
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -177,9 +176,9 @@ export function ClientRecentMessages({ userId, locale, translations }: ClientRec
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
-          {t('clientSections.recentMessages.title')}
+          {t('title')}
         </CardTitle>
-        <CardDescription>{t('clientSections.recentMessages.subtitle')}</CardDescription>
+        <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading && (
@@ -190,7 +189,7 @@ export function ClientRecentMessages({ userId, locale, translations }: ClientRec
 
         {errorMessage && !isLoading && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            <p>{t('clientSections.recentMessages.error')}</p>
+            <p>{t('error')}</p>
             <p className="mt-2 text-xs text-destructive/80">{errorMessage}</p>
           </div>
         )}
@@ -198,11 +197,11 @@ export function ClientRecentMessages({ userId, locale, translations }: ClientRec
         {!isLoading && !errorMessage && messages.length === 0 && (
           <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
             <UserCircle className="mx-auto mb-3 h-10 w-10 opacity-50" />
-            <p>{t('clientSections.recentMessages.empty')}</p>
+            <p>{t('empty')}</p>
             <Button asChild className="mt-4" variant="secondary">
               <Link href="/messages">
                 <ArrowRight className="mr-2 h-4 w-4" />
-                {t('clientSections.recentMessages.cta')}
+                {t('cta')}
               </Link>
             </Button>
           </div>
@@ -232,7 +231,7 @@ export function ClientRecentMessages({ userId, locale, translations }: ClientRec
                     </Button>
                     {!message.read && (
                       <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                        {t('clientSections.recentMessages.unread', { count: 1 })}
+                        {t('unread', { count: 1 })}
                       </span>
                     )}
                   </div>

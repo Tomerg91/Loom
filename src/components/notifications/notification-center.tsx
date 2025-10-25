@@ -245,7 +245,7 @@ const NotificationItem = memo(({
 NotificationItem.displayName = 'NotificationItem';
 
 function NotificationCenterComponent() {
-  const t = useTranslations('notifications');
+  const t = useTranslations('notification');
   const router = useRouter();
   const locale = useLocale();
   const user = useUser();

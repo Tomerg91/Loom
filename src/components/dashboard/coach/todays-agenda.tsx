@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { CalendarClock, ExternalLink, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -10,12 +11,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from '@/i18n/routing';
 import type { Session } from '@/types';
 
-import type { DashboardTranslations } from '../dashboard-types';
-
 interface CoachTodaysAgendaProps {
   userId: string;
   locale: string;
-  translations: DashboardTranslations;
 }
 
 interface SessionsResponse {
@@ -53,8 +51,9 @@ async function fetchTodaysAgenda(userId: string): Promise<Session[]> {
   );
 }
 
-export function CoachTodaysAgenda({ userId, locale, translations }: CoachTodaysAgendaProps) {
-  const { dashboard: t, common: commonT } = translations;
+export function CoachTodaysAgenda({ userId, locale }: CoachTodaysAgendaProps) {
+  const t = useTranslations('dashboard.coachSections.todaysAgenda');
+  const commonT = useTranslations('common');
 
   const timeFormatter = useMemo(
     () =>
@@ -95,10 +94,10 @@ export function CoachTodaysAgenda({ userId, locale, translations }: CoachTodaysA
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarClock className="h-5 w-5" />
-          {t('coachSections.todaysAgenda.title')}
+          {t('title')}
         </CardTitle>
         <CardDescription>
-          {t('coachSections.todaysAgenda.subtitle', { date: dateLabelFormatter.format(agendaDate) })}
+          {t('subtitle', { date: dateLabelFormatter.format(agendaDate) })}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -119,7 +118,7 @@ export function CoachTodaysAgenda({ userId, locale, translations }: CoachTodaysA
 
         {isError && !isLoading && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            <p>{t('coachSections.todaysAgenda.error')}</p>
+            <p>{t('error')}</p>
             <Button onClick={() => refetch()} size="sm" variant="outline" className="mt-3">
               {commonT('retry')}
             </Button>
@@ -129,10 +128,10 @@ export function CoachTodaysAgenda({ userId, locale, translations }: CoachTodaysA
         {!isLoading && !isError && agenda.length === 0 && (
           <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
             <CalendarClock className="mx-auto mb-3 h-12 w-12 opacity-40" />
-            <p>{t('coachSections.todaysAgenda.empty')}</p>
+            <p>{t('empty')}</p>
             <Button asChild variant="secondary" className="mt-4">
               <Link href="/sessions/new">
-                {t('coachSections.todaysAgenda.cta')}
+                {t('cta')}
               </Link>
             </Button>
           </div>
@@ -164,13 +163,13 @@ export function CoachTodaysAgenda({ userId, locale, translations }: CoachTodaysA
                     <Button asChild size="sm" variant="outline">
                       <Link href={`/sessions/${session.id}`}>
                         <ExternalLink className="mr-2 h-4 w-4" />
-                        {t('coachSections.todaysAgenda.viewDetails')}
+                        {t('viewDetails')}
                       </Link>
                     </Button>
                     {session.meetingUrl && (
                       <Button asChild size="sm">
                         <a href={session.meetingUrl} target="_blank" rel="noopener noreferrer">
-                          {t('coachSections.todaysAgenda.startSession')}
+                          {t('startSession')}
                         </a>
                       </Button>
                     )}

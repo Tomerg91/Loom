@@ -13,6 +13,10 @@ export class ClientAuthService {
     string,
     { data: AuthUser; expires: number }
   >();
+  // Store access token from signin as fallback for API calls if setSession times out
+  private fallbackAccessToken: string | null = null;
+  // Store the user ID from signin in case Supabase session never initializes
+  private currentUserId: string | null = null;
 
   private getCachedUserProfile(userId: string): AuthUser | null {
     const cached = this.userProfileCache.get(`user_profile_${userId}`);
@@ -170,6 +174,15 @@ export class ClientAuthService {
       });
 
       if (session?.accessToken && session?.refreshToken) {
+        // Store access token and user ID as fallback for API calls if setSession times out
+        this.fallbackAccessToken = session.accessToken;
+        if (user) {
+          this.currentUserId = user.id;
+        }
+        console.log('[ClientAuthService.signIn] Stored access token and user ID as fallback', {
+          userId: user?.id,
+        });
+
         console.log('[ClientAuthService.signIn] Calling setSession with timeout...');
 
         // Set session with a timeout to prevent hanging on Vercel Edge Runtime
@@ -198,7 +211,7 @@ export class ClientAuthService {
         } catch (timeoutError) {
           console.warn('[ClientAuthService.signIn] setSession timed out:', timeoutError);
           // Don't fail signin just because setSession timed out
-          // The tokens from API response will be used for navigation
+          // The tokens from API response will be used for navigation and API calls
         }
       } else {
         console.warn('[ClientAuthService.signIn] No session tokens in API response');
@@ -229,6 +242,10 @@ export class ClientAuthService {
    */
   async signOut(): Promise<{ error: string | null }> {
     try {
+      // Clear fallback tokens and user ID
+      this.fallbackAccessToken = null;
+      this.currentUserId = null;
+
       const { error } = await this.supabase.auth.signOut();
       return { error: error?.message || null };
     } catch (error) {
@@ -247,52 +264,65 @@ export class ClientAuthService {
         data: { user },
       } = await this.supabase.auth.getUser();
 
-      if (!user) {
-        console.log('[ClientAuthService] No Supabase user found');
+      // If no user from Supabase but we have a fallback user ID, use that
+      // (happens when setSession timed out and session never initialized)
+      const userId = user?.id || this.currentUserId;
+
+      if (!userId) {
+        console.log('[ClientAuthService] No Supabase user found and no fallback user ID');
         return null;
       }
 
+      const usingFallbackUserId = !user?.id && !!this.currentUserId;
       console.log('[ClientAuthService] Getting current user:', {
-        userId: user.id,
-        email: user.email,
-        metadataRole: user.user_metadata?.role,
+        userId,
+        email: user?.email,
+        metadataRole: user?.user_metadata?.role,
+        usingFallbackUserId,
       });
 
       // Check cache first
-      const cached = this.getCachedUserProfile(user.id);
+      const cached = this.getCachedUserProfile(userId);
       if (cached) {
         console.log('[ClientAuthService] Returning cached user profile');
         return cached;
       }
 
-      // Fetch from API
-      const userProfile = await this.fetchUserProfileFromAPI(user.id);
+      // Fetch from API - pass fallback token in case setSession timed out
+      const userProfile = await this.fetchUserProfileFromAPI(userId, this.fallbackAccessToken ?? undefined);
 
       if (userProfile) {
         // Cache for 2 minutes
-        this.cacheUserProfile(user.id, userProfile, 120000);
+        this.cacheUserProfile(userId, userProfile, 120000);
         return userProfile;
       }
 
-      // Fallback: construct user from metadata if API fails
-      console.warn(
-        '[ClientAuthService] API fetch failed, constructing from user_metadata'
-      );
-      const fallbackUser: AuthUser = {
-        id: user.id,
-        email: user.email || '',
-        role: (user.user_metadata?.role as any) || 'client',
-        firstName: user.user_metadata?.first_name || '',
-        lastName: user.user_metadata?.last_name || '',
-        language: (user.user_metadata?.language as any) || 'en',
-        status: 'active',
-        createdAt: user.created_at || new Date().toISOString(),
-        updatedAt:
-          user.updated_at || user.created_at || new Date().toISOString(),
-        mfaEnabled: !!user.user_metadata?.mfaEnabled,
-      };
+      // Fallback: construct user from Supabase metadata if API fails
+      if (user) {
+        console.warn(
+          '[ClientAuthService] API fetch failed, constructing from user_metadata'
+        );
+        const fallbackUser: AuthUser = {
+          id: user.id,
+          email: user.email || '',
+          role: (user.user_metadata?.role as any) || 'client',
+          firstName: user.user_metadata?.first_name || '',
+          lastName: user.user_metadata?.last_name || '',
+          language: (user.user_metadata?.language as any) || 'en',
+          status: 'active',
+          createdAt: user.created_at || new Date().toISOString(),
+          updatedAt:
+            user.updated_at || user.created_at || new Date().toISOString(),
+          mfaEnabled: !!user.user_metadata?.mfaEnabled,
+        };
 
-      return fallbackUser;
+        return fallbackUser;
+      }
+
+      // If using fallback userId but no Supabase user and API failed, return null
+      // (This shouldn't normally happen if signin succeeded, but safety-check anyway)
+      console.warn('[ClientAuthService] Could not fetch user profile and no metadata available');
+      return null;
     } catch (error) {
       console.error('[ClientAuthService] Error getting current user:', error);
       return null;
@@ -455,20 +485,25 @@ export class ClientAuthService {
    * Fetch user profile from API endpoint
    */
   private async fetchUserProfileFromAPI(
-    userId: string
+    userId: string,
+    fallbackAccessToken?: string
   ): Promise<AuthUser | null> {
     try {
       const {
         data: { session },
       } = await this.supabase.auth.getSession();
       const headers: Record<string, string> = {};
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
+
+      // Use session token if available, otherwise use fallback token (from signin response)
+      const accessToken = session?.access_token || fallbackAccessToken;
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
       console.log('[ClientAuthService] Fetching user profile:', {
         userId,
-        hasAccessToken: !!session?.access_token,
+        hasAccessToken: !!accessToken,
+        usingFallbackToken: !session?.access_token && !!fallbackAccessToken,
       });
 
       const response = await fetch(`/api/users/${userId}/profile`, { headers });

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,17 +10,16 @@ import { createClient } from '@/lib/supabase/client';
 
 import { ClientDashboard } from './client/client-dashboard';
 import { CoachDashboard } from './coach/coach-dashboard';
-import type { DashboardTranslations } from './dashboard-types';
 
 interface DashboardContentProps {
-  translations: DashboardTranslations;
   locale: string;
 }
 
-export function DashboardContent({ translations, locale }: DashboardContentProps) {
+export function DashboardContent({ locale }: DashboardContentProps) {
   const user = useUser();
   const isAuthLoading = useAuthLoading();
-  const { dashboard: t, common: commonT } = translations;
+  const t = useTranslations('dashboard');
+  const commonT = useTranslations('common');
 
   // Add detailed logging for debugging
   useEffect(() => {
@@ -89,12 +89,11 @@ export function DashboardContent({ translations, locale }: DashboardContentProps
           <CoachDashboard
             userId={user.id}
             locale={locale}
-            translations={translations}
             userName={user.firstName || user.email}
           />
         )}
         {role === 'client' && (
-          <ClientDashboard userId={user.id} locale={locale} translations={translations} />
+          <ClientDashboard userId={user.id} locale={locale} />
         )}
         {role !== 'coach' && role !== 'client' && (
           <Card>
