@@ -13,7 +13,6 @@ import type { NextRequest, NextResponse } from 'next/server';
 import {
   PLACEHOLDER_SUPABASE_ANON_KEY,
   PLACEHOLDER_SUPABASE_URL,
-  serverEnv,
 } from '@/env/server';
 
 /**
