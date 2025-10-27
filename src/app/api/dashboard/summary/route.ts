@@ -43,7 +43,7 @@ export async function GET() {
 
     // Cache for 30 seconds
     const response = NextResponse.json(summary);
-    response.headers.set('Cache-Control', 'public, max-age=30');
+    response.headers.set('Cache-Control', 'private, max-age=30');
     return response;
   } catch (error) {
     console.error('Dashboard summary API error:', error);

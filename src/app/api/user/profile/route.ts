@@ -57,7 +57,7 @@ export async function GET(_request: NextRequest): Promise<Response> {
 
     // Return response with cache headers
     const response = ApiResponseHelper.success(profile);
-    response.headers.set('Cache-Control', 'public, max-age=30');
+    response.headers.set('Cache-Control', 'private, max-age=30');
 
     return response;
   } catch (error) {
