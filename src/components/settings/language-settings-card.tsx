@@ -1,26 +1,26 @@
 'use client';
 
-import { 
+import {
   Globe,
   Languages,
   CheckCircle,
   Info
 } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { usePathname, useRouter } from '@/i18n/routing';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { routing } from '@/i18n/routing';
+import { buildLocalizedPath } from '@/i18n/routing';
 
 interface LanguageOption {
   code: string;
@@ -42,19 +42,9 @@ export function LanguageSettingsCard() {
   const router = useRouter();
 
   const switchLanguage = (newLocale: string) => {
-    const segments = pathname.split('/').filter(Boolean);
-    const currentLocale = segments[0];
-    
-    const isLocaleInPath = routing.locales.includes(currentLocale as any);
-    
-    let newPathname: string;
-    if (isLocaleInPath) {
-      segments[0] = newLocale;
-      newPathname = `/${segments.join('/')}`;
-    } else {
-      newPathname = `/${newLocale}${pathname}`;
-    }
-    
+    // usePathname() from next-intl returns path without locale prefix
+    // buildLocalizedPath adds the correct locale prefix
+    const newPathname = buildLocalizedPath(pathname, newLocale);
     router.push(newPathname);
   };
 

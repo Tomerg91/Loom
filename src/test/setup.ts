@@ -107,6 +107,85 @@ Object.defineProperty(window, 'location', {
   writable: true,
 });
 
+// Mock window.matchMedia for responsive design tests
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+// Mock localStorage and sessionStorage
+const createStorageMock = () => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+    key: (index: number) => {
+      const keys = Object.keys(store);
+      return keys[index] || null;
+    },
+    get length() {
+      return Object.keys(store).length;
+    },
+  };
+};
+
+Object.defineProperty(window, 'localStorage', {
+  value: createStorageMock(),
+});
+
+Object.defineProperty(window, 'sessionStorage', {
+  value: createStorageMock(),
+});
+
+// Mock getBoundingClientRect for layout calculations
+Element.prototype.getBoundingClientRect = vi.fn(() => ({
+  width: 100,
+  height: 100,
+  top: 0,
+  left: 0,
+  bottom: 100,
+  right: 100,
+  x: 0,
+  y: 0,
+  toJSON: () => ({}),
+}));
+
+// Mock IntersectionObserver
+global.IntersectionObserver = class IntersectionObserver {
+  constructor() {}
+  disconnect() {}
+  observe() {}
+  takeRecords() {
+    return [];
+  }
+  unobserve() {}
+} as any;
+
+// Mock ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  constructor() {}
+  disconnect() {}
+  observe() {}
+  unobserve() {}
+} as any;
+
 // Mock fetch globally to handle API calls in tests
 global.fetch = vi.fn();
 

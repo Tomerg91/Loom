@@ -1,7 +1,8 @@
-import { screen, fireEvent, waitFor, act, within } from '@testing-library/react';
+import { screen, waitFor, act, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { renderWithProviders, mockUser, mockCoachUser, setupTestEnvironment } from '@/test/utils';
+import { renderWithProviders, mockUser, setupTestEnvironment } from '@/test/utils';
 
 // Mock Next.js navigation
 const mockPush = vi.fn();
@@ -82,7 +83,7 @@ const EmailVerificationFlow = ({ email, userId }: { email: string; userId: strin
         description: `Check your email at ${email}`,
         variant: 'default',
       });
-    } catch (error) {
+    } catch (_error) {
       mockToast({
         title: 'Failed to Send Email',
         description: 'Please try again later',
@@ -548,6 +549,7 @@ describe('Email and Communication Integration', () => {
 
   describe('Email Verification Workflow', () => {
     it('completes email verification flow successfully', async () => {
+      const user = userEvent.setup();
       renderWithProviders(
         <EmailVerificationFlow email={mockUser.email} userId={mockUser.id} />
       );
@@ -556,7 +558,7 @@ describe('Email and Communication Integration', () => {
 
       // Send initial verification email
       const resendButton = screen.getByTestId('resend-button');
-      fireEvent.click(resendButton);
+      await user.click(resendButton);
 
       await waitFor(() => {
         expect(mockEmailService.sendVerificationEmail).toHaveBeenCalledWith(
@@ -573,11 +575,11 @@ describe('Email and Communication Integration', () => {
 
       // Enter verification code
       const codeInput = screen.getByTestId('verification-code-input');
-      fireEvent.change(codeInput, { target: { value: '123456' } });
+      await user.type(codeInput, '123456');
 
       // Verify code
       const verifyButton = screen.getByTestId('verify-button');
-      fireEvent.click(verifyButton);
+      await user.click(verifyButton);
 
       await waitFor(() => {
         expect(mockEmailService.verifyEmailCode).toHaveBeenCalledWith(
@@ -596,6 +598,7 @@ describe('Email and Communication Integration', () => {
     });
 
     it('handles invalid verification codes', async () => {
+      const user = userEvent.setup();
       mockEmailService.verifyEmailCode.mockResolvedValue({ valid: false });
 
       renderWithProviders(
@@ -603,10 +606,10 @@ describe('Email and Communication Integration', () => {
       );
 
       const codeInput = screen.getByTestId('verification-code-input');
-      fireEvent.change(codeInput, { target: { value: '000000' } });
+      await user.type(codeInput, '000000');
 
       const verifyButton = screen.getByTestId('verify-button');
-      fireEvent.click(verifyButton);
+      await user.click(verifyButton);
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
@@ -620,13 +623,14 @@ describe('Email and Communication Integration', () => {
     });
 
     it('enforces resend cooldown period', async () => {
+      const user = userEvent.setup();
       renderWithProviders(
         <EmailVerificationFlow email={mockUser.email} userId={mockUser.id} />
       );
 
       // First send should work
       const resendButton = screen.getByTestId('resend-button');
-      fireEvent.click(resendButton);
+      await user.click(resendButton);
 
       await waitFor(() => {
         expect(mockEmailService.sendVerificationEmail).toHaveBeenCalledTimes(1);
@@ -649,6 +653,7 @@ describe('Email and Communication Integration', () => {
     });
 
     it('handles email service failures gracefully', async () => {
+      const user = userEvent.setup();
       mockEmailService.sendVerificationEmail.mockRejectedValue(new Error('SMTP server unavailable'));
 
       renderWithProviders(
@@ -656,7 +661,7 @@ describe('Email and Communication Integration', () => {
       );
 
       const resendButton = screen.getByTestId('resend-button');
-      fireEvent.click(resendButton);
+      await user.click(resendButton);
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
@@ -670,13 +675,14 @@ describe('Email and Communication Integration', () => {
 
   describe('Password Reset Workflow', () => {
     it('completes full password reset flow', async () => {
+      const user = userEvent.setup();
       renderWithProviders(<PasswordResetFlow email={mockUser.email} />);
 
       // Step 1: Request reset
       expect(screen.getByTestId('reset-step-request')).toBeInTheDocument();
-      
+
       const requestButton = screen.getByTestId('request-reset-button');
-      fireEvent.click(requestButton);
+      await user.click(requestButton);
 
       await waitFor(() => {
         expect(mockEmailService.sendPasswordResetEmail).toHaveBeenCalledWith(mockUser.email);
@@ -700,10 +706,10 @@ describe('Email and Communication Integration', () => {
       });
 
       const resetCodeInput = screen.getByTestId('reset-code-input');
-      fireEvent.change(resetCodeInput, { target: { value: 'RESET123' } });
+      await user.type(resetCodeInput, 'RESET123');
 
       const verifyResetButton = screen.getByTestId('verify-reset-button');
-      fireEvent.click(verifyResetButton);
+      await user.click(verifyResetButton);
 
       await waitFor(() => {
         expect(mockEmailService.verifyEmailCode).toHaveBeenCalledWith(
@@ -724,12 +730,12 @@ describe('Email and Communication Integration', () => {
 
       const newPasswordInput = screen.getByTestId('new-password-input');
       const confirmPasswordInput = screen.getByTestId('confirm-password-input');
-      
-      fireEvent.change(newPasswordInput, { target: { value: 'newSecurePassword123!' } });
-      fireEvent.change(confirmPasswordInput, { target: { value: 'newSecurePassword123!' } });
+
+      await user.type(newPasswordInput, 'newSecurePassword123!');
+      await user.type(confirmPasswordInput, 'newSecurePassword123!');
 
       const resetPasswordButton = screen.getByTestId('reset-password-button');
-      fireEvent.click(resetPasswordButton);
+      await user.click(resetPasswordButton);
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
@@ -743,6 +749,7 @@ describe('Email and Communication Integration', () => {
     });
 
     it('validates password confirmation matching', async () => {
+      const user = userEvent.setup();
       renderWithProviders(<PasswordResetFlow email={mockUser.email} />);
 
       // Mock being on reset step
@@ -757,12 +764,12 @@ describe('Email and Communication Integration', () => {
 
       const newPasswordInput = screen.getByTestId('new-password-input');
       const confirmPasswordInput = screen.getByTestId('confirm-password-input');
-      
-      fireEvent.change(newPasswordInput, { target: { value: 'password1' } });
-      fireEvent.change(confirmPasswordInput, { target: { value: 'password2' } });
+
+      await user.type(newPasswordInput, 'password1');
+      await user.type(confirmPasswordInput, 'password2');
 
       const resetPasswordButton = screen.getByTestId('reset-password-button');
-      fireEvent.click(resetPasswordButton);
+      await user.click(resetPasswordButton);
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
@@ -778,6 +785,7 @@ describe('Email and Communication Integration', () => {
 
   describe('Multi-Channel Notification System', () => {
     it('sends notifications through enabled channels based on priority', async () => {
+      const user = userEvent.setup();
       const preferences = {
         email: true,
         sms: true,
@@ -793,11 +801,11 @@ describe('Email and Communication Integration', () => {
       expect(screen.getByTestId('channel-status')).toHaveTextContent('Push: Enabled');
 
       const messageInput = screen.getByTestId('test-message-input');
-      fireEvent.change(messageInput, { target: { value: 'Test urgent message' } });
+      await user.type(messageInput, 'Test urgent message');
 
       // Test high priority (should use all channels)
       const highPriorityButton = screen.getByTestId('send-high-priority');
-      fireEvent.click(highPriorityButton);
+      await user.click(highPriorityButton);
 
       await waitFor(() => {
         expect(mockEmailService.sendNotificationEmail).toHaveBeenCalledWith(
@@ -832,6 +840,7 @@ describe('Email and Communication Integration', () => {
     });
 
     it('respects channel preferences for low priority notifications', async () => {
+      const user = userEvent.setup();
       const preferences = {
         email: true,
         sms: true,
@@ -843,11 +852,11 @@ describe('Email and Communication Integration', () => {
       );
 
       const messageInput = screen.getByTestId('test-message-input');
-      fireEvent.change(messageInput, { target: { value: 'Low priority update' } });
+      await user.type(messageInput, 'Low priority update');
 
       // Test low priority (should only use email, not SMS)
       const lowPriorityButton = screen.getByTestId('send-low-priority');
-      fireEvent.click(lowPriorityButton);
+      await user.click(lowPriorityButton);
 
       await waitFor(() => {
         expect(mockEmailService.sendNotificationEmail).toHaveBeenCalledWith(
@@ -859,7 +868,7 @@ describe('Email and Communication Integration', () => {
 
         // SMS should not be sent for low priority
         expect(mockSmsService.sendUrgentNotification).not.toHaveBeenCalled();
-        
+
         // Push disabled in preferences
         expect(mockPushService.sendPushNotification).not.toHaveBeenCalled();
       });
@@ -872,6 +881,7 @@ describe('Email and Communication Integration', () => {
     });
 
     it('handles partial delivery failures', async () => {
+      const user = userEvent.setup();
       const preferences = {
         email: true,
         sms: true,
@@ -886,10 +896,10 @@ describe('Email and Communication Integration', () => {
       );
 
       const messageInput = screen.getByTestId('test-message-input');
-      fireEvent.change(messageInput, { target: { value: 'Test message' } });
+      await user.type(messageInput, 'Test message');
 
       const highPriorityButton = screen.getByTestId('send-high-priority');
-      fireEvent.click(highPriorityButton);
+      await user.click(highPriorityButton);
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
@@ -903,12 +913,13 @@ describe('Email and Communication Integration', () => {
 
   describe('Session Reminder System', () => {
     it('sends reminders based on time preferences', async () => {
+      const user = userEvent.setup();
       renderWithProviders(<SessionReminderSystem />);
 
       // Verify default settings are displayed
       const settingsDiv = screen.getByTestId('reminder-settings');
       const checkboxes = within(settingsDiv).getAllByRole('checkbox');
-      
+
       expect(checkboxes[0]).toBeChecked(); // email24h
       expect(checkboxes[1]).toBeChecked(); // email1h
       expect(checkboxes[2]).not.toBeChecked(); // sms15m
@@ -916,7 +927,7 @@ describe('Email and Communication Integration', () => {
 
       // Test session reminders
       const testButton = screen.getByTestId('test-reminders');
-      fireEvent.click(testButton);
+      await user.click(testButton);
 
       await waitFor(() => {
         expect(mockEmailService.sendSessionReminder).toHaveBeenCalledWith('test-session-123', '1h');
@@ -941,16 +952,17 @@ describe('Email and Communication Integration', () => {
     });
 
     it('allows customization of reminder preferences', async () => {
+      const user = userEvent.setup();
       renderWithProviders(<SessionReminderSystem />);
 
       const settingsDiv = screen.getByTestId('reminder-settings');
       const smsCheckbox = within(settingsDiv).getAllByRole('checkbox')[2]; // sms15m
 
       // Enable SMS reminders
-      fireEvent.click(smsCheckbox);
+      await user.click(smsCheckbox);
 
       const testButton = screen.getByTestId('test-reminders');
-      fireEvent.click(testButton);
+      await user.click(testButton);
 
       await waitFor(() => {
         expect(mockSmsService.sendSessionReminder).toHaveBeenCalledWith('test-session-123');
@@ -958,13 +970,14 @@ describe('Email and Communication Integration', () => {
     });
 
     it('handles reminder delivery failures gracefully', async () => {
+      const user = userEvent.setup();
       mockEmailService.sendSessionReminder.mockRejectedValue(new Error('Email service down'));
       mockPushService.sendPushNotification.mockRejectedValue(new Error('Push service down'));
 
       renderWithProviders(<SessionReminderSystem />);
 
       const testButton = screen.getByTestId('test-reminders');
-      fireEvent.click(testButton);
+      await user.click(testButton);
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
@@ -1052,13 +1065,14 @@ describe('Email and Communication Integration', () => {
       mockEmailService.subscribeToNewsletter.mockResolvedValue({ subscribed: true, id: 'sub-123' });
       mockEmailService.unsubscribeFromNewsletter.mockResolvedValue({ unsubscribed: true });
 
+      const user = userEvent.setup();
       renderWithProviders(<NewsletterSubscription />);
 
       const emailInput = screen.getByTestId('newsletter-email-input');
-      fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+      await user.type(emailInput, 'test@example.com');
 
       const subscribeButton = screen.getByTestId('subscribe-button');
-      fireEvent.click(subscribeButton);
+      await user.click(subscribeButton);
 
       await waitFor(() => {
         expect(mockEmailService.subscribeToNewsletter).toHaveBeenCalledWith(
@@ -1082,7 +1096,7 @@ describe('Email and Communication Integration', () => {
       });
 
       const unsubscribeButton = screen.getByTestId('unsubscribe-button');
-      fireEvent.click(unsubscribeButton);
+      await user.click(unsubscribeButton);
 
       await waitFor(() => {
         expect(mockEmailService.unsubscribeFromNewsletter).toHaveBeenCalledWith('test@example.com');
@@ -1152,10 +1166,11 @@ describe('Email and Communication Integration', () => {
         messageId: 'msg-456',
       });
 
+      const user = userEvent.setup();
       renderWithProviders(<DeliveryTracker />);
 
       const sendButton = screen.getByTestId('send-tracked-email');
-      fireEvent.click(sendButton);
+      await user.click(sendButton);
 
       await waitFor(() => {
         expect(screen.getByTestId('delivery-status')).toHaveTextContent('Message msg-456: sent');

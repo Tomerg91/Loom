@@ -17,9 +17,13 @@ vi.mock('@/hooks/use-realtime-bookings', () => ({
   useRealtimeBookings: vi.fn(),
 }));
 
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: vi.fn(),
-}));
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importOriginal<typeof import('@tanstack/react-query')>('@tanstack/react-query');
+  return {
+    ...actual,
+    useQuery: vi.fn(),
+  };
+});
 
 // Mock date-fns functions for consistent testing
 vi.mock('date-fns', async () => {

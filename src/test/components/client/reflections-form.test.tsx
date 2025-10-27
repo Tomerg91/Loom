@@ -6,11 +6,15 @@ import { ReflectionsManagement } from '@/components/client/reflections-managemen
 import { renderWithProviders, mockUseQuery, mockUseMutation, mockUser, createMockReflection } from '@/test/utils';
 
 // Mock dependencies
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: vi.fn(),
-  useMutation: vi.fn(),
-  useQueryClient: vi.fn(),
-}));
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importOriginal<typeof import('@tanstack/react-query')>('@tanstack/react-query');
+  return {
+    ...actual,
+    useQuery: vi.fn(),
+    useMutation: vi.fn(),
+    useQueryClient: vi.fn(),
+  };
+});
 
 // Mock react-hook-form
 vi.mock('react-hook-form', () => ({
