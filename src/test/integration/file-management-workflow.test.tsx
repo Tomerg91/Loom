@@ -1,4 +1,5 @@
-import { screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { renderWithProviders, mockUser, mockCoachUser, mockSupabaseClient, setupTestEnvironment } from '@/test/utils';
@@ -84,7 +85,7 @@ const FileManager = ({ userId, userRole }: { userId: string; userRole: string })
         description: `${file.name} uploaded successfully`,
         variant: 'default',
       });
-    } catch (error) {
+    } catch (_error) {
       mockToast({
         title: 'Upload Failed',
         description: `Failed to upload ${file.name}`,
@@ -218,8 +219,9 @@ describe('File Management Workflow Integration', () => {
 
   describe('File Upload Workflow', () => {
     it('uploads single file successfully', async () => {
+      const user = userEvent.setup();
       const mockFile = new File(['file content'], 'test.pdf', { type: 'application/pdf' });
-      
+
       mockFileService.uploadFile.mockResolvedValue({
         id: 'file-123',
         name: 'test.pdf',
@@ -233,13 +235,13 @@ describe('File Management Workflow Integration', () => {
       renderWithProviders(<FileManager userId={mockUser.id} userRole={mockUser.role} />);
 
       const fileInput = screen.getByTestId('file-input');
-      
+
       Object.defineProperty(fileInput, 'files', {
         value: [mockFile],
         writable: false,
       });
 
-      fireEvent.change(fileInput);
+      await user.upload(fileInput, mockFile);
 
       await waitFor(() => {
         expect(mockFileService.uploadFile).toHaveBeenCalledWith(
@@ -295,7 +297,7 @@ describe('File Management Workflow Integration', () => {
         writable: false,
       });
 
-      fireEvent.change(fileInput);
+      await user.upload(fileInput, mockFiles);
 
       await waitFor(() => {
         expect(mockFileService.uploadFile).toHaveBeenCalledTimes(3);
@@ -306,11 +308,12 @@ describe('File Management Workflow Integration', () => {
     });
 
     it('validates file types and sizes before upload', async () => {
-      const oversizedFile = new File(['x'.repeat(50 * 1024 * 1024)], 'large.pdf', { 
-        type: 'application/pdf' 
+      const user = userEvent.setup();
+      const oversizedFile = new File(['x'.repeat(50 * 1024 * 1024)], 'large.pdf', {
+        type: 'application/pdf',
       });
-      const invalidFile = new File(['content'], 'script.exe', { 
-        type: 'application/octet-stream' 
+      const invalidFile = new File(['content'], 'script.exe', {
+        type: 'application/octet-stream',
       });
 
       mockFileService.validateFile
@@ -320,13 +323,13 @@ describe('File Management Workflow Integration', () => {
       renderWithProviders(<FileManager userId={mockUser.id} userRole={mockUser.role} />);
 
       const fileInput = screen.getByTestId('file-input');
-      
+
       Object.defineProperty(fileInput, 'files', {
         value: [oversizedFile, invalidFile],
         writable: false,
       });
 
-      fireEvent.change(fileInput);
+      await user.upload(fileInput, [oversizedFile, invalidFile]);
 
       await waitFor(() => {
         expect(mockFileService.validateFile).toHaveBeenCalledWith(oversizedFile);
@@ -344,8 +347,9 @@ describe('File Management Workflow Integration', () => {
     });
 
     it('handles upload failures with retry mechanism', async () => {
+      const user = userEvent.setup();
       const mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
-      
+
       mockFileService.uploadFile
         .mockRejectedValueOnce(new Error('Network error'))
         .mockRejectedValueOnce(new Error('Network error'))
@@ -359,13 +363,13 @@ describe('File Management Workflow Integration', () => {
       renderWithProviders(<FileManager userId={mockUser.id} userRole={mockUser.role} />);
 
       const fileInput = screen.getByTestId('file-input');
-      
+
       Object.defineProperty(fileInput, 'files', {
         value: [mockFile],
         writable: false,
       });
 
-      fireEvent.change(fileInput);
+      await user.upload(fileInput, mockFile);
 
       // First attempt fails
       await waitFor(() => {
@@ -377,7 +381,7 @@ describe('File Management Workflow Integration', () => {
       });
 
       // Retry upload
-      fireEvent.change(fileInput);
+      await user.upload(fileInput, mockFile);
 
       await waitFor(() => {
         expect(mockFileService.uploadFile).toHaveBeenCalledTimes(2);
@@ -439,7 +443,7 @@ describe('File Management Workflow Integration', () => {
       renderWithProviders(<DownloadButton fileId={mockFile.id} />);
 
       const downloadButton = screen.getByRole('button', { name: /download/i });
-      fireEvent.click(downloadButton);
+      await userEvent.setup().then(user => user.click(downloadButton));
 
       await waitFor(() => {
         expect(mockFileService.downloadFile).toHaveBeenCalledWith(mockFile.id);
@@ -472,7 +476,7 @@ describe('File Management Workflow Integration', () => {
       renderWithProviders(<DownloadButton fileId="nonexistent-file" />);
 
       const downloadButton = screen.getByRole('button', { name: /download/i });
-      fireEvent.click(downloadButton);
+      await userEvent.setup().then(user => user.click(downloadButton));
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
@@ -506,7 +510,7 @@ describe('File Management Workflow Integration', () => {
       setFiles([mockFile]);
 
       const shareButton = screen.getByRole('button', { name: /share/i });
-      fireEvent.click(shareButton);
+      await userEvent.setup().then(user => user.click(shareButton));
 
       await waitFor(() => {
         expect(mockFileService.shareFile).toHaveBeenCalledWith(
@@ -540,7 +544,7 @@ describe('File Management Workflow Integration', () => {
 
       // Test coach sharing with specific client
       const shareButton = screen.getByRole('button', { name: /share/i });
-      fireEvent.click(shareButton);
+      await userEvent.setup().then(user => user.click(shareButton));
 
       await waitFor(() => {
         expect(mockFileService.shareFile).toHaveBeenCalledWith(
@@ -572,7 +576,7 @@ describe('File Management Workflow Integration', () => {
       setFiles([sharedFile]);
 
       const deleteButton = screen.getByRole('button', { name: /delete/i });
-      fireEvent.click(deleteButton);
+      await userEvent.setup().then(user => user.click(deleteButton));
 
       await waitFor(() => {
         expect(mockFileService.deleteFile).toHaveBeenCalledWith(sharedFile.id);
@@ -606,7 +610,7 @@ describe('File Management Workflow Integration', () => {
       setSelectedFiles(['file-1', 'file-2']);
 
       const bulkDeleteButton = screen.getByRole('button', { name: /delete selected \(2\)/i });
-      fireEvent.click(bulkDeleteButton);
+      await userEvent.setup().then(user => user.click(bulkDeleteButton));
 
       await waitFor(() => {
         expect(mockFileService.deleteFile).toHaveBeenCalledWith('file-1');
@@ -643,7 +647,7 @@ describe('File Management Workflow Integration', () => {
       setSelectedFiles(['file-1', 'file-2', 'file-3']);
 
       const bulkDeleteButton = screen.getByRole('button', { name: /delete selected \(3\)/i });
-      fireEvent.click(bulkDeleteButton);
+      await userEvent.setup().then(user => user.click(bulkDeleteButton));
 
       await waitFor(() => {
         expect(mockFileService.deleteFile).toHaveBeenCalledTimes(3);
@@ -697,7 +701,7 @@ describe('File Management Workflow Integration', () => {
       renderWithProviders(<FolderManager />);
 
       const createFolderButton = screen.getByRole('button', { name: /create folder/i });
-      fireEvent.click(createFolderButton);
+      await userEvent.setup().then(user => user.click(createFolderButton));
 
       await waitFor(() => {
         expect(mockFileService.createFolder).toHaveBeenCalledWith({
@@ -708,7 +712,7 @@ describe('File Management Workflow Integration', () => {
       });
 
       const moveFileButton = screen.getByRole('button', { name: /move file/i });
-      fireEvent.click(moveFileButton);
+      await userEvent.setup().then(user => user.click(moveFileButton));
 
       await waitFor(() => {
         expect(mockFileService.moveFile).toHaveBeenCalledWith('file-123', '/Session Notes');
@@ -752,7 +756,7 @@ describe('File Management Workflow Integration', () => {
       renderWithProviders(<VersionManager />);
 
       const versionButton = screen.getByRole('button', { name: /update file version/i });
-      fireEvent.click(versionButton);
+      await userEvent.setup().then(user => user.click(versionButton));
 
       await waitFor(() => {
         expect(mockFileService.uploadFile).toHaveBeenCalledWith(
@@ -806,7 +810,7 @@ describe('File Management Workflow Integration', () => {
       expect(screen.getByTestId('storage-usage')).toHaveTextContent('Storage: 90% used (45MB / 50MB)');
 
       const uploadButton = screen.getByRole('button', { name: /upload file/i });
-      fireEvent.click(uploadButton);
+      await userEvent.setup().then(user => user.click(uploadButton));
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
