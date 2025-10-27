@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useDashboardSummary, useUserProfile } from '@/lib/queries/dashboard';
 import { useAuthLoading, useUser } from '@/lib/store/auth-store';
-import { createClient } from '@/lib/supabase/client';
 
 import { ClientDashboard } from './client/client-dashboard';
 import { CoachDashboard } from './coach/coach-dashboard';
@@ -16,10 +16,17 @@ interface DashboardContentProps {
   locale: string;
 }
 
-export function DashboardContent({ translations, locale }: DashboardContentProps) {
+export function DashboardContent({
+  translations,
+  locale,
+}: DashboardContentProps) {
   const user = useUser();
   const isAuthLoading = useAuthLoading();
   const { dashboard: t, common: commonT } = translations;
+
+  // Parallel queries - both fire immediately when user is available
+  const profileQuery = useUserProfile();
+  const summaryQuery = useDashboardSummary();
 
   // Add detailed logging for debugging
   useEffect(() => {
@@ -29,9 +36,26 @@ export function DashboardContent({ translations, locale }: DashboardContentProps
       userRole: user?.role,
       userEmail: user?.email,
       isAuthLoading,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }, [user, isAuthLoading]);
+
+  // Log query states
+  useEffect(() => {
+    console.log('[DashboardContent] Query States:', {
+      profile: {
+        isLoading: profileQuery.isLoading,
+        isError: profileQuery.isError,
+        hasData: !!profileQuery.data,
+      },
+      summary: {
+        isLoading: summaryQuery.isLoading,
+        isError: summaryQuery.isError,
+        hasData: !!summaryQuery.data,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  }, [profileQuery, summaryQuery]);
 
   // Loading state
   if (isAuthLoading) {
@@ -51,13 +75,40 @@ export function DashboardContent({ translations, locale }: DashboardContentProps
     console.error('[DashboardContent] No user found after loading completed');
     return (
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <Card className="border-dashed border-muted-foreground/40 bg-muted/10 text-center">
-            <CardContent className="py-10 text-sm font-medium text-muted-foreground">
-              {t('loadError')}
-            </CardContent>
-          </Card>
+        <Card className="border-dashed border-muted-foreground/40 bg-muted/10 text-center">
+          <CardContent className="py-10 text-sm font-medium text-muted-foreground">
+            {t('loadError')}
+          </CardContent>
+        </Card>
       </div>
     );
+  }
+
+  // Handle query errors gracefully
+  if (profileQuery.isError) {
+    console.error(
+      '[DashboardContent] Profile query error:',
+      profileQuery.error
+    );
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <Card className="border-destructive/50 bg-destructive/10">
+          <CardContent className="py-10">
+            <p className="text-center text-sm font-medium text-destructive">
+              Error loading profile. Please try again.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (summaryQuery.isError) {
+    console.error(
+      '[DashboardContent] Summary query error:',
+      summaryQuery.error
+    );
+    // Don't block the entire UI for summary errors - show error in specific section
   }
 
   // Use role directly from user object (already validated by auth system)
@@ -65,7 +116,11 @@ export function DashboardContent({ translations, locale }: DashboardContentProps
   const roleVariant =
     role === 'admin' ? 'default' : role === 'coach' ? 'secondary' : 'outline';
   const roleLabel =
-    role === 'admin' ? t('roles.admin') : role === 'coach' ? t('roles.coach') : t('roles.client');
+    role === 'admin'
+      ? t('roles.admin')
+      : role === 'coach'
+        ? t('roles.coach')
+        : t('roles.client');
 
   return (
     <>
@@ -94,7 +149,11 @@ export function DashboardContent({ translations, locale }: DashboardContentProps
           />
         )}
         {role === 'client' && (
-          <ClientDashboard userId={user.id} locale={locale} translations={translations} />
+          <ClientDashboard
+            userId={user.id}
+            locale={locale}
+            translations={translations}
+          />
         )}
         {role !== 'coach' && role !== 'client' && (
           <Card>
