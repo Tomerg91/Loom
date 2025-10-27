@@ -313,6 +313,27 @@ const nextConfig = {
               reuseExistingChunk: true,
             },
 
+            // Separate dashboard from signin for better code splitting
+            dashboardChunk: {
+              test: /[\\/]src[\\/](components[\\/]dashboard|app[\\/]\[locale\][\\/]dashboard)/,
+              name: 'dashboard',
+              priority: 20,
+            },
+
+            // Vendor chunks for better caching
+            react: {
+              test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+              name: 'react-vendor',
+              priority: 30,
+              reuseExistingChunk: true,
+            },
+            query: {
+              test: /[\\/]node_modules[\\/]@tanstack[\\/]react-query/,
+              name: 'query-vendor',
+              priority: 25,
+              reuseExistingChunk: true,
+            },
+
             // Heavy libraries chunk
             vendor: {
               test: /[\\/]node_modules[\\/]/,
