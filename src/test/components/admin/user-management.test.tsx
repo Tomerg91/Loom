@@ -6,11 +6,15 @@ import { AdminUsersPage } from '@/components/admin/users-page';
 import { renderWithProviders, mockUseQuery, mockUseMutation, mockUser, mockCoachUser, mockAdminUser } from '@/test/utils';
 
 // Mock dependencies
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: vi.fn(),
-  useMutation: vi.fn(),
-  useQueryClient: vi.fn(),
-}));
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importOriginal<typeof import('@tanstack/react-query')>('@tanstack/react-query');
+  return {
+    ...actual,
+    useQuery: vi.fn(),
+    useMutation: vi.fn(),
+    useQueryClient: vi.fn(),
+  };
+});
 
 vi.mock('@/components/ui/toast-provider', () => ({
   useToast: vi.fn(() => ({
