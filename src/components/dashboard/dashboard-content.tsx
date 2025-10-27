@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { markPerformance } from '@/lib/performance';
 import { useDashboardSummary, useUserProfile } from '@/lib/queries/dashboard';
 import { useAuthLoading, useUser } from '@/lib/store/auth-store';
 
@@ -56,6 +57,25 @@ export function DashboardContent({
       timestamp: new Date().toISOString(),
     });
   }, [profileQuery, summaryQuery]);
+
+  // Performance marks - dashboard interactive
+  useEffect(() => {
+    markPerformance('dashboard-interactive');
+  }, []);
+
+  // Performance marks - profile loaded
+  useEffect(() => {
+    if (profileQuery.data) {
+      markPerformance('profile-loaded');
+    }
+  }, [profileQuery.data]);
+
+  // Performance marks - summary loaded
+  useEffect(() => {
+    if (summaryQuery.data) {
+      markPerformance('summary-loaded');
+    }
+  }, [summaryQuery.data]);
 
   // Loading state
   if (isAuthLoading) {
