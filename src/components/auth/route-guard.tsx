@@ -3,7 +3,7 @@
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { usePermission, useAnyPermission, useHasAnyRole } from '@/lib/permissions/hooks';
@@ -48,7 +48,8 @@ export function RouteGuard({
   const pathname = usePathname();
   const user = useUser();
   const isLoading = useAuthLoading();
-  
+  const [mounted, setMounted] = useState(false);
+
   // Always call hooks to avoid conditional hook calls
   const hasRequiredPermission = usePermission(requirePermission || '' as Permission);
   const hasAnyRequiredPermission = useAnyPermission(requireAnyPermission || []);
@@ -58,8 +59,13 @@ export function RouteGuard({
   const permissionSatisfied = !requirePermission || hasRequiredPermission;
   const anyPermissionSatisfied = !requireAnyPermission || hasAnyRequiredPermission;
 
+  // Track when component has mounted (hydrated)
   useEffect(() => {
-    if (isLoading) return; // Wait for auth to load
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isLoading || !mounted) return; // Wait for auth to load and hydration to complete
 
     // Batch all redirect logic to reduce effect runs
     const checkAuthAndRedirect = () => {
@@ -123,6 +129,7 @@ export function RouteGuard({
     }
   }, [
     isLoading,
+    mounted,
     user,
     permissionSatisfied,
     anyPermissionSatisfied,
@@ -176,53 +183,46 @@ export function RouteGuard({
     );
   }
 
-  // Check authorization after loading
-  if (!isLoading) {
-    // Not authenticated but auth required
-    if (requireAuth && !user) {
-      return null; // Will redirect in useEffect
-    }
-
-    // Authenticated but missing role
-    if (user && (requireRole || requireAnyRole) && !hasRequiredRole) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <Card className="w-full max-w-md" role="region" aria-live="assertive">
-            <CardContent className="flex items-center justify-center p-8 text-center">
-              <div>
-                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
-                <p className="text-muted-foreground">
-                  {unauthorizedMessage || 'You do not have permission to access this page.'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
-
-    // Authenticated but missing permission
-    if (user && (!permissionSatisfied || !anyPermissionSatisfied)) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <Card className="w-full max-w-md" role="region" aria-live="assertive">
-            <CardContent className="flex items-center justify-center p-8 text-center">
-              <div>
-                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
-                <p className="text-muted-foreground">
-                  {unauthorizedMessage || 'You do not have the required permissions for this action.'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
+  // Authenticated but missing role
+  if (!isLoading && user && (requireRole || requireAnyRole) && !hasRequiredRole) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-md" role="region" aria-live="assertive">
+          <CardContent className="flex items-center justify-center p-8 text-center">
+            <div>
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+              <p className="text-muted-foreground">
+                {unauthorizedMessage || 'You do not have permission to access this page.'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
-  // All checks passed, render children
+  // Authenticated but missing permission
+  if (!isLoading && user && (!permissionSatisfied || !anyPermissionSatisfied)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-md" role="region" aria-live="assertive">
+          <CardContent className="flex items-center justify-center p-8 text-center">
+            <div>
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+              <p className="text-muted-foreground">
+                {unauthorizedMessage || 'You do not have the required permissions for this action.'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // All checks passed or still loading/waiting for redirect - render children
+  // The redirect will happen in useEffect if needed
   return <>{children}</>;
 }
 
