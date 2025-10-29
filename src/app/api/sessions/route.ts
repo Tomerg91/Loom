@@ -1,12 +1,15 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
+import {
+  createAuthenticatedSupabaseClient,
+  propagateCookies,
+} from '@/lib/api/auth-client';
 import {
   HTTP_STATUS,
   createErrorResponse,
   createSuccessResponse,
   validateRequestBody,
 } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
 import { createLogger } from '@/modules/platform/logging/logger';
 import {
   ForbiddenSupabaseHttpError,
@@ -37,15 +40,27 @@ const createUnauthorizedResponse = () =>
     HTTP_STATUS.UNAUTHORIZED
   );
 
-async function getAuthenticatedActor(): Promise<
-  { actor: AuthActor } | { response: Response }
+async function getAuthenticatedActor(
+  request: NextRequest
+): Promise<
+  | { actor: AuthActor; authResponse: NextResponse }
+  | { response: Response; authResponse: NextResponse }
 > {
+  const { client: supabase, response: authResponse } =
+    createAuthenticatedSupabaseClient(request, new NextResponse());
+
   try {
-    const supabase = createServerClient();
-    const { data: session, error } = await supabase.auth.getUser();
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
 
     if (error || !session?.user) {
-      return { response: createUnauthorizedResponse() };
+      const errorResponse = createUnauthorizedResponse();
+      return {
+        response: propagateCookies(authResponse, errorResponse),
+        authResponse,
+      };
     }
 
     const { data: profile, error: profileError } = await supabase
@@ -66,13 +81,18 @@ async function getAuthenticatedActor(): Promise<
         id: session.user.id,
         role: (profile?.role ?? 'client') as AuthRole,
       },
+      authResponse,
     };
   } catch (error) {
     log.error('Sessions API authentication error', {
       error,
       feature: 'sessions-api',
     });
-    return { response: createUnauthorizedResponse() };
+    const errorResponse = createUnauthorizedResponse();
+    return {
+      response: propagateCookies(authResponse, errorResponse),
+      authResponse,
+    };
   }
 }
 
@@ -91,47 +111,51 @@ export const GET = async (request: NextRequest) => {
     { context: 'sessions.list.query' }
   );
 
-  const authResult = await getAuthenticatedActor();
+  const authResult = await getAuthenticatedActor(request);
   if ('response' in authResult) {
     return authResult.response;
   }
 
-  const { actor } = authResult;
+  const { actor, authResponse } = authResult;
   const view = request.nextUrl.searchParams.get('view') ?? 'calendar';
 
   try {
     if (view === 'requests') {
       const requests = await scheduler.listRequests(actor);
-      return createSuccessResponse({ requests });
+      const successResponse = createSuccessResponse({ requests });
+      return propagateCookies(authResponse, successResponse);
     }
 
     const calendar = await scheduler.listCalendar(
       actor,
       parseCalendarSearchParams(request)
     );
-    return createSuccessResponse({ sessions: calendar });
+    const successResponse = createSuccessResponse({ sessions: calendar });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     if (error instanceof SessionSchedulerError) {
-      return createErrorResponse(error.message, error.status);
+      const errorResponse = createErrorResponse(error.message, error.status);
+      return propagateCookies(authResponse, errorResponse);
     }
     log.error('Sessions API GET error', {
       error,
       feature: 'sessions-api',
     });
-    return createErrorResponse(
+    const errorResponse = createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
+    return propagateCookies(authResponse, errorResponse);
   }
 };
 
 export const POST = async (request: NextRequest) => {
-  const authResult = await getAuthenticatedActor();
+  const authResult = await getAuthenticatedActor(request);
   if ('response' in authResult) {
     return authResult.response;
   }
 
-  const { actor } = authResult;
+  const { actor, authResponse } = authResult;
   let body: unknown;
 
   try {
@@ -141,55 +165,68 @@ export const POST = async (request: NextRequest) => {
       error,
       feature: 'sessions-api',
     });
-    return createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
+    const errorResponse = createErrorResponse(
+      'Invalid JSON body',
+      HTTP_STATUS.BAD_REQUEST
+    );
+    return propagateCookies(authResponse, errorResponse);
   }
 
   try {
     ensureNoSupabaseHttpUsage(body, { context: 'sessions.create.body' });
   } catch (error) {
     if (error instanceof ForbiddenSupabaseHttpError) {
-      return createErrorResponse(
+      const errorResponse = createErrorResponse(
         'Invalid payload received.',
         HTTP_STATUS.BAD_REQUEST
       );
+      return propagateCookies(authResponse, errorResponse);
     }
     throw error;
   }
 
   const parsed = validateRequestBody(sessionRequestSchema, body);
   if (!parsed.success) {
-    return createErrorResponse(parsed.error, HTTP_STATUS.BAD_REQUEST);
+    const errorResponse = createErrorResponse(
+      parsed.error,
+      HTTP_STATUS.BAD_REQUEST
+    );
+    return propagateCookies(authResponse, errorResponse);
   }
 
   const payload = parsed.data as SessionRequestInput;
 
   if (actor.role === 'client' && payload.clientId !== actor.id) {
-    return createErrorResponse(
+    const errorResponse = createErrorResponse(
       'Clients can only schedule sessions for themselves.',
       HTTP_STATUS.FORBIDDEN
     );
+    return propagateCookies(authResponse, errorResponse);
   }
 
   try {
     const result = await scheduler.createRequest(actor, payload);
-    return createSuccessResponse(
+    const successResponse = createSuccessResponse(
       result,
       actor.role === 'client'
         ? 'Session request submitted successfully'
         : 'Session scheduled successfully',
       HTTP_STATUS.CREATED
     );
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     if (error instanceof SessionSchedulerError) {
-      return createErrorResponse(error.message, error.status);
+      const errorResponse = createErrorResponse(error.message, error.status);
+      return propagateCookies(authResponse, errorResponse);
     }
     log.error('Sessions API POST error', {
       error,
       feature: 'sessions-api',
     });
-    return createErrorResponse(
+    const errorResponse = createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
+    return propagateCookies(authResponse, errorResponse);
   }
 };
