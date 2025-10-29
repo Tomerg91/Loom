@@ -2,8 +2,16 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { serverEnv } from '@/env/server';
-import { createSuccessResponse, createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
-import { createServerClient, createAdminClient } from '@/lib/supabase/server';
+import {
+  createAuthenticatedSupabaseClient,
+  propagateCookies,
+} from '@/lib/api/auth-client';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  HTTP_STATUS,
+} from '@/lib/api/utils';
+import { createAdminClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/supabase';
 
 interface RouteParams {
@@ -14,22 +22,33 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: userId } = await params;
-    
-    // Create client from Authorization bearer if provided; fallback to cookie-based server client
+
+    // Use authenticated client helper for cookie handling
+    const { client: supabase, response: authResponse } =
+      createAuthenticatedSupabaseClient(request, new NextResponse());
+
+    // Create client from Authorization bearer if provided; fallback to request/response client
     const authHeader = request.headers.get('authorization');
-    const supabase = authHeader
+    const finalSupabase = authHeader
       ? createSupabaseClient<Database>(
           serverEnv.NEXT_PUBLIC_SUPABASE_URL!,
           serverEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
           { global: { headers: { Authorization: authHeader } } }
         )
-      : createServerClient();
-    
+      : supabase;
+
     // Get current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+      error: sessionError,
+    } = await finalSupabase.auth.getSession();
+
     if (sessionError || !session) {
-      return createErrorResponse('Authentication required', HTTP_STATUS.UNAUTHORIZED);
+      const errorResponse = createErrorResponse(
+        'Authentication required',
+        HTTP_STATUS.UNAUTHORIZED
+      );
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Only allow users to fetch their own profile or admins to fetch any profile
@@ -43,21 +62,30 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         .single();
 
       if (!currentUserProfile || currentUserProfile.role !== 'admin') {
-        return createErrorResponse('Access denied', HTTP_STATUS.FORBIDDEN);
+        const errorResponse = createErrorResponse(
+          'Access denied',
+          HTTP_STATUS.FORBIDDEN
+        );
+        return propagateCookies(authResponse, errorResponse);
       }
     }
 
     // Fetch user profile using admin client to bypass RLS
-    // This is safe because we've already validated the user can access this profile
     const adminClient = createAdminClient();
     const { data: user, error } = await adminClient
       .from('users')
-      .select('id, email, first_name, last_name, role, phone, avatar_url, timezone, language, status, created_at, updated_at, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data, mfa_enabled, mfa_setup_completed, mfa_verified_at, remember_device_enabled')
+      .select(
+        'id, email, first_name, last_name, role, phone, avatar_url, timezone, language, status, created_at, updated_at, last_seen_at, onboarding_status, onboarding_step, onboarding_completed_at, onboarding_data, mfa_enabled, mfa_setup_completed, mfa_verified_at, remember_device_enabled'
+      )
       .eq('id', userId)
       .single();
 
     if (error || !user) {
-      return createErrorResponse('User profile not found', HTTP_STATUS.NOT_FOUND);
+      const errorResponse = createErrorResponse(
+        'User profile not found',
+        HTTP_STATUS.NOT_FOUND
+      );
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Transform to AuthUser format
@@ -85,13 +113,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       rememberDeviceEnabled: user.remember_device_enabled ?? false,
     };
 
-    return createSuccessResponse(authUser);
-    
+    const successResponse = createSuccessResponse(authUser);
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     console.error('Error fetching user profile:', error);
-    return createErrorResponse(
-      'Internal server error', 
+    const errorResponse = createErrorResponse(
+      'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
+    // Note: authResponse may not be available if error occurs before creation
+    return errorResponse;
   }
 }
