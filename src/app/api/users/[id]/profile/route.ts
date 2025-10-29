@@ -23,12 +23,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: userId } = await params;
 
+    // Diagnostic logging: Check incoming request cookies
+    const incomingCookies = request.cookies.getAll();
+    console.log(
+      '[PROFILE] GET /api/users/[id]/profile - Incoming cookies:',
+      incomingCookies.map(c => c.name).join(', ') || '(none)'
+    );
+
     // Use authenticated client helper for cookie handling
     const { client: supabase, response: authResponse } =
       createAuthenticatedSupabaseClient(request, new NextResponse());
 
     // Create client from Authorization bearer if provided; fallback to request/response client
     const authHeader = request.headers.get('authorization');
+    console.log('[PROFILE] Authorization header present:', !!authHeader);
     const finalSupabase = authHeader
       ? createSupabaseClient<Database>(
           serverEnv.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,6 +50,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       data: { session },
       error: sessionError,
     } = await finalSupabase.auth.getSession();
+
+    console.log('[PROFILE] Session result:', {
+      hasSession: !!session,
+      error: sessionError?.message,
+      sessionUser: session?.user?.email,
+    });
 
     if (sessionError || !session) {
       const errorResponse = createErrorResponse(

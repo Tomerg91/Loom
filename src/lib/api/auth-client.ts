@@ -39,6 +39,13 @@ export function createAuthenticatedSupabaseClient(
   request: NextRequest,
   response: NextResponse
 ): AuthenticatedClientResult {
+  // Diagnostic logging: Check what cookies are available at this point
+  const requestCookies = request.cookies.getAll();
+  console.log(
+    '[AUTH-CLIENT] createAuthenticatedSupabaseClient called. Available request cookies:',
+    requestCookies.map(c => c.name).join(', ') || '(none)'
+  );
+
   const client = createServerClientWithRequest(request, response);
   return { client, response };
 }
