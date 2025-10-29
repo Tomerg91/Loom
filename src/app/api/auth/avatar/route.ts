@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 
 import { ApiError } from '@/lib/api/errors';
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { config } from '@/lib/config';
 import { authService } from '@/lib/services/auth-service';
@@ -8,9 +9,9 @@ import { fileService } from '@/lib/services/file-service';
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    // Get current user session
-    const session = await authService.getSession();
-    if (!session?.user) {
+    // Get current user
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     // Upload file
     const uploadResult = await fileService.uploadFile(file, {
       directory: 'avatars',
-      userId: session.user.id,
+      userId: user.id,
       resize: {
         width: 256,
         height: 256,
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     // Update user avatar URL
-    const updatedUser = await authService.updateUser(session.user.id, {
+    const updatedUser = await authService.updateUser(user.id, {
       avatarUrl: uploadResult.url,
     });
 
@@ -69,15 +70,13 @@ export async function POST(request: NextRequest): Promise<Response> {
   }
 }
 
-export async function DELETE(_request: NextRequest): Promise<Response> {
+export async function DELETE(request: NextRequest): Promise<Response> {
   try {
-    // Get current user session
-    const session = await authService.getSession();
-    if (!session?.user) {
+    // Get current user
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
       return ApiResponseHelper.unauthorized('Authentication required');
     }
-
-    const user = session.user;
 
     // Delete existing avatar file if it exists
     if (user.avatarUrl) {

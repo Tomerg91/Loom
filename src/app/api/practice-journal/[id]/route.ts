@@ -1,13 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { ApiError } from '@/lib/api/errors';
-import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import {
   mapPracticeJournalEntry,
   type PracticeJournalEntry,
   type PracticeJournalEntryRow,
 } from '@/lib/api/practice-journal/transformers';
 import { ApiResponseHelper } from '@/lib/api/types';
+import { createClient } from '@/lib/supabase/server';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -18,20 +19,15 @@ export async function GET(
   request: NextRequest,
   context: RouteContext
 ): Promise<Response> {
-  const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
-    request,
-    new NextResponse()
-  );
-
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError || !session?.user) {
-      const errorResponse = ApiResponseHelper.unauthorized('Authentication required');
-      return propagateCookies(authResponse, errorResponse);
+    // Get authenticated user
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return ApiResponseHelper.unauthorized('Authentication required');
     }
 
     const { id } = await context.params;
+    const supabase = createClient();
     // Casting is required until the Supabase generated types include practice_journal_entries
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const practiceJournalClient = supabase as any;
@@ -44,41 +40,35 @@ export async function GET(
 
     if (error) {
       if (error.code === 'PGRST116') {
-        const errorResponse = ApiResponseHelper.notFound('Practice journal entry not found');
-        return propagateCookies(authResponse, errorResponse);
+        return ApiResponseHelper.notFound('Practice journal entry not found');
       }
       throw new ApiError('FETCH_ERROR', 'Failed to fetch practice journal entry', 500);
     }
 
     // Check permissions
     if (
-      session.user.role === 'client' &&
-      data.client_id !== session.user.id
+      user.role === 'client' &&
+      data.client_id !== user.id
     ) {
-      const errorResponse = ApiResponseHelper.forbidden('You can only view your own journal entries');
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.forbidden('You can only view your own journal entries');
     }
 
     if (
-      session.user.role === 'coach' &&
+      user.role === 'coach' &&
       !data.shared_with_coach
     ) {
-      const errorResponse = ApiResponseHelper.forbidden('This entry has not been shared with you');
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.forbidden('This entry has not been shared with you');
     }
 
     const entry = mapPracticeJournalEntry(data as PracticeJournalEntryRow);
 
-    const successResponse = ApiResponseHelper.success<PracticeJournalEntry>(entry);
-    return propagateCookies(authResponse, successResponse);
+    return ApiResponseHelper.success<PracticeJournalEntry>(entry);
   } catch (error) {
     console.error('Error fetching practice journal entry:', error);
     if (error instanceof ApiError) {
-      const errorResponse = ApiResponseHelper.error(error.code, error.message, error.statusCode);
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
-    const internalErrorResponse = ApiResponseHelper.internalError('An unexpected error occurred');
-    return propagateCookies(authResponse, internalErrorResponse);
+    return ApiResponseHelper.internalError('An unexpected error occurred');
   }
 }
 
@@ -87,22 +77,15 @@ export async function PUT(
   request: NextRequest,
   context: RouteContext
 ): Promise<Response> {
-  const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
-    request,
-    new NextResponse()
-  );
-
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError || !session?.user) {
-      const errorResponse = ApiResponseHelper.unauthorized('Authentication required');
-      return propagateCookies(authResponse, errorResponse);
+    // Get authenticated user
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return ApiResponseHelper.unauthorized('Authentication required');
     }
 
-    if (session.user.role !== 'client' && session.user.role !== 'admin') {
-      const errorResponse = ApiResponseHelper.forbidden('Only clients can update their journal entries');
-      return propagateCookies(authResponse, errorResponse);
+    if (user.role !== 'client' && user.role !== 'admin') {
+      return ApiResponseHelper.forbidden('Only clients can update their journal entries');
     }
 
     const { id } = await context.params;
@@ -123,20 +106,18 @@ export async function PUT(
 
     // Validation
     if (content && content.length > 10000) {
-      const errorResponse = ApiResponseHelper.badRequest('Content must be less than 10,000 characters');
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.badRequest('Content must be less than 10,000 characters');
     }
 
     if (moodRating && (moodRating < 1 || moodRating > 10)) {
-      const errorResponse = ApiResponseHelper.badRequest('Mood rating must be between 1 and 10');
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.badRequest('Mood rating must be between 1 and 10');
     }
 
     if (energyLevel && (energyLevel < 1 || energyLevel > 10)) {
-      const errorResponse = ApiResponseHelper.badRequest('Energy level must be between 1 and 10');
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.badRequest('Energy level must be between 1 and 10');
     }
 
+    const supabase = createClient();
     // Casting is required until the Supabase generated types include practice_journal_entries
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const practiceJournalClient = supabase as any;
@@ -150,17 +131,15 @@ export async function PUT(
 
     if (fetchError) {
       if (fetchError.code === 'PGRST116') {
-        const errorResponse = ApiResponseHelper.notFound('Practice journal entry not found');
-        return propagateCookies(authResponse, errorResponse);
+        return ApiResponseHelper.notFound('Practice journal entry not found');
       }
       throw new ApiError('FETCH_ERROR', 'Failed to fetch practice journal entry', 500);
     }
 
     const existing = existingData as PracticeJournalEntryRow;
 
-    if (existing.client_id !== session.user.id && session.user.role !== 'admin') {
-      const errorResponse = ApiResponseHelper.forbidden('You can only update your own journal entries');
-      return propagateCookies(authResponse, errorResponse);
+    if (existing.client_id !== user.id && user.role !== 'admin') {
+      return ApiResponseHelper.forbidden('You can only update your own journal entries');
     }
 
     const updates: Partial<PracticeJournalEntryRow> = {};
@@ -199,19 +178,16 @@ export async function PUT(
 
     const entry = mapPracticeJournalEntry(data as PracticeJournalEntryRow);
 
-    const successResponse = ApiResponseHelper.success<PracticeJournalEntry>(
+    return ApiResponseHelper.success<PracticeJournalEntry>(
       entry,
       'Practice journal entry updated successfully'
     );
-    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     console.error('Error updating practice journal entry:', error);
     if (error instanceof ApiError) {
-      const errorResponse = ApiResponseHelper.error(error.code, error.message, error.statusCode);
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
-    const internalErrorResponse = ApiResponseHelper.internalError('An unexpected error occurred');
-    return propagateCookies(authResponse, internalErrorResponse);
+    return ApiResponseHelper.internalError('An unexpected error occurred');
   }
 }
 
@@ -220,25 +196,19 @@ export async function DELETE(
   request: NextRequest,
   context: RouteContext
 ): Promise<Response> {
-  const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
-    request,
-    new NextResponse()
-  );
-
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError || !session?.user) {
-      const errorResponse = ApiResponseHelper.unauthorized('Authentication required');
-      return propagateCookies(authResponse, errorResponse);
+    // Get authenticated user
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return ApiResponseHelper.unauthorized('Authentication required');
     }
 
-    if (session.user.role !== 'client' && session.user.role !== 'admin') {
-      const errorResponse = ApiResponseHelper.forbidden('Only clients can delete their journal entries');
-      return propagateCookies(authResponse, errorResponse);
+    if (user.role !== 'client' && user.role !== 'admin') {
+      return ApiResponseHelper.forbidden('Only clients can delete their journal entries');
     }
 
     const { id } = await context.params;
+    const supabase = createClient();
     // Casting is required until the Supabase generated types include practice_journal_entries
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const practiceJournalClient = supabase as any;
@@ -252,17 +222,15 @@ export async function DELETE(
 
     if (fetchError) {
       if (fetchError.code === 'PGRST116') {
-        const errorResponse = ApiResponseHelper.notFound('Practice journal entry not found');
-        return propagateCookies(authResponse, errorResponse);
+        return ApiResponseHelper.notFound('Practice journal entry not found');
       }
       throw new ApiError('FETCH_ERROR', 'Failed to fetch practice journal entry', 500);
     }
 
     const existing = existingData as Pick<PracticeJournalEntryRow, 'client_id'>;
 
-    if (existing.client_id !== session.user.id && session.user.role !== 'admin') {
-      const errorResponse = ApiResponseHelper.forbidden('You can only delete your own journal entries');
-      return propagateCookies(authResponse, errorResponse);
+    if (existing.client_id !== user.id && user.role !== 'admin') {
+      return ApiResponseHelper.forbidden('You can only delete your own journal entries');
     }
 
     const { error } = await practiceJournalClient
@@ -274,15 +242,12 @@ export async function DELETE(
       throw new ApiError('DELETE_ERROR', 'Failed to delete practice journal entry', 500);
     }
 
-    const successResponse = ApiResponseHelper.success(null, 'Practice journal entry deleted successfully');
-    return propagateCookies(authResponse, successResponse);
+    return ApiResponseHelper.success(null, 'Practice journal entry deleted successfully');
   } catch (error) {
     console.error('Error deleting practice journal entry:', error);
     if (error instanceof ApiError) {
-      const errorResponse = ApiResponseHelper.error(error.code, error.message, error.statusCode);
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
-    const internalErrorResponse = ApiResponseHelper.internalError('An unexpected error occurred');
-    return propagateCookies(authResponse, internalErrorResponse);
+    return ApiResponseHelper.internalError('An unexpected error occurred');
   }
 }

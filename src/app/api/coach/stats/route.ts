@@ -2,9 +2,9 @@ import { NextRequest } from 'next/server';
 
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { getCoachSessionRate } from '@/lib/coach-dashboard/coach-profile';
 import { getDefaultCoachRating } from '@/lib/config/analytics-constants';
-import { authService } from '@/lib/services/auth-service';
 import { createClient } from '@/lib/supabase/server';
 
 interface DashboardStats {
@@ -18,33 +18,25 @@ interface DashboardStats {
   totalRevenue: number;
 }
 
-export async function GET(_request: NextRequest): Promise<Response> {
+export async function GET(request: NextRequest): Promise<Response> {
   try {
-    // Verify authentication and get user
-    const session = await authService.getSession();
+    // Verify authentication and get user from Authorization header
+    const user = await getAuthenticatedUser(request);
 
-    console.log('[/api/coach/stats] Auth check:', {
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
-      userRole: session?.user?.role,
-      timestamp: new Date().toISOString()
-    });
-
-    if (!session?.user) {
-      console.error('[/api/coach/stats] No session or user found');
+    if (!user) {
+      console.error('[/api/coach/stats] Authentication failed: No user found');
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
-    if (session.user.role !== 'coach') {
-      console.error('[/api/coach/stats] User is not a coach:', {
-        userId: session.user.id,
-        role: session.user.role
+    if (user.role !== 'coach') {
+      console.error('[/api/coach/stats] Authorization failed: User is not a coach', {
+        userId: user.id,
+        role: user.role
       });
-      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${session.user.role}`);
+      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${user.role}`);
     }
 
-    const coachId = session.user.id;
+    const coachId = user.id;
     const supabase = createClient();
 
     console.log('[/api/coach/stats] Fetching stats for coach:', coachId);

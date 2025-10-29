@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { ApiError } from '@/lib/api/errors';
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { rateLimit } from '@/lib/security/rate-limit';
-import { authService } from '@/lib/services/auth-service';
 import { userService } from '@/lib/services/user-service';
 
 
@@ -21,8 +21,8 @@ const rateLimitedHandler = rateLimit(100, 60000)( // 100 requests per minute for
   async (request: NextRequest): Promise<NextResponse> => {
   try {
     // Verify admin access
-    const session = await authService.getSession();
-    if (!session?.user || session.user.role !== 'admin') {
+    const user = await getAuthenticatedUser(request);
+    if (!user || user.role !== 'admin') {
       return ApiResponseHelper.forbidden('Admin access required');
     }
 

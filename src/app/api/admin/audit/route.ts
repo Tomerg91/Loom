@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { adminSystemService } from '@/lib/database/admin-system';
-import { authService } from '@/lib/services/auth-service';
 
 
 const auditQuerySchema = z.object({
@@ -15,8 +15,8 @@ const auditQuerySchema = z.object({
 export async function GET(request: NextRequest): Promise<Response> {
   try {
     // Verify admin access
-    const session = await authService.getSession();
-    if (!session?.user || session.user.role !== 'admin') {
+    const user = await getAuthenticatedUser(request);
+    if (!user || user.role !== 'admin') {
       return ApiResponseHelper.forbidden('Admin access required');
     }
 

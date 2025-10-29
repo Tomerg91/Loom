@@ -1,14 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
-import {
-  createAuthenticatedSupabaseClient,
-  propagateCookies,
-} from '@/lib/api/auth-client';
-import {
-  createSuccessResponse,
-  createErrorResponse,
-  HTTP_STATUS,
-} from '@/lib/api/utils';
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
+import { ApiResponseHelper } from '@/lib/api/types';
+import { createClient } from '@/lib/supabase/server';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -16,39 +10,22 @@ interface RouteParams {
 
 // PATCH /api/users/[id]/last-seen - Update user's last seen timestamp
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  // Declare authResponse outside try block so it's accessible in catch
-  const authResponse = new NextResponse();
-
   try {
     const { id: userId } = await params;
 
-    const { client: supabase } = createAuthenticatedSupabaseClient(
-      request,
-      authResponse
-    );
-
-    // Get current session
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    if (sessionError || !session) {
-      return propagateCookies(
-        authResponse,
-        createErrorResponse('Authentication required', HTTP_STATUS.UNAUTHORIZED)
-      );
+    // Get authenticated user
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return ApiResponseHelper.unauthorized('Authentication required');
     }
 
     // Only allow users to update their own last seen timestamp
-    if (session.user.id !== userId) {
-      return propagateCookies(
-        authResponse,
-        createErrorResponse('Access denied', HTTP_STATUS.FORBIDDEN)
-      );
+    if (user.id !== userId) {
+      return ApiResponseHelper.forbidden('Access denied');
     }
 
     // Update last seen timestamp
+    const supabase = createClient();
     const { error: updateError } = await supabase
       .from('users')
       .update({ last_seen_at: new Date().toISOString() })
@@ -56,27 +33,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (updateError) {
       console.error('Error updating last seen:', updateError);
-      return propagateCookies(
-        authResponse,
-        createErrorResponse(
-          'Failed to update last seen timestamp',
-          HTTP_STATUS.INTERNAL_SERVER_ERROR
-        )
-      );
+      return ApiResponseHelper.internalError('Failed to update last seen timestamp');
     }
 
-    return propagateCookies(
-      authResponse,
-      createSuccessResponse(null, 'Last seen timestamp updated successfully')
-    );
+    return ApiResponseHelper.success(null, 'Last seen timestamp updated successfully');
   } catch (error) {
     console.error('Error updating last seen:', error);
-    return propagateCookies(
-      authResponse,
-      createErrorResponse(
-        'Internal server error',
-        HTTP_STATUS.INTERNAL_SERVER_ERROR
-      )
-    );
+    return ApiResponseHelper.internalError('Failed to update last seen timestamp');
   }
 }

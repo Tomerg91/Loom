@@ -8,8 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { compose, withAuth, withRole, withRateLimit } from '@/lib/api';
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiResponseHelper } from '@/lib/api/types';
-import { authService } from '@/lib/services/auth-service';
 import { createServerClient } from '@/lib/supabase/server';
 
 interface SystemHealth {
@@ -41,8 +41,8 @@ interface SystemHealth {
 export const GET = compose(async function(request: NextRequest) {
   try {
     // Verify admin authentication
-    const session = await authService.getSession();
-    if (!session?.user || session.user.role !== 'admin') {
+    const user = await getAuthenticatedUser(request);
+    if (!user || user.role !== 'admin') {
       return ApiResponseHelper.forbidden('Admin access required');
     }
 

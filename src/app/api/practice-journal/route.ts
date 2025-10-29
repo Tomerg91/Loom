@@ -1,30 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { ApiError } from '@/lib/api/errors';
-import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import {
   mapPracticeJournalEntries,
   mapPracticeJournalEntry,
   type PracticeJournalEntry,
 } from '@/lib/api/practice-journal/transformers';
 import { ApiResponseHelper } from '@/lib/api/types';
+import { createClient } from '@/lib/supabase/server';
 
 // GET: Fetch practice journal entries
 export async function GET(request: NextRequest): Promise<Response> {
-  const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
-    request,
-    new NextResponse()
-  );
-
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError || !session?.user) {
-      const errorResponse = ApiResponseHelper.unauthorized('Authentication required');
-      return propagateCookies(authResponse, errorResponse);
+    // Get authenticated user
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return ApiResponseHelper.unauthorized('Authentication required');
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
@@ -32,6 +27,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const search = searchParams.get('search') || '';
     const sessionId = searchParams.get('sessionId');
 
+    const supabase = createClient();
     // Casting is required until the Supabase generated types include practice_journal_entries
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const practiceJournalClient = supabase as any;
@@ -43,17 +39,17 @@ export async function GET(request: NextRequest): Promise<Response> {
       .range(offset, offset + limit - 1);
 
     // Filter by user role
-    if (session.user.role === 'client') {
+    if (user.role === 'client') {
       // Clients see their own entries
       query = query.eq('client_id', userId);
-    } else if (session.user.role === 'coach') {
+    } else if (user.role === 'coach') {
       // Coaches see only shared entries
       query = query.eq('shared_with_coach', true);
     }
     // Admins see all entries (no filter)
 
     // Additional filters
-    if (sharedOnly && session.user.role === 'client') {
+    if (sharedOnly && user.role === 'client') {
       query = query.eq('shared_with_coach', true);
     }
 
@@ -73,7 +69,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const entries: PracticeJournalEntry[] = mapPracticeJournalEntries(data);
 
-    const successResponse = ApiResponseHelper.success({
+    return ApiResponseHelper.success({
       entries,
       pagination: {
         total: count || 0,
@@ -82,36 +78,26 @@ export async function GET(request: NextRequest): Promise<Response> {
         hasMore: count ? offset + limit < count : false,
       },
     });
-    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     console.error('Error fetching practice journal entries:', error);
     if (error instanceof ApiError) {
-      const errorResponse = ApiResponseHelper.error(error.code, error.message, error.statusCode);
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
-    const internalErrorResponse = ApiResponseHelper.internalError('An unexpected error occurred');
-    return propagateCookies(authResponse, internalErrorResponse);
+    return ApiResponseHelper.internalError('An unexpected error occurred');
   }
 }
 
 // POST: Create new practice journal entry
 export async function POST(request: NextRequest): Promise<Response> {
-  const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
-    request,
-    new NextResponse()
-  );
-
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError || !session?.user) {
-      const errorResponse = ApiResponseHelper.unauthorized('Authentication required');
-      return propagateCookies(authResponse, errorResponse);
+    // Get authenticated user
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return ApiResponseHelper.unauthorized('Authentication required');
     }
 
-    if (session.user.role !== 'client' && session.user.role !== 'admin') {
-      const errorResponse = ApiResponseHelper.forbidden('Only clients can create practice journal entries');
-      return propagateCookies(authResponse, errorResponse);
+    if (user.role !== 'client' && user.role !== 'admin') {
+      return ApiResponseHelper.forbidden('Only clients can create practice journal entries');
     }
 
     const body = await request.json();
@@ -131,30 +117,27 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     // Validation
     if (!content || content.trim().length === 0) {
-      const errorResponse = ApiResponseHelper.badRequest('Content is required');
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.badRequest('Content is required');
     }
 
     if (content.length > 10000) {
-      const errorResponse = ApiResponseHelper.badRequest('Content must be less than 10,000 characters');
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.badRequest('Content must be less than 10,000 characters');
     }
 
     if (moodRating && (moodRating < 1 || moodRating > 10)) {
-      const errorResponse = ApiResponseHelper.badRequest('Mood rating must be between 1 and 10');
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.badRequest('Mood rating must be between 1 and 10');
     }
 
     if (energyLevel && (energyLevel < 1 || energyLevel > 10)) {
-      const errorResponse = ApiResponseHelper.badRequest('Energy level must be between 1 and 10');
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.badRequest('Energy level must be between 1 and 10');
     }
 
+    const supabase = createClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const practiceJournalClient = supabase as any;
 
     const newEntry = {
-      client_id: session.user.id,
+      client_id: user.id,
       content: content.trim(),
       title: title?.trim() || null,
       sensations: sensations || null,
@@ -181,15 +164,12 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     const entry = mapPracticeJournalEntry(data);
 
-    const successResponse = ApiResponseHelper.created(entry, 'Practice journal entry created successfully');
-    return propagateCookies(authResponse, successResponse);
+    return ApiResponseHelper.created(entry, 'Practice journal entry created successfully');
   } catch (error) {
     console.error('Error creating practice journal entry:', error);
     if (error instanceof ApiError) {
-      const errorResponse = ApiResponseHelper.error(error.code, error.message, error.statusCode);
-      return propagateCookies(authResponse, errorResponse);
+      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
-    const internalErrorResponse = ApiResponseHelper.internalError('An unexpected error occurred');
-    return propagateCookies(authResponse, internalErrorResponse);
+    return ApiResponseHelper.internalError('An unexpected error occurred');
   }
 }
