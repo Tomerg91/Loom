@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
+  createAuthenticatedSupabaseClient,
+  propagateCookies,
+} from '@/lib/api/auth-client';
+import {
   createSuccessResponse,
   createErrorResponse,
   HTTP_STATUS,
 } from '@/lib/api/utils';
-import {
-  createAuthenticatedSupabaseClient,
-  propagateCookies,
-} from '@/lib/api/auth-client';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -16,11 +16,16 @@ interface RouteParams {
 
 // PATCH /api/users/[id]/last-seen - Update user's last seen timestamp
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  // Declare authResponse outside try block so it's accessible in catch
+  const authResponse = new NextResponse();
+
   try {
     const { id: userId } = await params;
 
-    const { client: supabase, response: authResponse } =
-      createAuthenticatedSupabaseClient(request, new NextResponse());
+    const { client: supabase } = createAuthenticatedSupabaseClient(
+      request,
+      authResponse
+    );
 
     // Get current session
     const {
@@ -66,9 +71,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     );
   } catch (error) {
     console.error('Error updating last seen:', error);
-    return createErrorResponse(
-      'Internal server error',
-      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    return propagateCookies(
+      authResponse,
+      createErrorResponse(
+        'Internal server error',
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      )
     );
   }
 }

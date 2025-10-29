@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
+  createAuthenticatedSupabaseClient,
+  propagateCookies,
+} from '@/lib/api/auth-client';
+import {
   HTTP_STATUS,
   createErrorResponse,
   createSuccessResponse,
   validateRequestBody,
 } from '@/lib/api/utils';
-import {
-  createAuthenticatedSupabaseClient,
-  propagateCookies,
-} from '@/lib/api/auth-client';
 import {
   SessionSchedulerError,
   SessionSchedulerService,
@@ -28,26 +28,22 @@ type AuthActor = {
 
 const scheduler = new SessionSchedulerService();
 
-const createUnauthorizedResponse = () =>
-  createErrorResponse(
-    'Authentication required. Please sign in again.',
-    HTTP_STATUS.UNAUTHORIZED
-  );
-
 async function getAuthenticatedActor(
-  request: NextRequest,
-  authResponse: NextResponse
-): Promise<{ actor: AuthActor } | { response: Response }> {
+  request: NextRequest
+): Promise<
+  | { actor: AuthActor; authResponse: NextResponse }
+  | { error: string; authResponse: NextResponse }
+> {
+  const { client: supabase, response: authResponse } =
+    createAuthenticatedSupabaseClient(request, new NextResponse());
+
   try {
-    const { client: supabase } = createAuthenticatedSupabaseClient(
-      request,
-      authResponse
-    );
     const { data: session, error } = await supabase.auth.getUser();
 
     if (error || !session?.user) {
       return {
-        response: propagateCookies(authResponse, createUnauthorizedResponse()),
+        error: 'Unauthorized',
+        authResponse,
       };
     }
 
@@ -69,11 +65,13 @@ async function getAuthenticatedActor(
         id: session.user.id,
         role: (profile?.role ?? 'client') as AuthRole,
       },
+      authResponse,
     };
   } catch (error) {
     console.error('Session update API authentication error:', error);
     return {
-      response: propagateCookies(authResponse, createUnauthorizedResponse()),
+      error: 'Internal server error',
+      authResponse,
     };
   }
 }
@@ -83,13 +81,19 @@ export const PATCH = async (
   context: { params: Promise<{ id: string }> }
 ) => {
   const params = await context.params;
-  const authResponse = new NextResponse();
-  const authResult = await getAuthenticatedActor(request, authResponse);
-  if ('response' in authResult) {
-    return authResult.response;
+  const authResult = await getAuthenticatedActor(request);
+
+  if ('error' in authResult) {
+    const errorResponse = createErrorResponse(
+      authResult.error,
+      authResult.error === 'Unauthorized'
+        ? HTTP_STATUS.UNAUTHORIZED
+        : HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
+    return propagateCookies(authResult.authResponse, errorResponse);
   }
 
-  const { actor } = authResult;
+  const { actor, authResponse } = authResult;
   let body: unknown;
 
   try {
