@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
+import { createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
 
 const updateNoteSchema = z.object({
   title: z.string().min(1).max(100).optional(),
@@ -42,11 +43,15 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const params = await context.params;
   try {
     const { id } = params;
-    const supabase = createServerClient();
+    const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+      request,
+      new NextResponse()
+    );
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Get user profile to determine role
@@ -57,7 +62,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .single();
 
     if (!profile) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('User not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Determine table and owner field based on user role
@@ -75,11 +81,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     if (error) {
       console.error('Error fetching note:', error);
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('Note not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     if (!data) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('Note not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Type assertion to resolve GenericStringError union
@@ -101,7 +109,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       updatedAt: note.updated_at,
     };
 
-    return NextResponse.json({ data: transformedNote });
+    const successResponse = NextResponse.json({ data: transformedNote });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     console.error('Error in note GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -112,11 +121,15 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   const params = await context.params;
   try {
     const { id } = params;
-    const supabase = createServerClient();
+    const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+      request,
+      new NextResponse()
+    );
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Get user profile to determine role
@@ -127,7 +140,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       .single();
 
     if (!profile) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('User not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     const body = await request.json();
@@ -146,7 +160,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       .single();
 
     if (fetchError || !existingNote) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('Note not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Prepare update data
@@ -182,11 +197,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     if (error) {
       console.error('Error updating note:', error);
-      return NextResponse.json({ error: 'Failed to update note' }, { status: 500 });
+      const errorResponse = createErrorResponse('Failed to update note', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     if (!data) {
-      return NextResponse.json({ error: 'Failed to update note' }, { status: 500 });
+      const errorResponse = createErrorResponse('Failed to update note', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Type assertion to resolve GenericStringError union
@@ -208,7 +225,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       updatedAt: note.updated_at,
     };
 
-    return NextResponse.json({ data: transformedNote });
+    const successResponse = NextResponse.json({ data: transformedNote });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -226,11 +244,15 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   const params = await context.params;
   try {
     const { id } = params;
-    const supabase = createServerClient();
+    const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+      request,
+      new NextResponse()
+    );
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Get user profile to determine role
@@ -241,7 +263,8 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       .single();
 
     if (!profile) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('User not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Determine table and owner field based on user role
@@ -257,7 +280,8 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       .single();
 
     if (fetchError || !existingNote) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('Note not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Delete note
@@ -269,10 +293,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     if (error) {
       console.error('Error deleting note:', error);
-      return NextResponse.json({ error: 'Failed to delete note' }, { status: 500 });
+      const errorResponse = createErrorResponse('Failed to delete note', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return propagateCookies(authResponse, errorResponse);
     }
 
-    return NextResponse.json({ message: 'Note deleted successfully' });
+    const successResponse = NextResponse.json({ message: 'Note deleted successfully' });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     console.error('Error in note DELETE:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

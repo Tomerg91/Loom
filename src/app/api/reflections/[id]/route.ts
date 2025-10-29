@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
+import { createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
 
 const updateReflectionSchema = z.object({
   content: z.string().min(10).max(2000).optional(),
@@ -19,11 +20,15 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const supabase = createServerClient();
+    const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+      request,
+      new NextResponse()
+    );
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     const { data: reflection, error } = await supabase
@@ -44,7 +49,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .single();
 
     if (error || !reflection) {
-      return NextResponse.json({ error: 'Reflection not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('Reflection not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Transform response
@@ -60,7 +66,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       updatedAt: reflection.updated_at,
     };
 
-    return NextResponse.json({ data: transformedReflection });
+    const successResponse = NextResponse.json({ data: transformedReflection });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     console.error('Error in reflection GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -70,11 +77,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const supabase = createServerClient();
+    const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+      request,
+      new NextResponse()
+    );
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     const body = await request.json();
@@ -89,7 +100,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       .single();
 
     if (fetchError || !existingReflection) {
-      return NextResponse.json({ error: 'Reflection not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('Reflection not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Update reflection
@@ -119,7 +131,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (error) {
       console.error('Error updating reflection:', error);
-      return NextResponse.json({ error: 'Failed to update reflection' }, { status: 500 });
+      const errorResponse = createErrorResponse('Failed to update reflection', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Transform response
@@ -135,7 +148,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       updatedAt: reflection.updated_at,
     };
 
-    return NextResponse.json({ data: transformedReflection });
+    const successResponse = NextResponse.json({ data: transformedReflection });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -152,11 +166,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const supabase = createServerClient();
+    const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+      request,
+      new NextResponse()
+    );
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Verify reflection exists and belongs to user
@@ -168,7 +186,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       .single();
 
     if (fetchError || !existingReflection) {
-      return NextResponse.json({ error: 'Reflection not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('Reflection not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Delete reflection
@@ -180,10 +199,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     if (error) {
       console.error('Error deleting reflection:', error);
-      return NextResponse.json({ error: 'Failed to delete reflection' }, { status: 500 });
+      const errorResponse = createErrorResponse('Failed to delete reflection', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return propagateCookies(authResponse, errorResponse);
     }
 
-    return NextResponse.json({ message: 'Reflection deleted successfully' });
+    const successResponse = NextResponse.json({ message: 'Reflection deleted successfully' });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     console.error('Error in reflection DELETE:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

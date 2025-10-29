@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
+import { createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
 import { getCachedData, CacheKeys, CacheTTL, CacheInvalidation } from '@/lib/performance/cache';
-import { createServerClient } from '@/lib/supabase/server';
 
 const createReflectionSchema = z.object({
   sessionId: z.string().optional(),
@@ -14,11 +15,15 @@ const createReflectionSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+      request,
+      new NextResponse()
+    );
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Get query parameters
@@ -123,7 +128,7 @@ export async function GET(request: NextRequest) {
       updatedAt: reflection.updated_at,
     })) || [];
 
-    return NextResponse.json({
+    const successResponse = NextResponse.json({
       data: transformedReflections,
       pagination: {
         page,
@@ -134,6 +139,7 @@ export async function GET(request: NextRequest) {
         hasPrev: page > 1,
       },
     });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     console.error('Error in reflections GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -142,11 +148,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+      request,
+      new NextResponse()
+    );
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     const body = await request.json();
@@ -160,7 +170,8 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profile?.role !== 'client') {
-      return NextResponse.json({ error: 'Only clients can create reflections' }, { status: 403 });
+      const errorResponse = createErrorResponse('Only clients can create reflections', HTTP_STATUS.FORBIDDEN);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // If sessionId provided, verify it exists and belongs to the client
@@ -173,7 +184,8 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (!sessionExists) {
-        return NextResponse.json({ error: 'Session not found or access denied' }, { status: 404 });
+        const errorResponse = createErrorResponse('Session not found or access denied', HTTP_STATUS.NOT_FOUND);
+        return propagateCookies(authResponse, errorResponse);
       }
     }
 
@@ -193,9 +205,10 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating reflection:', error);
-      return NextResponse.json({ error: 'Failed to create reflection' }, { status: 500 });
+      const errorResponse = createErrorResponse('Failed to create reflection', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return propagateCookies(authResponse, errorResponse);
     }
-    
+
     // Invalidate cache for this user's reflections
     CacheInvalidation.user(user.id);
 
@@ -212,7 +225,8 @@ export async function POST(request: NextRequest) {
       updatedAt: reflection.updated_at,
     };
 
-    return NextResponse.json({ data: transformedReflection }, { status: 201 });
+    const successResponse = NextResponse.json({ data: transformedReflection }, { status: 201 });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
+import { createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
 
 const createNoteSchema = z.object({
   clientId: z.string().min(1).optional(),
@@ -17,11 +18,15 @@ const createNoteSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+      request,
+      new NextResponse()
+    );
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Get user profile to determine role
@@ -32,7 +37,8 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (!profile) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('User not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Get query parameters
@@ -110,7 +116,8 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching notes:', error);
-      return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 });
+      const errorResponse = createErrorResponse('Failed to fetch notes', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Get total count for pagination - use type assertion to avoid complex union type
@@ -169,7 +176,7 @@ export async function GET(request: NextRequest) {
       updatedAt: note.updated_at,
     })) || [];
 
-    return NextResponse.json({
+    const successResponse = NextResponse.json({
       data: transformedNotes,
       pagination: {
         page,
@@ -180,6 +187,7 @@ export async function GET(request: NextRequest) {
         hasPrev: page > 1,
       },
     });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     console.error('Error in notes GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -188,11 +196,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+      request,
+      new NextResponse()
+    );
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     const body = await request.json();
@@ -206,7 +218,8 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!profile) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      const errorResponse = createErrorResponse('User not found', HTTP_STATUS.NOT_FOUND);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Determine table and prepare data based on user role
@@ -223,7 +236,8 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (!clientExists) {
-        return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+        const errorResponse = createErrorResponse('Client not found', HTTP_STATUS.NOT_FOUND);
+        return propagateCookies(authResponse, errorResponse);
       }
     }
 
@@ -245,11 +259,13 @@ export async function POST(request: NextRequest) {
       const { data: sessionExists } = await sessionQuery.eq('id', validatedData.sessionId).single();
 
       if (!sessionExists) {
-        return NextResponse.json({ error: 'Session not found or access denied' }, { status: 404 });
+        const errorResponse = createErrorResponse('Session not found or access denied', HTTP_STATUS.NOT_FOUND);
+        return propagateCookies(authResponse, errorResponse);
       }
     }
 
     // Prepare insert data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const insertData: any = {
       [ownerField]: user.id,
       session_id: validatedData.sessionId || null,
@@ -276,7 +292,8 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating note:', error);
-      return NextResponse.json({ error: 'Failed to create note' }, { status: 500 });
+      const errorResponse = createErrorResponse('Failed to create note', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Transform response
@@ -295,7 +312,8 @@ export async function POST(request: NextRequest) {
       updatedAt: note.updated_at,
     };
 
-    return NextResponse.json({ data: transformedNote }, { status: 201 });
+    const successResponse = NextResponse.json({ data: transformedNote }, { status: 201 });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
