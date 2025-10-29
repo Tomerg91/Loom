@@ -1,232 +1,62 @@
-import { config } from '@/lib/config';
-import type { Language, UserRole } from '@/types';
+// src/lib/api/auth-client.ts
+/**
+ * @fileoverview Helper for creating authenticated Supabase clients in API routes
+ * with proper cookie handling for both reading and writing auth tokens.
+ *
+ * All authenticated API routes MUST use this instead of createServerClient()
+ * to ensure authentication cookies are properly read from requests.
+ */
 
-export interface AuthUser {
-  id: string;
-  email: string;
-  role: UserRole;
-  firstName?: string;
-  lastName?: string;
-  avatarUrl?: string;
-  language: Language;
+import { NextRequest, NextResponse } from 'next/server';
+
+import { createServerClientWithRequest } from '@/modules/platform/supabase/server';
+
+export interface AuthenticatedClientResult {
+  client: ReturnType<typeof createServerClientWithRequest>;
+  response: NextResponse;
 }
 
-export interface SignUpData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  phone?: string;
-  language: Language;
+/**
+ * Creates an authenticated Supabase client with request/response cookie handling.
+ *
+ * This MUST be used in any authenticated API route instead of createServerClient().
+ * The pattern is:
+ *
+ * ```typescript
+ * const { client, response } = createAuthenticatedSupabaseClient(request, new NextResponse());
+ * const { data: { session } } = await client.auth.getSession();
+ * // ... business logic ...
+ * const finalResponse = createSuccessResponse(data);
+ * response.cookies.getAll().forEach(cookie => finalResponse.cookies.set(cookie));
+ * return finalResponse;
+ * ```
+ *
+ * @param request - Next.js request object
+ * @param response - Next.js response object for cookie propagation
+ * @returns Object with authenticated client and response
+ */
+export function createAuthenticatedSupabaseClient(
+  request: NextRequest,
+  response: NextResponse
+): AuthenticatedClientResult {
+  const client = createServerClientWithRequest(request, response);
+  return { client, response };
 }
 
-export interface SignInData {
-  email: string;
-  password: string;
-  rememberMe?: boolean;
+/**
+ * Helper to propagate cookies from auth response to API response.
+ * Call this before returning any response in an authenticated route.
+ *
+ * @param authResponse - Response object with cookies set by Supabase client
+ * @param apiResponse - Response to send to client
+ * @returns apiResponse with cookies propagated
+ */
+export function propagateCookies(
+  authResponse: NextResponse,
+  apiResponse: NextResponse
+): NextResponse {
+  authResponse.cookies.getAll().forEach(cookie => {
+    apiResponse.cookies.set(cookie);
+  });
+  return apiResponse;
 }
-
-export interface UpdateProfileData {
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  bio?: string;
-  location?: string;
-  website?: string;
-  avatarUrl?: string;
-  language?: Language;
-  specialties?: string[];
-}
-
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  user?: AuthUser;
-  error?: string;
-  message?: string;
-  details?: string[];
-}
-
-class AuthApiClient {
-  private readonly baseUrl: string;
-  private readonly authEndpoints = config.endpoints.auth;
-  private readonly httpConfig = config.http;
-
-  constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '') {
-    this.baseUrl = baseUrl.replace(/\/$/, '');
-  }
-
-  private resolveUrl(endpoint: string): string {
-    return `${this.baseUrl}${endpoint}`;
-  }
-
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
-    try {
-      const url = this.resolveUrl(endpoint);
-      const headers = new Headers(options.headers ?? {});
-
-      if (!headers.has('Content-Type')) {
-        headers.set('Content-Type', this.httpConfig.contentTypes.JSON);
-      }
-
-      const response = await fetch(url, {
-        ...options,
-        headers,
-        credentials: options.credentials ?? 'include',
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.error || 'An error occurred',
-          details: data.details,
-        };
-      }
-
-      return {
-        success: true,
-        ...data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Network error',
-      };
-    }
-  }
-
-  /**
-   * Sign up a new user
-   */
-  async signUp(data: SignUpData): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>(this.authEndpoints.SIGN_UP, {
-      method: this.httpConfig.methods.POST,
-      body: JSON.stringify(data),
-    });
-  }
-
-  /**
-   * Sign in an existing user
-   */
-  async signIn(data: SignInData): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>(this.authEndpoints.SIGN_IN, {
-      method: this.httpConfig.methods.POST,
-      body: JSON.stringify(data),
-    });
-  }
-
-  /**
-   * Sign out the current user
-   */
-  async signOut(): Promise<ApiResponse> {
-    return this.request(this.authEndpoints.SIGN_OUT, {
-      method: this.httpConfig.methods.POST,
-    });
-  }
-
-  /**
-   * Get the current user profile
-   */
-  async getCurrentUser(): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>(this.authEndpoints.ME);
-  }
-
-  /**
-   * Get the current session
-   */
-  async getSession(): Promise<ApiResponse> {
-    return this.request(this.authEndpoints.SESSION);
-  }
-
-  /**
-   * Terminate the current session
-   */
-  async terminateSession(): Promise<ApiResponse> {
-    return this.request(this.authEndpoints.SESSION, {
-      method: this.httpConfig.methods.DELETE,
-    });
-  }
-
-  /**
-   * Reset password
-   */
-  async resetPassword(email: string): Promise<ApiResponse> {
-    return this.request(this.authEndpoints.RESET_PASSWORD, {
-      method: this.httpConfig.methods.POST,
-      body: JSON.stringify({ email }),
-    });
-  }
-
-  /**
-   * Update password
-   */
-  async updatePassword(password: string, confirmPassword: string): Promise<ApiResponse> {
-    return this.request(this.authEndpoints.UPDATE_PASSWORD, {
-      method: this.httpConfig.methods.POST,
-      body: JSON.stringify({ password, confirmPassword }),
-    });
-  }
-
-  /**
-   * Get user profile
-   */
-  async getProfile(): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>(this.authEndpoints.PROFILE);
-  }
-
-  /**
-   * Update user profile
-   */
-  async updateProfile(data: UpdateProfileData): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>(this.authEndpoints.PROFILE, {
-      method: this.httpConfig.methods.PUT,
-      body: JSON.stringify(data),
-    });
-  }
-
-  /**
-   * Verify email token
-   */
-  async verifyToken(tokenHash: string, type: string = 'signup'): Promise<ApiResponse<AuthUser>> {
-    return this.request<AuthUser>(this.authEndpoints.VERIFY, {
-      method: this.httpConfig.methods.POST,
-      body: JSON.stringify({ token_hash: tokenHash, type }),
-    });
-  }
-
-  /**
-   * Check if user has specific role
-   */
-  async hasRole(role: UserRole): Promise<boolean> {
-    const response = await this.getCurrentUser();
-    return response.success && response.user?.role === role;
-  }
-
-  /**
-   * Check if user has any of the specified roles
-   */
-  async hasAnyRole(roles: UserRole[]): Promise<boolean> {
-    const response = await this.getCurrentUser();
-    return response.success && response.user ? roles.includes(response.user.role) : false;
-  }
-
-  /**
-   * Check if user is authenticated
-   */
-  async isAuthenticated(): Promise<boolean> {
-    const response = await this.getCurrentUser();
-    return response.success && !!response.user;
-  }
-}
-
-// Export singleton instance
-export const authApi = new AuthApiClient();
-
-// Export class for testing or custom instances
-export { AuthApiClient };
