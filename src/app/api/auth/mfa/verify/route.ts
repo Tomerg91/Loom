@@ -7,18 +7,20 @@
  * This endpoint is called after initial username/password authentication.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
+import {
+  createSuccessResponse,
+  createErrorResponse,
   withErrorHandling,
   HTTP_STATUS,
 } from '@/lib/api/utils';
-import { createAuthService } from '@/lib/auth/auth';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
+
+// Cookie name for MFA trusted device token
+const MFA_TRUSTED_DEVICE_COOKIE = 'mfa_trusted_device';
 
 
 // Request validation schema
