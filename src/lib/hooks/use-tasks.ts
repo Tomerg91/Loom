@@ -2,7 +2,10 @@
  * @fileoverview Task query hooks using TanStack Query for fetching task data.
  * Provides hooks for coaches and clients to query tasks, templates, and instances.
  */
+'use client';
+
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api/client-api-request';
 
 import type {
   TaskDto,
@@ -99,15 +102,8 @@ export function useCoachTasks(
       if (filters?.page) params.append('page', String(filters.page));
       if (filters?.pageSize) params.append('pageSize', String(filters.pageSize));
 
-      const response = await fetch(`/api/tasks?${params.toString()}`);
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || 'Failed to fetch tasks');
-      }
-
-      const data = await response.json();
-      return data.data as TaskListResponse;
+      const data = await apiGet<{ data: TaskListResponse }>(`/api/tasks?${params.toString()}`);
+      return data.data;
     },
     staleTime: 30 * 1000, // 30 seconds
     refetchOnWindowFocus: true,
@@ -131,15 +127,8 @@ export function useTaskTemplates(
         // For now, we fetch all tasks and client can filter
       });
 
-      const response = await fetch(`/api/tasks?${params.toString()}`);
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || 'Failed to fetch task templates');
-      }
-
-      const data = await response.json();
-      return data.data.data as TaskDto[];
+      const data = await apiGet<{ data: { data: TaskDto[] } }>(`/api/tasks?${params.toString()}`);
+      return data.data.data;
     },
     staleTime: 60 * 1000, // 1 minute (templates change less frequently)
     refetchOnWindowFocus: true,
@@ -154,15 +143,8 @@ export function useTaskById(taskId: string): UseQueryResult<TaskDto> {
   return useQuery({
     queryKey: taskKeys.detail(taskId),
     queryFn: async () => {
-      const response = await fetch(`/api/tasks/${taskId}`);
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || 'Failed to fetch task');
-      }
-
-      const data = await response.json();
-      return data.data as TaskDto;
+      const data = await apiGet<{ data: TaskDto }>(`/api/tasks/${taskId}`);
+      return data.data;
     },
     staleTime: 30 * 1000,
     refetchOnWindowFocus: true,
@@ -184,15 +166,8 @@ export function useClientAssignedTasks(
       const params = new URLSearchParams();
       if (status) params.append('status', status);
 
-      const response = await fetch(`/api/tasks/assigned?${params.toString()}`);
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || 'Failed to fetch assigned tasks');
-      }
-
-      const data = await response.json();
-      return data.data as AssignedTasksResponse;
+      const data = await apiGet<{ data: AssignedTasksResponse }>(`/api/tasks/assigned?${params.toString()}`);
+      return data.data;
     },
     staleTime: 15 * 1000, // 15 seconds (more real-time for clients)
     refetchOnWindowFocus: true,
@@ -209,15 +184,8 @@ export function useTaskInstance(
   return useQuery({
     queryKey: taskKeys.instance(instanceId),
     queryFn: async () => {
-      const response = await fetch(`/api/tasks/assigned/${instanceId}`);
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || 'Failed to fetch task instance');
-      }
-
-      const data = await response.json();
-      return data.data as TaskInstance;
+      const data = await apiGet<{ data: TaskInstance }>(`/api/tasks/assigned/${instanceId}`);
+      return data.data;
     },
     staleTime: 15 * 1000,
     refetchOnWindowFocus: true,
@@ -234,15 +202,8 @@ export function useTaskCategories(
   return useQuery({
     queryKey: taskKeys.categories(coachId),
     queryFn: async () => {
-      const response = await fetch(`/api/task-categories?coachId=${coachId}`);
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || 'Failed to fetch task categories');
-      }
-
-      const data = await response.json();
-      return data.data as TaskCategory[];
+      const data = await apiGet<{ data: TaskCategory[] }>(`/api/task-categories?coachId=${coachId}`);
+      return data.data;
     },
     staleTime: 60 * 1000, // 1 minute (categories change infrequently)
     refetchOnWindowFocus: true,

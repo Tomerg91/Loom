@@ -2,11 +2,14 @@
  * @fileoverview Task mutation hooks using TanStack Query for modifying task data.
  * Provides hooks for creating, updating, deleting tasks, categories, and managing progress.
  */
+'use client';
+
 import {
   useMutation,
   UseMutationResult,
   useQueryClient,
 } from '@tanstack/react-query';
+import { apiPost, apiPatch, apiDelete } from '@/lib/api/client-api-request';
 
 import { useToast } from '@/components/ui/toast-provider';
 import type {
@@ -81,19 +84,8 @@ export function useCreateTask(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (input: CreateTaskInput) => {
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to create task');
-      }
-
-      const data = await response.json();
-      return data.data as TaskDto;
+      const data = await apiPost<{ data: TaskDto }>('/api/tasks', input);
+      return data.data;
     },
     onSuccess: data => {
       // Invalidate task lists
@@ -123,19 +115,8 @@ export function useUpdateTask(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ taskId, data }) => {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update task');
-      }
-
-      const responseData = await response.json();
-      return responseData.data as TaskDto;
+      const responseData = await apiPatch<{ data: TaskDto }>(`/api/tasks/${taskId}`, data);
+      return responseData.data;
     },
     onSuccess: (data, variables) => {
       // Update cache with new data
@@ -164,14 +145,7 @@ export function useDeleteTask(): UseMutationResult<void, Error, string> {
 
   return useMutation({
     mutationFn: async (taskId: string) => {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to delete task');
-      }
+      await apiDelete(`/api/tasks/${taskId}`);
     },
     onSuccess: (_, taskId) => {
       // Remove from cache
@@ -202,18 +176,7 @@ export function useAssignTasks(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ taskId, data }) => {
-      const response = await fetch(`/api/tasks/${taskId}/assign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to assign task');
-      }
-
-      const responseData = await response.json();
+      const responseData = await apiPost<{ data: unknown }>(`/api/tasks/${taskId}/assign`, data);
       const rawResult = responseData.data as {
         created?: number;
         failed?: number;
@@ -303,19 +266,8 @@ export function useCreateCategory(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (input: CreateCategoryInput) => {
-      const response = await fetch('/api/task-categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to create category');
-      }
-
-      const data = await response.json();
-      return data.data as TaskCategory;
+      const data = await apiPost<{ data: TaskCategory }>('/api/task-categories', input);
+      return data.data;
     },
     onSuccess: data => {
       // Invalidate categories
@@ -347,19 +299,8 @@ export function useUpdateCategory(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ categoryId, data }) => {
-      const response = await fetch(`/api/task-categories/${categoryId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update category');
-      }
-
-      const responseData = await response.json();
-      return responseData.data as TaskCategory;
+      const responseData = await apiPatch<{ data: TaskCategory }>(`/api/task-categories/${categoryId}`, data);
+      return responseData.data;
     },
     onSuccess: data => {
       // Invalidate categories
@@ -394,14 +335,7 @@ export function useDeleteCategory(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ categoryId }) => {
-      const response = await fetch(`/api/task-categories/${categoryId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to delete category');
-      }
+      await apiDelete(`/api/task-categories/${categoryId}`);
     },
     onSuccess: (_, variables) => {
       // Invalidate categories
@@ -436,21 +370,7 @@ export function useCreateProgress(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ instanceId, data }) => {
-      const response = await fetch(
-        `/api/tasks/assigned/${instanceId}/progress`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to create progress update');
-      }
-
-      const responseData = await response.json();
+      const responseData = await apiPost<{ data: unknown }>(`/api/tasks/assigned/${instanceId}/progress`, data);
       return responseData.data;
     },
     onSuccess: (_, variables) => {
@@ -483,21 +403,7 @@ export function useUpdateProgress(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ instanceId, updateId, data }) => {
-      const response = await fetch(
-        `/api/tasks/assigned/${instanceId}/progress/${updateId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update progress');
-      }
-
-      const responseData = await response.json();
+      const responseData = await apiPatch<{ data: unknown }>(`/api/tasks/assigned/${instanceId}/progress/${updateId}`, data);
       return responseData.data;
     },
     onSuccess: (_, variables) => {
@@ -530,20 +436,8 @@ export function useCompleteTask(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (instanceId: string) => {
-      const response = await fetch(
-        `/api/tasks/assigned/${instanceId}/complete`,
-        {
-          method: 'PATCH',
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to complete task');
-      }
-
-      const data = await response.json();
-      return data.data as TaskInstance;
+      const data = await apiPatch<{ data: TaskInstance }>(`/api/tasks/assigned/${instanceId}/complete`, {});
+      return data.data;
     },
     onMutate: async instanceId => {
       // Cancel outgoing queries

@@ -1,11 +1,13 @@
+'use client';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { createSessionService } from '@/lib/database';
-import type { 
-  Session, 
-  SessionStatus, 
-  SessionFilters, 
-  SessionListOptions, 
+import { apiGet, apiPost, apiRequest } from '@/lib/api/client-api-request';
+import type {
+  Session,
+  SessionStatus,
+  SessionListOptions,
   SessionRating,
   SessionRescheduleRequest,
   SessionCancellation,
@@ -170,9 +172,7 @@ export function useFilteredSessions(clientId: string, options: SessionListOption
         params.append('limit', options.limit.toString());
       }
       
-      const response = await fetch(`/api/sessions?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch sessions');
-      return response.json();
+      return apiGet(`/api/sessions?${params}`);
     },
     enabled: !!clientId,
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -183,11 +183,7 @@ export function useFilteredSessions(clientId: string, options: SessionListOption
 export function useSessionAttachments(sessionId: string) {
   return useQuery({
     queryKey: sessionKeys.attachments(sessionId),
-    queryFn: async (): Promise<SessionAttachment[]> => {
-      const response = await fetch(`/api/sessions/${sessionId}/files`);
-      if (!response.ok) throw new Error('Failed to fetch session attachments');
-      return response.json();
-    },
+    queryFn: (): Promise<SessionAttachment[]> => apiGet(`/api/sessions/${sessionId}/files`),
     enabled: !!sessionId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -197,11 +193,7 @@ export function useSessionAttachments(sessionId: string) {
 export function useSessionProgressNotes(sessionId: string) {
   return useQuery({
     queryKey: sessionKeys.progressNotes(sessionId),
-    queryFn: async (): Promise<SessionProgressNote[]> => {
-      const response = await fetch(`/api/sessions/${sessionId}/notes`);
-      if (!response.ok) throw new Error('Failed to fetch session progress notes');
-      return response.json();
-    },
+    queryFn: (): Promise<SessionProgressNote[]> => apiGet(`/api/sessions/${sessionId}/notes`),
     enabled: !!sessionId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -211,16 +203,14 @@ export function useSessionProgressNotes(sessionId: string) {
 export function useSessionHistory(clientId: string, dateRange?: { from: Date; to: Date }) {
   return useQuery({
     queryKey: dateRange ? sessionKeys.analytics(clientId, dateRange) : sessionKeys.history(clientId),
-    queryFn: async () => {
+    queryFn: () => {
       const params = new URLSearchParams({ clientId });
       if (dateRange) {
         params.append('from', dateRange.from.toISOString());
         params.append('to', dateRange.to.toISOString());
       }
-      
-      const response = await fetch(`/api/sessions/analytics?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch session history');
-      return response.json();
+
+      return apiGet(`/api/sessions/analytics?${params}`);
     },
     enabled: !!clientId,
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -345,22 +335,10 @@ export function useCompleteSession() {
 // Enhanced mutations
 export function useRescheduleSession() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async (data: SessionRescheduleRequest) => {
-      const response = await fetch(`/api/sessions/${data.sessionId}/reschedule`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to reschedule session');
-      }
-      
-      return response.json();
-    },
+    mutationFn: (data: SessionRescheduleRequest) =>
+      apiPost(`/api/sessions/${data.sessionId}/reschedule`, data),
     onSuccess: (_, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) });
       queryClient.invalidateQueries({ queryKey: sessionKeys.lists() });
@@ -370,22 +348,10 @@ export function useRescheduleSession() {
 
 export function useRateSession() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async (rating: Omit<SessionRating, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const response = await fetch(`/api/sessions/${rating.sessionId}/rate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(rating),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to rate session');
-      }
-      
-      return response.json();
-    },
+    mutationFn: (rating: Omit<SessionRating, 'id' | 'createdAt' | 'updatedAt'>) =>
+      apiPost(`/api/sessions/${rating.sessionId}/rate`, rating),
     onSuccess: (_, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) });
       queryClient.invalidateQueries({ queryKey: sessionKeys.ratings(sessionId) });
@@ -395,22 +361,10 @@ export function useRateSession() {
 
 export function useAddProgressNote() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async (note: Omit<SessionProgressNote, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const response = await fetch(`/api/sessions/${note.sessionId}/notes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(note),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to add progress note');
-      }
-      
-      return response.json();
-    },
+    mutationFn: (note: Omit<SessionProgressNote, 'id' | 'createdAt' | 'updatedAt'>) =>
+      apiPost(`/api/sessions/${note.sessionId}/notes`, note),
     onSuccess: (_, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.progressNotes(sessionId) });
       queryClient.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) });
@@ -420,29 +374,34 @@ export function useAddProgressNote() {
 
 export function useUploadSessionFile() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ sessionId, file, description }: { 
-      sessionId: string; 
-      file: File; 
-      description?: string; 
+    mutationFn: async ({
+      sessionId,
+      file,
+      description
+    }: {
+      sessionId: string;
+      file: File;
+      description?: string;
     }) => {
       const formData = new FormData();
       formData.append('file', file);
       if (description) {
         formData.append('description', description);
       }
-      
-      const response = await fetch(`/api/sessions/${sessionId}/files`, {
+
+      // Use apiRequest for FormData (not apiPost, as FormData requires special handling)
+      const response = await apiRequest(`/api/sessions/${sessionId}/files`, {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to upload file');
       }
-      
+
       return response.json();
     },
     onSuccess: (_, { sessionId }) => {
@@ -453,22 +412,10 @@ export function useUploadSessionFile() {
 
 export function useCancelSessionWithPolicy() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async (cancellation: SessionCancellation) => {
-      const response = await fetch(`/api/sessions/${cancellation.sessionId}/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cancellation),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to cancel session');
-      }
-      
-      return response.json();
-    },
+    mutationFn: (cancellation: SessionCancellation) =>
+      apiPost(`/api/sessions/${cancellation.sessionId}/cancel`, cancellation),
     onSuccess: (_, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) });
       queryClient.invalidateQueries({ queryKey: sessionKeys.lists() });

@@ -1,12 +1,13 @@
 'use client';
 
-import { 
-  useQuery, 
-  useMutation, 
+import {
+  useQuery,
+  useMutation,
   useQueryClient,
   UseQueryOptions,
-  UseMutationOptions 
+  UseMutationOptions
 } from '@tanstack/react-query';
+import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api/client-api-request';
 
 // Types
 export interface Note {
@@ -82,79 +83,30 @@ export const noteKeys = {
 // API Functions
 const fetchNotes = async (filters: NotesFilter = {}): Promise<NotesResponse> => {
   const params = new URLSearchParams();
-  
+
   Object.entries(filters).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       params.append(key, value.toString());
     }
   });
 
-  const response = await fetch(`/api/notes?${params.toString()}`);
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch notes');
-  }
-  
-  return response.json();
+  return apiGet<NotesResponse>(`/api/notes?${params.toString()}`);
 };
 
 const fetchNote = async (id: string): Promise<{ data: Note }> => {
-  const response = await fetch(`/api/notes/${id}`);
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch note');
-  }
-  
-  return response.json();
+  return apiGet<{ data: Note }>(`/api/notes/${id}`);
 };
 
 const createNote = async (data: CreateNoteData): Promise<{ data: Note }> => {
-  const response = await fetch('/api/notes', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create note');
-  }
-  
-  return response.json();
+  return apiPost<{ data: Note }>('/api/notes', data);
 };
 
 const updateNote = async ({ id, ...data }: UpdateNoteData & { id: string }): Promise<{ data: Note }> => {
-  const response = await fetch(`/api/notes/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update note');
-  }
-  
-  return response.json();
+  return apiPut<{ data: Note }>(`/api/notes/${id}`, data);
 };
 
 const deleteNote = async (id: string): Promise<{ message: string }> => {
-  const response = await fetch(`/api/notes/${id}`, {
-    method: 'DELETE',
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to delete note');
-  }
-  
-  return response.json();
+  return apiDelete<{ message: string }>(`/api/notes/${id}`);
 };
 
 const duplicateNote = async (id: string): Promise<{ data: Note }> => {
@@ -176,14 +128,7 @@ const duplicateNote = async (id: string): Promise<{ data: Note }> => {
 };
 
 const fetchTags = async (): Promise<{ data: string[]; count: number }> => {
-  const response = await fetch('/api/notes/tags');
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch tags');
-  }
-  
-  return response.json();
+  return apiGet<{ data: string[]; count: number }>('/api/notes/tags');
 };
 
 // Query Hooks
@@ -355,7 +300,7 @@ export const useToggleArchive = () => {
 };
 
 // Autosave hook for note editing
-export const useAutosaveNote = (id: string, debounceMs: number = 1000) => {
+export const useAutosaveNote = (id: string, _debounceMs: number = 1000) => {
   const queryClient = useQueryClient();
   const updateNote = useUpdateNote({
     onSuccess: (data) => {
