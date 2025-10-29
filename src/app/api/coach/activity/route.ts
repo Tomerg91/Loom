@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
-import { authService } from '@/lib/services/auth-service';
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { createClient } from '@/lib/supabase/server';
 
 interface RecentActivity {
@@ -15,31 +15,30 @@ interface RecentActivity {
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
-    // Verify authentication and get user
-    const session = await authService.getSession();
+    // Verify authentication and get user from Authorization header
+    const user = await getAuthenticatedUser(request);
 
     console.log('[/api/coach/activity] Auth check:', {
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
-      userRole: session?.user?.role,
+      hasUser: !!user,
+      userId: user?.id,
+      userRole: user?.role,
       timestamp: new Date().toISOString()
     });
 
-    if (!session?.user) {
-      console.error('[/api/coach/activity] No session or user found');
+    if (!user) {
+      console.error('[/api/coach/activity] No user found');
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
-    if (session.user.role !== 'coach') {
+    if (user.role !== 'coach') {
       console.error('[/api/coach/activity] User is not a coach:', {
-        userId: session.user.id,
-        role: session.user.role
+        userId: user.id,
+        role: user.role
       });
-      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${session.user.role}`);
+      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${user.role}`);
     }
 
-    const coachId = session.user.id;
+    const coachId = user.id;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
 

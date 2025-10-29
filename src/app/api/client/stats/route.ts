@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
-import { authService } from '@/lib/services/auth-service';
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { createServerClient } from '@/lib/supabase/server';
 
 interface ClientStats {
@@ -18,17 +18,17 @@ interface ClientStats {
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
-    // Verify authentication and get user
-    const session = await authService.getSession();
-    if (!session?.user) {
+    // Verify authentication and get user from Authorization header
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
-    if (session.user.role !== 'client' && session.user.role !== 'admin') {
-      return ApiResponseHelper.forbidden(`Client access required. Current role: ${session.user.role}`);
+    if (user.role !== 'client' && user.role !== 'admin') {
+      return ApiResponseHelper.forbidden(`Client access required. Current role: ${user.role}`);
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     const supabase = createServerClient();
 
     // Calculate date ranges
