@@ -20,7 +20,11 @@ import {
   normalizeResourceCategory,
 } from '@/types/resources';
 
-import { mapFileUploadToResource, mapFileUploadsToResources, type FileUploadRow } from './utils';
+import {
+  mapFileUploadToResource,
+  mapFileUploadsToResources,
+  type FileUploadRow,
+} from './utils';
 
 /**
  * Get library resources for a coach with optional filtering
@@ -76,12 +80,15 @@ export async function getCoachLibraryResources(
   if (error) {
     // Log RLS policy violations for debugging
     if (error.code === 'PGRST301' || error.message.includes('policy')) {
-      console.error('[RLS Policy Violation] Failed to fetch library resources:', {
-        coachId,
-        filters,
-        error: error.message,
-        code: error.code,
-      });
+      console.error(
+        '[RLS Policy Violation] Failed to fetch library resources:',
+        {
+          coachId,
+          filters,
+          error: error.message,
+          code: error.code,
+        }
+      );
     }
     throw new Error(`Failed to fetch library resources: ${error.message}`);
   }
@@ -144,13 +151,15 @@ type FileShareRow = {
   file_id: string;
   permission_type: ClientResourceItem['permission'];
   expires_at: string | null;
-  file_uploads: (FileUploadRow & {
-    users?: {
-      first_name: string | null;
-      last_name: string | null;
-      user_metadata?: { role?: string } | null;
-    } | null;
-  }) | null;
+  file_uploads:
+    | (FileUploadRow & {
+        users?: {
+          first_name: string | null;
+          last_name: string | null;
+          user_metadata?: { role?: string } | null;
+        } | null;
+      })
+    | null;
 };
 
 type ProgressRow = {
@@ -219,17 +228,34 @@ export async function getClientSharedResources(
     const searchTerm = filters.search.trim();
     if (searchTerm) {
       query = query.or(
-        `file_uploads.filename.ilike.%${searchTerm}%,file_uploads.description.ilike.%${searchTerm}%`
+        `filename.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`,
+        { foreignTable: 'file_uploads' }
       );
     }
   }
 
   const sortBy = filters?.sortBy || 'created_at';
   const sortOrder = filters?.sortOrder === 'asc' ? 'asc' : 'desc';
-  query = query.order(sortBy, {
+  const fileUploadSortColumns = new Set([
+    'filename',
+    'original_filename',
+    'file_type',
+    'file_size',
+    'view_count',
+    'download_count',
+    'completion_count',
+    'created_at',
+    'updated_at',
+  ]);
+  const orderOptions: { ascending: boolean; foreignTable?: string } = {
     ascending: sortOrder === 'asc',
-    referencedTable: 'file_uploads',
-  });
+  };
+
+  if (fileUploadSortColumns.has(sortBy)) {
+    orderOptions.foreignTable = 'file_uploads';
+  }
+
+  query = query.order(sortBy, orderOptions);
 
   if (filters?.limit) {
     const offset = filters.offset || 0;
@@ -240,11 +266,14 @@ export async function getClientSharedResources(
 
   if (error) {
     if (error.code === 'PGRST301' || error.message.includes('policy')) {
-      console.error('[RLS Policy Violation] Failed to fetch shared resources:', {
-        clientId,
-        error: error.message,
-        code: error.code,
-      });
+      console.error(
+        '[RLS Policy Violation] Failed to fetch shared resources:',
+        {
+          clientId,
+          error: error.message,
+          code: error.code,
+        }
+      );
     }
     throw new Error(`Failed to fetch shared resources: ${error.message}`);
   }
@@ -253,7 +282,7 @@ export async function getClientSharedResources(
     return [];
   }
 
-  const typedShares = shares as FileShareRow[];
+  const typedShares = shares as unknown as FileShareRow[];
   const resourceIds = typedShares
     .map(share => share.file_uploads?.id)
     .filter((id): id is string => Boolean(id));
@@ -294,9 +323,12 @@ export async function getClientSharedResources(
         sharedBy: {
           id: file.user_id,
           name: owner
-            ? `${owner.first_name ?? ''} ${owner.last_name ?? ''}`.trim() || 'Coach'
+            ? `${owner.first_name ?? ''} ${owner.last_name ?? ''}`.trim() ||
+              'Coach'
             : 'Coach',
-          role: (owner?.user_metadata?.role as 'coach' | 'admin' | undefined) || 'coach',
+          role:
+            (owner?.user_metadata?.role as 'coach' | 'admin' | undefined) ||
+            'coach',
         },
         permission: share.permission_type,
         expiresAt: share.expires_at,
