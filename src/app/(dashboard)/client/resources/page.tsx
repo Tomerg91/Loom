@@ -23,7 +23,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import {
   useClientResources,
-  extractUniqueTags,
   useTrackResourceProgress,
 } from '@/hooks/resources';
 import type {
@@ -83,38 +82,44 @@ export default function ClientResourcesPage() {
   // Track progress mutation shared across view/download actions
   const progressMutation = useTrackResourceProgress(['client-resources']);
 
-  // Derived filters and metadata
-  const availableTags = useMemo(
-    () => extractUniqueTags(clientResources),
-    [clientResources]
-  );
-
-  const coaches = useMemo(() => {
+  // Derived filters, metadata, and progress stats computed in a single pass
+  const {
+    availableTags,
+    coaches,
+    viewedCount,
+    completedCount,
+  } = useMemo(() => {
+    const tagSet = new Set<string>();
     const coachMap = new Map<string, { id: string; name: string }>();
+    let viewed = 0;
+    let completed = 0;
 
-    clientResources.forEach(resource => {
+    for (const resource of clientResources) {
+      resource.tags.forEach(tag => tagSet.add(tag));
+
       if (resource.sharedBy) {
         coachMap.set(resource.sharedBy.id, {
           id: resource.sharedBy.id,
           name: resource.sharedBy.name,
         });
       }
-    });
 
-    return Array.from(coachMap.values());
+      if (hasViewedResource(resource)) {
+        viewed += 1;
+      }
+
+      if (hasCompletedResource(resource)) {
+        completed += 1;
+      }
+    }
+
+    return {
+      availableTags: Array.from(tagSet).sort(),
+      coaches: Array.from(coachMap.values()),
+      viewedCount: viewed,
+      completedCount: completed,
+    };
   }, [clientResources]);
-
-  const viewedCount = useMemo(
-    () =>
-      clientResources.filter(resource => hasViewedResource(resource)).length,
-    [clientResources]
-  );
-
-  const completedCount = useMemo(
-    () =>
-      clientResources.filter(resource => hasCompletedResource(resource)).length,
-    [clientResources]
-  );
 
   // Handlers
   const handleFiltersChange = useCallback(

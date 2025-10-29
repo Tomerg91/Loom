@@ -67,6 +67,8 @@ export async function GET(request: NextRequest) {
     const rawSortBy = searchParams.get('sortBy');
     const rawSortOrder = searchParams.get('sortOrder');
     const rawCoach = searchParams.get('coach');
+    const rawLimit = searchParams.get('limit');
+    const rawOffset = searchParams.get('offset');
 
     const sortByOptions: ResourceListParams['sortBy'][] = [
       'created_at',
@@ -93,21 +95,23 @@ export async function GET(request: NextRequest) {
           ? rawSortOrder
           : 'desc',
       coachId: rawCoach || undefined,
+      limit:
+        rawLimit && !Number.isNaN(Number(rawLimit))
+          ? Number(rawLimit)
+          : undefined,
+      offset:
+        rawOffset && !Number.isNaN(Number(rawOffset))
+          ? Number(rawOffset)
+          : undefined,
     };
 
     // Get shared resources
     const resources = await getClientSharedResources(user.id, filters);
 
-    // Filter by coach if specified
-    const coachId = filters.coachId;
-    const filteredResources = coachId
-      ? resources.filter(r => r.sharedBy.id === coachId)
-      : resources;
-
     return NextResponse.json({
       success: true,
       data: {
-        resources: filteredResources,
+        resources,
       },
     });
   } catch (error) {

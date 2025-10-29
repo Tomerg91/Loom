@@ -20,7 +20,7 @@ import {
   normalizeResourceCategory,
 } from '@/types/resources';
 
-import { mapFileUploadToResource, mapFileUploadsToResources } from './utils';
+import { mapFileUploadToResource, mapFileUploadsToResources, type FileUploadRow } from './utils';
 
 /**
  * Get library resources for a coach with optional filtering
@@ -140,31 +140,105 @@ export async function getResourceById(
  * @param filters - Optional filters
  * @returns Array of shared resources with share metadata
  */
+type FileShareRow = {
+  file_id: string;
+  permission_type: ClientResourceItem['permission'];
+  expires_at: string | null;
+  file_uploads: (FileUploadRow & {
+    users?: {
+      first_name: string | null;
+      last_name: string | null;
+      user_metadata?: { role?: string } | null;
+    } | null;
+  }) | null;
+};
+
+type ProgressRow = {
+  file_id: string;
+  viewed_at: string | null;
+  completed_at: string | null;
+};
+
 export async function getClientSharedResources(
   clientId: string,
   filters?: ResourceListParams
 ): Promise<ClientResourceItem[]> {
   const supabase = await createClient();
+  const nowIso = new Date().toISOString();
 
-  // Get file shares for this client
-  const sharesQuery = supabase
+  let query = supabase
     .from('file_shares')
     .select(
       `
-      *,
-      file_uploads!file_shares_file_id_fkey(
-        *,
-        users!file_uploads_user_id_fkey(first_name, last_name, user_metadata)
-      )
-    `
+        file_id,
+        permission_type,
+        expires_at,
+        file_uploads:file_uploads!inner(
+          id,
+          user_id,
+          filename,
+          original_filename,
+          file_type,
+          file_size,
+          storage_path,
+          bucket_name,
+          is_library_resource,
+          is_public,
+          shared_with_all_clients,
+          file_category,
+          tags,
+          description,
+          view_count,
+          download_count,
+          completion_count,
+          created_at,
+          updated_at,
+          users:users!file_uploads_user_id_fkey(first_name, last_name, user_metadata)
+        )
+      `
     )
     .eq('shared_with', clientId)
-    .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString());
+    .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+    .eq('file_uploads.is_library_resource', true);
 
-  const { data: shares, error } = await sharesQuery;
+  if (filters?.coachId) {
+    query = query.eq('file_uploads.user_id', filters.coachId);
+  }
+
+  if (filters?.category) {
+    const normalizedCategory = normalizeResourceCategory(filters.category);
+    const synonyms = getResourceCategorySynonyms(normalizedCategory);
+    query = query.in('file_uploads.file_category', synonyms);
+  }
+
+  if (filters?.tags && filters.tags.length > 0) {
+    query = query.overlaps('file_uploads.tags', filters.tags);
+  }
+
+  if (filters?.search) {
+    const searchTerm = filters.search.trim();
+    if (searchTerm) {
+      query = query.or(
+        `file_uploads.filename.ilike.%${searchTerm}%,file_uploads.description.ilike.%${searchTerm}%`
+      );
+    }
+  }
+
+  const sortBy = filters?.sortBy || 'created_at';
+  const sortOrder = filters?.sortOrder === 'asc' ? 'asc' : 'desc';
+  query = query.order(sortBy, {
+    ascending: sortOrder === 'asc',
+    referencedTable: 'file_uploads',
+  });
+
+  if (filters?.limit) {
+    const offset = filters.offset || 0;
+    query = query.range(offset, offset + filters.limit - 1);
+  }
+
+  const { data: shares, error } = await query;
 
   if (error) {
-    // Log RLS policy violations for debugging
     if (error.code === 'PGRST301' || error.message.includes('policy')) {
       console.error('[RLS Policy Violation] Failed to fetch shared resources:', {
         clientId,
@@ -179,94 +253,63 @@ export async function getClientSharedResources(
     return [];
   }
 
-  // Get progress for all shared resources
-  const resourceIds = shares.map(s => s.file_id);
-  const { data: progressData } = await supabase
-    .from('resource_client_progress')
-    .select('*')
-    .eq('client_id', clientId)
-    .in('file_id', resourceIds);
+  const typedShares = shares as FileShareRow[];
+  const resourceIds = typedShares
+    .map(share => share.file_uploads?.id)
+    .filter((id): id is string => Boolean(id));
 
-  const progressMap = new Map(progressData?.map(p => [p.file_id, p]) || []);
+  let progressMap = new Map<string, ProgressRow>();
+  if (resourceIds.length > 0) {
+    const { data: progressData, error: progressError } = await supabase
+      .from('resource_client_progress')
+      .select('file_id, viewed_at, completed_at')
+      .eq('client_id', clientId)
+      .in('file_id', resourceIds);
 
-  // Map to ClientResourceItem
-  let resources: ClientResourceItem[] = shares
-    .filter(
-      share => share.file_uploads && share.file_uploads.is_library_resource
-    )
+    if (progressError) {
+      console.error('[Resource Progress] Failed to load client progress', {
+        clientId,
+        error: progressError.message,
+      });
+    }
+
+    progressMap = new Map((progressData || []).map(row => [row.file_id, row]));
+  }
+
+  return typedShares
+    .filter(share => share.file_uploads)
     .map(share => {
-      const file = share.file_uploads;
-      const user = file.users;
+      const file = share.file_uploads as FileUploadRow & {
+        users?: {
+          first_name: string | null;
+          last_name: string | null;
+          user_metadata?: { role?: string } | null;
+        } | null;
+      };
+      const owner = file.users;
       const progress = progressMap.get(file.id);
 
       return {
         ...mapFileUploadToResource(file),
         sharedBy: {
           id: file.user_id,
-          name: user
-            ? `${user.first_name} ${user.last_name || ''}`.trim()
+          name: owner
+            ? `${owner.first_name ?? ''} ${owner.last_name ?? ''}`.trim() || 'Coach'
             : 'Coach',
-          role: user?.user_metadata?.role || 'coach',
+          role: (owner?.user_metadata?.role as 'coach' | 'admin' | undefined) || 'coach',
         },
         permission: share.permission_type,
         expiresAt: share.expires_at,
         progress: progress
           ? {
-              viewed: !!progress.viewed_at,
-              completed: !!progress.completed_at,
+              viewed: Boolean(progress.viewed_at),
+              completed: Boolean(progress.completed_at),
               viewedAt: progress.viewed_at,
               completedAt: progress.completed_at,
             }
           : undefined,
-      };
+      } satisfies ClientResourceItem;
     });
-
-  // Apply filters
-  if (filters?.category) {
-    const normalizedCategory = normalizeResourceCategory(filters.category);
-    resources = resources.filter(r => r.category === normalizedCategory);
-  }
-
-  if (filters?.tags && filters.tags.length > 0) {
-    resources = resources.filter(r =>
-      r.tags.some(tag => filters.tags!.includes(tag))
-    );
-  }
-
-  if (filters?.search) {
-    const searchLower = filters.search.toLowerCase();
-    resources = resources.filter(
-      r =>
-        r.filename.toLowerCase().includes(searchLower) ||
-        r.description?.toLowerCase().includes(searchLower)
-    );
-  }
-
-  // Apply sorting
-  const sortBy = filters?.sortBy || 'created_at';
-  const sortOrder = filters?.sortOrder || 'desc';
-  resources.sort((a, b) => {
-    const key = sortBy as keyof ClientResourceItem;
-    const aVal = a[key];
-    const bVal = b[key];
-
-    if (aVal == null && bVal == null) {
-      return 0;
-    }
-
-    if (aVal == null) {
-      return sortOrder === 'asc' ? 1 : -1;
-    }
-
-    if (bVal == null) {
-      return sortOrder === 'asc' ? -1 : 1;
-    }
-
-    const comparison = aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-    return sortOrder === 'asc' ? comparison : -comparison;
-  });
-
-  return resources;
 }
 
 /**
