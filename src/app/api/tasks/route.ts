@@ -1,12 +1,12 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
+import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
 import {
   HTTP_STATUS,
   createErrorResponse,
   createSuccessResponse,
   validateRequestBody,
 } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
 import { createLogger } from '@/modules/platform/logging/logger';
 import {
   ForbiddenSupabaseHttpError,
@@ -37,15 +37,22 @@ const createUnauthorizedResponse = () =>
     HTTP_STATUS.UNAUTHORIZED
   );
 
-async function getAuthenticatedActor(): Promise<
-  { actor: AuthActor } | { response: Response }
+async function getAuthenticatedActor(
+  request: NextRequest
+): Promise<
+  { actor: AuthActor; authResponse: NextResponse } | { response: Response }
 > {
   try {
-    const supabase = createServerClient();
+    const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+      request,
+      new NextResponse()
+    );
+
     const { data: session, error } = await supabase.auth.getUser();
 
     if (error || !session?.user) {
-      return { response: createUnauthorizedResponse() };
+      const errorResponse = createUnauthorizedResponse();
+      return { response: propagateCookies(authResponse, errorResponse) };
     }
 
     const { data: profile, error: profileError } = await supabase
@@ -66,6 +73,7 @@ async function getAuthenticatedActor(): Promise<
         id: session.user.id,
         role: profile?.role ?? 'client',
       },
+      authResponse,
     };
   } catch (error) {
     log.error('Task API authentication error', {
@@ -82,24 +90,26 @@ export const GET = async (request: NextRequest) => {
     { context: 'tasks.list.query' }
   );
 
-  const authResult = await getAuthenticatedActor();
+  const authResult = await getAuthenticatedActor(request);
   if ('response' in authResult) {
     return authResult.response;
   }
 
-  const { actor } = authResult;
+  const { actor, authResponse } = authResult;
 
   if (actor.role !== 'coach' && actor.role !== 'admin') {
-    return createErrorResponse(
+    const errorResponse = createErrorResponse(
       'Access denied. Required role: coach',
       HTTP_STATUS.FORBIDDEN
     );
+    return propagateCookies(authResponse, errorResponse);
   }
 
   const parsedQuery = parseTaskListQueryParams(request.nextUrl.searchParams);
 
   if (!parsedQuery.success) {
-    return createErrorResponse('Validation failed', HTTP_STATUS.BAD_REQUEST);
+    const errorResponse = createErrorResponse('Validation failed', HTTP_STATUS.BAD_REQUEST);
+    return propagateCookies(authResponse, errorResponse);
   }
 
   const normalizedFilters: SessionTaskListQueryInput = {
@@ -113,35 +123,39 @@ export const GET = async (request: NextRequest) => {
       normalizedFilters
     );
 
-    return createSuccessResponse(result);
+    const successResponse = createSuccessResponse(result);
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     if (error instanceof TaskServiceError) {
-      return createErrorResponse(error.message, error.status);
+      const errorResponse = createErrorResponse(error.message, error.status);
+      return propagateCookies(authResponse, errorResponse);
     }
     log.error('Task list error', {
       error,
       feature: 'tasks-api',
     });
-    return createErrorResponse(
+    const errorResponse = createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
+    return propagateCookies(authResponse, errorResponse);
   }
 };
 
 export const POST = async (request: NextRequest) => {
-  const authResult = await getAuthenticatedActor();
+  const authResult = await getAuthenticatedActor(request);
   if ('response' in authResult) {
     return authResult.response;
   }
 
-  const { actor } = authResult;
+  const { actor, authResponse } = authResult;
 
   if (actor.role !== 'coach' && actor.role !== 'admin') {
-    return createErrorResponse(
+    const errorResponse = createErrorResponse(
       'Access denied. Required role: coach',
       HTTP_STATUS.FORBIDDEN
     );
+    return propagateCookies(authResponse, errorResponse);
   }
 
   let body: unknown;
@@ -152,23 +166,26 @@ export const POST = async (request: NextRequest) => {
       error,
       feature: 'tasks-api',
     });
-    return createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
+    const errorResponse = createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
+    return propagateCookies(authResponse, errorResponse);
   }
   try {
     ensureNoSupabaseHttpUsage(body, { context: 'tasks.create.body' });
   } catch (error) {
     if (error instanceof ForbiddenSupabaseHttpError) {
-      return createErrorResponse(
+      const errorResponse = createErrorResponse(
         'Invalid payload received.',
         HTTP_STATUS.BAD_REQUEST
       );
+      return propagateCookies(authResponse, errorResponse);
     }
     throw error;
   }
   const parsed = validateRequestBody(sessionCreateTaskSchema, body);
 
   if (!parsed.success) {
-    return createErrorResponse(parsed.error, HTTP_STATUS.BAD_REQUEST);
+    const errorResponse = createErrorResponse(parsed.error, HTTP_STATUS.BAD_REQUEST);
+    return propagateCookies(authResponse, errorResponse);
   }
 
   const createPayload = parsed.data as SessionCreateTaskInput;
@@ -183,22 +200,25 @@ export const POST = async (request: NextRequest) => {
       createPayload
     );
 
-    return createSuccessResponse(
+    const successResponse = createSuccessResponse(
       task,
       'Task created successfully',
       HTTP_STATUS.CREATED
     );
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     if (error instanceof TaskServiceError) {
-      return createErrorResponse(error.message, error.status);
+      const errorResponse = createErrorResponse(error.message, error.status);
+      return propagateCookies(authResponse, errorResponse);
     }
     log.error('Task creation error', {
       error,
       feature: 'tasks-api',
     });
-    return createErrorResponse(
+    const errorResponse = createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
+    return propagateCookies(authResponse, errorResponse);
   }
 };

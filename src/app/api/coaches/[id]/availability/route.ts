@@ -1,16 +1,16 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
+import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
+import {
+  createSuccessResponse,
+  createErrorResponse,
   withErrorHandling,
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { uuidSchema } from '@/lib/api/validation';
 import { getCoachAvailability, setCoachAvailability } from '@/lib/database/availability';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
-import { createServerClient } from '@/lib/supabase/server';
+import { createCorsResponse } from '@/lib/security/cors';
 
 const availabilitySlotSchema = z.object({
   dayOfWeek: z.number().min(0).max(6),
@@ -29,13 +29,21 @@ interface RouteParams {
 }
 
 // GET /api/coaches/[id]/availability - Get coach availability for a specific date
+// Note: This endpoint allows public (unauthenticated) access for browsing coaches
 export const GET = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
+  // Use authenticated client to handle any auth cookies if present
+  const { response: authResponse } = createAuthenticatedSupabaseClient(
+    request,
+    new NextResponse()
+  );
+
   const { id: coachId } = await params;
-  
+
   // Validate UUID format
   const validationResult = uuidSchema.safeParse(coachId);
   if (!validationResult.success) {
-    return createErrorResponse('Invalid coach ID format', HTTP_STATUS.BAD_REQUEST);
+    const errorResponse = createErrorResponse('Invalid coach ID format', HTTP_STATUS.BAD_REQUEST);
+    return propagateCookies(authResponse, errorResponse);
   }
 
   const { searchParams } = request.nextUrl;
@@ -44,47 +52,58 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
   const detailed = searchParams.get('detailed') === 'true';
 
   if (!date) {
-    return createErrorResponse('Date parameter is required', HTTP_STATUS.BAD_REQUEST);
+    const errorResponse = createErrorResponse('Date parameter is required', HTTP_STATUS.BAD_REQUEST);
+    return propagateCookies(authResponse, errorResponse);
   }
 
   // Validate date format (YYYY-MM-DD)
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   if (!dateRegex.test(date)) {
-    return createErrorResponse('Invalid date format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST);
+    const errorResponse = createErrorResponse('Invalid date format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST);
+    return propagateCookies(authResponse, errorResponse);
   }
 
   // Validate duration
   if (duration < 15 || duration > 480) {
-    return createErrorResponse('Duration must be between 15 and 480 minutes', HTTP_STATUS.BAD_REQUEST);
+    const errorResponse = createErrorResponse('Duration must be between 15 and 480 minutes', HTTP_STATUS.BAD_REQUEST);
+    return propagateCookies(authResponse, errorResponse);
   }
 
   try {
     const timeSlots = await getCoachAvailability(coachId, date, duration, detailed);
-    return createSuccessResponse(timeSlots);
+    const successResponse = createSuccessResponse(timeSlots);
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     console.error('Error fetching coach availability:', error);
-    return createErrorResponse(
+    const errorResponse = createErrorResponse(
       'Failed to fetch availability',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
+    return propagateCookies(authResponse, errorResponse);
   }
 });
 
 // POST /api/coaches/[id]/availability - Set coach availability
 export const POST = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
-  const supabase = createServerClient();
+  const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+    request,
+    new NextResponse()
+  );
+
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+    const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+    return propagateCookies(authResponse, errorResponse);
   }
 
   const { id: coachId } = await params;
-  
+
   // Validate UUID format
   const validationResult = uuidSchema.safeParse(coachId);
   if (!validationResult.success) {
-    return createErrorResponse('Invalid coach ID format', HTTP_STATUS.BAD_REQUEST);
+    const errorResponse = createErrorResponse('Invalid coach ID format', HTTP_STATUS.BAD_REQUEST);
+    return propagateCookies(authResponse, errorResponse);
   }
 
   // Verify user is the coach or has admin rights
@@ -96,7 +115,8 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
       .single();
 
     if (profile?.role !== 'admin') {
-      return createErrorResponse('Forbidden', HTTP_STATUS.FORBIDDEN);
+      const errorResponse = createErrorResponse('Forbidden', HTTP_STATUS.FORBIDDEN);
+      return propagateCookies(authResponse, errorResponse);
     }
   }
 
@@ -105,22 +125,26 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
     const validatedData = setAvailabilitySchema.parse(body);
 
     const success = await setCoachAvailability(coachId, validatedData.slots, validatedData.timezone);
-    
+
     if (!success) {
-      return createErrorResponse('Failed to set availability', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      const errorResponse = createErrorResponse('Failed to set availability', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return propagateCookies(authResponse, errorResponse);
     }
 
-    return createSuccessResponse({ 
+    const successResponse = createSuccessResponse({
       message: 'Availability updated successfully',
-      data: validatedData.slots 
+      data: validatedData.slots
     });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return createErrorResponse('Validation error', HTTP_STATUS.BAD_REQUEST);
+      const errorResponse = createErrorResponse('Validation error', HTTP_STATUS.BAD_REQUEST);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     console.error('Error in availability POST:', error);
-    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    const errorResponse = createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    return propagateCookies(authResponse, errorResponse);
   }
 });
 

@@ -1,15 +1,15 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
+import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
+import {
+  createSuccessResponse,
+  createErrorResponse,
   withErrorHandling,
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { uuidSchema } from '@/lib/api/validation';
 import { getCoachSchedule } from '@/lib/database/availability';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
-import { createServerClient } from '@/lib/supabase/server';
+import { createCorsResponse } from '@/lib/security/cors';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -17,19 +17,25 @@ interface RouteParams {
 
 // GET /api/coaches/[id]/schedule - Get coach's weekly availability schedule
 export const GET = withErrorHandling(async (request: NextRequest, { params }: RouteParams) => {
-  const supabase = createServerClient();
+  const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+    request,
+    new NextResponse()
+  );
+
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+    const errorResponse = createErrorResponse('Unauthorized', HTTP_STATUS.UNAUTHORIZED);
+    return propagateCookies(authResponse, errorResponse);
   }
 
   const { id: coachId } = await params;
-  
+
   // Validate UUID format
   const validationResult = uuidSchema.safeParse(coachId);
   if (!validationResult.success) {
-    return createErrorResponse('Invalid coach ID format', HTTP_STATUS.BAD_REQUEST);
+    const errorResponse = createErrorResponse('Invalid coach ID format', HTTP_STATUS.BAD_REQUEST);
+    return propagateCookies(authResponse, errorResponse);
   }
 
   // Verify user is the coach or has appropriate access
@@ -41,19 +47,22 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
       .single();
 
     if (profile?.role !== 'admin' && profile?.role !== 'client') {
-      return createErrorResponse('Forbidden', HTTP_STATUS.FORBIDDEN);
+      const errorResponse = createErrorResponse('Forbidden', HTTP_STATUS.FORBIDDEN);
+      return propagateCookies(authResponse, errorResponse);
     }
   }
 
   try {
     const schedule = await getCoachSchedule(coachId);
-    return createSuccessResponse({ data: schedule });
+    const successResponse = createSuccessResponse({ data: schedule });
+    return propagateCookies(authResponse, successResponse);
   } catch (error) {
     console.error('Error fetching coach schedule:', error);
-    return createErrorResponse(
+    const errorResponse = createErrorResponse(
       'Failed to fetch schedule',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
+    return propagateCookies(authResponse, errorResponse);
   }
 });
 

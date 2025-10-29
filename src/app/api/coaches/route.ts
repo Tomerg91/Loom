@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { rateLimit } from '@/lib/security/rate-limit';
-import { authService } from '@/lib/services/auth-service';
-import { createServerClient } from '@/lib/supabase/server';
 
 interface Coach {
   id: string;
@@ -37,11 +36,17 @@ interface Coach {
 // Apply rate limiting for coaches listing to prevent scraping
 const rateLimitedHandler = rateLimit(200, 60000)( // 200 requests per minute
   async (request: NextRequest): Promise<NextResponse> => {
+  const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(
+    request,
+    new NextResponse()
+  );
+
   try {
     // Verify authentication and get user
-    const session = await authService.getSession();
-    if (!session?.user) {
-      return ApiResponseHelper.unauthorized('Authentication required');
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError || !session?.user) {
+      const errorResponse = ApiResponseHelper.unauthorized('Authentication required');
+      return propagateCookies(authResponse, errorResponse);
     }
 
     const { searchParams } = new URL(request.url);
@@ -50,8 +55,6 @@ const rateLimitedHandler = rateLimit(200, 60000)( // 200 requests per minute
     const minRating = searchParams.get('minRating');
     const maxRate = searchParams.get('maxRate');
     const limit = parseInt(searchParams.get('limit') || '20', 10);
-
-    const supabase = createServerClient();
 
     // Build query for coaches
     let query = supabase
@@ -91,14 +94,16 @@ const rateLimitedHandler = rateLimit(200, 60000)( // 200 requests per minute
     const { data: coachData, error } = await query;
 
     if (error) {
-      throw new ApiError('FETCH_COACHES_FAILED', 'Failed to fetch coaches', 500);
+      const errorResponse = ApiResponseHelper.error('FETCH_COACHES_FAILED', 'Failed to fetch coaches', 500);
+      return propagateCookies(authResponse, errorResponse);
     }
 
     // Get additional statistics for each coach
     const coaches: Coach[] = await Promise.all(
       (coachData || []).map(async (coach) => {
-        // Get session count for this coach (rating functionality will be implemented later)
-        const { data: sessionStats } = await supabase
+        // Session count tracking (rating functionality will be implemented later)
+        // Note: Currently unused but kept for future rating calculations
+        await supabase
           .from('sessions')
           .select('status')
           .eq('coach_id', coach.id)
@@ -132,6 +137,7 @@ const rateLimitedHandler = rateLimit(200, 60000)( // 200 requests per minute
 
         const uniqueClients = new Set(clientSessions?.map(s => s.client_id) || []);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const profile = coach.coach_profiles?.[0] as any;
 
         return {
@@ -184,16 +190,17 @@ const rateLimitedHandler = rateLimit(200, 60000)( // 200 requests per minute
       filteredCoaches = filteredCoaches.filter(coach => coach.hourlyRate <= maxRateNum);
     }
 
-    return ApiResponseHelper.success(filteredCoaches);
+    const successResponse = ApiResponseHelper.success(filteredCoaches);
+    return propagateCookies(authResponse, successResponse);
 
   } catch (error) {
     console.error('Coaches API error:', error);
-    
-    if (error instanceof ApiError) {
-      return ApiResponseHelper.error(error.code, error.message, error.statusCode);
-    }
-    
-    return ApiResponseHelper.internalError('Failed to fetch coaches');
+
+    const errorResponse = error instanceof ApiError
+      ? ApiResponseHelper.error(error.code, error.message, error.statusCode)
+      : ApiResponseHelper.internalError('Failed to fetch coaches');
+
+    return propagateCookies(authResponse, errorResponse);
   }
   }
 );
