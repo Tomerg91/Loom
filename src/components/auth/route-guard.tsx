@@ -145,42 +145,49 @@ export function RouteGuard({
     pathname,
   ]);
 
-  // Show loading state with skeleton to reduce LCP
-  if (isLoading && showLoading) {
-    return (
-      <div
-        className="min-h-screen bg-background flex flex-col"
-        data-testid="route-guard-loading"
-        role="region"
-        aria-live="polite"
-      >
-        <span className="sr-only">Loading...</span>
-        <div className="h-16 bg-card border-b flex items-center px-4">
-          <div className="h-8 w-32 bg-muted rounded animate-pulse" />
-          <div className="ml-auto flex items-center space-x-4">
-            <div className="h-8 w-24 bg-muted rounded animate-pulse" />
-            <div className="h-8 w-8 bg-muted rounded-full animate-pulse" />
+  const loadingFallback = (
+    <div
+      className="min-h-screen bg-background flex flex-col"
+      data-testid="route-guard-loading"
+      role="region"
+      aria-live="polite"
+    >
+      <span className="sr-only">Loading...</span>
+      <div className="h-16 bg-card border-b flex items-center px-4">
+        <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+        <div className="ml-auto flex items-center space-x-4">
+          <div className="h-8 w-24 bg-muted rounded animate-pulse" />
+          <div className="h-8 w-8 bg-muted rounded-full animate-pulse" />
+        </div>
+      </div>
+      <main className="flex-1 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="h-8 w-64 bg-muted rounded animate-pulse mb-6" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-card border rounded-lg p-4">
+                <div className="h-4 w-24 bg-muted rounded animate-pulse mb-2" />
+                <div className="h-8 w-16 bg-muted rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-center gap-3 text-muted-foreground">
+            <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
+            <span className="text-lg font-medium">Loading...</span>
           </div>
         </div>
-        <main className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="h-8 w-64 bg-muted rounded animate-pulse mb-6" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-card border rounded-lg p-4">
-                  <div className="h-4 w-24 bg-muted rounded animate-pulse mb-2" />
-                  <div className="h-8 w-16 bg-muted rounded animate-pulse" />
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-center gap-3 text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
-              <span className="text-lg font-medium">Loading...</span>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
+      </main>
+    </div>
+  );
+
+  // Show loading state with skeleton to reduce LCP
+  if (showLoading && (isLoading || (!isLoading && requireAuth && !user))) {
+    return loadingFallback;
+  }
+
+  // When auth is required but no user is available, suppress rendering until redirect completes
+  if (!isLoading && requireAuth && !user) {
+    return null;
   }
 
   // Authenticated but missing role
