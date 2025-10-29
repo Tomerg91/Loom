@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/client';
-import { createServerClient } from '@/lib/supabase/server';
+import {
+  createServerClient,
+  type ServerSupabaseClient,
+} from '@/lib/supabase/server';
 import type { Notification, NotificationType } from '@/types';
 import type { Database } from '@/types/supabase';
 
@@ -24,7 +27,11 @@ interface GetNotificationsCountOptions {
 
 interface CreateNotificationData {
   userId: string;
-  type: 'session_reminder' | 'new_message' | 'session_confirmation' | 'system_update';
+  type:
+    | 'session_reminder'
+    | 'new_message'
+    | 'session_confirmation'
+    | 'system_update';
   title: string;
   content: string;
   scheduledFor?: string;
@@ -32,18 +39,21 @@ interface CreateNotificationData {
 }
 
 export class NotificationService {
-  private supabase: any;
+  private supabase: ServerSupabaseClient;
 
-  constructor(isServer = true) {
-    this.supabase = isServer ? createServerClient() : createClient();
+  constructor(isServer = true, supabaseClient?: ServerSupabaseClient) {
+    // If client is provided, use it directly (for authenticated API routes with cookie handling)
+    // Otherwise fall back to creating a client based on environment
+    this.supabase =
+      supabaseClient || (isServer ? createServerClient() : createClient());
   }
 
   /**
    * Get notifications for a user
    */
   async getUserNotifications(
-    userId: string, 
-    limit = 50, 
+    userId: string,
+    limit = 50,
     includeRead = false
   ): Promise<Notification[]> {
     let queryBuilder = this.supabase
@@ -98,15 +108,18 @@ export class NotificationService {
     data?: Record<string, unknown>;
     scheduledFor?: Date;
   }): Promise<Notification | null> {
-    const { data, error } = await this.supabase
-      .rpc('send_notification', {
-        user_id: notificationData.userId,
-        notification_type: notificationData.type,
-        title: notificationData.title,
-        message: notificationData.message,
-        data: notificationData.data ? JSON.stringify(notificationData.data) : null,
-        scheduled_for: notificationData.scheduledFor?.toISOString() || new Date().toISOString(),
-      });
+    const { data, error } = await this.supabase.rpc('send_notification', {
+      user_id: notificationData.userId,
+      notification_type: notificationData.type,
+      title: notificationData.title,
+      message: notificationData.message,
+      data: notificationData.data
+        ? JSON.stringify(notificationData.data)
+        : null,
+      scheduled_for:
+        notificationData.scheduledFor?.toISOString() ||
+        new Date().toISOString(),
+    });
 
     if (error) {
       console.error('Error creating notification:', error);
@@ -138,14 +151,13 @@ export class NotificationService {
    * Mark notifications as read
    */
   async markAsRead(
-    userId: string, 
+    userId: string,
     notificationIds?: string[]
   ): Promise<number> {
-    const { data, error } = await this.supabase
-      .rpc('mark_notifications_read', {
-        user_id: userId,
-        notification_ids: notificationIds || undefined,
-      });
+    const { data, error } = await this.supabase.rpc('mark_notifications_read', {
+      user_id: userId,
+      notification_ids: notificationIds || undefined,
+    });
 
     if (error) {
       console.error('Error marking notifications as read:', error);
@@ -158,7 +170,10 @@ export class NotificationService {
   /**
    * Mark single notification as read
    */
-  async markSingleAsRead(notificationId: string, userId: string): Promise<boolean> {
+  async markSingleAsRead(
+    notificationId: string,
+    userId: string
+  ): Promise<boolean> {
     const { error } = await this.supabase
       .from('notifications')
       .update({ read_at: new Date().toISOString() })
@@ -176,7 +191,10 @@ export class NotificationService {
   /**
    * Delete notification
    */
-  async deleteNotification(notificationId: string, userId: string): Promise<boolean> {
+  async deleteNotification(
+    notificationId: string,
+    userId: string
+  ): Promise<boolean> {
     const { error } = await this.supabase
       .from('notifications')
       .delete()
@@ -212,8 +230,8 @@ export class NotificationService {
    * Get notifications by type
    */
   async getNotificationsByType(
-    userId: string, 
-    type: NotificationType, 
+    userId: string,
+    type: NotificationType,
     limit = 20
   ): Promise<Notification[]> {
     const { data, error } = await this.supabase
@@ -236,9 +254,9 @@ export class NotificationService {
    * Create session reminder notification
    */
   async createSessionReminder(
-    userId: string, 
-    sessionId: string, 
-    sessionTitle: string, 
+    userId: string,
+    sessionId: string,
+    sessionTitle: string,
     scheduledAt: Date
   ): Promise<Notification | null> {
     const reminderTime = new Date(scheduledAt.getTime() - 24 * 60 * 60 * 1000); // 24 hours before
@@ -257,8 +275,8 @@ export class NotificationService {
    * Create new message notification
    */
   async createNewMessageNotification(
-    userId: string, 
-    fromUserName: string, 
+    userId: string,
+    fromUserName: string,
     messageType: string
   ): Promise<Notification | null> {
     return this.createNotification({
@@ -274,8 +292,8 @@ export class NotificationService {
    * Create session confirmation notification
    */
   async createSessionConfirmation(
-    userId: string, 
-    sessionId: string, 
+    userId: string,
+    sessionId: string,
     sessionTitle: string
   ): Promise<Notification | null> {
     return this.createNotification({
@@ -287,11 +305,13 @@ export class NotificationService {
     });
   }
 
-
   /**
    * Get notifications by IDs for a specific user
    */
-  async getNotificationsByIds(notificationIds: string[], userId: string): Promise<Notification[]> {
+  async getNotificationsByIds(
+    notificationIds: string[],
+    userId: string
+  ): Promise<Notification[]> {
     const { data, error } = await this.supabase
       .from('notifications')
       .select('*')
@@ -309,7 +329,10 @@ export class NotificationService {
   /**
    * Mark multiple notifications as read
    */
-  async markMultipleAsRead(notificationIds: string[], userId: string): Promise<{ count: number; processedIds: string[] }> {
+  async markMultipleAsRead(
+    notificationIds: string[],
+    userId: string
+  ): Promise<{ count: number; processedIds: string[] }> {
     const { data, error } = await this.supabase
       .from('notifications')
       .update({ read_at: new Date().toISOString() })
@@ -323,13 +346,19 @@ export class NotificationService {
       return { count: 0, processedIds: [] };
     }
 
-    return { count: data.length, processedIds: data.map(n => n.id) };
+    return {
+      count: data.length,
+      processedIds: data.map((n: { id: string }) => n.id),
+    };
   }
 
   /**
    * Delete multiple notifications
    */
-  async deleteMultiple(notificationIds: string[], userId: string): Promise<{ count: number; processedIds: string[] }> {
+  async deleteMultiple(
+    notificationIds: string[],
+    userId: string
+  ): Promise<{ count: number; processedIds: string[] }> {
     const { data, error } = await this.supabase
       .from('notifications')
       .delete()
@@ -342,23 +371,29 @@ export class NotificationService {
       return { count: 0, processedIds: [] };
     }
 
-    return { count: data.length, processedIds: data.map(n => n.id) };
+    return {
+      count: data.length,
+      processedIds: data.map((n: { id: string }) => n.id),
+    };
   }
 
   /**
    * Archive multiple notifications (mark as archived and read)
    */
-  async archiveMultiple(notificationIds: string[], userId: string): Promise<{ count: number; processedIds: string[] }> {
+  async archiveMultiple(
+    notificationIds: string[],
+    userId: string
+  ): Promise<{ count: number; processedIds: string[] }> {
     const now = new Date().toISOString();
     const { data, error } = await this.supabase
       .from('notifications')
-      .update({ 
-        data: this.supabase.rpc('jsonb_set', { 
-          target: 'data', 
-          path: '{isArchived}', 
-          value: JSON.stringify(true) 
+      .update({
+        data: this.supabase.rpc('jsonb_set', {
+          target: 'data',
+          path: '{isArchived}',
+          value: JSON.stringify(true),
         }),
-        read_at: now
+        read_at: now,
       })
       .in('id', notificationIds)
       .eq('user_id', userId)
@@ -369,7 +404,10 @@ export class NotificationService {
       return { count: 0, processedIds: [] };
     }
 
-    return { count: data.length, processedIds: data.map(n => n.id) };
+    return {
+      count: data.length,
+      processedIds: data.map((n: { id: string }) => n.id),
+    };
   }
 
   /**
@@ -402,7 +440,9 @@ export class NotificationService {
     }
 
     queryBuilder = queryBuilder
-      .order(filters.sortBy || 'created_at', { ascending: filters.sortOrder === 'asc' })
+      .order(filters.sortBy || 'created_at', {
+        ascending: filters.sortOrder === 'asc',
+      })
       .limit(filters.limit || 1000);
 
     const { data, error } = await queryBuilder;
@@ -421,7 +461,9 @@ export class NotificationService {
    * @param options - Configuration options for pagination and filtering
    * @returns Promise<Notification[]> - Array of filtered notifications
    */
-  async getNotificationsPaginated(options: GetNotificationsOptions): Promise<Notification[]> {
+  async getNotificationsPaginated(
+    options: GetNotificationsOptions
+  ): Promise<Notification[]> {
     let queryBuilder = this.supabase
       .from('notifications')
       .select('*')
@@ -439,7 +481,9 @@ export class NotificationService {
       if (options.isArchived) {
         queryBuilder = queryBuilder.eq('data->>isArchived', 'true');
       } else {
-        queryBuilder = queryBuilder.or('data->>isArchived.is.null,data->>isArchived.eq.false');
+        queryBuilder = queryBuilder.or(
+          'data->>isArchived.is.null,data->>isArchived.eq.false'
+        );
       }
     }
 
@@ -448,8 +492,13 @@ export class NotificationService {
     }
 
     queryBuilder = queryBuilder
-      .order(options.sortBy || 'created_at', { ascending: options.sortOrder === 'asc' })
-      .range(options.offset || 0, (options.offset || 0) + (options.limit || 20) - 1);
+      .order(options.sortBy || 'created_at', {
+        ascending: options.sortOrder === 'asc',
+      })
+      .range(
+        options.offset || 0,
+        (options.offset || 0) + (options.limit || 20) - 1
+      );
 
     const { data, error } = await queryBuilder;
 
@@ -467,7 +516,9 @@ export class NotificationService {
    * @param options - Configuration options for filtering
    * @returns Promise<number> - Total count of notifications matching the filters
    */
-  async getNotificationsCount(options: GetNotificationsCountOptions): Promise<number> {
+  async getNotificationsCount(
+    options: GetNotificationsCountOptions
+  ): Promise<number> {
     let queryBuilder = this.supabase
       .from('notifications')
       .select('*', { count: 'exact', head: true })
@@ -485,7 +536,9 @@ export class NotificationService {
       if (options.isArchived) {
         queryBuilder = queryBuilder.eq('data->>isArchived', 'true');
       } else {
-        queryBuilder = queryBuilder.or('data->>isArchived.is.null,data->>isArchived.eq.false');
+        queryBuilder = queryBuilder.or(
+          'data->>isArchived.is.null,data->>isArchived.eq.false'
+        );
       }
     }
 
@@ -509,7 +562,9 @@ export class NotificationService {
    * @param data - API notification data structure
    * @returns Promise<Notification | null> - Created notification or null if failed
    */
-  async createNotificationFromApi(data: CreateNotificationData): Promise<Notification | null> {
+  async createNotificationFromApi(
+    data: CreateNotificationData
+  ): Promise<Notification | null> {
     return this.createNotification({
       userId: data.userId,
       type: data.type,
@@ -524,8 +579,8 @@ export class NotificationService {
    * Create system update notification
    */
   async createSystemUpdate(
-    userId: string, 
-    updateTitle: string, 
+    userId: string,
+    updateTitle: string,
     updateMessage: string
   ): Promise<Notification | null> {
     return this.createNotification({
@@ -580,21 +635,18 @@ export class NotificationService {
   ): Notification {
     return {
       id: dbNotification.id,
-      userId: dbNotification.userId || dbNotification.user_id,
+      userId: dbNotification.user_id,
       type: dbNotification.type as NotificationType,
       title: dbNotification.title,
       message: dbNotification.message,
-      data: dbNotification.data as Record<string, unknown> || {},
-      readAt: dbNotification.read_at || undefined,
-      sentAt: dbNotification.sent_at || undefined,
-      scheduledFor: dbNotification.scheduled_for,
-      createdAt: dbNotification.createdAt || dbNotification.created_at,
-      updatedAt: dbNotification.updatedAt || dbNotification.updated_at,
+      data: (dbNotification.data as Record<string, unknown>) || {},
+      readAt: dbNotification.read_at ?? undefined,
+      sentAt: dbNotification.sent_at ?? undefined,
+      scheduledFor: dbNotification.scheduled_for ?? undefined,
+      createdAt: dbNotification.created_at ?? new Date().toISOString(),
+      updatedAt: dbNotification.created_at ?? new Date().toISOString(),
     };
   }
-
-
-
 }
 
 // Export individual functions for API usage
@@ -605,7 +657,7 @@ const notificationService = new NotificationService(true);
  * @param options - Configuration options for pagination and filtering
  * @returns Promise<Notification[]> - Array of filtered notifications
  */
-export const getNotificationsPaginated = (options: GetNotificationsOptions) => 
+export const getNotificationsPaginated = (options: GetNotificationsOptions) =>
   notificationService.getNotificationsPaginated(options);
 
 /**
@@ -613,7 +665,7 @@ export const getNotificationsPaginated = (options: GetNotificationsOptions) =>
  * @param options - Configuration options for filtering
  * @returns Promise<number> - Total count of notifications matching the filters
  */
-export const getNotificationsCount = (options: GetNotificationsCountOptions) => 
+export const getNotificationsCount = (options: GetNotificationsCountOptions) =>
   notificationService.getNotificationsCount(options);
 
 /**
@@ -621,5 +673,5 @@ export const getNotificationsCount = (options: GetNotificationsCountOptions) =>
  * @param notificationData - API notification data structure
  * @returns Promise<Notification | null> - Created notification or null if failed
  */
-export const createNotification = (notificationData: CreateNotificationData) => 
+export const createNotification = (notificationData: CreateNotificationData) =>
   notificationService.createNotificationFromApi(notificationData);
