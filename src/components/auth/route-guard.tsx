@@ -3,7 +3,7 @@
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { usePermission, useAnyPermission, useHasAnyRole } from '@/lib/permissions/hooks';
@@ -48,7 +48,13 @@ export function RouteGuard({
   const pathname = usePathname();
   const user = useUser();
   const isLoading = useAuthLoading();
-  
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Track when component has mounted (hydrated)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Always call hooks to avoid conditional hook calls
   const hasRequiredPermission = usePermission(requirePermission || '' as Permission);
   const hasAnyRequiredPermission = useAnyPermission(requireAnyPermission || []);
@@ -176,8 +182,8 @@ export function RouteGuard({
     );
   }
 
-  // Check authorization after loading
-  if (!isLoading) {
+  // Check authorization after loading and hydration
+  if (!isLoading && isMounted) {
     // Not authenticated but auth required
     if (requireAuth && !user) {
       return null; // Will redirect in useEffect
