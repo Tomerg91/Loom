@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import {
   HTTP_STATUS,
@@ -6,7 +6,10 @@ import {
   createSuccessResponse,
   validateRequestBody,
 } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
+import {
+  createAuthenticatedSupabaseClient,
+  propagateCookies,
+} from '@/lib/api/auth-client';
 import {
   SessionSchedulerError,
   SessionSchedulerService,
@@ -31,15 +34,21 @@ const createUnauthorizedResponse = () =>
     HTTP_STATUS.UNAUTHORIZED
   );
 
-async function getAuthenticatedActor(): Promise<
-  { actor: AuthActor } | { response: Response }
-> {
+async function getAuthenticatedActor(
+  request: NextRequest,
+  authResponse: NextResponse
+): Promise<{ actor: AuthActor } | { response: Response }> {
   try {
-    const supabase = createServerClient();
+    const { client: supabase } = createAuthenticatedSupabaseClient(
+      request,
+      authResponse
+    );
     const { data: session, error } = await supabase.auth.getUser();
 
     if (error || !session?.user) {
-      return { response: createUnauthorizedResponse() };
+      return {
+        response: propagateCookies(authResponse, createUnauthorizedResponse()),
+      };
     }
 
     const { data: profile, error: profileError } = await supabase
@@ -63,7 +72,9 @@ async function getAuthenticatedActor(): Promise<
     };
   } catch (error) {
     console.error('Session update API authentication error:', error);
-    return { response: createUnauthorizedResponse() };
+    return {
+      response: propagateCookies(authResponse, createUnauthorizedResponse()),
+    };
   }
 }
 
@@ -72,7 +83,8 @@ export const PATCH = async (
   context: { params: Promise<{ id: string }> }
 ) => {
   const params = await context.params;
-  const authResult = await getAuthenticatedActor();
+  const authResponse = new NextResponse();
+  const authResult = await getAuthenticatedActor(request, authResponse);
   if ('response' in authResult) {
     return authResult.response;
   }
@@ -84,27 +96,42 @@ export const PATCH = async (
     body = await request.json();
   } catch (error) {
     console.warn('Failed to parse session update payload:', error);
-    return createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
+    return propagateCookies(
+      authResponse,
+      createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST)
+    );
   }
 
   const parsed = validateRequestBody(sessionUpdateSchema, body);
   if (!parsed.success) {
-    return createErrorResponse(parsed.error, HTTP_STATUS.BAD_REQUEST);
+    return propagateCookies(
+      authResponse,
+      createErrorResponse(parsed.error, HTTP_STATUS.BAD_REQUEST)
+    );
   }
 
   const payload = parsed.data as SessionUpdateInput;
 
   try {
     const result = await scheduler.updateSession(actor, params.id, payload);
-    return createSuccessResponse(result, 'Session updated successfully');
+    return propagateCookies(
+      authResponse,
+      createSuccessResponse(result, 'Session updated successfully')
+    );
   } catch (error) {
     if (error instanceof SessionSchedulerError) {
-      return createErrorResponse(error.message, error.status);
+      return propagateCookies(
+        authResponse,
+        createErrorResponse(error.message, error.status)
+      );
     }
     console.error('Sessions API PATCH error:', error);
-    return createErrorResponse(
-      'Internal server error',
-      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    return propagateCookies(
+      authResponse,
+      createErrorResponse(
+        'Internal server error',
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      )
     );
   }
 };

@@ -1,10 +1,14 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { serverEnv } from '@/env/server';
-import { createSuccessResponse, createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
-import type { Database } from '@/types/supabase';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  HTTP_STATUS,
+} from '@/lib/api/utils';
+import {
+  createAuthenticatedSupabaseClient,
+  propagateCookies,
+} from '@/lib/api/auth-client';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -14,27 +18,29 @@ interface RouteParams {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: userId } = await params;
-    
-    // Create client from Authorization bearer if provided; fallback to cookie-based server client
-    const authHeader = request.headers.get('authorization');
-    const supabase = authHeader
-      ? createSupabaseClient<Database>(
-          serverEnv.NEXT_PUBLIC_SUPABASE_URL!,
-          serverEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          { global: { headers: { Authorization: authHeader } } }
-        )
-      : createServerClient();
-    
+
+    const { client: supabase, response: authResponse } =
+      createAuthenticatedSupabaseClient(request, new NextResponse());
+
     // Get current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
     if (sessionError || !session) {
-      return createErrorResponse('Authentication required', HTTP_STATUS.UNAUTHORIZED);
+      return propagateCookies(
+        authResponse,
+        createErrorResponse('Authentication required', HTTP_STATUS.UNAUTHORIZED)
+      );
     }
 
     // Only allow users to update their own last seen timestamp
     if (session.user.id !== userId) {
-      return createErrorResponse('Access denied', HTTP_STATUS.FORBIDDEN);
+      return propagateCookies(
+        authResponse,
+        createErrorResponse('Access denied', HTTP_STATUS.FORBIDDEN)
+      );
     }
 
     // Update last seen timestamp
@@ -45,18 +51,23 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (updateError) {
       console.error('Error updating last seen:', updateError);
-      return createErrorResponse(
-        'Failed to update last seen timestamp', 
-        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      return propagateCookies(
+        authResponse,
+        createErrorResponse(
+          'Failed to update last seen timestamp',
+          HTTP_STATUS.INTERNAL_SERVER_ERROR
+        )
       );
     }
 
-    return createSuccessResponse(null, 'Last seen timestamp updated successfully');
-    
+    return propagateCookies(
+      authResponse,
+      createSuccessResponse(null, 'Last seen timestamp updated successfully')
+    );
   } catch (error) {
     console.error('Error updating last seen:', error);
     return createErrorResponse(
-      'Internal server error', 
+      'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
   }
