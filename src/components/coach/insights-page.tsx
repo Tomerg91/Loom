@@ -1,8 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { 
-  BarChart3,
+import {
   TrendingUp,
   TrendingDown,
   Users,
@@ -13,30 +12,33 @@ import {
   Award,
   Activity,
   Download,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
-import { SessionMetricsChart, RevenueChart } from '@/components/charts/chart-components';
+import {
+  SessionMetricsChart,
+  RevenueChart,
+} from '@/components/charts/chart-components';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface CoachInsights {
   overview: {
@@ -83,20 +85,42 @@ interface CoachInsights {
   }>;
 }
 
+interface ApiClientProgress {
+  id: string;
+  name: string;
+  averageProgress?: number;
+  averageMood?: number;
+  sessionsCompleted: number;
+  lastSession: string;
+}
+
+interface ApiSessionMetric {
+  date: string;
+  completed: number;
+  cancelled: number;
+}
+
 export function CoachInsightsPage() {
   const t = useTranslations('coach.insights');
   const [timeRange, setTimeRange] = useState('30d');
   const [activeTab, setActiveTab] = useState('overview');
 
-  const { data: insights, isLoading, error, refetch } = useQuery<CoachInsights>({
+  const {
+    data: insights,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<CoachInsights>({
     queryKey: ['coach-insights', timeRange],
     queryFn: async () => {
-      const response = await fetch(`/api/coach/insights?timeRange=${timeRange}`);
+      const response = await fetch(
+        `/api/coach/insights?timeRange=${timeRange}`
+      );
       if (!response.ok) {
         throw new Error('Failed to fetch insights');
       }
       const result = await response.json();
-      
+
       // Transform API response to match component interface
       const apiData = result.data;
       return {
@@ -105,27 +129,41 @@ export function CoachInsightsPage() {
           activeClients: apiData.overview.uniqueClients, // All clients are considered active in this period
           totalSessions: apiData.overview.totalSessions,
           completedSessions: apiData.overview.completedSessions,
-          averageRating: apiData.overview.averageMoodRating || apiData.overview.averageProgressRating || 0,
+          averageRating:
+            apiData.overview.averageMoodRating ||
+            apiData.overview.averageProgressRating ||
+            0,
           revenue: apiData.overview.estimatedRevenue,
           clientRetentionRate: 85, // Placeholder - would need retention calculation
           sessionCompletionRate: apiData.overview.completionRate,
         },
-        clientProgress: apiData.clientProgress.map((client: any) => ({
-          clientId: client.id,
-          clientName: client.name,
-          progressScore: Math.round((client.averageProgress || client.averageMood || 50) * 20), // Convert 1-5 to 0-100
-          sessionsCompleted: client.sessionsCompleted,
-          goalAchievement: Math.round((client.averageProgress || 2.5) * 20), // Placeholder calculation
-          lastSession: client.lastSession,
-          trend: client.averageProgress > 3 ? 'up' : client.averageProgress < 2.5 ? 'down' : 'stable',
-        })),
-        sessionMetrics: apiData.sessionMetrics.map((metric: any) => ({
-          date: metric.date,
-          sessionsCompleted: metric.completed,
-          sessionsCancelled: metric.cancelled,
-          averageRating: 4.5, // Placeholder - would need actual ratings
-          revenue: metric.completed * 100, // $100 per session placeholder
-        })),
+        clientProgress: apiData.clientProgress.map(
+          (client: ApiClientProgress) => ({
+            clientId: client.id,
+            clientName: client.name,
+            progressScore: Math.round(
+              (client.averageProgress || client.averageMood || 50) * 20
+            ), // Convert 1-5 to 0-100
+            sessionsCompleted: client.sessionsCompleted,
+            goalAchievement: Math.round((client.averageProgress || 2.5) * 20), // Placeholder calculation
+            lastSession: client.lastSession,
+            trend:
+              client.averageProgress && client.averageProgress > 3
+                ? 'up'
+                : client.averageProgress && client.averageProgress < 2.5
+                  ? 'down'
+                  : ('stable' as const),
+          })
+        ),
+        sessionMetrics: apiData.sessionMetrics.map(
+          (metric: ApiSessionMetric) => ({
+            date: metric.date,
+            sessionsCompleted: metric.completed,
+            sessionsCancelled: metric.cancelled,
+            averageRating: 4.5, // Placeholder - would need actual ratings
+            revenue: metric.completed * 100, // $100 per session placeholder
+          })
+        ),
         goalAnalysis: {
           mostCommonGoals: [
             { goal: 'Career Development', count: 8, successRate: 75 },
@@ -158,6 +196,43 @@ export function CoachInsightsPage() {
     }
   };
 
+  const generateCSV = (data: typeof insights): string => {
+    if (!data) return '';
+
+    const headers = ['Metric', 'Value'];
+    const rows = [
+      ['Total Sessions', data.overview.totalSessions.toString()],
+      ['Completed Sessions', data.overview.completedSessions.toString()],
+      ['Client Count', data.overview.totalClients.toString()],
+      ['Average Rating', data.overview.averageRating.toString()],
+      ['Revenue', formatCurrency(data.overview.revenue)],
+      ['Client Retention Rate', `${data.overview.clientRetentionRate}%`],
+      ['Session Completion Rate', `${data.overview.sessionCompletionRate}%`],
+    ];
+
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+  };
+
+  const downloadFile = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExport = async () => {
+    try {
+      const csvContent = generateCSV(insights);
+      downloadFile(csvContent, 'coaching-insights.csv');
+      toast.success('Analytics data exported successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export data');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -196,12 +271,17 @@ export function CoachInsightsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" data-testid="page-title">{t('title')}</h1>
+          <h1 className="text-3xl font-bold" data-testid="page-title">
+            {t('title')}
+          </h1>
           <p className="text-muted-foreground">{t('description')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[180px]" data-testid="time-range-filter">
+            <SelectTrigger
+              className="w-[180px]"
+              data-testid="time-range-filter"
+            >
               <SelectValue placeholder="Select time range" />
             </SelectTrigger>
             <SelectContent>
@@ -211,11 +291,19 @@ export function CoachInsightsPage() {
               <SelectItem value="1y">Last year</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => refetch()} data-testid="refresh-button">
+          <Button
+            variant="outline"
+            onClick={() => refetch()}
+            data-testid="refresh-button"
+          >
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
-          <Button variant="outline" data-testid="export-button">
+          <Button
+            variant="outline"
+            data-testid="export-button"
+            onClick={handleExport}
+          >
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
@@ -223,11 +311,22 @@ export function CoachInsightsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4" data-testid="insights-tabs">
-          <TabsTrigger value="overview" data-testid="overview-tab">Overview</TabsTrigger>
-          <TabsTrigger value="clients" data-testid="clients-tab">Client Progress</TabsTrigger>
-          <TabsTrigger value="goals" data-testid="goals-tab">Goal Analysis</TabsTrigger>
-          <TabsTrigger value="feedback" data-testid="feedback-tab">Feedback</TabsTrigger>
+        <TabsList
+          className="grid w-full grid-cols-4"
+          data-testid="insights-tabs"
+        >
+          <TabsTrigger value="overview" data-testid="overview-tab">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="clients" data-testid="clients-tab">
+            Client Progress
+          </TabsTrigger>
+          <TabsTrigger value="goals" data-testid="goals-tab">
+            Goal Analysis
+          </TabsTrigger>
+          <TabsTrigger value="feedback" data-testid="feedback-tab">
+            Feedback
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -235,24 +334,38 @@ export function CoachInsightsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Clients
+                </CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold" data-testid="total-clients-metric">{insights?.overview.totalClients}</div>
+                <div
+                  className="text-2xl font-bold"
+                  data-testid="total-clients-metric"
+                >
+                  {insights?.overview.totalClients}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">{insights?.overview.activeClients}</span> active
+                  <span className="text-green-600">
+                    {insights?.overview.activeClients}
+                  </span>{' '}
+                  active
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sessions Completed</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Sessions Completed
+                </CardTitle>
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{insights?.overview.completedSessions}</div>
+                <div className="text-2xl font-bold">
+                  {insights?.overview.completedSessions}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {insights?.overview.sessionCompletionRate}% completion rate
                 </p>
@@ -261,11 +374,15 @@ export function CoachInsightsPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Average Rating
+                </CardTitle>
                 <Star className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{insights?.overview.averageRating}</div>
+                <div className="text-2xl font-bold">
+                  {insights?.overview.averageRating}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   <span className="text-green-600">+0.3</span> from last month
                 </p>
@@ -278,7 +395,9 @@ export function CoachInsightsPage() {
                 <Target className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(insights?.overview.revenue || 0)}</div>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(insights?.overview.revenue || 0)}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   <span className="text-green-600">+15%</span> from last month
                 </p>
@@ -290,12 +409,15 @@ export function CoachInsightsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Session Performance Chart */}
             <SessionMetricsChart
-              data={insights?.sessionMetrics.map(metric => ({
-                date: metric.date,
-                totalSessions: metric.sessionsCompleted + metric.sessionsCancelled,
-                completedSessions: metric.sessionsCompleted,
-                cancelledSessions: metric.sessionsCancelled,
-              })) || []}
+              data={
+                insights?.sessionMetrics.map(metric => ({
+                  date: metric.date,
+                  totalSessions:
+                    metric.sessionsCompleted + metric.sessionsCancelled,
+                  completedSessions: metric.sessionsCompleted,
+                  cancelledSessions: metric.sessionsCancelled,
+                })) || []
+              }
               title="Session Performance"
               description="Sessions completed and cancelled over time"
               height={264}
@@ -304,11 +426,13 @@ export function CoachInsightsPage() {
 
             {/* Revenue Trend Chart */}
             <RevenueChart
-              data={insights?.sessionMetrics.map(metric => ({
-                date: metric.date,
-                revenue: metric.revenue,
-                sessions: metric.sessionsCompleted,
-              })) || []}
+              data={
+                insights?.sessionMetrics.map(metric => ({
+                  date: metric.date,
+                  revenue: metric.revenue,
+                  sessions: metric.sessionsCompleted,
+                })) || []
+              }
               title="Revenue Trend"
               description="Daily revenue and session count"
               height={264}
@@ -321,18 +445,24 @@ export function CoachInsightsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Client Retention</CardTitle>
-                <CardDescription>Client retention and engagement metrics</CardDescription>
+                <CardDescription>
+                  Client retention and engagement metrics
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Retention Rate</span>
-                    <span className="text-2xl font-bold">{insights?.overview.clientRetentionRate}%</span>
+                    <span className="text-2xl font-bold">
+                      {insights?.overview.clientRetentionRate}%
+                    </span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-primary h-2 rounded-full"
-                      style={{ width: `${insights?.overview.clientRetentionRate}%` }}
+                      style={{
+                        width: `${insights?.overview.clientRetentionRate}%`,
+                      }}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -345,18 +475,24 @@ export function CoachInsightsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Session Completion</CardTitle>
-                <CardDescription>Session completion and cancellation rates</CardDescription>
+                <CardDescription>
+                  Session completion and cancellation rates
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Completion Rate</span>
-                    <span className="text-2xl font-bold">{insights?.overview.sessionCompletionRate}%</span>
+                    <span className="text-2xl font-bold">
+                      {insights?.overview.sessionCompletionRate}%
+                    </span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-primary h-2 rounded-full"
-                      style={{ width: `${insights?.overview.sessionCompletionRate}%` }}
+                      style={{
+                        width: `${insights?.overview.sessionCompletionRate}%`,
+                      }}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -373,12 +509,17 @@ export function CoachInsightsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Client Progress Overview</CardTitle>
-              <CardDescription>Track your clients&apos; progress and achievements</CardDescription>
+              <CardDescription>
+                Track your clients&apos; progress and achievements
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {insights?.clientProgress.map((client) => (
-                  <div key={client.clientId} className="flex items-center justify-between p-4 border rounded-lg">
+                {insights?.clientProgress.map(client => (
+                  <div
+                    key={client.clientId}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
                         {getTrendIcon(client.trend)}
@@ -400,11 +541,25 @@ export function CoachInsightsPage() {
                         <p className="text-muted-foreground">Goals</p>
                       </div>
                       <div className="text-center">
-                        <p className="font-medium">{new Date(client.lastSession).toLocaleDateString()}</p>
+                        <p className="font-medium">
+                          {new Date(client.lastSession).toLocaleDateString()}
+                        </p>
                         <p className="text-muted-foreground">Last Session</p>
                       </div>
-                      <Badge variant={client.trend === 'up' ? 'default' : client.trend === 'down' ? 'destructive' : 'secondary'}>
-                        {client.trend === 'up' ? 'Improving' : client.trend === 'down' ? 'Declining' : 'Stable'}
+                      <Badge
+                        variant={
+                          client.trend === 'up'
+                            ? 'default'
+                            : client.trend === 'down'
+                              ? 'destructive'
+                              : 'secondary'
+                        }
+                      >
+                        {client.trend === 'up'
+                          ? 'Improving'
+                          : client.trend === 'down'
+                            ? 'Declining'
+                            : 'Stable'}
                       </Badge>
                     </div>
                   </div>
@@ -420,22 +575,43 @@ export function CoachInsightsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Most Common Goals</CardTitle>
-                <CardDescription>Goals your clients are working towards</CardDescription>
+                <CardDescription>
+                  Goals your clients are working towards
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {insights?.goalAnalysis.mostCommonGoals.map((goal, index) => (
-                    <div key={index} className="flex items-center justify-between">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between"
+                    >
                       <div className="flex items-center space-x-3">
                         <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
-                          <span className="text-sm font-medium text-primary">{goal.count}</span>
+                          <span className="text-sm font-medium text-primary">
+                            {goal.count}
+                          </span>
                         </div>
                         <span className="font-medium">{goal.goal}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-muted-foreground">{goal.successRate}% success</span>
-                        <Badge variant={goal.successRate >= 80 ? 'default' : goal.successRate >= 60 ? 'secondary' : 'outline'}>
-                          {goal.successRate >= 80 ? 'High' : goal.successRate >= 60 ? 'Medium' : 'Low'}
+                        <span className="text-sm text-muted-foreground">
+                          {goal.successRate}% success
+                        </span>
+                        <Badge
+                          variant={
+                            goal.successRate >= 80
+                              ? 'default'
+                              : goal.successRate >= 60
+                                ? 'secondary'
+                                : 'outline'
+                          }
+                        >
+                          {goal.successRate >= 80
+                            ? 'High'
+                            : goal.successRate >= 60
+                              ? 'Medium'
+                              : 'Low'}
                         </Badge>
                       </div>
                     </div>
@@ -447,18 +623,26 @@ export function CoachInsightsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Goal Achievement Metrics</CardTitle>
-                <CardDescription>Overall goal achievement statistics</CardDescription>
+                <CardDescription>
+                  Overall goal achievement statistics
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Overall Achievement Rate</span>
-                    <span className="text-2xl font-bold">{insights?.goalAnalysis.achievementRate}%</span>
+                    <span className="text-sm font-medium">
+                      Overall Achievement Rate
+                    </span>
+                    <span className="text-2xl font-bold">
+                      {insights?.goalAnalysis.achievementRate}%
+                    </span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-3">
-                    <div 
+                    <div
                       className="bg-primary h-3 rounded-full"
-                      style={{ width: `${insights?.goalAnalysis.achievementRate}%` }}
+                      style={{
+                        width: `${insights?.goalAnalysis.achievementRate}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -468,22 +652,38 @@ export function CoachInsightsPage() {
                     <Clock className="h-5 w-5 text-muted-foreground" />
                     <span className="font-medium">Average Time to Goal</span>
                   </div>
-                  <span className="text-lg font-bold">{insights?.goalAnalysis.averageTimeToGoal} weeks</span>
+                  <span className="text-lg font-bold">
+                    {insights?.goalAnalysis.averageTimeToGoal} weeks
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-3 border rounded-lg">
                     <Award className="h-6 w-6 mx-auto mb-2 text-primary" />
-                    <p className="text-sm text-muted-foreground">Goals Achieved</p>
+                    <p className="text-sm text-muted-foreground">
+                      Goals Achieved
+                    </p>
                     <p className="text-xl font-bold">
-                      {Math.round((insights?.goalAnalysis.achievementRate || 0) * (insights?.goalAnalysis.mostCommonGoals.reduce((sum, g) => sum + g.count, 0) || 0) / 100)}
+                      {Math.round(
+                        ((insights?.goalAnalysis.achievementRate || 0) *
+                          (insights?.goalAnalysis.mostCommonGoals.reduce(
+                            (sum, g) => sum + g.count,
+                            0
+                          ) || 0)) /
+                          100
+                      )}
                     </p>
                   </div>
                   <div className="text-center p-3 border rounded-lg">
                     <Target className="h-6 w-6 mx-auto mb-2 text-primary" />
-                    <p className="text-sm text-muted-foreground">Active Goals</p>
+                    <p className="text-sm text-muted-foreground">
+                      Active Goals
+                    </p>
                     <p className="text-xl font-bold">
-                      {insights?.goalAnalysis.mostCommonGoals.reduce((sum, g) => sum + g.count, 0) || 0}
+                      {insights?.goalAnalysis.mostCommonGoals.reduce(
+                        (sum, g) => sum + g.count,
+                        0
+                      ) || 0}
                     </p>
                   </div>
                 </div>
@@ -497,7 +697,9 @@ export function CoachInsightsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Recent Client Feedback</CardTitle>
-              <CardDescription>Latest reviews and comments from your clients</CardDescription>
+              <CardDescription>
+                Latest reviews and comments from your clients
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -507,7 +709,9 @@ export function CoachInsightsPage() {
                       <div className="flex items-center space-x-3">
                         <div>
                           <p className="font-medium">{feedback.clientName}</p>
-                          <p className="text-sm text-muted-foreground">{feedback.sessionType}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {feedback.sessionType}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -516,7 +720,9 @@ export function CoachInsightsPage() {
                             <Star
                               key={i}
                               className={`h-4 w-4 ${
-                                i < feedback.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'
+                                i < feedback.rating
+                                  ? 'text-yellow-500 fill-yellow-500'
+                                  : 'text-gray-300'
                               }`}
                             />
                           ))}
