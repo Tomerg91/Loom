@@ -24,7 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -33,13 +33,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { transformClientData } from '@/lib/transformers/client-transformer';
 
 
 interface Client {
@@ -100,6 +101,9 @@ export function CoachClientsPage() {
 
   // Transform API data to match component interface
   const clients: Client[] = clientsData?.map((client: Record<string, unknown>) => {
+    // Use the transformer for consistent field mapping
+    const transformedClient = transformClientData(client);
+
     const totalSessions = (client.totalSessions ?? client.total_sessions ?? 0) as number;
     const completedSessions = (client.completedSessions ?? client.completed_sessions ?? 0) as number;
     const rawProgress = (client.progress ?? null) as { current?: number; target?: number } | null;
@@ -110,11 +114,11 @@ export function CoachClientsPage() {
       : 0;
 
     return {
-      id: client.id,
-      firstName: client.firstName ?? client.first_name ?? '',
-      lastName: client.lastName ?? client.last_name ?? '',
-      email: client.email,
-      phone: client.phone || undefined,
+      id: transformedClient.id,
+      firstName: transformedClient.firstName,
+      lastName: transformedClient.lastName,
+      email: transformedClient.email,
+      phone: transformedClient.phone || undefined,
       avatarUrl: client.avatar || client.avatarUrl || undefined,
       status: client.status,
       joinedDate: client.joinedDate || client.joined_date || new Date().toISOString(),
