@@ -14,7 +14,7 @@ import {
   Download,
   RefreshCw,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -104,6 +104,7 @@ interface ApiSessionMetric {
 }
 
 export function CoachInsightsPage() {
+  const _locale = useLocale();
   const t = useTranslations('coach.insights');
   const [timeRange, setTimeRange] = useState('30d');
   const [activeTab, setActiveTab] = useState('overview');
