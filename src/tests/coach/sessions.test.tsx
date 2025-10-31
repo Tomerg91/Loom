@@ -2,6 +2,28 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CoachSessionsPage from '@/app/coach/sessions/page';
 
+// Mock the auth hook
+vi.mock('@/lib/auth/use-auth', () => ({
+  useUnifiedAuth: () => ({
+    user: { id: 'test-coach-id', role: 'coach' },
+    loading: false,
+  }),
+}));
+
+// Mock the custom hooks
+vi.mock('@/hooks/useCoachSessions', () => ({
+  useCoachSessions: () => ({
+    data: [],
+    isLoading: false,
+    error: null,
+  }),
+  useCoachClients: () => ({
+    data: [],
+    isLoading: false,
+    error: null,
+  }),
+}));
+
 describe('CoachSessionsPage - Button Click Handlers', () => {
   beforeEach(() => {
     vi.clearAllMocks();

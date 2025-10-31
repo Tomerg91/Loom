@@ -1,6 +1,6 @@
 'use client';
 
-import { format, addDays, startOfWeek, endOfWeek, isToday } from 'date-fns';
+import { format, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import {
   CalendarIcon,
   ClockIcon,
@@ -24,7 +24,7 @@ import {
   TimerIcon,
   BookOpenIcon,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { DateRange } from 'react-day-picker';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -42,6 +42,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { useCoachSessions, useCoachClients } from '@/hooks/useCoachSessions';
+import { useUnifiedAuth } from '@/lib/auth/use-auth';
 import { Session, SessionStatus, SessionType } from '@/types';
 
 
@@ -93,108 +95,28 @@ interface _SessionOutcome {
   followupRequired: boolean;
 }
 
-// Mock data - in real app, this would come from API
-const mockSessions: Session[] = [
-  {
-    id: '1',
-    coachId: 'coach-1',
-    clientId: 'client-1',
-    title: 'Goal Setting & Career Planning',
-    description: 'Initial consultation to discuss career goals and development plan',
-    scheduledAt: new Date().toISOString(),
-    duration: 60,
-    durationMinutes: 60,
-    status: 'scheduled',
-    sessionType: 'video',
-    meetingUrl: 'https://zoom.us/j/123456789',
-    notes: 'Client wants to transition to tech industry',
-    rating: 0,
-    actionItems: [],
-    goals: ['Define career objectives', 'Create action plan'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    coach: {
-      id: 'coach-1',
-      email: 'coach@example.com',
-      firstName: 'Sarah',
-      lastName: 'Johnson'
-    },
-    client: {
-      id: 'client-1',
-      email: 'client@example.com',
-      firstName: 'John',
-      lastName: 'Smith',
-      avatarUrl: '/avatars/john.jpg'
-    }
-  },
-  {
-    id: '2',
-    coachId: 'coach-1',
-    clientId: 'client-2',
-    title: 'Weekly Progress Review',
-    description: 'Review progress on action items and adjust goals',
-    scheduledAt: addDays(new Date(), 1).toISOString(),
-    duration: 45,
-    durationMinutes: 45,
-    status: 'scheduled',
-    sessionType: 'video',
-    meetingUrl: 'https://zoom.us/j/987654321',
-    notes: 'Follow up on networking activities',
-    rating: 0,
-    actionItems: ['Complete LinkedIn profile', 'Attend 2 networking events'],
-    goals: ['Build professional network', 'Improve online presence'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    coach: {
-      id: 'coach-1',
-      email: 'coach@example.com',
-      firstName: 'Sarah',
-      lastName: 'Johnson'
-    },
-    client: {
-      id: 'client-2',
-      email: 'client2@example.com',
-      firstName: 'Emma',
-      lastName: 'Wilson',
-      avatarUrl: '/avatars/emma.jpg'
-    }
-  }
-];
-
-const mockClients: CoachClient[] = [
-  {
-    id: 'client-1',
-    firstName: 'John',
-    lastName: 'Smith',
-    email: 'john@example.com',
-    avatar: '/avatars/john.jpg',
-    status: 'active',
-    totalSessions: 8,
-    completedSessions: 6,
-    averageRating: 4.8,
-    nextSession: new Date().toISOString(),
-    goals: ['Career transition to tech', 'Improve leadership skills']
-  },
-  {
-    id: 'client-2',
-    firstName: 'Emma',
-    lastName: 'Wilson',
-    email: 'emma@example.com',
-    avatar: '/avatars/emma.jpg',
-    status: 'active',
-    totalSessions: 12,
-    completedSessions: 10,
-    averageRating: 4.9,
-    nextSession: addDays(new Date(), 1).toISOString(),
-    goals: ['Build professional network', 'Work-life balance']
-  }
-];
-
 export default function CoachSessionsPage() {
-  const [sessions, setSessions] = useState<Session[]>(mockSessions);
-  const [clients] = useState<CoachClient[]>(mockClients);
+  const { user } = useUnifiedAuth();
+  const { data: sessionsData = [], isLoading: sessionsLoading } = useCoachSessions(user?.id || '');
+  const { data: clientsData = [], isLoading: clientsLoading } = useCoachClients(user?.id || '');
+
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [clients, setClients] = useState<CoachClient[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
+
+  // Sync API data with local state
+  useEffect(() => {
+    if (sessionsData && !sessionsLoading) {
+      setSessions(sessionsData);
+    }
+  }, [sessionsData, sessionsLoading]);
+
+  useEffect(() => {
+    if (clientsData && !clientsLoading) {
+      setClients(clientsData);
+    }
+  }, [clientsData, clientsLoading]);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
