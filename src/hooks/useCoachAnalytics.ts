@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/modules/platform/supabase/client';
+import { getSessionPrice } from '@/config/pricing';
 
 export interface AnalyticsMetrics {
   totalSessions: number;
@@ -17,84 +19,114 @@ export const useCoachAnalytics = (coachId: string) => {
   return useQuery({
     queryKey: ['analytics', coachId],
     queryFn: async () => {
-      // Fetch session metrics
-      const { data: sessions } = await supabase
-        .from('sessions')
-        .select('id, status, scheduled_at, client_id')
-        .eq('coach_id', coachId);
+      try {
+        // Fetch all session data with related ratings and goals in a single optimized query
+        const { data: sessions, error } = await supabase
+          .from('sessions')
+          .select(`
+            id,
+            status,
+            scheduled_at,
+            client_id,
+            type,
+            users!sessions_client_id_fkey(id, created_at, status),
+            session_ratings(id, rating, review),
+            client_goals(id, title, status)
+          `)
+          .eq('coach_id', coachId)
+          .order('scheduled_at', { ascending: false });
 
-      // Get unique client IDs from sessions
-      const clientIds = [...new Set(sessions?.map(s => s.client_id).filter(Boolean) || [])];
+        if (error) {
+          console.error('Failed to fetch coach analytics:', {
+            coachId,
+            error: error.message,
+            details: error.details,
+          });
+          throw new Error(`Failed to load analytics: ${error.message}`);
+        }
 
-      // Fetch client data
-      const { data: clients } = clientIds.length > 0
-        ? await supabase
-            .from('users')
-            .select('id, created_at, status')
-            .in('id', clientIds)
-        : { data: [] };
+        const sessionData = (sessions as any[] || []);
 
-      // Fetch ratings
-      const { data: ratings } = await supabase
-        .from('session_ratings')
-        .select('rating, review')
-        .eq('coach_id', coachId);
+        // Calculate metrics from the single query result
+        const completedSessions = sessionData.filter(s => s.status === 'completed').length;
+        const totalSessions = sessionData.length;
 
-      // Fetch goals
-      const { data: goals } = await supabase
-        .from('client_goals')
-        .select('title, status')
-        .eq('coach_id', coachId);
+        // Get unique clients from sessions
+        const uniqueClients = new Map<string, any>();
+        sessionData.forEach((session: any) => {
+          if (session.client_id && session.users && !uniqueClients.has(session.client_id)) {
+            uniqueClients.set(session.client_id, session.users);
+          }
+        });
+        const clientCount = uniqueClients.size;
 
-      // Calculate metrics
-      const completedSessions = sessions?.filter(s => s.status === 'completed').length || 0;
-      const totalSessions = sessions?.length || 0;
-      const clientCount = clients?.length || 0;
+        // Calculate retention rate (active clients / total clients who had sessions)
+        const activeClients = Array.from(uniqueClients.values()).filter(
+          (c: any) => c?.status === 'active'
+        ).length;
+        const clientRetentionRate = clientCount > 0 ? (activeClients / clientCount) * 100 : 0;
 
-      // Calculate retention rate (active clients / total clients who had sessions)
-      const activeClients = clients?.filter(c => c.status === 'active').length || 0;
-      const clientRetentionRate = clientCount > 0 ? (activeClients / clientCount) * 100 : 0;
+        // Collect all ratings from all sessions
+        const allRatings = sessionData
+          .flatMap((s: any) => s.session_ratings || [])
+          .map((r: any) => r.rating);
 
-      // Calculate goal achievement rate
-      const achievedGoals = goals?.filter(g => g.status === 'completed').length || 0;
-      const goalAchievement = goals && goals.length > 0 ? (achievedGoals / goals.length) * 100 : 0;
+        // Calculate average rating
+        const averageRating = allRatings.length > 0
+          ? Math.round((allRatings.reduce((sum: number, r: number) => sum + r, 0) / allRatings.length) * 10) / 10
+          : 0;
 
-      // Calculate average rating
-      const averageRating = ratings && ratings.length > 0
-        ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
-        : 0;
+        // Collect all goals from all sessions and calculate achievement
+        const allGoals = sessionData.flatMap((s: any) => s.client_goals || []);
+        const achievedGoals = allGoals.filter((g: any) => g.status === 'completed').length;
+        const goalAchievement = allGoals.length > 0 ? (achievedGoals / allGoals.length) * 100 : 0;
 
-      // Estimate revenue (you may need to adjust this based on your pricing model)
-      const revenue = completedSessions * 100; // $100 per session
+        // Calculate revenue based on session type and completion status
+        const revenue = sessionData
+          .filter((s: any) => s.status === 'completed')
+          .reduce((total: number, session: any) => {
+            const price = getSessionPrice(session.type);
+            return total + price;
+          }, 0);
 
-      // Most common goals
-      const goalCounts: Record<string, number> = {};
-      goals?.forEach(g => {
-        goalCounts[g.title] = (goalCounts[g.title] || 0) + 1;
-      });
+        // Most common goals
+        const goalCounts: Record<string, number> = {};
+        allGoals.forEach((g: any) => {
+          goalCounts[g.title] = (goalCounts[g.title] || 0) + 1;
+        });
 
-      const mostCommonGoals = Object.entries(goalCounts)
-        .map(([goal, count]) => ({ goal, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
+        const mostCommonGoals = Object.entries(goalCounts)
+          .map(([goal, count]) => ({ goal, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
 
-      const feedback = ratings?.map(r => ({
-        clientId: 'unknown',
-        rating: r.rating,
-        comment: r.review || '',
-      })) || [];
+        // Build feedback from ratings
+        const feedback = sessionData
+          .flatMap((session: any) =>
+            (session.session_ratings || []).map((r: any) => ({
+              clientId: session.client_id,
+              rating: r.rating,
+              comment: r.review || '',
+            }))
+          );
 
-      return {
-        totalSessions,
-        completedSessions,
-        clientCount,
-        clientRetentionRate: Math.round(clientRetentionRate),
-        goalAchievement: Math.round(goalAchievement),
-        averageRating: Math.round(averageRating * 10) / 10,
-        revenue,
-        mostCommonGoals,
-        feedback,
-      };
+        return {
+          totalSessions,
+          completedSessions,
+          clientCount,
+          clientRetentionRate: Math.round(clientRetentionRate),
+          goalAchievement: Math.round(goalAchievement),
+          averageRating,
+          revenue,
+          mostCommonGoals,
+          feedback,
+        };
+      } catch (err) {
+        console.error('Unexpected error in useCoachAnalytics:', err);
+        throw err;
+      }
     },
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
