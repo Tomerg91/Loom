@@ -58,7 +58,7 @@ vi.mock('@/lib/api/errors', () => ({
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
-  createServerClient: vi.fn(() => mockSupabaseClient),
+  createClient: vi.fn(() => mockSupabaseClient),
 }));
 
 vi.mock('@/lib/config/analytics-constants', () => ({
@@ -71,12 +71,12 @@ import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { getSessionRate, getDefaultCoachRating } from '@/lib/config/analytics-constants';
 import { authService } from '@/lib/services/auth-service';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { mockUser, mockCoachUser, mockAdminUser, mockSupabaseClient } from '@/test/utils';
 
 const mockAuthService = vi.mocked(authService);
 const mockApiResponseHelper = vi.mocked(ApiResponseHelper);
-const mockCreateServerClient = vi.mocked(createServerClient);
+const mockCreateClient = vi.mocked(createClient);
 const mockGetSessionRate = vi.mocked(getSessionRate);
 const mockGetDefaultCoachRating = vi.mocked(getDefaultCoachRating);
 
@@ -128,7 +128,7 @@ describe('/api/coach/stats', () => {
     vi.setSystemTime(currentDate);
     
     // Setup default mock implementations
-    mockCreateServerClient.mockReturnValue(mockSupabaseClient);
+    mockCreateClient.mockReturnValue(mockSupabaseClient);
     mockGetSessionRate.mockReturnValue(100);
     mockGetDefaultCoachRating.mockReturnValue(4.5);
   });

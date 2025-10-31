@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Clock, Plus, Trash2, Calendar, Save, Globe } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import React, { useState, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
@@ -92,10 +92,11 @@ const generateTimeOptions = () => {
 };
 
 export function AvailabilityManager() {
+  const _locale = useLocale();
   const t = useTranslations('coach');
   const user = useUser();
   const queryClient = useQueryClient();
-  
+
   const [isSaving, setIsSaving] = useState(false);
 
   // Memoize time options since they never change

@@ -1,21 +1,19 @@
 'use client';
 
-import { format, addDays, startOfWeek, endOfWeek, isToday } from 'date-fns';
-import { 
-  CalendarIcon, 
-  ClockIcon, 
-  UserIcon, 
-  FilterIcon, 
-  SearchIcon, 
-  PlayIcon, 
-  PauseIcon, 
+import { format, startOfWeek, endOfWeek, isToday } from 'date-fns';
+import {
+  CalendarIcon,
+  ClockIcon,
+  FilterIcon,
+  SearchIcon,
+  PlayIcon,
+  PauseIcon,
   CheckIcon,
   XIcon,
   MessageSquareIcon,
   FileTextIcon,
   TrendingUpIcon,
   DollarSignIcon,
-  UsersIcon,
   CalendarDaysIcon,
   MoreVerticalIcon,
   StarIcon,
@@ -24,31 +22,30 @@ import {
   PlusIcon,
   BarChart3Icon,
   TimerIcon,
-  BellIcon,
   BookOpenIcon,
-  TargetIcon
 } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { DateRange } from 'react-day-picker';
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Session, SessionStatus, SessionType, User } from '@/types';
+import { useCoachSessions, useCoachClients } from '@/hooks/useCoachSessions';
+import { useUnifiedAuth } from '@/lib/auth/use-auth';
+import { Session, SessionStatus, SessionType } from '@/types';
+import { RescheduleDialog } from '@/components/reschedule-dialog';
 
 
 // Types
@@ -73,7 +70,7 @@ interface SessionTimer {
   isRunning: boolean;
 }
 
-interface SessionNote {
+interface _SessionNote {
   id: string;
   sessionId: string;
   content: string;
@@ -81,7 +78,7 @@ interface SessionNote {
   type: 'preparation' | 'during' | 'followup';
 }
 
-interface SessionPreparation {
+interface _SessionPreparation {
   sessionId: string;
   checklist: { item: string; completed: boolean }[];
   clientHistory: string;
@@ -90,7 +87,7 @@ interface SessionPreparation {
   progressReviewed: boolean;
 }
 
-interface SessionOutcome {
+interface _SessionOutcome {
   sessionId: string;
   summary: string;
   clientProgress: string;
@@ -99,128 +96,48 @@ interface SessionOutcome {
   followupRequired: boolean;
 }
 
-// Mock data - in real app, this would come from API
-const mockSessions: Session[] = [
-  {
-    id: '1',
-    coachId: 'coach-1',
-    clientId: 'client-1',
-    title: 'Goal Setting & Career Planning',
-    description: 'Initial consultation to discuss career goals and development plan',
-    scheduledAt: new Date().toISOString(),
-    duration: 60,
-    durationMinutes: 60,
-    status: 'scheduled',
-    sessionType: 'video',
-    meetingUrl: 'https://zoom.us/j/123456789',
-    notes: 'Client wants to transition to tech industry',
-    rating: 0,
-    actionItems: [],
-    goals: ['Define career objectives', 'Create action plan'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    coach: {
-      id: 'coach-1',
-      email: 'coach@example.com',
-      firstName: 'Sarah',
-      lastName: 'Johnson'
-    },
-    client: {
-      id: 'client-1',
-      email: 'client@example.com',
-      firstName: 'John',
-      lastName: 'Smith',
-      avatarUrl: '/avatars/john.jpg'
-    }
-  },
-  {
-    id: '2',
-    coachId: 'coach-1',
-    clientId: 'client-2',
-    title: 'Weekly Progress Review',
-    description: 'Review progress on action items and adjust goals',
-    scheduledAt: addDays(new Date(), 1).toISOString(),
-    duration: 45,
-    durationMinutes: 45,
-    status: 'scheduled',
-    sessionType: 'video',
-    meetingUrl: 'https://zoom.us/j/987654321',
-    notes: 'Follow up on networking activities',
-    rating: 0,
-    actionItems: ['Complete LinkedIn profile', 'Attend 2 networking events'],
-    goals: ['Build professional network', 'Improve online presence'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    coach: {
-      id: 'coach-1',
-      email: 'coach@example.com',
-      firstName: 'Sarah',
-      lastName: 'Johnson'
-    },
-    client: {
-      id: 'client-2',
-      email: 'client2@example.com',
-      firstName: 'Emma',
-      lastName: 'Wilson',
-      avatarUrl: '/avatars/emma.jpg'
-    }
-  }
-];
-
-const mockClients: CoachClient[] = [
-  {
-    id: 'client-1',
-    firstName: 'John',
-    lastName: 'Smith',
-    email: 'john@example.com',
-    avatar: '/avatars/john.jpg',
-    status: 'active',
-    totalSessions: 8,
-    completedSessions: 6,
-    averageRating: 4.8,
-    nextSession: new Date().toISOString(),
-    goals: ['Career transition to tech', 'Improve leadership skills']
-  },
-  {
-    id: 'client-2',
-    firstName: 'Emma',
-    lastName: 'Wilson',
-    email: 'emma@example.com',
-    avatar: '/avatars/emma.jpg',
-    status: 'active',
-    totalSessions: 12,
-    completedSessions: 10,
-    averageRating: 4.9,
-    nextSession: addDays(new Date(), 1).toISOString(),
-    goals: ['Build professional network', 'Work-life balance']
-  }
-];
-
 export default function CoachSessionsPage() {
-  const [sessions, setSessions] = useState<Session[]>(mockSessions);
-  const [clients, setClients] = useState<CoachClient[]>(mockClients);
-  const [loading, setLoading] = useState(false);
+  const { user } = useUnifiedAuth();
+  const { data: sessionsData = [], isLoading: sessionsLoading } = useCoachSessions(user?.id || '');
+  const { data: clientsData = [], isLoading: clientsLoading } = useCoachClients(user?.id || '');
+
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [clients, setClients] = useState<CoachClient[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
-  
+
+  // Sync API data with local state
+  useEffect(() => {
+    if (sessionsData && !sessionsLoading) {
+      setSessions(sessionsData);
+    }
+  }, [sessionsData, sessionsLoading]);
+
+  useEffect(() => {
+    if (clientsData && !clientsLoading) {
+      setClients(clientsData);
+    }
+  }, [clientsData, clientsLoading]);
+
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<SessionStatus | 'all'>('all');
   const [clientFilter, setClientFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<SessionType | 'all'>('all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  
+
   // Session management
-  const [sessionTimers, setSessionTimers] = useState<Map<string, SessionTimer>>(new Map());
-  const [sessionNotes, setSessionNotes] = useState<Map<string, SessionNote[]>>(new Map());
-  const [sessionPreparations, setSessionPreparations] = useState<Map<string, SessionPreparation>>(new Map());
-  const [sessionOutcomes, setSessionOutcomes] = useState<Map<string, SessionOutcome>>(new Map());
-  
+  const [_sessionTimers, setSessionTimers] = useState<Map<string, SessionTimer>>(new Map());
+
   // Dialog states
   const [preparationDialog, setPreparationDialog] = useState<string | null>(null);
   const [conductDialog, setConductDialog] = useState<string | null>(null);
   const [outcomeDialog, setOutcomeDialog] = useState<string | null>(null);
   const [notesDialog, setNotesDialog] = useState<string | null>(null);
+  const [_showNewSessionDialog, setShowNewSessionDialog] = useState(false);
+  const [_showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [selectedSessionsToReschedule, setSelectedSessionsToReschedule] = useState<string[]>([]);
 
   // Filter sessions
   const filteredSessions = useMemo(() => {
@@ -327,8 +244,8 @@ export default function CoachSessionsPage() {
         ));
         break;
       case 'reschedule':
-        // In real app, would open reschedule dialog
-        console.log('Reschedule sessions:', selectedSessions);
+        setSelectedSessionsToReschedule(selectedSessions);
+        setRescheduleOpen(true);
         break;
     }
     setSelectedSessions([]);
@@ -375,11 +292,11 @@ export default function CoachSessionsPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button>
+          <Button onClick={() => setShowNewSessionDialog(true)}>
             <PlusIcon className="h-4 w-4 mr-2" />
             New Session
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setShowScheduleDialog(true)}>
             <CalendarIcon className="h-4 w-4 mr-2" />
             Schedule
           </Button>
@@ -390,7 +307,7 @@ export default function CoachSessionsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Sessions</CardTitle>
+            <CardTitle className="text-sm font-medium">Today&apos;s Sessions</CardTitle>
             <CalendarDaysIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -460,7 +377,7 @@ export default function CoachSessionsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <CalendarDaysIcon className="h-5 w-5 mr-2" />
-                  Today's Sessions
+                  Today&apos;s Sessions
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1033,9 +950,10 @@ export default function CoachSessionsPage() {
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setConductDialog(null)}>Save & Continue</Button>
                 <Button onClick={() => {
-                  completeSession(conductDialog);
+                  const sessionId = conductDialog;  // Capture value FIRST
+                  completeSession(sessionId);
                   setConductDialog(null);
-                  setOutcomeDialog(conductDialog);
+                  setOutcomeDialog(sessionId);  // Use captured value
                 }}>Complete Session</Button>
               </div>
             </div>
@@ -1117,6 +1035,17 @@ export default function CoachSessionsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Reschedule Dialog */}
+      <RescheduleDialog
+        open={rescheduleOpen}
+        onOpenChange={setRescheduleOpen}
+        sessionIds={selectedSessionsToReschedule}
+        onSuccess={() => {
+          // Refresh sessions list
+          setSelectedSessions([]);
+        }}
+      />
     </div>
   );
 }

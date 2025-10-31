@@ -12,14 +12,14 @@ import { POST, OPTIONS } from '@/app/api/sessions/book/route';
 
 // Mock all dependencies
 vi.mock('@/lib/api/utils', () => ({
-  createSuccessResponse: vi.fn((data, message = 'Success', status = 200) => 
-    new Response(JSON.stringify({ success: true, data, message }), { 
+  createSuccessResponse: vi.fn((data, message = 'Success', status = 200) =>
+    new Response(JSON.stringify({ success: true, data, message }), {
       status,
       headers: { 'Content-Type': 'application/json' }
     })
   ),
-  createErrorResponse: vi.fn((message, status = 400) => 
-    new Response(JSON.stringify({ success: false, error: message }), { 
+  createErrorResponse: vi.fn((message, status = 400) =>
+    new Response(JSON.stringify({ success: false, error: message }), {
       status,
       headers: { 'Content-Type': 'application/json' }
     })
@@ -39,6 +39,14 @@ vi.mock('@/lib/api/utils', () => ({
 
 vi.mock('@/lib/supabase/server', () => ({
   createServerClient: vi.fn(() => mockSupabaseClient),
+}));
+
+vi.mock('@/lib/api/auth-client', () => ({
+  createAuthenticatedSupabaseClient: vi.fn(() => ({
+    client: mockSupabaseClient,
+    response: new Response(),
+  })),
+  propagateCookies: vi.fn((response) => response),
 }));
 
 vi.mock('@/lib/security/rate-limit', () => ({
@@ -62,6 +70,7 @@ vi.mock('@/lib/security/cors', () => ({
 
 // Import mocked functions
 import { createSuccessResponse, createErrorResponse } from '@/lib/api/utils';
+import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
 import { isCoachAvailable } from '@/lib/database/availability';
 import { sessionNotificationService } from '@/lib/notifications/session-notifications';
 import { createCorsResponse } from '@/lib/security/cors';
@@ -88,6 +97,7 @@ describe('/api/sessions/book', () => {
 
   const mockCoachProfile = {
     id: '123e4567-e89b-12d3-a456-426614174000',
+    role: 'coach',
     first_name: 'John',
     last_name: 'Coach',
     email: 'coach@example.com',
@@ -135,14 +145,27 @@ describe('/api/sessions/book', () => {
         // Setup successful booking flow
         mockSupabaseClient.from.mockImplementation((table: any) => {
           if (table === 'users') {
+            const eqMock = vi.fn().mockReturnThis();
+            const selectMock = vi.fn().mockReturnThis();
+
             return {
-              select: vi.fn().mockReturnThis(),
-              eq: vi.fn().mockReturnThis(),
+              select: selectMock,
+              eq: eqMock,
               single: vi.fn().mockImplementation(() => {
-                const eq = vi.fn().mockReturnThis();
-                if (eq.mock.calls?.[0]?.[1] === mockUser.id) {
+                // Check eq calls to determine which profile to return
+                const eqCalls = eqMock.mock.calls;
+
+                // If first eq call is checking user.id, return client profile
+                if (eqCalls[0]?.[1] === mockUser.id) {
                   return Promise.resolve({ data: mockClientProfile });
                 }
+
+                // If first eq call is checking coach ID, return coach profile
+                if (eqCalls[0]?.[1] === validBookingRequest.coachId) {
+                  return Promise.resolve({ data: mockCoachProfile });
+                }
+
+                // Default return
                 return Promise.resolve({ data: mockCoachProfile });
               }),
             };
@@ -215,15 +238,27 @@ describe('/api/sessions/book', () => {
       it('should allow clients to book sessions', async () => {
         mockSupabaseClient.from.mockImplementation((table: any) => {
           if (table === 'users') {
+            const eqMock = vi.fn().mockReturnThis();
+            const selectMock = vi.fn().mockReturnThis();
+
             return {
-              select: vi.fn().mockReturnThis(),
-              eq: vi.fn().mockReturnThis(),
+              select: selectMock,
+              eq: eqMock,
               single: vi.fn().mockImplementation(() => {
-                const calls: any[] = [];
-                const lastCall = calls[calls.length - 1];
-                if (lastCall && lastCall[1] === mockUser.id) {
+                // Check eq calls to determine which profile to return
+                const eqCalls = eqMock.mock.calls;
+
+                // If first eq call is checking user.id, return client profile
+                if (eqCalls[0]?.[1] === mockUser.id) {
                   return Promise.resolve({ data: { ...mockClientProfile, role: 'client' } });
                 }
+
+                // If first eq call is checking coach ID, return coach profile
+                if (eqCalls[0]?.[1] === validBookingRequest.coachId) {
+                  return Promise.resolve({ data: mockCoachProfile });
+                }
+
+                // Default return
                 return Promise.resolve({ data: mockCoachProfile });
               }),
             };
@@ -634,15 +669,20 @@ describe('/api/sessions/book', () => {
             const insertMock = vi.fn().mockReturnThis();
             const selectMock = vi.fn().mockReturnThis();
             const singleMock = vi.fn().mockResolvedValue({ data: mockSessionData, error: null });
-            
+
             return {
               insert: insertMock,
               select: selectMock,
               single: singleMock,
             };
           }
-          // Return users table mock for other calls
-          return mockSupabaseClient.from(table);
+          // Return default mock for other tables
+          return {
+            insert: vi.fn().mockReturnThis(),
+            select: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            eq: vi.fn().mockReturnThis(),
+          };
         });
 
         const request = new NextRequest('http://localhost:3000/api/sessions/book', {
@@ -662,13 +702,19 @@ describe('/api/sessions/book', () => {
             return {
               insert: vi.fn().mockReturnThis(),
               select: vi.fn().mockReturnThis(),
-              single: vi.fn().mockResolvedValue({ 
-                data: null, 
-                error: new Error('Database constraint violation') 
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: new Error('Database constraint violation')
               }),
             };
           }
-          return mockSupabaseClient.from(table);
+          // Return default mock for other tables
+          return {
+            insert: vi.fn().mockReturnThis(),
+            select: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            eq: vi.fn().mockReturnThis(),
+          };
         });
 
         const request = new NextRequest('http://localhost:3000/api/sessions/book', {

@@ -1,11 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { 
-  Users, 
-  Plus, 
-  Search, 
-  Calendar, 
+import {
+  Users,
+  Plus,
+  Search,
+  Calendar,
   MessageSquare,
   Clock,
   Star,
@@ -17,14 +17,14 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -33,13 +33,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { transformClientData } from '@/lib/transformers/client-transformer';
 
 
 interface Client {
@@ -67,6 +68,7 @@ interface Client {
 export function CoachClientsPage() {
   const t = useTranslations('coach.clients');
   const router = useRouter();
+  const locale = useLocale();
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -98,10 +100,13 @@ export function CoachClientsPage() {
   });
 
   // Transform API data to match component interface
-  const clients: Client[] = clientsData?.map((client: any) => {
-    const totalSessions = client.totalSessions ?? client.total_sessions ?? 0;
-    const completedSessions = client.completedSessions ?? client.completed_sessions ?? 0;
-    const rawProgress = client.progress ?? null;
+  const clients: Client[] = clientsData?.map((client: Record<string, unknown>) => {
+    // Use the transformer for consistent field mapping
+    const transformedClient = transformClientData(client);
+
+    const totalSessions = (client.totalSessions ?? client.total_sessions ?? 0) as number;
+    const completedSessions = (client.completedSessions ?? client.completed_sessions ?? 0) as number;
+    const rawProgress = (client.progress ?? null) as { current?: number; target?: number } | null;
     const progressCurrent = rawProgress?.current ?? completedSessions;
     const progressTarget = rawProgress?.target ?? Math.max(totalSessions, 1);
     const progressPercent = progressTarget > 0
@@ -109,11 +114,11 @@ export function CoachClientsPage() {
       : 0;
 
     return {
-      id: client.id,
-      firstName: client.firstName ?? client.first_name ?? '',
-      lastName: client.lastName ?? client.last_name ?? '',
-      email: client.email,
-      phone: client.phone || undefined,
+      id: transformedClient.id,
+      firstName: transformedClient.firstName,
+      lastName: transformedClient.lastName,
+      email: transformedClient.email,
+      phone: transformedClient.phone || undefined,
       avatarUrl: client.avatar || client.avatarUrl || undefined,
       status: client.status,
       joinedDate: client.joinedDate || client.joined_date || new Date().toISOString(),
@@ -307,11 +312,11 @@ export function CoachClientsPage() {
       {/* Clients Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sortedClients?.map((client) => (
-          <Card 
-            key={client.id} 
-            className="hover:shadow-lg transition-shadow cursor-pointer" 
+          <Card
+            key={client.id}
+            className="hover:shadow-lg transition-shadow cursor-pointer"
             data-testid={`client-card-${client.id}`}
-            onClick={() => router.push(`/coach/clients/${client.id}`)}
+            onClick={() => router.push(`/${locale}/coach/clients/${client.id}`)}
           >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -350,15 +355,15 @@ export function CoachClientsPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>{t('actions.actions')}</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => router.push(`/sessions/book?clientId=${client.id}`)}>
+                      <DropdownMenuItem onClick={() => router.push(`/${locale}/sessions/book?clientId=${client.id}`)}>
                         <Calendar className="mr-2 h-4 w-4" />
                         {t('actions.scheduleSession')}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(`/messages?clientId=${client.id}`)}>
+                      <DropdownMenuItem onClick={() => router.push(`/${locale}/messages?clientId=${client.id}`)}>
                         <MessageSquare className="mr-2 h-4 w-4" />
                         {t('actions.sendMessage')}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(`/coach/clients/${client.id}`)}>
+                      <DropdownMenuItem onClick={() => router.push(`/${locale}/coach/clients/${client.id}`)}>
                         <FileText className="mr-2 h-4 w-4" />
                         {t('actions.viewNotes')}
                       </DropdownMenuItem>
@@ -444,19 +449,19 @@ export function CoachClientsPage() {
 
               {/* Action Buttons */}
               <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   className="flex-1"
-                  onClick={() => router.push(`/sessions/book?clientId=${client.id}&type=instant`)}
+                  onClick={() => router.push(`/${locale}/sessions/book?clientId=${client.id}&type=instant`)}
                 >
                   <Video className="mr-2 h-4 w-4" />
                   {t('actions.startSession')}
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
+                <Button
+                  size="sm"
+                  variant="outline"
                   className="flex-1"
-                  onClick={() => router.push(`/messages?clientId=${client.id}`)}
+                  onClick={() => router.push(`/${locale}/messages?clientId=${client.id}`)}
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   {t('actions.message')}
