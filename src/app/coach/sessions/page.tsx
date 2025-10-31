@@ -45,6 +45,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCoachSessions, useCoachClients } from '@/hooks/useCoachSessions';
 import { useUnifiedAuth } from '@/lib/auth/use-auth';
 import { Session, SessionStatus, SessionType } from '@/types';
+import { RescheduleDialog } from '@/components/reschedule-dialog';
 
 
 // Types
@@ -135,6 +136,8 @@ export default function CoachSessionsPage() {
   const [notesDialog, setNotesDialog] = useState<string | null>(null);
   const [_showNewSessionDialog, setShowNewSessionDialog] = useState(false);
   const [_showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [selectedSessionsToReschedule, setSelectedSessionsToReschedule] = useState<string[]>([]);
 
   // Filter sessions
   const filteredSessions = useMemo(() => {
@@ -241,8 +244,8 @@ export default function CoachSessionsPage() {
         ));
         break;
       case 'reschedule':
-        // In real app, would open reschedule dialog
-        console.log('Reschedule sessions:', selectedSessions);
+        setSelectedSessionsToReschedule(selectedSessions);
+        setRescheduleOpen(true);
         break;
     }
     setSelectedSessions([]);
@@ -1032,6 +1035,17 @@ export default function CoachSessionsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Reschedule Dialog */}
+      <RescheduleDialog
+        open={rescheduleOpen}
+        onOpenChange={setRescheduleOpen}
+        sessionIds={selectedSessionsToReschedule}
+        onSuccess={() => {
+          // Refresh sessions list
+          setSelectedSessions([]);
+        }}
+      />
     </div>
   );
 }
