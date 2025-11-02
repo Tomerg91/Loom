@@ -3,17 +3,17 @@
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 // Loading skeleton for charts
-const ChartSkeleton = ({ 
-  title = "Loading chart...", 
-  description, 
+const ChartSkeleton = ({
+  _title = "Loading chart...",
+  description,
   className,
-  height = 300 
+  height = 300
 }: {
-  title?: string;
+  _title?: string;
   description?: string;
   className?: string;
   height?: number;
@@ -30,9 +30,9 @@ const ChartSkeleton = ({
 );
 
 // Error fallback component
-const ChartErrorFallback = ({ 
-  title = "Chart Unavailable", 
-  onRetry 
+const ChartErrorFallback = ({
+  title = "Chart Unavailable",
+  onRetry
 }: {
   title?: string;
   onRetry?: () => void;
@@ -49,7 +49,7 @@ const ChartErrorFallback = ({
         Unable to load chart component
       </p>
       {onRetry && (
-        <button 
+        <button
           onClick={onRetry}
           className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"
         >
@@ -61,8 +61,9 @@ const ChartErrorFallback = ({
 );
 
 // Lazy-loaded chart components with optimized chunking
+// Import directly from .inner.tsx files to avoid double dynamic imports
 export const LazyUserGrowthChart = dynamic(
-  () => import('./chart-components').then(mod => mod.UserGrowthChart),
+  () => import('./chart-components.inner').then(mod => mod.UserGrowthChart),
   {
     loading: () => <ChartSkeleton title="Loading user growth chart..." />,
     ssr: false
@@ -70,7 +71,7 @@ export const LazyUserGrowthChart = dynamic(
 );
 
 export const LazySessionMetricsChart = dynamic(
-  () => import('./chart-components').then(mod => mod.SessionMetricsChart),
+  () => import('./chart-components.inner').then(mod => mod.SessionMetricsChart),
   {
     loading: () => <ChartSkeleton title="Loading session metrics chart..." />,
     ssr: false
@@ -78,7 +79,7 @@ export const LazySessionMetricsChart = dynamic(
 );
 
 export const LazyRevenueChart = dynamic(
-  () => import('./chart-components').then(mod => mod.RevenueChart),
+  () => import('./chart-components.inner').then(mod => mod.RevenueChart),
   {
     loading: () => <ChartSkeleton title="Loading revenue chart..." />,
     ssr: false
@@ -86,7 +87,7 @@ export const LazyRevenueChart = dynamic(
 );
 
 export const LazyProgressChart = dynamic(
-  () => import('./chart-components').then(mod => mod.ProgressChart),
+  () => import('./chart-components.inner').then(mod => mod.ProgressChart),
   {
     loading: () => <ChartSkeleton title="Loading progress chart..." />,
     ssr: false
@@ -94,7 +95,7 @@ export const LazyProgressChart = dynamic(
 );
 
 export const LazyGoalProgressChart = dynamic(
-  () => import('./chart-components').then(mod => mod.GoalProgressChart),
+  () => import('./chart-components.inner').then(mod => mod.GoalProgressChart),
   {
     loading: () => <ChartSkeleton title="Loading goal progress chart..." />,
     ssr: false
@@ -102,7 +103,7 @@ export const LazyGoalProgressChart = dynamic(
 );
 
 export const LazyCompletionRateChart = dynamic(
-  () => import('./chart-components').then(mod => mod.CompletionRateChart),
+  () => import('./chart-components.inner').then(mod => mod.CompletionRateChart),
   {
     loading: () => <ChartSkeleton title="Loading completion rate chart..." />,
     ssr: false
@@ -111,7 +112,7 @@ export const LazyCompletionRateChart = dynamic(
 
 // Enhanced chart components with lazy loading
 export const LazyEnhancedUserGrowthChart = dynamic(
-  () => import('./enhanced-chart-components').then(mod => mod.EnhancedUserGrowthChart),
+  () => import('./enhanced-chart-components.inner').then(mod => mod.EnhancedUserGrowthChart),
   {
     loading: () => <ChartSkeleton title="Loading enhanced user growth chart..." />,
     ssr: false
@@ -119,7 +120,7 @@ export const LazyEnhancedUserGrowthChart = dynamic(
 );
 
 export const LazyEnhancedSessionMetricsChart = dynamic(
-  () => import('./enhanced-chart-components').then(mod => mod.EnhancedSessionMetricsChart),
+  () => import('./enhanced-chart-components.inner').then(mod => mod.EnhancedSessionMetricsChart),
   {
     loading: () => <ChartSkeleton title="Loading enhanced session metrics chart..." />,
     ssr: false
@@ -128,7 +129,7 @@ export const LazyEnhancedSessionMetricsChart = dynamic(
 
 // Dashboard charts bundle (combines multiple charts)
 export const LazyDashboardCharts = dynamic(
-  () => import('./dashboard-charts'),
+  () => import('./dashboard-charts.inner'),
   {
     loading: () => (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -147,14 +148,14 @@ interface LazyChartWrapperProps {
   onError?: (error: Error) => void;
 }
 
-export const LazyChartWrapper = ({ 
-  children, 
+export const LazyChartWrapper = ({
+  children,
   fallback,
-  onError 
+  onError
 }: LazyChartWrapperProps) => {
   try {
     return (
-      <Suspense 
+      <Suspense
         fallback={fallback || <ChartSkeleton />}
       >
         {children}

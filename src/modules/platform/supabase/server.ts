@@ -91,8 +91,9 @@ export const createServerClient = (): ServerSupabaseClient => {
   }
 
   // Use process.env directly to work in Edge Runtime (Vercel)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  // Trim to remove any embedded whitespace/newlines from environment variables
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!.trim();
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!.trim();
 
 
   serverClientInstance = createSupabaseServerClient<any>(
@@ -125,8 +126,9 @@ export const createServerClientWithRequest = (
 
   // Use process.env directly instead of serverEnv wrapper to avoid
   // ENVIRONMENT_FALLBACK errors in Vercel's Edge Runtime
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  // Trim to remove any embedded whitespace/newlines from environment variables
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!.trim();
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!.trim();
 
 
   return createSupabaseServerClient<any>(supabaseUrl, supabaseKey, {

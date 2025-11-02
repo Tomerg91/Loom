@@ -1,4 +1,3 @@
-import { PDFDocument, rgb } from 'pdf-lib';
 import sharp from 'sharp';
 
 export interface OptimizationOptions {
@@ -176,6 +175,9 @@ class FileOptimizationService {
       }
 
       const originalSize = inputBuffer.length;
+
+      // Dynamically import pdf-lib to reduce initial bundle size
+      const { PDFDocument } = await import('pdf-lib');
 
       // Load the PDF
       const pdfDoc = await PDFDocument.load(inputBuffer);
@@ -385,6 +387,9 @@ class FileOptimizationService {
   ): Promise<ConversionResult> {
     const text = inputBuffer.toString('utf-8');
     const originalSize = inputBuffer.length;
+
+    // Dynamically import pdf-lib to reduce initial bundle size
+    const { PDFDocument, rgb } = await import('pdf-lib');
 
     // Create a new PDF document
     const pdfDoc = await PDFDocument.create();

@@ -1,0 +1,46 @@
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+tests/
+test/
+
+# Documentation (don't need to build docs)
+docs/
+*.md
+
+# Development utilities
+.env.local
+.env.*.local
+.husky/
+.git/
+.gitignore
+.prettierignore
+.eslintignore
+.worktrees/
+
+# Analysis and monitoring scripts (don't run in production)
+scripts/dev-only/
+
+# Build artifacts
+.next/cache/
+dist/
+build/
+.turbo/
+.vitest/
+.playwright/
+coverage/
+
+# Node modules (Vercel installs from package.json)
+node_modules/.bin/
+node_modules/.cache/
+
+# IDE and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

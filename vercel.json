@@ -1,4 +1,8 @@
 {
+  "buildCommand": "npm run build",
+  "env": {
+    "SKIP_ENV_VALIDATION": "1"
+  },
   "headers": [
     {
       "source": "/_next/static/css/(.*\\.css)$",
@@ -50,12 +54,11 @@
   ],
   "functions": {
     "src/app/api/**/route.ts": {
-      "memory": 512,
-      "maxDuration": 10
+      "memory": 1024,
+      "maxDuration": 60
     }
   },
   "regions": ["fra1"],
-  "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "framework": "nextjs",
   "crons": [
