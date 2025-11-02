@@ -24,17 +24,29 @@ const clientEnvSchema = z.object({
     .optional(),
 });
 
-const resolveSupabaseUrl = () =>
-  process.env.SUPABASE_URL ||
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  PLACEHOLDER_SUPABASE_URL;
+const sanitizeSupabaseValue = value => value.trim().replace(/\\n|[\r\n]+/g, '');
 
-const resolveSupabaseAnonKey = () =>
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  process.env.SUPABASE_ANON_KEY ||
-  process.env.SUPABASE_PUBLIC_ANON_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  PLACEHOLDER_SUPABASE_ANON_KEY;
+const resolveSupabaseUrl = () => {
+  const url =
+    process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    PLACEHOLDER_SUPABASE_URL;
+
+  // Trim whitespace and escape sequences to prevent malformed URLs
+  return sanitizeSupabaseValue(url);
+};
+
+const resolveSupabaseAnonKey = () => {
+  const key =
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLIC_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    PLACEHOLDER_SUPABASE_ANON_KEY;
+
+  // Trim whitespace and escape sequences to prevent malformed keys
+  return sanitizeSupabaseValue(key);
+};
 
 const rawClientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: resolveSupabaseUrl(),
