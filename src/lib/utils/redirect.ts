@@ -12,7 +12,7 @@ function isAuthRoute(path: string): boolean {
   }
 
   const [firstSegment, ...rest] = segments;
-  const localePrefixed = routing.locales.includes(firstSegment as any);
+  const localePrefixed = routing?.locales?.includes(firstSegment) ?? false;
   const relevantSegments = localePrefixed ? rest : segments;
 
   if (relevantSegments.length === 0) {
@@ -31,7 +31,7 @@ function isAuthRoute(path: string): boolean {
  */
 export function resolveRedirect(locale: string, redirectTo?: string | null, options: ResolveRedirectOptions = {}): string {
   const { allowAuthPaths = false } = options;
-  const safeLocale = routing.locales.includes(locale as any) ? locale : routing.defaultLocale;
+  const safeLocale = routing?.locales?.includes(locale) ? locale : routing?.defaultLocale ?? 'en';
 
   if (!redirectTo || typeof redirectTo !== 'string') {
     return `/${safeLocale}/dashboard`;
@@ -48,7 +48,7 @@ export function resolveRedirect(locale: string, redirectTo?: string | null, opti
   path = path.replace(/\/+/, '/');
 
   // Determine final path with locale prefixing
-  const alreadyPrefixed = routing.locales.some(l => path.startsWith(`/${l}/`) || path === `/${l}`);
+  const alreadyPrefixed = routing?.locales?.some(l => path.startsWith(`/${l}/`) || path === `/${l}`) ?? false;
   const finalPath = alreadyPrefixed
     ? path
     : path === '/'
@@ -66,9 +66,9 @@ export function resolveRedirect(locale: string, redirectTo?: string | null, opti
  * Ensure an auth page path is locale-prefixed and safe.
  */
 export function resolveAuthPath(locale: string, authPath: string): string {
-  const safeLocale = routing.locales.includes(locale as any) ? locale : routing.defaultLocale;
+  const safeLocale = routing?.locales?.includes(locale) ? locale : routing?.defaultLocale ?? 'en';
   const path = authPath.startsWith('/') ? authPath : `/${authPath}`;
-  const alreadyPrefixed = routing.locales.some(l => path.startsWith(`/${l}/`) || path === `/${l}`);
+  const alreadyPrefixed = routing?.locales?.some(l => path.startsWith(`/${l}/`) || path === `/${l}`) ?? false;
   if (alreadyPrefixed) return path;
   return `/${safeLocale}${path}`;
 }
