@@ -8,6 +8,14 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 
 import { HTTP_STATUS } from '@/lib/api/utils';
+import type {
+  CoachDashboardActivityItem,
+  CoachDashboardAgendaItem,
+  CoachDashboardSnapshot,
+  CoachDashboardSnapshotClient,
+  CoachDashboardSnapshotStats,
+  CoachDashboardSummary,
+} from '@/modules/dashboard/types';
 import { createClient } from '@/modules/platform/supabase/server';
 import type {
   SessionCalendarEntry,
@@ -542,4 +550,471 @@ export class SessionSchedulerService {
       session: mapSessionRow(typedSession),
     };
   }
+}
+
+interface CoachDashboardSummaryRpcPayload {
+  agenda?: SessionRow[] | null;
+  activity?: Array<{
+    id: string;
+    type: CoachDashboardActivityItem['type'];
+    description: string;
+    timestamp: string;
+    client_name?: string | null;
+  }> | null;
+  snapshot?: {
+    stats?: SnapshotStatsPayload | null;
+    clients?: Array<{
+      id: string;
+      first_name: string | null;
+      last_name: string | null;
+      email: string | null;
+      status: CoachDashboardSnapshotClient['status'] | null;
+      next_session?: string | null;
+      last_session?: string | null;
+    }> | null;
+  } | null;
+  generated_at?: string | null;
+}
+
+export interface LoadDashboardSummaryOptions {
+  /** Date used to determine the agenda window. Defaults to `new Date()`. */
+  referenceDate?: Date;
+  /** Maximum number of agenda items returned. */
+  agendaLimit?: number;
+  /** Maximum number of activity entries returned. */
+  activityLimit?: number;
+  /** Maximum number of clients surfaced in the snapshot widget. */
+  clientLimit?: number;
+}
+
+const DEFAULT_AGENDA_LIMIT = 10;
+const DEFAULT_ACTIVITY_LIMIT = 6;
+const DEFAULT_CLIENT_LIMIT = 12;
+
+type SnapshotStatsPayload = Partial<
+  CoachDashboardSnapshotStats & {
+    total_sessions: number;
+    completed_sessions: number;
+    upcoming_sessions: number;
+    total_clients: number;
+    active_clients: number;
+  }
+>;
+
+const deriveClientDisplayName = (
+  client: Pick<CoachDashboardSnapshotClient, 'firstName' | 'lastName' | 'email'>
+) => {
+  const parts = [client.firstName, client.lastName].filter(Boolean);
+  if (parts.length > 0) {
+    return parts.join(' ');
+  }
+
+  return client.email ?? '';
+};
+
+const mapAgendaEntry = (
+  entry: SessionCalendarEntry
+): CoachDashboardAgendaItem => ({
+  id: entry.id,
+  title: entry.title,
+  scheduledAt: entry.scheduledAt,
+  durationMinutes: entry.durationMinutes,
+  status: entry.status,
+  meetingUrl: entry.meetingUrl,
+  clientId: entry.clientId,
+  clientName: entry.clientName ?? null,
+});
+
+const mapSnapshotClient = (
+  client: CoachDashboardSnapshotClient
+): CoachDashboardSnapshotClient => ({
+  id: client.id,
+  firstName: client.firstName,
+  lastName: client.lastName,
+  email: client.email,
+  status: client.status,
+  nextSession: client.nextSession ?? null,
+  lastSession: client.lastSession ?? null,
+});
+
+const coerceSnapshotStats = (
+  stats: SnapshotStatsPayload | null | undefined,
+  pendingClients: number
+): CoachDashboardSnapshotStats => ({
+  totalSessions: stats?.totalSessions ?? stats?.total_sessions ?? 0,
+  completedSessions: stats?.completedSessions ?? stats?.completed_sessions ?? 0,
+  upcomingSessions: stats?.upcomingSessions ?? stats?.upcoming_sessions ?? 0,
+  totalClients: stats?.totalClients ?? stats?.total_clients ?? 0,
+  activeClients: stats?.activeClients ?? stats?.active_clients ?? 0,
+  pendingClients,
+});
+
+const isMissingRpcFunction = (error: PostgrestError | null) =>
+  Boolean(
+    error?.message && /function .*coach_dashboard_summary/i.test(error.message)
+  );
+
+const mapRpcPayloadToSummary = (
+  payload: CoachDashboardSummaryRpcPayload,
+  referenceDate: Date
+): CoachDashboardSummary => {
+  const agenda = (payload.agenda ?? []).map(row =>
+    mapAgendaEntry(mapSessionRow(row))
+  );
+
+  const activity: CoachDashboardActivityItem[] = (payload.activity ?? []).map(
+    item => ({
+      id: item.id,
+      type: item.type,
+      description: item.description,
+      timestamp: item.timestamp,
+      clientName: item.client_name ?? null,
+    })
+  );
+
+  const snapshotClients: CoachDashboardSnapshotClient[] = (
+    payload.snapshot?.clients ?? []
+  ).map(client =>
+    mapSnapshotClient({
+      id: client.id,
+      firstName: client.first_name,
+      lastName: client.last_name,
+      email: client.email,
+      status: client.status ?? 'inactive',
+      nextSession: client.next_session ?? null,
+      lastSession: client.last_session ?? null,
+    })
+  );
+
+  const pendingClients = snapshotClients.filter(
+    client => client.status === 'pending'
+  ).length;
+
+  const snapshot: CoachDashboardSnapshot = {
+    stats: coerceSnapshotStats(payload.snapshot?.stats, pendingClients),
+    clients: snapshotClients,
+  };
+
+  return {
+    agenda,
+    activity,
+    snapshot,
+    generatedAt: payload.generated_at ?? referenceDate.toISOString(),
+  };
+};
+
+interface LoadDashboardSummaryFallbackParams {
+  supabase: ReturnType<typeof createClient>;
+  actor: SessionSchedulerActor;
+  startOfDay: Date;
+  endOfDay: Date;
+  options: LoadDashboardSummaryOptions;
+}
+
+async function loadDashboardSummaryFallback({
+  supabase,
+  actor,
+  startOfDay,
+  endOfDay,
+  options,
+}: LoadDashboardSummaryFallbackParams): Promise<CoachDashboardSummary> {
+  const agendaLimit = options.agendaLimit ?? DEFAULT_AGENDA_LIMIT;
+  const activityLimit = options.activityLimit ?? DEFAULT_ACTIVITY_LIMIT;
+  const clientLimit = options.clientLimit ?? DEFAULT_CLIENT_LIMIT;
+
+  const startIso = startOfDay.toISOString();
+  const endIso = endOfDay.toISOString();
+  const now = new Date();
+
+  const agendaQuery = supabase
+    .from('sessions')
+    .select(
+      `
+        id,
+        coach_id,
+        client_id,
+        title,
+        scheduled_at,
+        duration_minutes,
+        status,
+        meeting_url,
+        timezone,
+        notes,
+        created_at,
+        updated_at,
+        coach:coach_id(first_name,last_name,email),
+        client:client_id(first_name,last_name,email)
+      `
+    )
+    .eq('coach_id', actor.id)
+    .gte('scheduled_at', startIso)
+    .lte('scheduled_at', endIso)
+    .order('scheduled_at', { ascending: true })
+    .limit(agendaLimit);
+
+  const sessionsQuery = supabase
+    .from('sessions')
+    .select(
+      `
+        id,
+        coach_id,
+        client_id,
+        status,
+        scheduled_at,
+        created_at,
+        updated_at,
+        meeting_url,
+        client:client_id(id,first_name,last_name,email,status)
+      `
+    )
+    .eq('coach_id', actor.id)
+    .order('scheduled_at', { ascending: false })
+    .limit(200);
+
+  const [agendaResponse, sessionsResponse] = await Promise.all([
+    agendaQuery,
+    sessionsQuery,
+  ]);
+
+  handlePostgrestError(agendaResponse.error);
+  handlePostgrestError(sessionsResponse.error);
+
+  const agendaRows = (agendaResponse.data ?? []) as unknown as SessionRow[];
+  type SessionWithClientRow = SessionRow & {
+    client:
+      | {
+          id: string;
+          first_name: string | null;
+          last_name: string | null;
+          email: string | null;
+          status?: string | null;
+        }
+      | Array<{
+          id: string;
+          first_name: string | null;
+          last_name: string | null;
+          email: string | null;
+          status?: string | null;
+        }>
+      | null;
+  };
+
+  const rawSessionRows = (sessionsResponse.data ??
+    []) as unknown as SessionWithClientRow[];
+  const sessionRows = rawSessionRows.map(row => ({
+    ...row,
+    client: Array.isArray(row.client) ? (row.client[0] ?? null) : row.client,
+  }));
+
+  const agenda = agendaRows.map(row => mapAgendaEntry(mapSessionRow(row)));
+
+  const activity: CoachDashboardActivityItem[] = [];
+
+  sessionRows.forEach(row => {
+    const client = row.client;
+    const name = client
+      ? deriveClientDisplayName({
+          firstName: client.first_name,
+          lastName: client.last_name,
+          email: client.email,
+        })
+      : null;
+
+    if (row.status === 'completed') {
+      activity.push({
+        id: `session_completed_${row.id}`,
+        type: 'session_completed',
+        description: name
+          ? `Completed session with ${name}`
+          : 'Completed coaching session',
+        timestamp: row.updated_at,
+        clientName: name,
+      });
+      return;
+    }
+
+    if (row.status === 'scheduled') {
+      activity.push({
+        id: `session_scheduled_${row.id}`,
+        type: 'session_scheduled',
+        description: name
+          ? `New session scheduled with ${name}`
+          : 'New session scheduled',
+        timestamp: row.created_at,
+        clientName: name,
+      });
+    }
+  });
+
+  activity.sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+
+  if (activity.length > activityLimit) {
+    activity.splice(activityLimit);
+  }
+
+  const clientById = new Map<
+    string,
+    CoachDashboardSnapshotClient & { totalSessions: number }
+  >();
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(now.getDate() - 30);
+
+  sessionRows.forEach(row => {
+    if (!row.client_id || !row.client) {
+      return;
+    }
+
+    const clientId = row.client_id;
+    const scheduledAt = new Date(row.scheduled_at);
+    const existing = clientById.get(clientId);
+    const baseStatus = (row.client.status ?? '').toLowerCase();
+    const initialStatus: CoachDashboardSnapshotClient['status'] =
+      baseStatus === 'pending' || baseStatus === 'invited'
+        ? 'pending'
+        : 'inactive';
+
+    if (!existing) {
+      clientById.set(clientId, {
+        id: clientId,
+        firstName: row.client.first_name,
+        lastName: row.client.last_name,
+        email: row.client.email,
+        status: initialStatus,
+        nextSession:
+          row.status === 'scheduled' && scheduledAt > now
+            ? row.scheduled_at
+            : null,
+        lastSession: row.status === 'completed' ? row.scheduled_at : null,
+        totalSessions: 1,
+      });
+      return;
+    }
+
+    existing.totalSessions += 1;
+
+    if (row.status === 'scheduled' && scheduledAt > now) {
+      if (
+        !existing.nextSession ||
+        scheduledAt < new Date(existing.nextSession)
+      ) {
+        existing.nextSession = row.scheduled_at;
+      }
+    }
+
+    if (row.status === 'completed') {
+      if (
+        !existing.lastSession ||
+        scheduledAt > new Date(existing.lastSession)
+      ) {
+        existing.lastSession = row.scheduled_at;
+      }
+    }
+
+    if (existing.status !== 'pending' && scheduledAt >= thirtyDaysAgo) {
+      existing.status = 'active';
+    }
+  });
+
+  const snapshotEntries = Array.from(clientById.values());
+
+  snapshotEntries.sort((a, b) => {
+    if (a.nextSession && b.nextSession) {
+      return (
+        new Date(a.nextSession).getTime() - new Date(b.nextSession).getTime()
+      );
+    }
+    if (a.nextSession) {
+      return -1;
+    }
+    if (b.nextSession) {
+      return 1;
+    }
+    return deriveClientDisplayName(a).localeCompare(deriveClientDisplayName(b));
+  });
+
+  const snapshotClients = snapshotEntries
+    .slice(0, clientLimit)
+    .map(({ totalSessions: _totalSessions, ...client }) =>
+      mapSnapshotClient(client)
+    );
+
+  const stats: CoachDashboardSnapshotStats = {
+    totalSessions: sessionRows.length,
+    completedSessions: sessionRows.filter(row => row.status === 'completed')
+      .length,
+    upcomingSessions: sessionRows.filter(
+      row => row.status === 'scheduled' && new Date(row.scheduled_at) > now
+    ).length,
+    totalClients: clientById.size,
+    activeClients: Array.from(clientById.values()).filter(
+      client => client.status === 'active'
+    ).length,
+    pendingClients: Array.from(clientById.values()).filter(
+      client => client.status === 'pending'
+    ).length,
+  };
+
+  return {
+    agenda,
+    activity,
+    snapshot: { stats, clients: snapshotClients },
+    generatedAt: now.toISOString(),
+  };
+}
+
+export async function loadDashboardSummary(
+  actor: SessionSchedulerActor,
+  options: LoadDashboardSummaryOptions = {}
+): Promise<CoachDashboardSummary> {
+  if (actor.role !== 'coach') {
+    throw new SessionSchedulerError(
+      'Only coaches can load the dashboard summary.',
+      HTTP_STATUS.FORBIDDEN
+    );
+  }
+
+  const supabase = createClient();
+  const referenceDate = options.referenceDate ?? new Date();
+  const startOfDay = new Date(referenceDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(referenceDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const agendaLimit = options.agendaLimit ?? DEFAULT_AGENDA_LIMIT;
+  const activityLimit = options.activityLimit ?? DEFAULT_ACTIVITY_LIMIT;
+  const clientLimit = options.clientLimit ?? DEFAULT_CLIENT_LIMIT;
+
+  const rpcResponse = await supabase.rpc('coach_dashboard_summary', {
+    coach_id: actor.id,
+    start_at: startOfDay.toISOString(),
+    end_at: endOfDay.toISOString(),
+    agenda_limit: agendaLimit,
+    activity_limit: activityLimit,
+    client_limit: clientLimit,
+  });
+
+  if (rpcResponse.error && !isMissingRpcFunction(rpcResponse.error)) {
+    throw new SessionSchedulerError(
+      'Failed to load coach dashboard summary.',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      rpcResponse.error
+    );
+  }
+
+  if (rpcResponse.data) {
+    return mapRpcPayloadToSummary(
+      (rpcResponse.data ?? {}) as CoachDashboardSummaryRpcPayload,
+      referenceDate
+    );
+  }
+
+  return loadDashboardSummaryFallback({
+    supabase,
+    actor,
+    startOfDay,
+    endOfDay,
+    options,
+  });
 }
