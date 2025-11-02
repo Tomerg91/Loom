@@ -54,8 +54,9 @@ let isHandlingSignOut = false;
 function validateClientEnv(): void {
   if (typeof window === 'undefined') return;
 
-  const url = clientEnv.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Trim environment variables to remove any embedded whitespace/newlines
+  const url = clientEnv.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   if (!url) {
     throw new Error(
@@ -208,9 +209,13 @@ export const createClient = (): BrowserSupabaseClient => {
   }
 
   try {
+    // Trim values before creating client to ensure no whitespace/newlines
+    const supabaseUrl = clientEnv.NEXT_PUBLIC_SUPABASE_URL.trim();
+    const supabaseAnonKey = clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY.trim();
+
     clientInstance = createBrowserClient<Database>(
-      clientEnv.NEXT_PUBLIC_SUPABASE_URL,
-      clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         auth: {
           storageKey: 'loom-auth',
