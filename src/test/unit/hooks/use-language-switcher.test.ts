@@ -8,11 +8,15 @@ vi.mock('next-intl', () => ({
   useLocale: () => useLocaleMock(),
 }));
 
-vi.mock('@/i18n/routing', () => ({
-  routing: { locales: ['en', 'he'] },
-  usePathname: () => usePathnameMock(),
-  useRouter: () => ({ push: pushMock }),
-}));
+vi.mock('@/i18n/routing', async () => {
+  const actual =
+    await vi.importActual<typeof import('@/i18n/routing')>('@/i18n/routing');
+  return {
+    ...actual,
+    usePathname: () => usePathnameMock(),
+    useRouter: () => ({ push: pushMock }),
+  };
+});
 
 // Import after mocks are set up
 import { useLanguageSwitcher } from '@/hooks/use-language-switcher';
