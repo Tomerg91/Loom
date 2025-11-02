@@ -24,6 +24,8 @@ const clientEnvSchema = z.object({
     .optional(),
 });
 
+const sanitizeSupabaseValue = value => value.trim().replace(/\\n|[\r\n]+/g, '');
+
 const resolveSupabaseUrl = () => {
   const url =
     process.env.SUPABASE_URL ||
@@ -31,7 +33,7 @@ const resolveSupabaseUrl = () => {
     PLACEHOLDER_SUPABASE_URL;
 
   // Trim whitespace and escape sequences to prevent malformed URLs
-  return url.trim().replace(/\\n/g, '').replace(/\n/g, '');
+  return sanitizeSupabaseValue(url);
 };
 
 const resolveSupabaseAnonKey = () => {
@@ -43,7 +45,7 @@ const resolveSupabaseAnonKey = () => {
     PLACEHOLDER_SUPABASE_ANON_KEY;
 
   // Trim whitespace and escape sequences to prevent malformed keys
-  return key.trim().replace(/\\n/g, '').replace(/\n/g, '');
+  return sanitizeSupabaseValue(key);
 };
 
 const rawClientEnv = {
