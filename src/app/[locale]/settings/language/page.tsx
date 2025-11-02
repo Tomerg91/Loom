@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
-import { RouteGuard } from '@/components/auth/route-guard';
+import { AppLayout } from '@/components/layout/app-layout';
+import { requireUser } from '@/lib/auth/auth';
 import { LanguageSettingsCard } from '@/components/settings/language-settings-card';
 
 interface Props {
@@ -9,11 +10,13 @@ interface Props {
   }>;
 }
 
-export default async function LanguageSettingsPage() {
-  const t = await getTranslations('common');
+export default async function LanguageSettingsPage({ params }: Props) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'common' });
+  const user = await requireUser({ locale, redirectTo: `/${locale}/settings/language` });
 
   return (
-    <RouteGuard>
+    <AppLayout user={user}>
       <div className="container mx-auto py-6 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="mb-6">
@@ -22,11 +25,11 @@ export default async function LanguageSettingsPage() {
               Manage your language preferences and regional settings
             </p>
           </div>
-          
+
           <LanguageSettingsCard />
         </div>
       </div>
-    </RouteGuard>
+    </AppLayout>
   );
 }
 

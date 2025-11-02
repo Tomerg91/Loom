@@ -1,4 +1,6 @@
 import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 import { routing } from '@/i18n/routing';
 import { config } from '@/lib/config';
@@ -8,6 +10,7 @@ import {
   createClient,
   createAdminClient,
 } from '@/modules/platform/supabase/server';
+import { resolveRedirect } from '@/lib/utils/redirect';
 import type { Language, User, UserRole, UserStatus } from '@/types';
 
 type AuthMetadata = Record<string, unknown> | null | undefined;
@@ -1281,6 +1284,59 @@ export const createAuthService = (
 export const getServerUser = async (): Promise<AuthUser | null> => {
   const authService = createAuthService(true);
   return authService.getCurrentUser();
+};
+
+export interface RequireUserOptions {
+  locale?: string;
+  redirectTo?: string | null;
+}
+
+export const requireUser = async (options: RequireUserOptions = {}): Promise<AuthUser> => {
+  const user = await getServerUser();
+  if (user) {
+    return user;
+  }
+
+  const inferLocaleFromPath = (path: string | null | undefined): string | undefined => {
+    if (!path || typeof path !== 'string') {
+      return undefined;
+    }
+
+    const sanitized = path.startsWith('/') ? path : `/${path}`;
+    const [ , firstSegment ] = sanitized.split('/');
+    if (firstSegment && routing.locales.includes(firstSegment as any)) {
+      return firstSegment;
+    }
+    return undefined;
+  };
+
+  let redirectPath = options.redirectTo ?? null;
+  let resolvedLocale = options.locale ?? inferLocaleFromPath(redirectPath ?? undefined);
+
+  if (!redirectPath) {
+    try {
+      const headerList = await headers();
+      const nextUrl = headerList?.get('next-url') ?? headerList?.get('referer');
+      if (nextUrl) {
+        redirectPath = nextUrl;
+        resolvedLocale = resolvedLocale ?? inferLocaleFromPath(nextUrl);
+      }
+    } catch {
+      // Ignore header access errors in environments without request context
+    }
+  }
+
+  const safeLocale = resolvedLocale && routing.locales.includes(resolvedLocale as any)
+    ? resolvedLocale
+    : options.locale && routing.locales.includes(options.locale as any)
+      ? options.locale
+      : routing.defaultLocale;
+
+  const fallbackRedirect = resolveRedirect(safeLocale, redirectPath);
+  const signInPath = resolveRedirect(safeLocale, '/auth/signin', { allowAuthPaths: true });
+  const loginUrl = `${signInPath}?redirectTo=${encodeURIComponent(fallbackRedirect)}`;
+
+  redirect(loginUrl);
 };
 
 export const requireAuth = async (): Promise<AuthUser> => {

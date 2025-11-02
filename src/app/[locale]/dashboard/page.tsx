@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-import { RouteGuard } from '@/components/auth/route-guard';
 import { DashboardContent } from '@/components/dashboard/dashboard-content';
 import { AppLayout } from '@/components/layout/app-layout';
+import { requireUser } from '@/lib/auth/auth';
 
 interface DashboardPageProps {
   params: Promise<{ locale: string }>;
@@ -21,12 +21,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function DashboardPage({ params }: DashboardPageProps) {
   const { locale } = await params;
+  const user = await requireUser({ locale, redirectTo: `/${locale}/dashboard` });
 
   return (
-    <RouteGuard requireAuth={true}>
-      <AppLayout>
-        <DashboardContent locale={locale} />
-      </AppLayout>
-    </RouteGuard>
+    <AppLayout user={user}>
+      <DashboardContent locale={locale} />
+    </AppLayout>
   );
 }

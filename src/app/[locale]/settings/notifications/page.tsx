@@ -1,16 +1,24 @@
 import { Suspense } from 'react';
 
-import { RouteGuard } from '@/components/auth/route-guard';
 import { NotificationSettingsPage } from '@/components/settings/notification-settings-page';
+import { AppLayout } from '@/components/layout/app-layout';
+import { requireUser } from '@/lib/auth/auth';
 
-export default function NotificationSettingsPageRoute() {
+interface NotificationSettingsPageRouteProps {
+  params: Promise<{ locale: string }>;
+}
+
+export default async function NotificationSettingsPageRoute({ params }: NotificationSettingsPageRouteProps) {
+  const { locale } = await params;
+  const user = await requireUser({ locale, redirectTo: `/${locale}/settings/notifications` });
+
   return (
-    <RouteGuard requireAuth={true}>
+    <AppLayout user={user}>
       <div className="container mx-auto px-4 py-8">
         <Suspense fallback={<div>Loading notification settings...</div>}>
           <NotificationSettingsPage />
         </Suspense>
       </div>
-    </RouteGuard>
+    </AppLayout>
   );
 }
