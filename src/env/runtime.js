@@ -1,10 +1,77 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+/**
+ * Server-side environment variables loader
+ * Cached to avoid repeated lookups during build and runtime
+ * Includes credential sanitization and multi-source resolution
+ */
+
 const { createEnv } = require('@t3-oss/env-nextjs');
 const { z } = require('zod');
 
+// Placeholder constants for fallback values
 const PLACEHOLDER_SUPABASE_URL = 'https://placeholder.supabase.co';
 const PLACEHOLDER_SUPABASE_ANON_KEY = 'sb_placeholder_supabase_key';
 
+// Cache for environment variable lookups
+const envCache = {};
+
+/**
+ * Get environment variable with caching and optional default value
+ * @param {string} key - Environment variable key
+ * @param {string} [defaultValue] - Optional default value
+ * @returns {string|undefined} - Environment variable value
+ */
+function getEnvVar(key, defaultValue) {
+  if (envCache[key] !== undefined) {
+    return envCache[key];
+  }
+
+  const value = process.env[key] ?? defaultValue;
+  envCache[key] = value;
+  return value;
+}
+
+/**
+ * Sanitize credential string by removing embedded newlines and escape sequences
+ * Prevents malformed URLs and keys from breaking the application
+ * @param {string} value - Credential string to sanitize
+ * @returns {string} - Sanitized credential string
+ */
+function sanitizeCredential(value) {
+  return value.trim().replace(/\\n/g, '').replace(/\n/g, '');
+}
+
+/**
+ * Resolve Supabase URL from multiple possible environment variable sources
+ * Checks SUPABASE_URL and NEXT_PUBLIC_SUPABASE_URL
+ * @returns {string} - Sanitized Supabase URL
+ */
+const resolveSupabaseUrl = () => {
+  const url =
+    getEnvVar('SUPABASE_URL') ||
+    getEnvVar('NEXT_PUBLIC_SUPABASE_URL') ||
+    PLACEHOLDER_SUPABASE_URL;
+
+  return sanitizeCredential(url);
+};
+
+/**
+ * Resolve Supabase anon key from multiple possible environment variable sources
+ * Checks SUPABASE_PUBLISHABLE_KEY, SUPABASE_ANON_KEY, SUPABASE_PUBLIC_ANON_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY
+ * @returns {string} - Sanitized Supabase anon key
+ */
+const resolveSupabaseAnonKey = () => {
+  const key =
+    getEnvVar('SUPABASE_PUBLISHABLE_KEY') ||
+    getEnvVar('SUPABASE_ANON_KEY') ||
+    getEnvVar('SUPABASE_PUBLIC_ANON_KEY') ||
+    getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY') ||
+    PLACEHOLDER_SUPABASE_ANON_KEY;
+
+  return sanitizeCredential(key);
+};
+
+// Client environment validation schema
 const clientEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z
     .string()
@@ -24,36 +91,16 @@ const clientEnvSchema = z.object({
     .optional(),
 });
 
-const resolveSupabaseUrl = () => {
-  const url =
-    process.env.SUPABASE_URL ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    PLACEHOLDER_SUPABASE_URL;
-
-  // Trim whitespace and escape sequences to prevent malformed URLs
-  return url.trim().replace(/\\n/g, '').replace(/\n/g, '');
-};
-
-const resolveSupabaseAnonKey = () => {
-  const key =
-    process.env.SUPABASE_PUBLISHABLE_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    process.env.SUPABASE_PUBLIC_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    PLACEHOLDER_SUPABASE_ANON_KEY;
-
-  // Trim whitespace and escape sequences to prevent malformed keys
-  return key.trim().replace(/\\n/g, '').replace(/\n/g, '');
-};
-
+// Build raw client environment using resolvers
 const rawClientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: resolveSupabaseUrl(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: resolveSupabaseAnonKey(),
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_APP_URL: getEnvVar('NEXT_PUBLIC_APP_URL'),
   NEXT_PUBLIC_SENTRY_DSN:
-    process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN,
+    getEnvVar('NEXT_PUBLIC_SENTRY_DSN') || getEnvVar('SENTRY_DSN'),
 };
 
+// Parse and validate client environment
 const parsedClientEnv = clientEnvSchema.safeParse(rawClientEnv);
 
 if (!parsedClientEnv.success) {
@@ -69,17 +116,18 @@ if (!parsedClientEnv.success) {
 
 const clientEnv = parsedClientEnv.data;
 
-// Create serverEnv with fallback for Edge Runtime
-// createEnv doesn't work in Edge Runtime (Vercel), so we try-catch it
-let serverEnv;
-
+/**
+ * Create serverEnv with fallback for Edge Runtime
+ * createEnv doesn't work in Edge Runtime (Vercel), so we try-catch it
+ */
 const createServerEnv = () => {
   const baseEnv = {
     SUPABASE_SERVICE_ROLE_KEY:
-      process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
-    DATABASE_URL: process.env.DATABASE_URL,
-    SENTRY_DSN: process.env.SENTRY_DSN,
-    TASK_ATTACHMENTS_BUCKET: process.env.TASK_ATTACHMENTS_BUCKET,
+      getEnvVar('SUPABASE_SECRET_KEY') ||
+      getEnvVar('SUPABASE_SERVICE_ROLE_KEY'),
+    DATABASE_URL: getEnvVar('DATABASE_URL'),
+    SENTRY_DSN: getEnvVar('SENTRY_DSN'),
+    TASK_ATTACHMENTS_BUCKET: getEnvVar('TASK_ATTACHMENTS_BUCKET'),
     NEXT_PUBLIC_SUPABASE_URL: clientEnv.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_APP_URL: clientEnv.NEXT_PUBLIC_APP_URL,
@@ -106,12 +154,13 @@ const createServerEnv = () => {
   }
 };
 
-serverEnv = createServerEnv();
+const serverEnv = createServerEnv();
 
+// Export all required values for backward compatibility
 module.exports = {
   clientEnv,
   serverEnv,
-  env: serverEnv,
+  env: serverEnv, // Alias for backward compatibility
   PLACEHOLDER_SUPABASE_ANON_KEY,
   PLACEHOLDER_SUPABASE_URL,
   resolveSupabaseAnonKey,
