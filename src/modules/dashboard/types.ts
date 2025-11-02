@@ -9,6 +9,73 @@ import type { TaskPriority, TaskStatus } from '@/modules/tasks/types/task';
 import type { SessionStatus } from '@/types';
 
 /**
+ * Normalised representation of an agenda entry surfaced on the dashboard.
+ */
+export interface CoachDashboardAgendaItem {
+  id: string;
+  title: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  status: SessionStatus;
+  meetingUrl: string | null;
+  clientId: string;
+  clientName: string | null;
+}
+
+/** Supported event types displayed in the recent activity feed. */
+export type CoachDashboardActivityType =
+  | 'session_completed'
+  | 'session_scheduled'
+  | 'note_added'
+  | 'client_joined';
+
+/**
+ * Activity event shown in the dashboard feed.
+ */
+export interface CoachDashboardActivityItem {
+  id: string;
+  type: CoachDashboardActivityType;
+  description: string;
+  timestamp: string;
+  clientName?: string | null;
+}
+
+/** Snapshot totals rendered in the coach client snapshot widget. */
+export interface CoachDashboardSnapshotStats {
+  totalSessions: number;
+  completedSessions: number;
+  upcomingSessions: number;
+  totalClients: number;
+  activeClients: number;
+  pendingClients: number;
+}
+
+/** Lightweight client summary for the snapshot widget. */
+export interface CoachDashboardSnapshotClient {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  status: 'active' | 'inactive' | 'pending';
+  nextSession?: string | null;
+  lastSession?: string | null;
+}
+
+/** Aggregated snapshot shown on the coach dashboard sidebar. */
+export interface CoachDashboardSnapshot {
+  stats: CoachDashboardSnapshotStats;
+  clients: CoachDashboardSnapshotClient[];
+}
+
+/** Combined payload returned when loading the coach dashboard summary. */
+export interface CoachDashboardSummary {
+  agenda: CoachDashboardAgendaItem[];
+  activity: CoachDashboardActivityItem[];
+  snapshot: CoachDashboardSnapshot;
+  generatedAt: string;
+}
+
+/**
  * Summary metrics displayed at the top of the coach dashboard.
  */
 export interface CoachOverviewSummary {

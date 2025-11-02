@@ -245,6 +245,7 @@ export class AuthService {
     string,
     { data: AuthUser; expires: number }
   >();
+  private readonly isServer: boolean;
 
   private getUserProfileCacheKey(userId: string): string {
     return `user_profile_${userId}`;
@@ -253,6 +254,7 @@ export class AuthService {
   private constructor(isServer = true, supabase?: ServerSupabaseClient) {
     // Use the request-scoped server client when provided or fall back to the shared browser client
     this.supabase = isServer && supabase ? supabase : clientSupabase;
+    this.isServer = isServer;
 
     const createUserService = getCreateUserService();
     this.userService = createUserService({
@@ -705,7 +707,7 @@ export class AuthService {
 
       console.log('[AuthService] signIn: Supabase auth completed', {
         success: !authError,
-        hasUser: !!authData?.user
+        hasUser: !!authData?.user,
       });
 
       if (authError) {
@@ -721,7 +723,7 @@ export class AuthService {
         hasAuthDataSession: !!authData.session,
         hasAccessToken: !!authData.session?.access_token,
         hasRefreshToken: !!authData.session?.refresh_token,
-        authDataSessionType: typeof authData.session
+        authDataSessionType: typeof authData.session,
       });
 
       if (authData.session?.access_token && authData.session?.refresh_token) {
@@ -735,7 +737,7 @@ export class AuthService {
         console.log('[AuthService] signIn: setSession result', {
           hasError: !!sessionError,
           hasSessionData: !!sessionData,
-          errorMessage: sessionError?.message
+          errorMessage: sessionError?.message,
         });
 
         if (sessionError) {
@@ -744,7 +746,9 @@ export class AuthService {
           });
         } else if (sessionData?.session) {
           activeSession = sessionData.session;
-          console.log('[AuthService] signIn: Updated activeSession from setSession');
+          console.log(
+            '[AuthService] signIn: Updated activeSession from setSession'
+          );
         }
       } else {
         console.warn('[AuthService] signIn: authData.session missing tokens');
@@ -764,7 +768,10 @@ export class AuthService {
       // the environment is missing the key (e.g., local dev without secrets).
       // IMPORTANT: Skip admin client in browser - service role key should only be used server-side
       const isBrowser = typeof window !== 'undefined';
-      console.log('[AuthService] signIn: Environment check', { isBrowser, isServer: this.isServer });
+      console.log('[AuthService] signIn: Environment check', {
+        isBrowser,
+        isServer: this.isServer,
+      });
 
       if (this.isServer && !isBrowser) {
         console.log('[AuthService] signIn: Using admin client (server-side)');
@@ -797,39 +804,40 @@ export class AuthService {
 
           console.log('[AuthService] signIn: Admin profile fetch completed', {
             success: !profileError,
-            hasData: !!profileData
+            hasData: !!profileData,
           });
 
           if (!profileError && profileData) {
-          authUser = {
-            id: profileData.id,
-            email: profileData.email,
-            role: profileData.role as any,
-            firstName: profileData.first_name || '',
-            lastName: profileData.last_name || '',
-            phone: profileData.phone || '',
-            avatarUrl: profileData.avatar_url || '',
-            timezone: profileData.timezone || '',
-            language: profileData.language as any,
-            status: profileData.status as any,
-            createdAt: profileData.created_at || new Date().toISOString(),
-            updatedAt: profileData.updated_at || new Date().toISOString(),
-            lastSeenAt: profileData.last_seen_at || undefined,
-            onboardingStatus:
-              (profileData.onboarding_status as
-                | 'pending'
-                | 'in_progress'
-                | 'completed') || 'pending',
-            onboardingStep: profileData.onboarding_step ?? 0,
-            onboardingCompletedAt:
-              profileData.onboarding_completed_at || undefined,
-            onboardingData:
-              (profileData.onboarding_data as Record<string, unknown>) || {},
-            mfaEnabled: profileData.mfa_enabled ?? false,
-            mfaSetupCompleted: profileData.mfa_setup_completed ?? false,
-            mfaVerifiedAt: profileData.mfa_verified_at || undefined,
-            rememberDeviceEnabled: profileData.remember_device_enabled ?? false,
-          };
+            authUser = {
+              id: profileData.id,
+              email: profileData.email,
+              role: profileData.role as any,
+              firstName: profileData.first_name || '',
+              lastName: profileData.last_name || '',
+              phone: profileData.phone || '',
+              avatarUrl: profileData.avatar_url || '',
+              timezone: profileData.timezone || '',
+              language: profileData.language as any,
+              status: profileData.status as any,
+              createdAt: profileData.created_at || new Date().toISOString(),
+              updatedAt: profileData.updated_at || new Date().toISOString(),
+              lastSeenAt: profileData.last_seen_at || undefined,
+              onboardingStatus:
+                (profileData.onboarding_status as
+                  | 'pending'
+                  | 'in_progress'
+                  | 'completed') || 'pending',
+              onboardingStep: profileData.onboarding_step ?? 0,
+              onboardingCompletedAt:
+                profileData.onboarding_completed_at || undefined,
+              onboardingData:
+                (profileData.onboarding_data as Record<string, unknown>) || {},
+              mfaEnabled: profileData.mfa_enabled ?? false,
+              mfaSetupCompleted: profileData.mfa_setup_completed ?? false,
+              mfaVerifiedAt: profileData.mfa_verified_at || undefined,
+              rememberDeviceEnabled:
+                profileData.remember_device_enabled ?? false,
+            };
           } else if (profileError) {
             console.warn(
               '[AuthService] Admin client profile fetch failed after signin:',
@@ -840,13 +848,19 @@ export class AuthService {
             );
           }
         } catch (adminError) {
-          console.warn('[AuthService] Admin client unavailable during signin:', {
-            userId: authData.user.id,
-            error: adminError instanceof Error ? adminError.message : adminError,
-          });
+          console.warn(
+            '[AuthService] Admin client unavailable during signin:',
+            {
+              userId: authData.user.id,
+              error:
+                adminError instanceof Error ? adminError.message : adminError,
+            }
+          );
         }
       } else {
-        console.log('[AuthService] signIn: Skipping admin client (browser-side or isServer=false)');
+        console.log(
+          '[AuthService] signIn: Skipping admin client (browser-side or isServer=false)'
+        );
       }
 
       if (!authUser) {
@@ -855,7 +869,9 @@ export class AuthService {
         const updateResult = await this.userService.updateLastSeen(
           authData.user.id
         );
-        console.log('[AuthService] signIn: updateLastSeen completed', { success: updateResult.success });
+        console.log('[AuthService] signIn: updateLastSeen completed', {
+          success: updateResult.success,
+        });
 
         if (!updateResult.success) {
           console.warn(
@@ -871,7 +887,9 @@ export class AuthService {
         const profileResult = await this.userService.getUserProfile(
           authData.user.id
         );
-        console.log('[AuthService] signIn: getUserProfile completed', { success: profileResult.success });
+        console.log('[AuthService] signIn: getUserProfile completed', {
+          success: profileResult.success,
+        });
 
         if (profileResult.success) {
           authUser = this.mapUserProfileToAuthUser(profileResult.data);
@@ -886,7 +904,9 @@ export class AuthService {
         }
       }
 
-      console.log('[AuthService] signIn: Final auth user check', { hasAuthUser: !!authUser });
+      console.log('[AuthService] signIn: Final auth user check', {
+        hasAuthUser: !!authUser,
+      });
 
       if (!authUser) {
         console.warn(
@@ -901,7 +921,7 @@ export class AuthService {
       console.log('[AuthService] signIn: Returning with session tokens', {
         hasSessionTokens: !!sessionTokens,
         sessionTokensKeys: sessionTokens ? Object.keys(sessionTokens) : null,
-        activeSessionExists: !!activeSession
+        activeSessionExists: !!activeSession,
       });
 
       return {

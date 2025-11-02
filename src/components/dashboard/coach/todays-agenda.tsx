@@ -1,57 +1,36 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { CalendarClock, ExternalLink, User } from 'lucide-react';
+import { CalendarClock, ExternalLink, RefreshCw, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from '@/i18n/routing';
-import type { Session } from '@/types';
+import type { CoachDashboardAgendaItem } from '@/modules/dashboard/types';
 
 interface CoachTodaysAgendaProps {
-  userId: string;
   locale: string;
+  agenda: CoachDashboardAgendaItem[];
+  isRefreshing?: boolean;
+  onRefresh?: (() => void) | undefined;
+  error?: string;
 }
 
-interface SessionsResponse {
-  data?: Session[];
-}
-
-async function fetchTodaysAgenda(userId: string): Promise<Session[]> {
-  const now = new Date();
-  const startOfDay = new Date(now);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(now);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  const params = new URLSearchParams({
-    coachId: userId,
-    status: 'scheduled',
-    from: startOfDay.toISOString(),
-    to: endOfDay.toISOString(),
-    sortOrder: 'asc',
-    limit: '10',
-  });
-
-  const response = await fetch(`/api/sessions?${params.toString()}`, {
-    cache: 'no-store',
-    credentials: 'same-origin',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch agenda');
-  }
-
-  const payload: SessionsResponse = await response.json();
-  return (payload.data ?? []).sort(
-    (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
-  );
-}
-
-export function CoachTodaysAgenda({ userId, locale }: CoachTodaysAgendaProps) {
+export function CoachTodaysAgenda({
+  locale,
+  agenda,
+  isRefreshing = false,
+  onRefresh,
+  error,
+}: CoachTodaysAgendaProps) {
   const t = useTranslations('dashboard.coachSections.todaysAgenda');
   const commonT = useTranslations('common');
 
@@ -74,37 +53,47 @@ export function CoachTodaysAgenda({ userId, locale }: CoachTodaysAgendaProps) {
     [locale]
   );
 
-  const {
-    data: sessions,
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery<Session[]>({
-    queryKey: ['coach-todays-agenda', userId],
-    queryFn: () => fetchTodaysAgenda(userId),
-    enabled: Boolean(userId),
-    staleTime: 30_000,
-  });
+  const agendaDate = agenda[0]?.scheduledAt
+    ? new Date(agenda[0].scheduledAt)
+    : new Date();
 
-  const agenda = sessions ?? [];
-  const agendaDate = agenda[0]?.scheduledAt ? new Date(agenda[0].scheduledAt) : new Date();
+  const showSkeleton = isRefreshing && agenda.length === 0;
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CalendarClock className="h-5 w-5" />
-          {t('title')}
-        </CardTitle>
-        <CardDescription>
-          {t('subtitle', { date: dateLabelFormatter.format(agendaDate) })}
-        </CardDescription>
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarClock className="h-5 w-5" />
+            {t('title')}
+          </CardTitle>
+          <CardDescription>
+            {t('subtitle', { date: dateLabelFormatter.format(agendaDate) })}
+          </CardDescription>
+        </div>
+        {onRefresh && (
+          <Button
+            onClick={onRefresh}
+            variant="ghost"
+            size="sm"
+            className="inline-flex items-center gap-2 text-primary"
+            disabled={isRefreshing}
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
+            />
+            {commonT('refresh')}
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {isLoading && (
+        {showSkeleton && (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={`agenda-skeleton-${index}`} className="flex items-center gap-3 rounded-lg border p-4">
+              <div
+                key={`agenda-skeleton-${index}`}
+                className="flex items-center gap-3 rounded-lg border p-4"
+              >
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-40" />
@@ -116,32 +105,36 @@ export function CoachTodaysAgenda({ userId, locale }: CoachTodaysAgendaProps) {
           </div>
         )}
 
-        {isError && !isLoading && (
+        {error && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
             <p>{t('error')}</p>
-            <Button onClick={() => refetch()} size="sm" variant="outline" className="mt-3">
-              {commonT('retry')}
-            </Button>
+            {onRefresh && (
+              <Button
+                onClick={onRefresh}
+                size="sm"
+                variant="outline"
+                className="mt-3"
+              >
+                {commonT('retry')}
+              </Button>
+            )}
           </div>
         )}
 
-        {!isLoading && !isError && agenda.length === 0 && (
+        {agenda.length === 0 && !showSkeleton && !error && (
           <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
             <CalendarClock className="mx-auto mb-3 h-12 w-12 opacity-40" />
             <p>{t('empty')}</p>
             <Button asChild variant="secondary" className="mt-4">
-              <Link href="/sessions/new">
-                {t('cta')}
-              </Link>
+              <Link href="/sessions/new">{t('cta')}</Link>
             </Button>
           </div>
         )}
 
-        {!isLoading && !isError && agenda.length > 0 && (
+        {agenda.length > 0 && (
           <ol className="space-y-3">
-            {agenda.map((session) => {
-              const clientName = `${session.client.firstName ?? ''} ${session.client.lastName ?? ''}`.trim() ||
-                session.client.email;
+            {agenda.map(session => {
+              const clientName = session.clientName || commonT('unknown');
 
               return (
                 <li
@@ -153,9 +146,12 @@ export function CoachTodaysAgenda({ userId, locale }: CoachTodaysAgendaProps) {
                       <User className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="font-medium text-sm text-foreground">{session.title}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {session.title}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {clientName} • {timeFormatter.format(new Date(session.scheduledAt))}
+                        {clientName} •{' '}
+                        {timeFormatter.format(new Date(session.scheduledAt))}
                       </p>
                     </div>
                   </div>
@@ -168,7 +164,11 @@ export function CoachTodaysAgenda({ userId, locale }: CoachTodaysAgendaProps) {
                     </Button>
                     {session.meetingUrl && (
                       <Button asChild size="sm">
-                        <a href={session.meetingUrl} target="_blank" rel="noopener noreferrer">
+                        <a
+                          href={session.meetingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
                           {t('startSession')}
                         </a>
                       </Button>
