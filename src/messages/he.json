@@ -54,6 +54,8 @@
     "profile": "פרופיל",
     "settings": "הגדרות",
     "logout": "התנתקות",
+    "coach": "מאמן",
+    "client": "לקוח",
     "roles": {
       "admin": "מנהל מערכת",
       "coach": "מאמן",

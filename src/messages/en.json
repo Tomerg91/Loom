@@ -54,6 +54,8 @@
     "profile": "Profile",
     "settings": "Settings",
     "logout": "Sign Out",
+    "coach": "Coach",
+    "client": "Client",
     "roles": {
       "admin": "Administrator",
       "coach": "Coach",

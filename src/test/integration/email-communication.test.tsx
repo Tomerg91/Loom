@@ -1,6 +1,7 @@
 import { screen, waitFor, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import React from 'react';
 
 import { renderWithProviders, mockUser, setupTestEnvironment } from '@/test/utils';
 
@@ -59,13 +60,6 @@ const mockToast = vi.fn();
 vi.mock('@/lib/hooks/use-toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
-
-// Mock React hooks
-const React = {
-  useState: vi.fn(),
-  useEffect: vi.fn(),
-  useCallback: vi.fn(),
-};
 
 // Email verification component
 const EmailVerificationFlow = ({ email, userId }: { email: string; userId: string }) => {
