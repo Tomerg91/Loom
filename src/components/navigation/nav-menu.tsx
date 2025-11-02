@@ -42,6 +42,7 @@ import {
 import { CompactLanguageSwitcher } from '@/components/ui/language-switcher';
 import { Link } from '@/i18n/routing';
 import { createClientAuthService } from '@/lib/auth/client-auth';
+import type { AuthUser } from '@/lib/auth/auth';
 import { useUser } from '@/lib/auth/use-user';
 
 interface NavItem {
@@ -51,14 +52,21 @@ interface NavItem {
   exact?: boolean;
 }
 
-export function NavMenu() {
+interface NavMenuProps {
+  user: AuthUser;
+  hydrateFromStore?: boolean;
+}
+
+export function NavMenu({ user, hydrateFromStore = true }: NavMenuProps) {
   const t = useTranslations('navigation');
-  const user = useUser();
+  const storeUser = useUser();
   const pathname = usePathname();
   const locale = useLocale();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  if (!user) {
+  const currentUser = hydrateFromStore ? storeUser ?? user : user;
+
+  if (!currentUser) {
     return null;
   }
 
@@ -70,8 +78,8 @@ export function NavMenu() {
   };
 
   // Common navigation items
-  const shouldShowOnboarding = user.role === 'coach' || user.role === 'client';
-  const onboardingIncomplete = shouldShowOnboarding && user.onboardingStatus !== 'completed';
+  const shouldShowOnboarding = currentUser.role === 'coach' || currentUser.role === 'client';
+  const onboardingIncomplete = shouldShowOnboarding && currentUser.onboardingStatus !== 'completed';
 
   const commonItems: NavItem[] = [
     ...(shouldShowOnboarding
@@ -117,18 +125,18 @@ export function NavMenu() {
     return normalized.startsWith(href);
   };
 
-  const getUserInitials = (user: { firstName?: string; lastName?: string; email: string }) => {
-    if (user.firstName && user.lastName) {
-      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+  const getUserInitials = (value: { firstName?: string; lastName?: string; email: string }) => {
+    if (value.firstName && value.lastName) {
+      return `${value.firstName.charAt(0)}${value.lastName.charAt(0)}`.toUpperCase();
     }
-    return user.email.charAt(0).toUpperCase();
+    return value.email.charAt(0).toUpperCase();
   };
 
-  const getUserDisplayName = (user: { firstName?: string; lastName?: string; email: string }) => {
-    if (user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
+  const getUserDisplayName = (value: { firstName?: string; lastName?: string; email: string }) => {
+    if (value.firstName && value.lastName) {
+      return `${value.firstName} ${value.lastName}`;
     }
-    return user.email;
+    return value.email;
   };
 
   return (
@@ -258,15 +266,15 @@ export function NavMenu() {
             <div className="hidden md:block">
               <Badge 
                 variant={
-                  user.role === 'admin' ? 'default' : 
-                  user.role === 'coach' ? 'secondary' : 
+                  currentUser.role === 'admin' ? 'default' : 
+                  currentUser.role === 'coach' ? 'secondary' : 
                   'outline'
                 }
                 role="status"
-                aria-label={`Current role: ${t(`roles.${user.role}`)}`}
+                aria-label={`Current role: ${t(`roles.${currentUser.role}`)}`}
               >
-                {user.role === 'admin' && <Shield className="h-3 w-3 mr-1" aria-hidden="true" />}
-                {t(`roles.${user.role}`)}
+                {currentUser.role === 'admin' && <Shield className="h-3 w-3 mr-1" aria-hidden="true" />}
+                {t(`roles.${currentUser.role}`)}
               </Badge>
             </div>
 
@@ -276,14 +284,14 @@ export function NavMenu() {
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full" data-testid="user-menu">
                   <Avatar className="h-10 w-10">
                     <StableImage
-                      src={user.avatarUrl}
-                      alt={`${getUserDisplayName(user)} profile picture - ${t(`roles.${user.role}`)}`}
+                      src={currentUser.avatarUrl}
+                      alt={`${getUserDisplayName(currentUser)} profile picture - ${t(`roles.${currentUser.role}`)}`}
                       width={40}
                       height={40}
                       className="rounded-full"
                     />
                     <AvatarFallback>
-                      {getUserInitials(user)}
+                      {getUserInitials(currentUser)}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -292,10 +300,10 @@ export function NavMenu() {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {getUserDisplayName(user)}
+                      {getUserDisplayName(currentUser)}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
+                      {currentUser.email}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -345,15 +353,15 @@ export function NavMenu() {
           <div className="flex items-center justify-between pb-3 border-b border-border sm:hidden">
             <Badge 
               variant={
-                user.role === 'admin' ? 'default' : 
-                user.role === 'coach' ? 'secondary' : 
+                currentUser.role === 'admin' ? 'default' : 
+                currentUser.role === 'coach' ? 'secondary' : 
                 'outline'
               }
               role="status"
-              aria-label={`Current role: ${t(`roles.${user.role}`)}`}
+              aria-label={`Current role: ${t(`roles.${currentUser.role}`)}`}
             >
-              {user.role === 'admin' && <Shield className="h-3 w-3 mr-1" aria-hidden="true" />}
-              {t(`roles.${user.role}`)}
+              {currentUser.role === 'admin' && <Shield className="h-3 w-3 mr-1" aria-hidden="true" />}
+              {t(`roles.${currentUser.role}`)}
             </Badge>
             <CompactLanguageSwitcher />
           </div>

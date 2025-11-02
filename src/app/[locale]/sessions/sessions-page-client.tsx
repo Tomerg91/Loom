@@ -4,7 +4,6 @@ import { Calendar, List, Plus, Clock, Users, CheckCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-import { AppLayout } from '@/components/layout/app-layout';
 import { LazySessionBooking, LazySessionList, LazySessionCalendar } from '@/components/lazy-components';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,7 +49,7 @@ export function SessionsPageClient({ locale }: SessionsPageClientProps) {
   };
 
   return (
-    <AppLayout>
+    <>
       {/* Header */}
       <div className="border-b bg-card/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -251,6 +250,6 @@ export function SessionsPageClient({ locale }: SessionsPageClientProps) {
           </Dialog>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }

@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 
 import { ErrorDisplay } from '@/components/error/error-display';
 import { AppLayout } from '@/components/layout/app-layout';
-import { getServerUser } from '@/lib/auth/auth';
+import { getServerUser, requireUser, type AuthUser } from '@/lib/auth/auth';
 import type { UserRole } from '@/types';
 
 export interface PageWrapperProps {
@@ -32,17 +32,16 @@ export async function PageWrapper({
   errorBoundary = true,
 }: PageWrapperProps) {
   // Handle authentication if required
-  if (requireAuth) {
-    const user = await getServerUser();
-    
-    if (!user) {
-      redirect(`/${locale}/auth/signin`);
-    }
+  let authenticatedUser: Awaited<ReturnType<typeof getServerUser>> = null;
 
-    // Check role-based access if specified
-    if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
+  if (requireAuth) {
+    authenticatedUser = await requireUser({ locale });
+
+    if (requiredRoles.length > 0 && !requiredRoles.includes(authenticatedUser.role)) {
       redirect(`/${locale}/dashboard`);
     }
+  } else if (showAppLayout) {
+    authenticatedUser = await getServerUser();
   }
 
   const defaultLoadingComponent = (
@@ -67,12 +66,12 @@ export async function PageWrapper({
     </Suspense>
   );
 
-  if (!showAppLayout) {
+  if (!showAppLayout || !authenticatedUser) {
     return content;
   }
 
   return (
-    <AppLayout>
+    <AppLayout user={authenticatedUser}>
       {content}
     </AppLayout>
   );
@@ -94,12 +93,14 @@ function ErrorBoundaryWrapper({ children }: { children: React.ReactNode }) {
 export interface ClientPageWrapperProps extends Omit<PageWrapperProps, 'requireAuth' | 'requiredRoles'> {
   user?: { role: UserRole } | null;
   requiredRoles?: UserRole[];
+  layoutUser?: AuthUser | null;
 }
 
 export function ClientPageWrapper({
   children,
   user,
   requiredRoles = [],
+  layoutUser = null,
   locale: _locale = 'en',
   containerClassName = 'container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8',
   showAppLayout = true,
@@ -156,12 +157,12 @@ export function ClientPageWrapper({
     </Suspense>
   );
 
-  if (!showAppLayout) {
+  if (!showAppLayout || !layoutUser) {
     return content;
   }
 
   return (
-    <AppLayout>
+    <AppLayout user={layoutUser}>
       {content}
     </AppLayout>
   );
@@ -170,19 +171,17 @@ export function ClientPageWrapper({
 /**
  * Simplified page wrapper for basic pages
  */
-export function SimplePage({ 
-  children, 
-  className = 'container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8' 
-}: { 
-  children: React.ReactNode; 
-  className?: string; 
+export function SimplePage({
+  children,
+  className = 'container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8'
+}: {
+  children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <AppLayout>
-      <div className={className}>
-        {children}
-      </div>
-    </AppLayout>
+    <div className={className}>
+      {children}
+    </div>
   );
 }
 

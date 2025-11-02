@@ -15,9 +15,9 @@ import {
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
-import { RouteGuard } from '@/components/auth/route-guard';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import type { DashboardNavigationConfig } from '@/components/layout/navigation-types';
+import { requireUser } from '@/lib/auth/auth';
 import '@/styles/dashboard.css';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +37,8 @@ export default async function DashboardLayout({
     locale,
     namespace: 'navigation',
   });
+
+  await requireUser({ locale, redirectTo: `/${locale}/dashboard` });
 
   const navigation: DashboardNavigationConfig = {
     primary: [
@@ -151,10 +153,8 @@ export default async function DashboardLayout({
   };
 
   return (
-    <RouteGuard requireAuth>
-      <DashboardShell locale={locale} navigation={navigation}>
-        {children}
-      </DashboardShell>
-    </RouteGuard>
+    <DashboardShell locale={locale} navigation={navigation}>
+      {children}
+    </DashboardShell>
   );
 }

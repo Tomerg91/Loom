@@ -1,16 +1,24 @@
 import { Suspense } from 'react';
 
-import { RouteGuard } from '@/components/auth/route-guard';
 import { SettingsPage } from '@/components/settings/settings-page';
+import { AppLayout } from '@/components/layout/app-layout';
+import { requireUser } from '@/lib/auth/auth';
 
-export default function SettingsPageRoute() {
+interface SettingsPageRouteProps {
+  params: Promise<{ locale: string }>;
+}
+
+export default async function SettingsPageRoute({ params }: SettingsPageRouteProps) {
+  const { locale } = await params;
+  const user = await requireUser({ locale, redirectTo: `/${locale}/settings` });
+
   return (
-    <RouteGuard requireAuth={true}>
+    <AppLayout user={user}>
       <div className="container mx-auto px-4 py-8">
         <Suspense fallback={<div>Loading settings...</div>}>
           <SettingsPage />
         </Suspense>
       </div>
-    </RouteGuard>
+    </AppLayout>
   );
 }

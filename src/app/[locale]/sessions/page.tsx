@@ -1,6 +1,9 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { AppLayout } from '@/components/layout/app-layout';
+import { requireUser } from '@/lib/auth/auth';
+
 import { SessionsPageClient } from './sessions-page-client';
 
 interface SessionsPageProps {
@@ -19,6 +22,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function SessionsPage({ params }: SessionsPageProps) {
   const { locale } = await params;
-  
-  return <SessionsPageClient locale={locale} />;
+  const user = await requireUser({ locale, redirectTo: `/${locale}/sessions` });
+
+  return (
+    <AppLayout user={user}>
+      <SessionsPageClient locale={locale} />
+    </AppLayout>
+  );
 }
