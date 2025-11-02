@@ -3,6 +3,8 @@
  *       platform CMS module. The page renders hero, feature, testimonial, and
  *       pricing sections sourced from structured JSON.
  */
+import type { Metadata } from 'next';
+
 import { LandingHero } from '@/components/features/landing/Hero';
 import { LandingPricing } from '@/components/features/landing/Pricing';
 import { LandingTestimonials } from '@/components/features/landing/Testimonials';
@@ -10,6 +12,28 @@ import { MarketingHeader } from '@/components/landing/marketing-header';
 import { Link } from '@/i18n/routing';
 import { getLandingContent } from '@/modules/platform/cms/client';
 import type { LandingFeatures } from '@/modules/platform/cms/types';
+
+export const dynamic = 'force-static';
+export const revalidate = 3600;
+
+export async function generateMetadata({ params }: HomePageProps): Promise<Metadata> {
+  const { locale } = await params;
+
+  const title = locale === 'he' ? 'לום – פלטפורמת האימון של שיטת סאטיה' : 'Loom – Coaching Platform';
+  const description =
+    locale === 'he'
+      ? 'פלטפורמת אימון מודרנית למאמנים ומטופלים עם כלים לשיטת סאטיה.'
+      : 'A modern coaching platform built for Satya Method coaches and clients.';
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+    },
+  };
+}
 
 interface HomePageProps {
   params: Promise<{ locale: string }>;
