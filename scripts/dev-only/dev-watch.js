@@ -56,17 +56,17 @@ function startDevServer() {
   }
 
   log('🚀 Starting Next.js development server...', 'blue');
-  
+
   devServer = spawn('npm', ['run', 'dev'], {
     stdio: 'inherit',
     shell: true,
   });
 
-  devServer.on('error', (error) => {
+  devServer.on('error', error => {
     log(`❌ Server error: ${error.message}`, 'red');
   });
 
-  devServer.on('exit', (code) => {
+  devServer.on('exit', code => {
     if (code !== 0 && !isRestarting) {
       log(`⚠️  Server exited with code ${code}`, 'yellow');
     }
@@ -77,10 +77,10 @@ function startDevServer() {
 
 function restartServer(reason) {
   if (isRestarting) return;
-  
+
   isRestarting = true;
   log(`🔄 Restarting server: ${reason}`, 'yellow');
-  
+
   setTimeout(() => {
     startDevServer();
     isRestarting = false;
@@ -93,7 +93,7 @@ function formatFile(filePath) {
     return;
   }
 
-  exec(`npx prettier --write "${filePath}"`, (error) => {
+  exec(`npx prettier --write "${filePath}"`, error => {
     if (error) {
       log(`❌ Format error for ${filePath}: ${error.message}`, 'red');
     } else {
@@ -105,16 +105,19 @@ function formatFile(filePath) {
 function checkBundleSize() {
   exec('npm run analyze:quick', (error, stdout) => {
     if (error) return;
-    
+
     try {
       const sizeMatch = stdout.match(/Total Size: (\d+) KB/);
       if (sizeMatch) {
         const currentSize = parseInt(sizeMatch[1]);
-        
+
         if (bundleSizeCache && currentSize > bundleSizeCache * 1.1) {
-          log(`📦 Bundle size increased: ${bundleSizeCache}KB → ${currentSize}KB`, 'yellow');
+          log(
+            `📦 Bundle size increased: ${bundleSizeCache}KB → ${currentSize}KB`,
+            'yellow'
+          );
         }
-        
+
         bundleSizeCache = currentSize;
       }
     } catch (e) {
@@ -132,7 +135,7 @@ const configWatcher = chokidar.watch(configFiles, {
   persistent: true,
 });
 
-configWatcher.on('change', (filePath) => {
+configWatcher.on('change', filePath => {
   const fileName = path.basename(filePath);
   restartServer(`Configuration changed: ${fileName}`);
 });
@@ -145,10 +148,13 @@ const sourceWatcher = chokidar.watch(formatFiles, {
 
 let formatTimeout = null;
 
-sourceWatcher.on('change', (filePath) => {
-  if (filePath.endsWith('.ts') || filePath.endsWith('.tsx') || 
-      filePath.endsWith('.js') || filePath.endsWith('.jsx')) {
-    
+sourceWatcher.on('change', filePath => {
+  if (
+    filePath.endsWith('.ts') ||
+    filePath.endsWith('.tsx') ||
+    filePath.endsWith('.js') ||
+    filePath.endsWith('.jsx')
+  ) {
     // Debounce formatting
     clearTimeout(formatTimeout);
     formatTimeout = setTimeout(() => {
@@ -163,14 +169,14 @@ setInterval(checkBundleSize, 30000); // Every 30 seconds
 // Handle graceful shutdown
 process.on('SIGINT', () => {
   log('\n🛑 Shutting down development server...', 'yellow');
-  
+
   configWatcher.close();
   sourceWatcher.close();
-  
+
   if (devServer) {
     devServer.kill();
   }
-  
+
   log('👋 Development server stopped', 'green');
   process.exit(0);
 });

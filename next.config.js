@@ -12,16 +12,37 @@ const nextConfig = {
     // webVitalsAttribution is deprecated - use built-in Web Vitals reporting
     optimizePackageImports: [
       '@radix-ui/react-icons',
+      '@radix-ui/react-accordion',
+      '@radix-ui/react-alert-dialog',
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-collapsible',
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-hover-card',
+      '@radix-ui/react-label',
+      '@radix-ui/react-menubar',
+      '@radix-ui/react-navigation-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-progress',
+      '@radix-ui/react-radio-group',
+      '@radix-ui/react-scroll-area',
       '@radix-ui/react-select',
+      '@radix-ui/react-separator',
+      '@radix-ui/react-slider',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-switch',
       '@radix-ui/react-tabs',
       '@radix-ui/react-toast',
+      '@radix-ui/react-toggle',
+      '@radix-ui/react-tooltip',
       'lucide-react',
       '@supabase/supabase-js',
+      '@supabase/ssr',
       '@tanstack/react-query',
       'recharts',
       'date-fns',
+      'zod',
     ],
     // Note: PPR and React compiler require Next.js canary version
     // ppr: 'incremental',
@@ -278,6 +299,22 @@ const nextConfig = {
           /Critical dependency: the request of a dependency is an expression/,
       },
     ];
+
+    // Mark specific libraries as side-effect free for better tree-shaking
+    config.module.rules.push({
+      test: /\.m?js$/,
+      resolve: {
+        fullySpecified: false,
+      },
+      sideEffects: false,
+      include: [
+        /node_modules\/@radix-ui/,
+        /node_modules\/lucide-react/,
+        /node_modules\/date-fns/,
+        /node_modules\/zod/,
+        /node_modules\/@tanstack\/react-query/,
+      ],
+    });
 
     // Enhanced bundle optimization for production
     if (!dev && !isServer) {

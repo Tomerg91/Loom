@@ -21,12 +21,7 @@ docs/
 .worktrees/
 
 # Analysis and monitoring scripts (don't run in production)
-scripts/analyze-bundle.js
-scripts/bundle-monitor.js
-scripts/bundle-performance-monitor.js
-scripts/performance-audit.js
-scripts/dev-watch.js
-scripts/validate-api-docs.js
+scripts/dev-only/
 
 # Build artifacts
 .next/cache/

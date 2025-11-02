@@ -43,7 +43,6 @@ try {
   console.log('- Optimize images and use Next.js Image component');
   console.log('- Enable compression in production');
   console.log('- Use tree shaking for libraries');
-
 } catch (error) {
   console.error('❌ Bundle analysis failed:', error.message);
   process.exit(1);
@@ -60,8 +59,10 @@ function displayBundleInfo(staticDir) {
 
     // Analyze JS chunks
     if (fs.existsSync(chunks)) {
-      const chunkFiles = fs.readdirSync(chunks).filter(file => file.endsWith('.js'));
-      
+      const chunkFiles = fs
+        .readdirSync(chunks)
+        .filter(file => file.endsWith('.js'));
+
       console.log('\n🔧 JavaScript Chunks:');
       chunkFiles.forEach(file => {
         const filePath = path.join(chunks, file);
@@ -82,8 +83,10 @@ function displayBundleInfo(staticDir) {
 
     // Analyze CSS files
     if (fs.existsSync(css)) {
-      const cssFiles = fs.readdirSync(css).filter(file => file.endsWith('.css'));
-      
+      const cssFiles = fs
+        .readdirSync(css)
+        .filter(file => file.endsWith('.css'));
+
       if (cssFiles.length > 0) {
         console.log('\n🎨 CSS Files:');
         cssFiles.forEach(file => {
@@ -105,16 +108,18 @@ function displayBundleInfo(staticDir) {
     console.log(`  CSS: ${Math.round(cssSize / 1024)} KB`);
 
     // Warnings
-    if (jsSize > 250000) { // 250KB
+    if (jsSize > 250000) {
+      // 250KB
       console.log('\n⚠️  JavaScript bundle is large (>250KB)');
     }
-    if (cssSize > 50000) { // 50KB
+    if (cssSize > 50000) {
+      // 50KB
       console.log('⚠️  CSS bundle is large (>50KB)');
     }
-    if (totalSize > 500000) { // 500KB
+    if (totalSize > 500000) {
+      // 500KB
       console.log('⚠️  Total bundle size is large (>500KB)');
     }
-
   } catch (error) {
     console.log('Could not analyze bundle details:', error.message);
   }
