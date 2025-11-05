@@ -62,6 +62,51 @@ export const mockAuthStore = {
   updateUser: vi.fn(),
 };
 
+// Mock Supabase Realtime Channel
+export const createMockRealtimeChannel = () => {
+  const eventHandlers: Record<string, Array<(payload: any) => void>> = {};
+
+  return {
+    on: vi.fn((event: string, callback: (payload: any) => void) => {
+      if (!eventHandlers[event]) {
+        eventHandlers[event] = [];
+      }
+      eventHandlers[event].push(callback);
+      return mockChannel;
+    }),
+    off: vi.fn((event?: string) => {
+      if (event && eventHandlers[event]) {
+        delete eventHandlers[event];
+      } else {
+        Object.keys(eventHandlers).forEach(key => delete eventHandlers[key]);
+      }
+      return mockChannel;
+    }),
+    subscribe: vi.fn((callback?: (status: string) => void) => {
+      if (callback) {
+        setTimeout(() => callback('SUBSCRIBED'), 0);
+      }
+      return Promise.resolve({ error: null });
+    }),
+    unsubscribe: vi.fn(() => {
+      Object.keys(eventHandlers).forEach(key => delete eventHandlers[key]);
+      return Promise.resolve({ error: null });
+    }),
+    send: vi.fn((event: any) => {
+      return Promise.resolve('ok');
+    }),
+    // Helper method for tests to trigger events
+    _triggerEvent: (event: string, payload: any) => {
+      if (eventHandlers[event]) {
+        eventHandlers[event].forEach(handler => handler(payload));
+      }
+    },
+  };
+};
+
+// Create a shared mock channel instance
+export const mockChannel = createMockRealtimeChannel();
+
 // Mock Supabase client
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const mockSupabaseClient: any = {
@@ -98,6 +143,15 @@ export const mockSupabaseClient: any = {
       remove: vi.fn().mockResolvedValue({ data: null, error: null }),
     }),
   },
+  // Realtime support
+  channel: vi.fn((channelName: string) => {
+    const channel = createMockRealtimeChannel();
+    // Store channel name for testing purposes
+    (channel as any)._channelName = channelName;
+    return channel;
+  }),
+  removeChannel: vi.fn(() => Promise.resolve({ error: null })),
+  getChannels: vi.fn(() => []),
 };
 
 // Custom render function with providers
