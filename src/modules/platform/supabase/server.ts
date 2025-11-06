@@ -10,8 +10,8 @@ import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { NextRequest, NextResponse } from 'next/server';
 
-import {
 import { logger } from '@/lib/logger';
+import {
   PLACEHOLDER_SUPABASE_ANON_KEY,
   PLACEHOLDER_SUPABASE_URL,
   serverEnv,
