@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { FolderMetadata } from '@/lib/services/file-management-service';
+import { logger } from '@/lib/logger';
 
 interface UseFoldersParams {
   ownerId: string;
@@ -40,7 +41,7 @@ export function useFolders(params: UseFoldersParams) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch folders';
       setError(errorMessage);
-      console.error('Error fetching folders:', err);
+      logger.error('Error fetching folders:', err);
     } finally {
       setLoading(false);
     }

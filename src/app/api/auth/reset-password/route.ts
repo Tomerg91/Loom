@@ -11,6 +11,7 @@ import {
 import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { logger } from '@/lib/logger';
 
 
 
@@ -41,7 +42,7 @@ export const POST = withErrorHandling(
 
       if (!validation.success) {
         // Log invalid reset password attempt for security monitoring
-        console.warn('Invalid password reset attempt:', {
+        logger.warn('Invalid password reset attempt:', {
           ip: request.headers.get('x-forwarded-for') || 'unknown',
           userAgent: request.headers.get('user-agent'),
           timestamp: new Date().toISOString(),
@@ -57,7 +58,7 @@ export const POST = withErrorHandling(
       const { email } = validation.data;
 
       // Log password reset attempt for security monitoring
-      console.info('Password reset requested:', {
+      logger.info('Password reset requested:', {
         email,
         timestamp: new Date().toISOString(),
         ip: request.headers.get('x-forwarded-for') || 'unknown',
@@ -69,7 +70,7 @@ export const POST = withErrorHandling(
 
       if (error) {
         // Log failed password reset for security monitoring
-        console.warn('Password reset failed:', {
+        logger.warn('Password reset failed:', {
           email,
           error,
           timestamp: new Date().toISOString(),
@@ -83,7 +84,7 @@ export const POST = withErrorHandling(
       }
 
       // Log successful password reset for auditing
-      console.info('Password reset email sent:', {
+      logger.info('Password reset email sent:', {
         email,
         timestamp: new Date().toISOString(),
         ip: request.headers.get('x-forwarded-for') || 'unknown'
@@ -95,7 +96,7 @@ export const POST = withErrorHandling(
 
     } catch (error) {
       // Log error for monitoring
-      console.error('Password reset error:', {
+      logger.error('Password reset error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),

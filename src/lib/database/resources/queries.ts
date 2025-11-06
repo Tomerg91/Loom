@@ -21,6 +21,7 @@ import {
 } from '@/types/resources';
 
 import { mapFileUploadToResource, mapFileUploadsToResources } from './utils';
+import { logger } from '@/lib/logger';
 
 /**
  * Get library resources for a coach with optional filtering
@@ -76,7 +77,7 @@ export async function getCoachLibraryResources(
   if (error) {
     // Log RLS policy violations for debugging
     if (error.code === 'PGRST301' || error.message.includes('policy')) {
-      console.error('[RLS Policy Violation] Failed to fetch library resources:', {
+      logger.error('[RLS Policy Violation] Failed to fetch library resources:', {
         coachId,
         filters,
         error: error.message,
@@ -166,7 +167,7 @@ export async function getClientSharedResources(
   if (error) {
     // Log RLS policy violations for debugging
     if (error.code === 'PGRST301' || error.message.includes('policy')) {
-      console.error('[RLS Policy Violation] Failed to fetch shared resources:', {
+      logger.error('[RLS Policy Violation] Failed to fetch shared resources:', {
         clientId,
         error: error.message,
         code: error.code,

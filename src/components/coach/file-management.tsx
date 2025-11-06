@@ -30,6 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast-provider';
+import { logger } from '@/lib/logger';
 
 
 interface FileItem {
@@ -161,7 +162,7 @@ export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFil
         throw new Error(data?.error || 'Failed to load clients');
       }
     } catch (error) {
-      console.error('Failed to load clients:', error);
+      logger.error('Failed to load clients:', error);
       if (error instanceof Error) {
         showError('Failed to load clients', error.message);
       }

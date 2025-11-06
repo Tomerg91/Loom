@@ -48,6 +48,7 @@ import { ANALYTICS_CONFIG, getGrowthRateOrDefault } from '@/lib/config/analytics
 import { analyticsExportService, type ExportFormat } from '@/lib/services/analytics-export-service';
 
 import { SystemHealthDisplay } from './system-health-display';
+import { logger } from '@/lib/logger';
 
 interface AnalyticsData {
   overview: {
@@ -248,10 +249,10 @@ export function AdminAnalyticsPage() {
       analyticsExportService.downloadFile(blob, filename);
       
       // Show success message (you could add a toast notification here)
-      console.log(`Analytics exported successfully as ${format.toUpperCase()}`);
+      logger.debug(`Analytics exported successfully as ${format.toUpperCase()}`);
       
     } catch (error) {
-      console.error('Export failed:', error);
+      logger.error('Export failed:', error);
       // Create error notification
       const errorMessage = error instanceof Error ? error.message : 'Unknown export error';
       
@@ -298,9 +299,9 @@ export function AdminAnalyticsPage() {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
       
-      console.log('Comprehensive report generated successfully');
+      logger.debug('Comprehensive report generated successfully');
     } catch (error) {
-      console.error('Report generation failed:', error);
+      logger.error('Report generation failed:', error);
     } finally {
       setIsGeneratingReport(false);
     }
@@ -544,7 +545,7 @@ export function AdminAnalyticsPage() {
             enableBrush={true}
             showTrends={true}
             onDataPointClick={(data, index) => {
-              console.log('User growth data point clicked:', data, index);
+              logger.debug('User growth data point clicked:', data, index);
               // Could show detailed breakdown modal
             }}
             ariaLabel={`User growth chart showing ${analytics?.userGrowth?.length || 0} data points over ${timeRange}`}
@@ -565,7 +566,7 @@ export function AdminAnalyticsPage() {
             enableBrush={true}
             showTrends={true}
             onDataPointClick={(data, index) => {
-              console.log('Session metrics data point clicked:', data, index);
+              logger.debug('Session metrics data point clicked:', data, index);
               // Could navigate to sessions page with date filter
             }}
             ariaLabel={`Session metrics chart showing ${analytics?.sessionMetrics?.length || 0} data points over ${timeRange}`}

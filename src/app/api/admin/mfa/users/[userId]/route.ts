@@ -6,6 +6,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { enableMfaForUser, disableMfaForUser, resetMfaForUser } from '@/lib/database/mfa-admin';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { authService } from '@/lib/services/auth-service';
+import { logger } from '@/lib/logger';
 
 
 const mfaActionSchema = z.object({
@@ -82,7 +83,7 @@ const rateLimitedHandler = rateLimit(20, 60000)( // 20 requests per minute for M
         });
 
     } catch (error) {
-      console.error('MFA admin action API error:', error);
+      logger.error('MFA admin action API error:', error);
       
       if (error instanceof ApiError) {
         return ApiResponseHelper.error(error.code, error.message);

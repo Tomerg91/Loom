@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
 import { createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
+import { logger } from '@/lib/logger';
 
 const updateNoteSchema = z.object({
   title: z.string().min(1).max(100).optional(),
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .single();
 
     if (error) {
-      console.error('Error fetching note:', error);
+      logger.error('Error fetching note:', error);
       const errorResponse = createErrorResponse('Note not found', HTTP_STATUS.NOT_FOUND);
       return propagateCookies(authResponse, errorResponse);
     }
@@ -112,7 +113,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const successResponse = NextResponse.json({ data: transformedNote });
     return propagateCookies(authResponse, successResponse);
   } catch (error) {
-    console.error('Error in note GET:', error);
+    logger.error('Error in note GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -196,7 +197,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       .single();
 
     if (error) {
-      console.error('Error updating note:', error);
+      logger.error('Error updating note:', error);
       const errorResponse = createErrorResponse('Failed to update note', HTTP_STATUS.INTERNAL_SERVER_ERROR);
       return propagateCookies(authResponse, errorResponse);
     }
@@ -235,7 +236,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       );
     }
 
-    console.error('Error in note PUT:', error);
+    logger.error('Error in note PUT:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -292,7 +293,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       .eq(ownerField, user.id);
 
     if (error) {
-      console.error('Error deleting note:', error);
+      logger.error('Error deleting note:', error);
       const errorResponse = createErrorResponse('Failed to delete note', HTTP_STATUS.INTERNAL_SERVER_ERROR);
       return propagateCookies(authResponse, errorResponse);
     }
@@ -300,7 +301,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const successResponse = NextResponse.json({ message: 'Note deleted successfully' });
     return propagateCookies(authResponse, successResponse);
   } catch (error) {
-    console.error('Error in note DELETE:', error);
+    logger.error('Error in note DELETE:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

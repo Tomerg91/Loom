@@ -30,7 +30,7 @@ function loadOpenApiSpec() {
     
     return spec;
   } catch (error) {
-    console.warn('Could not load openapi.yaml, using embedded spec:', error);
+    logger.warn('Could not load openapi.yaml, using embedded spec:', error);
     return embeddedOpenApiSpec;
   }
 }

@@ -11,6 +11,7 @@ import { z } from 'zod';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
+import { logger } from '@/lib/logger';
 
 // Request validation schema
 const disableRequestSchema = z.object({
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('MFA disable error:', error);
+    logger.error('MFA disable error:', error);
     
     return NextResponse.json(
       { 

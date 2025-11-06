@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 import { useUser } from '@/lib/auth/use-user';
 import { PushNotificationService } from '@/lib/services/push-notification-service';
+import { logger } from '@/lib/logger';
 
 interface UsePushNotificationsReturn {
   isSupported: boolean;
@@ -39,7 +40,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
           setIsSubscribed(!!subscription);
         }
       } catch (error) {
-        console.error('Error checking push notification status:', error);
+        logger.error('Error checking push notification status:', error);
         setError(error instanceof Error ? error.message : 'Unknown error');
       }
     };
@@ -61,7 +62,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to request permission';
       setError(errorMessage);
-      console.error('Error requesting notification permission:', error);
+      logger.error('Error requesting notification permission:', error);
       return 'denied';
     }
   }, [isSupported]);
@@ -142,7 +143,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to subscribe';
       setError(errorMessage);
-      console.error('Error subscribing to push notifications:', error);
+      logger.error('Error subscribing to push notifications:', error);
       return false;
     } finally {
       setIsLoading(false);
@@ -189,7 +190,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to unsubscribe';
       setError(errorMessage);
-      console.error('Error unsubscribing from push notifications:', error);
+      logger.error('Error unsubscribing from push notifications:', error);
       return false;
     } finally {
       setIsLoading(false);

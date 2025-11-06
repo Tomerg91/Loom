@@ -4,6 +4,7 @@ import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { adminAnalyticsService } from '@/lib/database/admin-analytics';
 import { authService } from '@/lib/services/auth-service';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     return ApiResponseHelper.success(systemHealth);
 
   } catch (error) {
-    console.error('System health API error:', error);
+    logger.error('System health API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);

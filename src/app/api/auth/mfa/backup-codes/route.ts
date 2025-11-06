@@ -12,6 +12,7 @@ import { z } from 'zod';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
+import { logger } from '@/lib/logger';
 
 // Request validation schema for POST (regenerate codes)
 const regenerateRequestSchema = z.object({
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Backup codes status error:', error);
+    logger.error('Backup codes status error:', error);
     
     return NextResponse.json(
       { 
@@ -148,7 +149,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Backup codes regenerate error:', error);
+    logger.error('Backup codes regenerate error:', error);
     
     return NextResponse.json(
       { 

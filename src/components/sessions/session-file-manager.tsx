@@ -28,6 +28,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { logger } from '@/lib/logger';
 
 
 interface SessionFile {
@@ -101,7 +102,7 @@ export function SessionFileManager({
       const data = await response.json();
       setSessionFiles(data.files || []);
     } catch (error) {
-      console.error('Error loading session files:', error);
+      logger.error('Error loading session files:', error);
       setError(error instanceof Error ? error.message : 'Failed to load session files');
     }
   };
@@ -116,7 +117,7 @@ export function SessionFileManager({
         setUserFiles(data.files || []);
       }
     } catch (error) {
-      console.error('Error loading user files:', error);
+      logger.error('Error loading user files:', error);
     } finally {
       setLoading(false);
     }
@@ -149,7 +150,7 @@ export function SessionFileManager({
       // Check for errors
       const errors = results.filter(result => result.status === 'rejected');
       if (errors.length > 0) {
-        console.error('Some files failed to attach:', errors);
+        logger.error('Some files failed to attach:', errors);
       }
 
       // Refresh session files

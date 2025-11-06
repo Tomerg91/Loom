@@ -1,6 +1,7 @@
 import type { SessionStatus } from '@/types';
 
 import { BaseSessionService } from './base-session';
+import { logger } from '@/lib/logger';
 
 /**
  * Session workflow and status management service
@@ -15,7 +16,7 @@ export class SessionWorkflowService extends BaseSessionService {
     // Validate status transition
     const isValidTransition = await this.validateStatusTransition(sessionId, status);
     if (!isValidTransition) {
-      console.warn(`Invalid status transition to ${status} for session ${sessionId}`);
+      logger.warn(`Invalid status transition to ${status} for session ${sessionId}`);
       return false;
     }
 

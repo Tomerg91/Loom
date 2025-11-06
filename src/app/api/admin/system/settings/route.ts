@@ -4,6 +4,7 @@ import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { adminSystemService } from '@/lib/database/admin-system';
 import { authService } from '@/lib/services/auth-service';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     return ApiResponseHelper.success(systemSettings);
 
   } catch (error) {
-    console.error('System settings API error:', error);
+    logger.error('System settings API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);
@@ -46,7 +47,7 @@ export async function PUT(request: NextRequest): Promise<Response> {
     return ApiResponseHelper.success(updatedSettings);
 
   } catch (error) {
-    console.error('System settings update API error:', error);
+    logger.error('System settings update API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);

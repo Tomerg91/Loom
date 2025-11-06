@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { logger } from '@/lib/logger';
 
 
 interface PerformanceMetric {
@@ -125,7 +126,7 @@ export function PerformanceDashboard() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
-      console.error('Error fetching performance data:', err);
+      logger.error('Error fetching performance data:', err);
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +146,7 @@ export function PerformanceDashboard() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
-      console.error('Error resetting stats:', err);
+      logger.error('Error resetting stats:', err);
     }
   };
 

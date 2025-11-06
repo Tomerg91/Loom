@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/nextjs';
 import React from 'react';
+import { logger } from '@/lib/logger';
 
 // Direct access to client-safe environment variables
 const NODE_ENV = process.env.NODE_ENV;
@@ -43,14 +44,14 @@ export const captureError = (error: Error, context?: Record<string, unknown>) =>
       Sentry.captureException(error);
     });
   }
-  console.error('Error captured:', error, context);
+  logger.error('Error captured:', error, context);
 };
 
 export const captureMessage = (message: string, level: Sentry.SeverityLevel = 'info') => {
   if (SENTRY_DSN) {
     Sentry.captureMessage(message, level);
   }
-  console.log(`[${level}] ${message}`);
+  logger.debug(`[${level}] ${message}`);
 };
 
 // User context
@@ -129,7 +130,7 @@ export const trackBusinessMetric = (metricName: string, value: number, tags?: Re
         data: { metric: metricName, value, tags },
       });
     } catch (error) {
-      console.warn('Failed to track business metric:', error);
+      logger.warn('Failed to track business metric:', error);
     }
   }
 };

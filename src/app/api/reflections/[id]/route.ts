@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
 import { createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
+import { logger } from '@/lib/logger';
 
 const updateReflectionSchema = z.object({
   content: z.string().min(10).max(2000).optional(),
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const successResponse = NextResponse.json({ data: transformedReflection });
     return propagateCookies(authResponse, successResponse);
   } catch (error) {
-    console.error('Error in reflection GET:', error);
+    logger.error('Error in reflection GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -130,7 +131,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       .single();
 
     if (error) {
-      console.error('Error updating reflection:', error);
+      logger.error('Error updating reflection:', error);
       const errorResponse = createErrorResponse('Failed to update reflection', HTTP_STATUS.INTERNAL_SERVER_ERROR);
       return propagateCookies(authResponse, errorResponse);
     }
@@ -158,7 +159,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    console.error('Error in reflection PUT:', error);
+    logger.error('Error in reflection PUT:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -198,7 +199,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       .eq('client_id', user.id);
 
     if (error) {
-      console.error('Error deleting reflection:', error);
+      logger.error('Error deleting reflection:', error);
       const errorResponse = createErrorResponse('Failed to delete reflection', HTTP_STATUS.INTERNAL_SERVER_ERROR);
       return propagateCookies(authResponse, errorResponse);
     }
@@ -206,7 +207,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const successResponse = NextResponse.json({ message: 'Reflection deleted successfully' });
     return propagateCookies(authResponse, successResponse);
   } catch (error) {
-    console.error('Error in reflection DELETE:', error);
+    logger.error('Error in reflection DELETE:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

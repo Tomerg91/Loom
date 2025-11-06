@@ -11,6 +11,7 @@ import { compose, withAuth, withRole, withRateLimit } from '@/lib/api';
 import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface SystemHealth {
   database: {
@@ -71,7 +72,7 @@ export const GET = compose(async function(request: NextRequest) {
     return ApiResponseHelper.success(systemHealth);
 
   } catch (error) {
-    console.error('System health check error:', error);
+    logger.error('System health check error:', error);
     return ApiResponseHelper.internalError('Failed to check system health');
   }
 }, withAuth, withRole(['admin']), withRateLimit());

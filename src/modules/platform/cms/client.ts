@@ -9,6 +9,7 @@ import landingEn from '@/i18n/locales/en/landing.json';
 import landingHe from '@/i18n/locales/he/landing.json';
 
 import { LandingContent, LandingContentSchema, LandingLocale } from './types';
+import { logger } from '@/lib/logger';
 
 /**
  * Cached accessor that simulates fetching marketing content from an external CMS.
@@ -26,7 +27,7 @@ export const getLandingContent = cache(
 
     const parsed = LandingContentSchema.safeParse(source);
     if (!parsed.success) {
-      console.error(
+      logger.error(
         'Invalid landing content payload, falling back to Hebrew defaults',
         parsed.error.flatten()
       );

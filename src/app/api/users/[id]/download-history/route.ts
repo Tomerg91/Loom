@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 // Validation schema
 const historyQuerySchema = z.object({
@@ -158,7 +159,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Get user download history error:', error);
+    logger.error('Get user download history error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

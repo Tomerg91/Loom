@@ -4,6 +4,7 @@ import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface RecentActivity {
   id: string;
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     // Verify authentication and get user from Authorization header
     const user = await getAuthenticatedUser(request);
 
-    console.log('[/api/coach/activity] Auth check:', {
+    logger.debug('[/api/coach/activity] Auth check:', {
       hasUser: !!user,
       userId: user?.id,
       userRole: user?.role,
@@ -26,12 +27,12 @@ export async function GET(request: NextRequest): Promise<Response> {
     });
 
     if (!user) {
-      console.error('[/api/coach/activity] No user found');
+      logger.error('[/api/coach/activity] No user found');
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
     if (user.role !== 'coach') {
-      console.error('[/api/coach/activity] User is not a coach:', {
+      logger.error('[/api/coach/activity] User is not a coach:', {
         userId: user.id,
         role: user.role
       });
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
 
-    console.log('[/api/coach/activity] Fetching activity for coach:', coachId);
+    logger.debug('[/api/coach/activity] Fetching activity for coach:', coachId);
 
     const supabase = createClient();
 
@@ -126,7 +127,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       .limit(5);
 
     if (notesError) {
-      console.warn('[/api/coach/activity] Error fetching notes (may not exist):', notesError.message);
+      logger.warn('[/api/coach/activity] Error fetching notes (may not exist):', notesError.message);
     } else {
       recentNotes?.forEach(note => {
         const client = Array.isArray(note.users) ? note.users[0] : note.users;
@@ -147,7 +148,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, limit);
 
-    console.log('[/api/coach/activity] Returning activities:', {
+    logger.debug('[/api/coach/activity] Returning activities:', {
       count: sortedActivities.length,
       types: sortedActivities.map(a => a.type)
     });
@@ -155,7 +156,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     return ApiResponseHelper.success(sortedActivities);
 
   } catch (error) {
-    console.error('Coach activity API error:', error);
+    logger.error('Coach activity API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);

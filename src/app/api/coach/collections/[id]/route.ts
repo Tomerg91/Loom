@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,7 @@ export async function DELETE(
       message: 'Collection deleted successfully',
     });
   } catch (error) {
-    console.error('Failed to delete collection:', error);
+    logger.error('Failed to delete collection:', error);
     return NextResponse.json(
       {
         success: false,
@@ -125,7 +126,7 @@ export async function PATCH(
       data: collection,
     });
   } catch (error) {
-    console.error('Failed to update collection:', error);
+    logger.error('Failed to update collection:', error);
     return NextResponse.json(
       {
         success: false,

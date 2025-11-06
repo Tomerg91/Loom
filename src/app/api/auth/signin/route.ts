@@ -13,6 +13,7 @@ import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { basicPasswordSchema } from '@/lib/security/password';
 import { createServerClientWithRequest } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 // Enhanced signin schema with security validations
 const signInSchema = z.object({
@@ -100,7 +101,7 @@ export const POST = withErrorHandling(
 
       if (!validation.success) {
         // Log invalid signin attempt for security monitoring
-        console.warn('Invalid signin attempt:', {
+        logger.warn('Invalid signin attempt:', {
           ip: request.headers.get('x-forwarded-for') || 'unknown',
           userAgent: request.headers.get('user-agent'),
           timestamp: new Date().toISOString(),
@@ -118,7 +119,7 @@ export const POST = withErrorHandling(
       // Check email-specific rate limiting
       const emailRateLimit = checkEmailRateLimit(email);
       if (emailRateLimit.blocked) {
-        console.warn('Email rate limit exceeded:', {
+        logger.warn('Email rate limit exceeded:', {
           email,
           remainingTime: emailRateLimit.remainingTime,
           ip: request.headers.get('x-forwarded-for') || 'unknown',
@@ -141,9 +142,9 @@ export const POST = withErrorHandling(
         isServer: true,
         supabaseClient: supabase,
       });
-      console.log('[signin] Calling authService.signIn with email:', email);
+      logger.debug('[signin] Calling authService.signIn with email:', email);
       const { user, error, session } = await authService.signIn({ email, password, rememberMe });
-      console.log('[signin] authService.signIn returned:', {
+      logger.debug('[signin] authService.signIn returned:', {
         hasUser: !!user,
         hasError: !!error,
         hasSession: !!session,
@@ -155,7 +156,7 @@ export const POST = withErrorHandling(
         recordFailedAttempt(email);
         
         // Log failed signin for security monitoring
-        console.warn('Signin failed:', {
+        logger.warn('Signin failed:', {
           email,
           error: error || 'User not found',
           timestamp: new Date().toISOString(),
@@ -172,7 +173,7 @@ export const POST = withErrorHandling(
 
       // Check if account is active
       if (user.status !== 'active') {
-        console.warn('Inactive account signin attempt:', {
+        logger.warn('Inactive account signin attempt:', {
           userId: user.id,
           email: user.email,
           status: user.status,
@@ -220,7 +221,7 @@ export const POST = withErrorHandling(
 
       if (requiresMFA) {
         // Log MFA required for auditing
-        console.info('User signin - MFA required:', {
+        logger.info('User signin - MFA required:', {
           userId: user.id,
           email: user.email,
           timestamp: new Date().toISOString(),
@@ -245,13 +246,13 @@ export const POST = withErrorHandling(
         });
 
         // Copy ALL cookies from supabaseResponse to ensure auth cookies are included
-        console.log('[signin] MFA: Copying cookies from supabaseResponse:', {
+        logger.debug('[signin] MFA: Copying cookies from supabaseResponse:', {
           cookieCount: supabaseResponse.cookies.getAll().length,
           cookies: supabaseResponse.cookies.getAll().map(c => c.name)
         });
 
         supabaseResponse.cookies.getAll().forEach(cookie => {
-          console.log('[signin] MFA: Setting cookie:', cookie.name);
+          logger.debug('[signin] MFA: Setting cookie:', cookie.name);
           response.cookies.set(cookie);
         });
 
@@ -264,7 +265,7 @@ export const POST = withErrorHandling(
       }
 
       // Log successful signin for auditing (non-MFA)
-      console.info('User signin successful:', {
+      logger.info('User signin successful:', {
         userId: user.id,
         email: user.email,
         role: user.role,
@@ -275,7 +276,7 @@ export const POST = withErrorHandling(
       });
 
       if (!sessionPayload) {
-        console.warn('Sign-in succeeded but no session tokens were returned for user', {
+        logger.warn('Sign-in succeeded but no session tokens were returned for user', {
           userId: user.id,
         });
       }
@@ -298,13 +299,13 @@ export const POST = withErrorHandling(
       });
 
       // Copy ALL cookies from supabaseResponse to ensure auth cookies are included
-      console.log('[signin] Copying cookies from supabaseResponse:', {
+      logger.debug('[signin] Copying cookies from supabaseResponse:', {
         cookieCount: supabaseResponse.cookies.getAll().length,
         cookies: supabaseResponse.cookies.getAll().map(c => c.name)
       });
 
       supabaseResponse.cookies.getAll().forEach(cookie => {
-        console.log('[signin] Setting cookie:', cookie.name);
+        logger.debug('[signin] Setting cookie:', cookie.name);
         response.cookies.set(cookie);
       });
 
@@ -317,7 +318,7 @@ export const POST = withErrorHandling(
       
     } catch (error) {
       // Log error for monitoring
-      console.error('Signin error:', {
+      logger.error('Signin error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),

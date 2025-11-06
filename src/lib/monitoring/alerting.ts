@@ -1,4 +1,5 @@
 import { captureError, captureMessage, trackBusinessMetric } from './sentry';
+import { logger } from '@/lib/logger';
 
 // Alert severity levels
 export type AlertSeverity = 'info' | 'warning' | 'error' | 'critical';
@@ -316,7 +317,7 @@ export class AlertManager {
     this.alerts.set(alert.id, alert);
     
     // Log alert
-    console.warn(`🚨 Alert triggered: ${alert.title}`, {
+    logger.warn(`🚨 Alert triggered: ${alert.title}`, {
       id: alert.id,
       severity: alert.severity,
       metric: alert.metric,
@@ -380,7 +381,7 @@ export class AlertManager {
           break;
       }
     } catch (error) {
-      console.error(`Failed to send ${channel.type} notification:`, error);
+      logger.error(`Failed to send ${channel.type} notification:`, error);
     }
   }
   

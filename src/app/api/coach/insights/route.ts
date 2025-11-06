@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { getCoachSessionRate } from '@/lib/coach-dashboard/coach-profile';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 const insightsQuerySchema = z.object({
   timeRange: z.enum(['7d', '30d', '90d', '1y']).default('30d'),
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
       .order('scheduled_at', { ascending: true });
 
     if (sessionsError) {
-      console.error('Error fetching sessions:', sessionsError);
+      logger.error('Error fetching sessions:', sessionsError);
       return NextResponse.json({ error: 'Failed to fetch session data' }, { status: 500 });
     }
 
@@ -106,7 +107,7 @@ export async function GET(request: NextRequest) {
       .lte('created_at', end);
 
     if (notesError) {
-      console.error('Error fetching notes:', notesError);
+      logger.error('Error fetching notes:', notesError);
     }
 
     // Get client reflections for mood/progress insights
@@ -153,10 +154,10 @@ export async function GET(request: NextRequest) {
     const coachRate = await getCoachSessionRate(supabase, user.id);
 
     if (feedbackResult.error) {
-      console.warn('Error fetching session feedback for insights:', feedbackResult.error);
+      logger.warn('Error fetching session feedback for insights:', feedbackResult.error);
     }
     if (ratingsResult.error) {
-      console.warn('Error fetching session ratings for insights:', ratingsResult.error);
+      logger.warn('Error fetching session ratings for insights:', ratingsResult.error);
     }
 
     const ratingBySession = new Map<string, number>();
@@ -348,7 +349,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.error('Error in coach insights GET:', error);
+    logger.error('Error in coach insights GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { createAuthService } from '@/lib/auth/auth';
 import type { User } from '@/types';
+import { logger } from '@/lib/logger';
 
 export interface SessionUser {
   id: string;
@@ -39,7 +40,7 @@ class AuthService {
         },
       };
     } catch (error) {
-      console.error('Error getting session:', error);
+      logger.error('Error getting session:', error);
       return null;
     }
   }
@@ -49,7 +50,7 @@ class AuthService {
       const authLib = await this.getAuthLib();
       return await authLib.updateUser(userId, updates);
     } catch (error) {
-      console.error('Error updating user:', error);
+      logger.error('Error updating user:', error);
       throw error;
     }
   }
@@ -59,7 +60,7 @@ class AuthService {
       const authLib = await this.getAuthLib();
       return await authLib.getCurrentUser();
     } catch (error) {
-      console.error('Error getting current user:', error);
+      logger.error('Error getting current user:', error);
       return null;
     }
   }
@@ -69,7 +70,7 @@ class AuthService {
       const authLib = await this.getAuthLib();
       return await authLib.updatePasswordWithToken(token, password);
     } catch (error) {
-      console.error('Error updating password with token:', error);
+      logger.error('Error updating password with token:', error);
       throw error;
     }
   }

@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { logger } from '@/lib/logger';
 
 const updateProfileSchema = z.object({
   firstName: z.string().min(1, 'First name is required').optional(),
@@ -42,7 +43,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('Get profile error:', error);
+    logger.error('Get profile error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -108,7 +109,7 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Update profile error:', error);
+    logger.error('Update profile error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

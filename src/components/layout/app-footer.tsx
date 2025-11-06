@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { CompactLanguageSwitcher } from '@/components/ui/language-switcher';
 import { Link } from '@/i18n/routing';
+import { logger } from '@/lib/logger';
 
 interface FooterLink {
   label: string;
@@ -246,7 +247,7 @@ export async function AppFooter({ locale }: { locale: string }) {
         return t.raw(key);
       } catch (error) {
         if (process.env.LOG_MISSING_TRANSLATIONS === 'true') {
-          console.warn('Missing footer translation key', { key, locale, error });
+          logger.warn('Missing footer translation key', { key, locale, error });
         }
         return undefined;
       }
@@ -273,7 +274,7 @@ export async function AppFooter({ locale }: { locale: string }) {
         typeof rawTermsLabel === 'string' && rawTermsLabel.trim().length > 0 ? rawTermsLabel : fallback.termsLabel
     };
   } catch (error) {
-    console.warn('Falling back to default footer content', { locale, error });
+    logger.warn('Falling back to default footer content', { locale, error });
     footerContent = fallback;
   }
 

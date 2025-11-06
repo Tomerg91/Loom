@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 export interface ErrorDisplayProps {
   error?: Error & { digest?: string };
@@ -41,7 +42,7 @@ export function ErrorDisplay({
   useEffect(() => {
     // Log error for monitoring
     if (error) {
-      console.error('Error caught by ErrorDisplay:', error);
+      logger.error('Error caught by ErrorDisplay:', error);
       
       // Report to error monitoring service (Sentry, etc.)
       if (typeof window !== 'undefined' && window.gtag) {

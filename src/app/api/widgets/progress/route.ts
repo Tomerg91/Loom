@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ApiResponse } from '@/lib/api/types';
 import { getServerUser } from '@/lib/auth/auth';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export interface Milestone {
   id: string;
@@ -337,7 +338,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     });
 
   } catch (error) {
-    console.error('Error fetching progress:', error);
+    logger.error('Error fetching progress:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch progress data' },
       { status: 500 }

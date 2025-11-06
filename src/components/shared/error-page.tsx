@@ -4,6 +4,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
 
 interface ErrorPageProps {
   error: Error & { digest?: string };
@@ -23,7 +24,7 @@ export function ErrorPageComponent({
   isGlobal = false,
 }: ErrorPageProps) {
   useEffect(() => {
-    console.error(`${logPrefix}:`, error);
+    logger.error(`${logPrefix}:`, error);
   }, [error, logPrefix]);
 
   const content = (

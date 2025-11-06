@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useRateSession } from '@/lib/queries/sessions';
 import type { Session, SessionRating } from '@/types';
+import { logger } from '@/lib/logger';
 
 interface SessionRatingDialogProps {
   session: Session;
@@ -134,7 +135,7 @@ export function SessionRatingDialog({ session, onClose, onSuccess }: SessionRati
       await rateSession.mutateAsync(rating);
       onSuccess();
     } catch (error) {
-      console.error('Failed to submit rating:', error);
+      logger.error('Failed to submit rating:', error);
     } finally {
       setIsSubmitting(false);
     }

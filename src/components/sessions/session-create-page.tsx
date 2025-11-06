@@ -16,6 +16,7 @@ import { SessionGoalsManager } from './forms/session-goals-manager';
 import { SessionInformationForm } from './forms/session-information-form';
 import { SessionNotesEditor } from './forms/session-notes-editor';
 import { SessionTypeSelector } from './forms/session-type-selector';
+import { logger } from '@/lib/logger';
 
 
 export function SessionCreatePage() {
@@ -108,7 +109,7 @@ export function SessionCreatePage() {
   const createSessionMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       // Mock API call
-      console.log('Creating session:', data);
+      logger.debug('Creating session:', data);
       return { id: 'new-session-id', success: true };
     },
     onSuccess: (response) => {

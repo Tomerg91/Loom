@@ -5,6 +5,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { adminSystemService } from '@/lib/database/admin-system';
 import { withAdminSecurity } from '@/lib/security/admin-middleware';
 import { createCorsResponse } from '@/lib/security/cors';
+import { logger } from '@/lib/logger';
 
 
 const historyQuerySchema = z.object({
@@ -94,7 +95,7 @@ export const GET = withAdminSecurity(
       });
       
     } catch (error) {
-      console.error('Maintenance history API error:', error);
+      logger.error('Maintenance history API error:', error);
       return ApiResponseHelper.internalError('Failed to fetch maintenance history');
     }
   },

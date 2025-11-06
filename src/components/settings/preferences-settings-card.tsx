@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { usePathname, useRouter, buildLocalizedPath } from '@/i18n/routing';
+import { logger } from '@/lib/logger';
 
 export function PreferencesSettingsCard() {
   const locale = useLocale();
@@ -97,7 +98,7 @@ export function PreferencesSettingsCard() {
                   <button
                     key={theme.value}
                     className="flex flex-col items-center p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                    onClick={() => console.log('Theme changed to:', theme.value)}
+                    onClick={() => logger.debug('Theme changed to:', theme.value)}
                   >
                     <IconComponent className="w-6 h-6 mb-2" />
                     <span className="text-sm font-medium">{theme.label}</span>

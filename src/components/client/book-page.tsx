@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { logger } from '@/lib/logger';
 
 
 interface Coach {
@@ -129,7 +130,7 @@ export function ClientBookPage() {
             });
           }
         } catch (error) {
-          console.error(`Failed to fetch availability for ${dateStr}:`, error);
+          logger.error(`Failed to fetch availability for ${dateStr}:`, error);
           // Fallback to some default times if API fails
           const timeOptions = ['09:00', '14:00', '16:00'];
           timeOptions.forEach((time) => {
@@ -186,7 +187,7 @@ export function ClientBookPage() {
 
   const handleBookingSubmit = async () => {
     if (!selectedCoach || !selectedSlot) {
-      console.error('Missing coach or slot information');
+      logger.error('Missing coach or slot information');
       return;
     }
 
@@ -214,10 +215,10 @@ export function ClientBookPage() {
       }
 
       const result = await response.json();
-      console.log('Session booked successfully:', result);
+      logger.debug('Session booked successfully:', result);
       setBookingStep(4);
     } catch (error) {
-      console.error('Booking failed:', error);
+      logger.error('Booking failed:', error);
       // In a real app, you would show an error message to the user
       alert('Booking failed. Please try again.');
     }

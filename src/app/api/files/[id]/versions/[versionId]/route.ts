@@ -5,6 +5,7 @@ import { fileVersionsDatabase } from '@/lib/database/file-versions';
 import { fileDatabase } from '@/lib/database/files';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schemas
@@ -89,7 +90,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Get file version error:', error);
+    logger.error('Get file version error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -177,7 +178,7 @@ export async function PUT(
     });
 
   } catch (error) {
-    console.error('Update file version error:', error);
+    logger.error('Update file version error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -263,7 +264,7 @@ export async function DELETE(
       .remove([version.storage_path]);
 
     if (storageError) {
-      console.error('Failed to delete from storage:', storageError);
+      logger.error('Failed to delete from storage:', storageError);
       // Continue with database deletion even if storage deletion fails
     }
 
@@ -276,7 +277,7 @@ export async function DELETE(
     });
 
   } catch (error) {
-    console.error('Delete file version error:', error);
+    logger.error('Delete file version error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }

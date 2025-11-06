@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { userService } from '@/lib/services/user-service';
+import { logger } from '@/lib/logger';
 
 
 const getUsersQuerySchema = z.object({
@@ -55,7 +56,7 @@ const rateLimitedHandler = rateLimit(100, 60000)( // 100 requests per minute for
     return ApiResponseHelper.success(result);
 
   } catch (error) {
-    console.error('Get users API error:', error);
+    logger.error('Get users API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);

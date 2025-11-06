@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { logger } from '@/lib/logger';
 
 export function PwaBootstrap() {
   useEffect(() => {
@@ -19,7 +20,7 @@ export function PwaBootstrap() {
         }
       } catch (err) {
         // Non-fatal: PWA still works without SW
-        console.warn('Service worker registration failed:', err);
+        logger.warn('Service worker registration failed:', err);
       }
     })();
   }, []);

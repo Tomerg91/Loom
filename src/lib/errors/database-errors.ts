@@ -210,7 +210,7 @@ function logRLSViolation(
   };
 
   // Console log (structured)
-  console.error('[RLS_VIOLATION]', logData);
+  logger.error('[RLS_VIOLATION]', logData);
 
   // Sentry capture
   Sentry.captureException(

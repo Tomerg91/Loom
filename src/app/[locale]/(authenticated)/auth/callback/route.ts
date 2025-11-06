@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${origin}${next}`);
       }
     } catch (error) {
-      console.error('Auth callback error:', error);
+      logger.error('Auth callback error:', error);
     }
   }
 

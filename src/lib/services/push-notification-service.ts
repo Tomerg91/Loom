@@ -109,7 +109,7 @@ export class PushNotificationService {
           .single();
 
         if (error) {
-          console.error('Error updating push subscription:', error);
+          logger.error('Error updating push subscription:', error);
           return null;
         }
 
@@ -123,14 +123,14 @@ export class PushNotificationService {
           .single();
 
         if (error) {
-          console.error('Error creating push subscription:', error);
+          logger.error('Error creating push subscription:', error);
           return null;
         }
 
         return this.mapDatabaseSubscription(data);
       }
     } catch (error) {
-      console.error('Error subscribing user to push notifications:', error);
+      logger.error('Error subscribing user to push notifications:', error);
       return null;
     }
   }
@@ -152,13 +152,13 @@ export class PushNotificationService {
       const { error } = await query;
 
       if (error) {
-        console.error('Error unsubscribing from push notifications:', error);
+        logger.error('Error unsubscribing from push notifications:', error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error unsubscribing user from push notifications:', error);
+      logger.error('Error unsubscribing user from push notifications:', error);
       return false;
     }
   }
@@ -174,13 +174,13 @@ export class PushNotificationService {
         .eq('user_id', userId);
 
       if (error) {
-        console.error('Error fetching user subscriptions:', error);
+        logger.error('Error fetching user subscriptions:', error);
         return [];
       }
 
       return data.map(this.mapDatabaseSubscription);
     } catch (error) {
-      console.error('Error getting user subscriptions:', error);
+      logger.error('Error getting user subscriptions:', error);
       return [];
     }
   }
@@ -202,7 +202,7 @@ export class PushNotificationService {
       const subscriptions = await this.getUserSubscriptions(userId);
 
       if (subscriptions.length === 0) {
-        console.log('No push subscriptions found for user:', userId);
+        logger.debug('No push subscriptions found for user:', userId);
         return { success: true, results: [] };
       }
 
@@ -232,8 +232,8 @@ export class PushNotificationService {
           try {
             // In a production environment, you would use web-push library here
             // For now, we'll simulate the push notification sending
-            console.log('Sending push notification to:', subscription.endpoint);
-            console.log('Payload:', notificationPayload);
+            logger.debug('Sending push notification to:', subscription.endpoint);
+            logger.debug('Payload:', notificationPayload);
 
             // Log the delivery attempt
             await this.logPushDelivery(
@@ -245,7 +245,7 @@ export class PushNotificationService {
 
             return { success: true, subscriptionId: subscription.id };
           } catch (error) {
-            console.error('Failed to send push notification:', error);
+            logger.error('Failed to send push notification:', error);
 
             // Log the delivery failure
             await this.logPushDelivery(
@@ -267,7 +267,7 @@ export class PushNotificationService {
         result => result.status === 'fulfilled' && result.value.success
       ).length;
 
-      console.log(
+      logger.debug(
         `Push notification sent to ${successCount}/${subscriptions.length} subscriptions`
       );
 
@@ -280,7 +280,7 @@ export class PushNotificationService {
         ),
       };
     } catch (error) {
-      console.error('Error sending push notification:', error);
+      logger.error('Error sending push notification:', error);
       return { success: false, results: [] };
     }
   }
@@ -329,7 +329,7 @@ export class PushNotificationService {
 
       return { totalSent, totalFailed, results: allResults };
     } catch (error) {
-      console.error('Error sending bulk push notifications:', error);
+      logger.error('Error sending bulk push notifications:', error);
       return { totalSent: 0, totalFailed: userIds.length, results: [] };
     }
   }
@@ -350,14 +350,14 @@ export class PushNotificationService {
         .select('id');
 
       if (error) {
-        console.error('Error cleaning up expired subscriptions:', error);
+        logger.error('Error cleaning up expired subscriptions:', error);
         return 0;
       }
 
-      console.log(`Cleaned up ${data.length} expired push subscriptions`);
+      logger.debug(`Cleaned up ${data.length} expired push subscriptions`);
       return data.length;
     } catch (error) {
-      console.error('Error cleaning up expired subscriptions:', error);
+      logger.error('Error cleaning up expired subscriptions:', error);
       return 0;
     }
   }
@@ -402,7 +402,7 @@ export class PushNotificationService {
 
       await this.supabase.from('notification_delivery_logs').insert([logData]);
     } catch (error) {
-      console.error('Error logging push delivery:', error);
+      logger.error('Error logging push delivery:', error);
     }
   }
 

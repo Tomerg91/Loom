@@ -19,7 +19,7 @@ export async function apiRequest(
     const { data, error } = await supabase.auth.getSession();
 
     if (error || !data.session?.access_token) {
-      console.error('[API-REQUEST] No access token available');
+      logger.error('[API-REQUEST] No access token available');
       throw new Error('Authentication required');
     }
 
@@ -37,7 +37,7 @@ export async function apiRequest(
 
     return response;
   } catch (error) {
-    console.error('[API-REQUEST] Error making authenticated request:', error);
+    logger.error('[API-REQUEST] Error making authenticated request:', error);
     throw error;
   }
 }

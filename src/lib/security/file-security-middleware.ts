@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export interface SecurityCheckResult {
   allowed: boolean;
@@ -56,7 +57,7 @@ export class FileSecurityMiddleware {
       return { allowed: true };
 
     } catch (error) {
-      console.error('Security check failed:', error);
+      logger.error('Security check failed:', error);
       return {
         allowed: false,
         reason: 'Security validation error',
@@ -259,7 +260,7 @@ export class FileSecurityMiddleware {
       return { allowed: true };
 
     } catch (error) {
-      console.error('Authentication check failed:', error);
+      logger.error('Authentication check failed:', error);
       return {
         allowed: false,
         reason: 'Authentication validation failed',
@@ -301,7 +302,7 @@ export class FileSecurityMiddleware {
       return { allowed: true };
 
     } catch (error) {
-      console.error('Upload security check failed:', error);
+      logger.error('Upload security check failed:', error);
       return {
         allowed: false,
         reason: 'Upload validation failed',
@@ -421,7 +422,7 @@ export class FileSecurityMiddleware {
       }
 
     } catch (error) {
-      console.error('Failed to log suspicious activity:', error);
+      logger.error('Failed to log suspicious activity:', error);
     }
   }
 

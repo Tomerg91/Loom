@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 
 interface ClientUpcomingSessionsProps {
@@ -70,7 +71,7 @@ export function ClientUpcomingSessions({ userId, locale }: ClientUpcomingSession
           .order('scheduled_at', { ascending: true })
           .limit(UPCOMING_LIMIT);
 
-        console.log('[ClientUpcomingSessions] Supabase response', { data, error });
+        logger.debug('[ClientUpcomingSessions] Supabase response', { data, error });
 
         if (error) {
           throw error;
@@ -87,7 +88,7 @@ export function ClientUpcomingSessions({ userId, locale }: ClientUpcomingSession
           setSessions(normalizedSessions);
         }
       } catch (error) {
-        console.error('[ClientUpcomingSessions] Failed to load sessions', error);
+        logger.error('[ClientUpcomingSessions] Failed to load sessions', error);
         if (isMounted) {
           setErrorMessage(error instanceof Error ? error.message : String(error));
         }

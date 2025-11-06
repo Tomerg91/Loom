@@ -4,6 +4,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { adminSystemService } from '@/lib/database/admin-system';
 import { applyRateLimit } from '@/lib/security/rate-limit';
 import { authService, type Session } from '@/lib/services/auth-service';
+import { logger } from '@/lib/logger';
 
 export interface AdminMiddlewareOptions {
   requireSuperAdmin?: boolean;
@@ -225,7 +226,7 @@ export async function adminSecurityMiddleware(
     };
 
   } catch (error) {
-    console.error('Admin middleware error:', error);
+    logger.error('Admin middleware error:', error);
     return {
       success: false,
       response: ApiResponseHelper.internalError('Security validation failed')

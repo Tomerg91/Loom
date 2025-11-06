@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 import { useUser } from '@/lib/auth/use-user';
 import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 
 /**
@@ -30,7 +31,7 @@ export function useRealtimeBookings() {
           filter: `client_id=eq.${user.id},coach_id=eq.${user.id}`,
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log('Session change detected:', payload);
+          logger.debug('Session change detected:', payload);
           
           // Invalidate relevant queries
           queryClient.invalidateQueries({ queryKey: ['sessions'] });
@@ -77,7 +78,7 @@ export function useRealtimeBookings() {
           table: 'coach_availability',
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log('Availability change detected:', payload);
+          logger.debug('Availability change detected:', payload);
           
           // Invalidate time slots queries for affected coach
           const coachId = payload.new?.coach_id || payload.old?.coach_id;
@@ -102,7 +103,7 @@ export function useRealtimeBookings() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log('New notification:', payload);
+          logger.debug('New notification:', payload);
           
           // Invalidate notifications query
           queryClient.invalidateQueries({ 
@@ -113,7 +114,7 @@ export function useRealtimeBookings() {
           const notification = payload.new;
           if (notification.type === 'session_confirmation') {
             // Could trigger a toast notification here
-            console.log('Session notification received:', notification.title);
+            logger.debug('Session notification received:', notification.title);
           }
         }
       )

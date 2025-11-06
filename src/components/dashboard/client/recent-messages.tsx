@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 
 interface ClientRecentMessagesProps {
@@ -87,7 +88,7 @@ export function ClientRecentMessages({ userId, locale }: ClientRecentMessagesPro
           .order('created_at', { ascending: false })
           .limit(MESSAGE_LIMIT);
 
-        console.log('[ClientRecentMessages] Supabase response', { data, error });
+        logger.debug('[ClientRecentMessages] Supabase response', { data, error });
 
         if (error) {
           throw error;
@@ -153,7 +154,7 @@ export function ClientRecentMessages({ userId, locale }: ClientRecentMessagesPro
           setMessages(normalizedMessages);
         }
       } catch (error) {
-        console.error('[ClientRecentMessages] Failed to load messages', error);
+        logger.error('[ClientRecentMessages] Failed to load messages', error);
         if (isMounted) {
           setErrorMessage(error instanceof Error ? error.message : String(error));
         }

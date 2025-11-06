@@ -5,6 +5,7 @@ import { promisify } from 'util';
 
 import { ApiError } from '@/lib/api/errors';
 import { createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 const execAsync = promisify(exec);
 
@@ -73,7 +74,7 @@ class AdminSystemService {
         },
       };
     } catch (error) {
-      console.error('Error fetching system settings:', error);
+      logger.error('Error fetching system settings:', error);
       throw new Error('Failed to fetch system settings');
     }
   }
@@ -94,7 +95,7 @@ class AdminSystemService {
 
       return updatedSettings;
     } catch (error) {
-      console.error('Error updating system settings:', error);
+      logger.error('Error updating system settings:', error);
       throw new Error('Failed to update system settings');
     }
   }
@@ -132,7 +133,7 @@ class AdminSystemService {
 
       return logs;
     } catch (error) {
-      console.error('Error fetching system logs:', error);
+      logger.error('Error fetching system logs:', error);
       return [];
     }
   }
@@ -178,7 +179,7 @@ class AdminSystemService {
           throw new ApiError('UNKNOWN_ACTION', `Unknown maintenance action: ${action}`);
       }
     } catch (error) {
-      console.error('Error performing maintenance action:', error);
+      logger.error('Error performing maintenance action:', error);
       
       if (error instanceof ApiError) {
         return {
@@ -247,7 +248,7 @@ class AdminSystemService {
       });
       
       if (backupError) {
-        console.error('Failed to record backup in database:', backupError);
+        logger.error('Failed to record backup in database:', backupError);
       }
       
       // Log the backup completion
@@ -768,18 +769,18 @@ class AdminSystemService {
       });
       
       if (error) {
-        console.error('Failed to log maintenance action to database:', error);
+        logger.error('Failed to log maintenance action to database:', error);
         // Fallback to console logging
-        console.log('Maintenance action logged (fallback):', {
+        logger.debug('Maintenance action logged (fallback):', {
           ...logEntry,
           timestamp: new Date().toISOString(),
           userId
         });
       }
     } catch (error) {
-      console.error('Failed to log maintenance action:', error);
+      logger.error('Failed to log maintenance action:', error);
       // Don't throw here to avoid breaking the main operation
-      console.log('Maintenance action logged (console fallback):', {
+      logger.debug('Maintenance action logged (console fallback):', {
         ...logEntry,
         timestamp: new Date().toISOString(),
         userId
@@ -814,10 +815,10 @@ class AdminSystemService {
       });
       
       if (error) {
-        console.error('Failed to log audit event:', error);
+        logger.error('Failed to log audit event:', error);
       }
     } catch (error) {
-      console.error('Failed to log audit event:', error);
+      logger.error('Failed to log audit event:', error);
     }
   }
   
@@ -846,13 +847,13 @@ class AdminSystemService {
       });
       
       if (error) {
-        console.error('Failed to fetch maintenance history:', error);
+        logger.error('Failed to fetch maintenance history:', error);
         return [];
       }
       
       return data || [];
     } catch (error) {
-      console.error('Failed to fetch maintenance history:', error);
+      logger.error('Failed to fetch maintenance history:', error);
       return [];
     }
   }
@@ -866,13 +867,13 @@ class AdminSystemService {
       });
       
       if (error) {
-        console.error('Failed to fetch system health stats:', error);
+        logger.error('Failed to fetch system health stats:', error);
         return null;
       }
       
       return data;
     } catch (error) {
-      console.error('Failed to fetch system health stats:', error);
+      logger.error('Failed to fetch system health stats:', error);
       return null;
     }
   }
@@ -898,10 +899,10 @@ class AdminSystemService {
       });
       
       if (error) {
-        console.error('Failed to record health check:', error);
+        logger.error('Failed to record health check:', error);
       }
     } catch (error) {
-      console.error('Failed to record health check:', error);
+      logger.error('Failed to record health check:', error);
     }
   }
   
@@ -949,7 +950,7 @@ class AdminSystemService {
 
       return mockLogs;
     } catch (error) {
-      console.error('Error fetching audit logs:', error);
+      logger.error('Error fetching audit logs:', error);
       return [];
     }
   }

@@ -90,7 +90,7 @@ export type TaskUpdateCallback = (
  * useEffect(() => {
  *   const cleanup = subscribeToProgressUpdates(instanceId, (payload) => {
  *     if (payload.eventType === 'INSERT') {
- *       console.log('New progress update:', payload.new);
+ *       logger.debug('New progress update:', payload.new);
  *       queryClient.invalidateQueries(['task-instance', instanceId]);
  *     }
  *   });
@@ -119,24 +119,24 @@ export function subscribeToProgressUpdates(
           filter: `instance_id=eq.${instanceId}`,
         },
         (payload) => {
-          console.log('Progress update received:', payload);
+          logger.debug('Progress update received:', payload);
           callback(payload as RealtimePostgresChangesPayload<ProgressUpdate>);
         }
       )
       .subscribe((status) => {
-        console.log(
+        logger.debug(
           `Progress subscription status for instance ${instanceId}:`,
           status
         );
       });
   } catch (error) {
-    console.error('Failed to subscribe to progress updates:', error);
+    logger.error('Failed to subscribe to progress updates:', error);
   }
 
   // Return cleanup function
   return () => {
     if (channel) {
-      console.log(`Unsubscribing from progress updates for ${instanceId}`);
+      logger.debug(`Unsubscribing from progress updates for ${instanceId}`);
       supabase.removeChannel(channel);
     }
   };
@@ -184,24 +184,24 @@ export function subscribeToTaskAssignments(
           filter: `client_id=eq.${clientId}`,
         },
         (payload) => {
-          console.log('New task assignment received:', payload);
+          logger.debug('New task assignment received:', payload);
           callback(payload as RealtimePostgresChangesPayload<TaskInstancePayload>);
         }
       )
       .subscribe((status) => {
-        console.log(
+        logger.debug(
           `Task assignment subscription status for client ${clientId}:`,
           status
         );
       });
   } catch (error) {
-    console.error('Failed to subscribe to task assignments:', error);
+    logger.error('Failed to subscribe to task assignments:', error);
   }
 
   // Return cleanup function
   return () => {
     if (channel) {
-      console.log(`Unsubscribing from task assignments for ${clientId}`);
+      logger.debug(`Unsubscribing from task assignments for ${clientId}`);
       supabase.removeChannel(channel);
     }
   };
@@ -219,7 +219,7 @@ export function subscribeToTaskAssignments(
  * ```tsx
  * useEffect(() => {
  *   const cleanup = subscribeToTaskUpdates(coachId, (payload) => {
- *     console.log('Task update:', payload.eventType);
+ *     logger.debug('Task update:', payload.eventType);
  *     queryClient.invalidateQueries(['tasks', 'list']);
  *   });
  *
@@ -247,24 +247,24 @@ export function subscribeToTaskUpdates(
           filter: `coach_id=eq.${coachId}`,
         },
         (payload) => {
-          console.log('Task update received:', payload);
+          logger.debug('Task update received:', payload);
           callback(payload as RealtimePostgresChangesPayload<TaskPayload>);
         }
       )
       .subscribe((status) => {
-        console.log(
+        logger.debug(
           `Task update subscription status for coach ${coachId}:`,
           status
         );
       });
   } catch (error) {
-    console.error('Failed to subscribe to task updates:', error);
+    logger.error('Failed to subscribe to task updates:', error);
   }
 
   // Return cleanup function
   return () => {
     if (channel) {
-      console.log(`Unsubscribing from task updates for ${coachId}`);
+      logger.debug(`Unsubscribing from task updates for ${coachId}`);
       supabase.removeChannel(channel);
     }
   };
@@ -286,7 +286,7 @@ export function subscribeToTaskUpdates(
  *       const oldStatus = payload.old.status;
  *       const newStatus = payload.new.status;
  *       if (oldStatus !== newStatus) {
- *         console.log(`Task status changed from ${oldStatus} to ${newStatus}`);
+ *         logger.debug(`Task status changed from ${oldStatus} to ${newStatus}`);
  *         queryClient.invalidateQueries(['tasks', 'assigned']);
  *       }
  *     }
@@ -316,24 +316,24 @@ export function subscribeToInstanceStatusChanges(
           filter: `client_id=eq.${clientId}`,
         },
         (payload) => {
-          console.log('Task instance status change:', payload);
+          logger.debug('Task instance status change:', payload);
           callback(payload as RealtimePostgresChangesPayload<TaskInstancePayload>);
         }
       )
       .subscribe((status) => {
-        console.log(
+        logger.debug(
           `Instance status subscription for client ${clientId}:`,
           status
         );
       });
   } catch (error) {
-    console.error('Failed to subscribe to instance status changes:', error);
+    logger.error('Failed to subscribe to instance status changes:', error);
   }
 
   // Return cleanup function
   return () => {
     if (channel) {
-      console.log(`Unsubscribing from instance status for ${clientId}`);
+      logger.debug(`Unsubscribing from instance status for ${clientId}`);
       supabase.removeChannel(channel);
     }
   };
@@ -359,7 +359,7 @@ export function isRealtimeConnected(): boolean {
     const supabase = createClient();
     return supabase.realtime.isConnected();
   } catch (error) {
-    console.error('Error checking realtime connection:', error);
+    logger.error('Error checking realtime connection:', error);
     return false;
   }
 }

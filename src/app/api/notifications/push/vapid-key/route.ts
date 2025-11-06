@@ -8,6 +8,7 @@ import {
   handlePreflight
 } from '@/lib/api/utils';
 import { PushNotificationService } from '@/lib/services/push-notification-service';
+import { logger } from '@/lib/logger';
 
 // GET /api/notifications/push/vapid-key - Get VAPID public key
 export const GET = withErrorHandling(async (request: NextRequest) => {
@@ -24,7 +25,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
     return createSuccessResponse({ vapidPublicKey });
   } catch (error) {
-    console.error('Error getting VAPID public key:', error);
+    logger.error('Error getting VAPID public key:', error);
     return createErrorResponse(
       'Failed to get VAPID public key',
       HTTP_STATUS.INTERNAL_SERVER_ERROR

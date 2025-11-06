@@ -16,6 +16,7 @@ import {
   PLACEHOLDER_SUPABASE_URL,
 } from '@/env/client';
 import { Database } from '@/types/supabase';
+import { logger } from '@/lib/logger';
 
 /**
  * Shape of the browser Supabase client so downstream modules can reference a
@@ -97,7 +98,7 @@ function validateClientEnv(): void {
     );
 
     if (!matchesPattern) {
-      console.warn(
+      logger.warn(
         `Supabase URL "${url}" does not match expected patterns. Continuing anyway.`
       );
     }
@@ -146,7 +147,7 @@ async function handleInvalidToken(
         localStorage.removeItem('loom-auth-token');
         sessionStorage.removeItem('loom-auth');
       } catch (storageError) {
-        console.warn(
+        logger.warn(
           'Failed to clear auth storage during forced sign-out:',
           storageError
         );
@@ -157,7 +158,7 @@ async function handleInvalidToken(
       }
     }
   } catch (error) {
-    console.error('Error during automatic sign-out:', error);
+    logger.error('Error during automatic sign-out:', error);
   } finally {
     isHandlingSignOut = false;
   }
@@ -180,7 +181,7 @@ async function retryTokenRefresh(
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`Token refresh attempt ${attempt + 1} failed:`, error);
+        logger.warn(`Token refresh attempt ${attempt + 1} failed:`, error);
       }
 
       if (attempt < MAX_REFRESH_RETRIES - 1) {
@@ -283,7 +284,7 @@ export const createClient = (): BrowserSupabaseClient => {
           } catch (error) {
             // Non-JSON response – ignore.
             if (process.env.NODE_ENV === 'development') {
-              console.warn(
+              logger.warn(
                 'Failed to parse Supabase auth error response:',
                 error
               );

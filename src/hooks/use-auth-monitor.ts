@@ -4,6 +4,7 @@ import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { useEffect, useRef } from 'react';
 
 import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface AuthMonitorOptions {
   onSessionExpired?: () => void;
@@ -55,13 +56,13 @@ export function useAuthMonitor(options: AuthMonitorOptions = {}) {
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error) {
-          console.warn('Session validation error:', error);
+          logger.warn('Session validation error:', error);
           optionsRef.current.onError?.(error);
           return;
         }
 
         if (!session) {
-          console.warn('No active session found during periodic check');
+          logger.warn('No active session found during periodic check');
           optionsRef.current.onSessionExpired?.();
           return;
         }
@@ -73,17 +74,17 @@ export function useAuthMonitor(options: AuthMonitorOptions = {}) {
           const timeUntilExpiry = expiresAt - now;
 
           if (timeUntilExpiry < 300) { // Less than 5 minutes
-            console.log('Session expiring soon, attempting refresh...');
+            logger.debug('Session expiring soon, attempting refresh...');
             const { error: refreshError } = await supabase.auth.refreshSession();
 
             if (refreshError) {
-              console.error('Failed to refresh expiring session:', refreshError);
+              logger.error('Failed to refresh expiring session:', refreshError);
               optionsRef.current.onError?.(refreshError);
             }
           }
         }
       } catch (error) {
-        console.error('Error during session check:', error);
+        logger.error('Error during session check:', error);
         optionsRef.current.onError?.(error as Error);
       }
     }, 5 * 60 * 1000); // Check every 5 minutes

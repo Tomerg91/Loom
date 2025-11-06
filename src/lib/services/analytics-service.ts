@@ -1,4 +1,5 @@
 import { adminAnalyticsService } from '@/lib/database/admin-analytics';
+import { logger } from '@/lib/logger';
 
 export interface AnalyticsOverview {
   totalUsers: number;
@@ -51,7 +52,7 @@ class AnalyticsService {
         averageRating: overview.averageRating,
       };
     } catch (error) {
-      console.error('Error fetching overview analytics:', error);
+      logger.error('Error fetching overview analytics:', error);
       return {
         totalUsers: 0,
         activeUsers: 0,
@@ -80,7 +81,7 @@ class AnalyticsService {
         activeUsers: data.activeUsers,
       }));
     } catch (error) {
-      console.error('Error fetching user growth analytics:', error);
+      logger.error('Error fetching user growth analytics:', error);
       return [];
     }
   }
@@ -103,7 +104,7 @@ class AnalyticsService {
         cancelledSessions: data.cancelledSessions,
       }));
     } catch (error) {
-      console.error('Error fetching session metrics analytics:', error);
+      logger.error('Error fetching session metrics analytics:', error);
       return [];
     }
   }
@@ -125,7 +126,7 @@ class AnalyticsService {
         revenue: data.revenue,
       }));
     } catch (error) {
-      console.error('Error fetching coach performance analytics:', error);
+      logger.error('Error fetching coach performance analytics:', error);
       return [];
     }
   }
@@ -156,7 +157,7 @@ class AnalyticsService {
         type: 'application/json',
       });
     } catch (error) {
-      console.error('Error exporting analytics data:', error);
+      logger.error('Error exporting analytics data:', error);
       throw new Error('Failed to export analytics data');
     }
   }

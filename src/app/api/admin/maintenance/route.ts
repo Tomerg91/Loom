@@ -6,6 +6,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { adminSystemService, MaintenanceAction, MaintenanceActionParams } from '@/lib/database/admin-system';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { authService } from '@/lib/services/auth-service';
+import { logger } from '@/lib/logger';
 
 
 const maintenanceActionSchema = z.object({
@@ -85,7 +86,7 @@ export const POST = maintenanceRateLimit(async function(request: NextRequest): P
     }
 
     // Log the maintenance action start
-    console.log(`[MAINTENANCE] Admin ${session.user.email} initiated: ${action}`, {
+    logger.debug(`[MAINTENANCE] Admin ${session.user.email} initiated: ${action}`, {
       timestamp: new Date().toISOString(),
       userAgent: request.headers.get('user-agent'),
       ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
@@ -102,7 +103,7 @@ export const POST = maintenanceRateLimit(async function(request: NextRequest): P
     const result = await Promise.race([operationPromise, timeoutPromise]) as any;
 
     if (!result.success) {
-      console.error(`[MAINTENANCE] Failed: ${action}`, {
+      logger.error(`[MAINTENANCE] Failed: ${action}`, {
         error: result.error,
         message: result.message,
         details: result.details
@@ -116,7 +117,7 @@ export const POST = maintenanceRateLimit(async function(request: NextRequest): P
     }
 
     // Log successful completion
-    console.log(`[MAINTENANCE] Completed: ${action}`, {
+    logger.debug(`[MAINTENANCE] Completed: ${action}`, {
       timestamp: new Date().toISOString(),
       admin: session.user.email,
       result: result.message
@@ -132,7 +133,7 @@ export const POST = maintenanceRateLimit(async function(request: NextRequest): P
     });
 
   } catch (error) {
-    console.error('[MAINTENANCE] API error:', error);
+    logger.error('[MAINTENANCE] API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message, error.statusCode || 500);
@@ -247,7 +248,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
 
   } catch (error) {
-    console.error('Maintenance status API error:', error);
+    logger.error('Maintenance status API error:', error);
     return ApiResponseHelper.internalError('Failed to fetch maintenance information');
   }
 }

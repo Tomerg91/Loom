@@ -6,6 +6,7 @@ import { createAuthService } from '@/lib/auth/auth';
 import { createPaymentService } from '@/lib/database';
 import { applySecurityHeaders } from '@/lib/security/headers';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { logger } from '@/lib/logger';
 
 const bodySchema = z.object({
   amount: z.number().positive().max(100000),
@@ -86,7 +87,7 @@ async function handler(req: NextRequest): Promise<NextResponse> {
       NextResponse.json({ success: true, url }, { status: 200 })
     );
   } catch (e) {
-    console.error('Tranzila session error', e);
+    logger.error('Tranzila session error', e);
     return applySecurityHeaders(
       req,
       NextResponse.json({ success: false, error: 'Internal error' }, { status: 500 })

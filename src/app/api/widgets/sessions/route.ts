@@ -4,6 +4,7 @@ import { ApiResponse } from '@/lib/api/types';
 import { getServerUser } from '@/lib/auth/auth';
 import { getCachedData, CacheKeys, CacheTTL } from '@/lib/performance/cache';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export interface SessionWidget {
   id: string;
@@ -201,7 +202,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     });
 
   } catch (error) {
-    console.error('Error fetching sessions:', error);
+    logger.error('Error fetching sessions:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch sessions data' },
       { status: 500 }

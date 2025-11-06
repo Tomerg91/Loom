@@ -1,4 +1,5 @@
 import type { NotificationType } from '@/types';
+import { logger } from '@/lib/logger';
 
 export interface EmailNotificationPayload {
   to: string;
@@ -107,7 +108,7 @@ export class EmailNotificationService {
 
       return result;
     } catch (error) {
-      console.error('Error sending email notification:', error);
+      logger.error('Error sending email notification:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
       if (payload.templateId) {
@@ -177,7 +178,7 @@ export class EmailNotificationService {
         tags: ['notification', notificationType, userLanguage],
       });
     } catch (error) {
-      console.error('Error sending email from template:', error);
+      logger.error('Error sending email from template:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -237,7 +238,7 @@ export class EmailNotificationService {
         // Add small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
-        console.error(`Error sending email to ${recipient.email}:`, error);
+        logger.error(`Error sending email to ${recipient.email}:`, error);
         results.push({
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -280,7 +281,7 @@ export class EmailNotificationService {
       }
 
       if (error || !data) {
-        console.error('Error fetching email template:', error);
+        logger.error('Error fetching email template:', error);
         return null;
       }
 
@@ -294,7 +295,7 @@ export class EmailNotificationService {
         variables: data.variables || {},
       };
     } catch (error) {
-      console.error('Error getting email template:', error);
+      logger.error('Error getting email template:', error);
       return null;
     }
   }
@@ -397,7 +398,7 @@ export class EmailNotificationService {
    */
   private async sendWithSendGrid(payload: EmailNotificationPayload): Promise<EmailDeliveryResult> {
     // Implement SendGrid API integration
-    console.log('SendGrid integration not implemented yet');
+    logger.debug('SendGrid integration not implemented yet');
     return {
       success: false,
       error: 'SendGrid integration not implemented',
@@ -410,7 +411,7 @@ export class EmailNotificationService {
    */
   private async sendWithSES(payload: EmailNotificationPayload): Promise<EmailDeliveryResult> {
     // Implement AWS SES integration
-    console.log('AWS SES integration not implemented yet');
+    logger.debug('AWS SES integration not implemented yet');
     return {
       success: false,
       error: 'AWS SES integration not implemented',
@@ -423,7 +424,7 @@ export class EmailNotificationService {
    */
   private async sendWithPostmark(payload: EmailNotificationPayload): Promise<EmailDeliveryResult> {
     // Implement Postmark API integration
-    console.log('Postmark integration not implemented yet');
+    logger.debug('Postmark integration not implemented yet');
     return {
       success: false,
       error: 'Postmark integration not implemented',
@@ -473,7 +474,7 @@ export class EmailNotificationService {
         .from('notification_delivery_logs')
         .insert([logData]);
     } catch (error) {
-      console.error('Error logging email delivery:', error);
+      logger.error('Error logging email delivery:', error);
     }
   }
 
@@ -514,7 +515,7 @@ export class EmailNotificationService {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching email delivery stats:', error);
+        logger.error('Error fetching email delivery stats:', error);
         return { total: 0, sent: 0, delivered: 0, failed: 0, opened: 0, clicked: 0, bounced: 0 };
       }
 
@@ -545,7 +546,7 @@ export class EmailNotificationService {
 
       return stats;
     } catch (error) {
-      console.error('Error calculating email delivery stats:', error);
+      logger.error('Error calculating email delivery stats:', error);
       return { total: 0, sent: 0, delivered: 0, failed: 0, opened: 0, clicked: 0, bounced: 0 };
     }
   }

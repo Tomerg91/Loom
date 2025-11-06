@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import type { Session } from '@/types';
 
 import { BookingConfirmationDialog } from './booking-confirmation-dialog';
+import { logger } from '@/lib/logger';
 
 
 // Validation schema
@@ -410,7 +411,7 @@ function UnifiedSessionBookingComponent({
       return { previousSlots, queryKey };
     } : undefined,
     onError: (error, formData, context) => {
-      console.error('Session booking failed:', error);
+      logger.error('Session booking failed:', error);
       setBookingError(error.message || 'Failed to book session. Please try again.');
       
       // Revert optimistic update on error
@@ -493,7 +494,7 @@ function UnifiedSessionBookingComponent({
       }
       
     } catch (error) {
-      console.error(`Failed to ${action} session:`, error);
+      logger.error(`Failed to ${action} session:`, error);
       setBookingError(`Failed to ${action} session: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setSessionActionLoading(null);
@@ -934,7 +935,7 @@ function UnifiedSessionBookingComponent({
           }}
           onViewSession={(sessionId) => {
             // Handle navigation to session details if needed
-            console.log('Navigate to session:', sessionId);
+            logger.debug('Navigate to session:', sessionId);
           }}
         />
       )}

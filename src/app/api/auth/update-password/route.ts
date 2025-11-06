@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { logger } from '@/lib/logger';
 
 const updatePasswordSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Update password error:', error);
+    logger.error('Update password error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

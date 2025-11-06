@@ -10,6 +10,7 @@ import {
 import { uuidSchema } from '@/lib/api/validation';
 import { getCoachSchedule } from '@/lib/database/availability';
 import { createCorsResponse } from '@/lib/security/cors';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -57,7 +58,7 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
     const successResponse = createSuccessResponse({ data: schedule });
     return propagateCookies(authResponse, successResponse);
   } catch (error) {
-    console.error('Error fetching coach schedule:', error);
+    logger.error('Error fetching coach schedule:', error);
     const errorResponse = createErrorResponse(
       'Failed to fetch schedule',
       HTTP_STATUS.INTERNAL_SERVER_ERROR

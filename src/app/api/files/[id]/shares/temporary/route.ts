@@ -5,6 +5,7 @@ import { fileDatabase } from '@/lib/database/files';
 import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schemas
@@ -117,7 +118,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Create temporary share error:', error);
+    logger.error('Create temporary share error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -214,7 +215,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Get file temporary shares error:', error);
+    logger.error('Get file temporary shares error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

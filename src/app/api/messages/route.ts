@@ -10,6 +10,7 @@ import {
 } from '@/lib/api/utils';
 import { MessagingService } from '@/lib/database/messaging';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { logger } from '@/lib/logger';
 
 // GET /api/messages - Get conversations list with last message and unread count
 export const GET = withErrorHandling(
@@ -58,7 +59,7 @@ export const GET = withErrorHandling(
           },
         });
       } catch (error) {
-        console.error('Error fetching conversations:', error);
+        logger.error('Error fetching conversations:', error);
         return createErrorResponse(
           'Failed to fetch conversations',
           HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -142,7 +143,7 @@ export const POST = withErrorHandling(
           HTTP_STATUS.CREATED
         );
       } catch (error) {
-        console.error('Error sending message:', error);
+        logger.error('Error sending message:', error);
         return createErrorResponse(
           'Failed to send message',
           HTTP_STATUS.INTERNAL_SERVER_ERROR

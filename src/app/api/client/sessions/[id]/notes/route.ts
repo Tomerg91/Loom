@@ -4,6 +4,7 @@ import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface SessionNotes {
   id: string;
@@ -90,7 +91,7 @@ export async function GET(
     return ApiResponseHelper.success(formattedNotes);
 
   } catch (error) {
-    console.error('Session notes API error:', error);
+    logger.error('Session notes API error:', error);
 
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message, error.statusCode);

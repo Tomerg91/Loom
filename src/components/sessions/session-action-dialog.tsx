@@ -31,6 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useRescheduleSession, useCancelSessionWithPolicy, useAddProgressNote } from '@/lib/queries/sessions';
 import type { Session, SessionRescheduleRequest, SessionCancellation } from '@/types';
+import { logger } from '@/lib/logger';
 
 interface SessionActionDialogProps {
   session: Session;
@@ -119,7 +120,7 @@ export function SessionActionDialog({ session, action, onClose, onSuccess }: Ses
       await rescheduleSession.mutateAsync(rescheduleRequest);
       onSuccess();
     } catch (error) {
-      console.error('Failed to reschedule session:', error);
+      logger.error('Failed to reschedule session:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -142,7 +143,7 @@ export function SessionActionDialog({ session, action, onClose, onSuccess }: Ses
       await cancelSession.mutateAsync(cancellation);
       onSuccess();
     } catch (error) {
-      console.error('Failed to cancel session:', error);
+      logger.error('Failed to cancel session:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -161,7 +162,7 @@ export function SessionActionDialog({ session, action, onClose, onSuccess }: Ses
       });
       onSuccess();
     } catch (error) {
-      console.error('Failed to add note:', error);
+      logger.error('Failed to add note:', error);
     } finally {
       setIsSubmitting(false);
     }

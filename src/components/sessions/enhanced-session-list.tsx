@@ -46,6 +46,7 @@ import type {
 import { SessionCalendarView } from './session-calendar-view';
 import { SessionCard } from './session-card';
 import { SessionTimelineView } from './session-timeline-view';
+import { logger } from '@/lib/logger';
 
 interface EnhancedSessionListProps {
   clientId?: string;
@@ -171,7 +172,7 @@ export function EnhancedSessionList({
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('Export failed:', error);
+      logger.error('Export failed:', error);
     }
   };
 
@@ -436,7 +437,7 @@ export function EnhancedSessionList({
           sessions={sessions} 
           onSessionSelect={(session) => {
             // Handle session selection for calendar view
-            console.log('Selected session:', session);
+            logger.debug('Selected session:', session);
           }}
         />
       )}

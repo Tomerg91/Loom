@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCoachCollections, createCollection } from '@/lib/database/resources';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,7 @@ export async function GET() {
       data: collections,
     });
   } catch (error) {
-    console.error('Failed to fetch collections:', error);
+    logger.error('Failed to fetch collections:', error);
     return NextResponse.json(
       {
         success: false,
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
       data: collection,
     });
   } catch (error) {
-    console.error('Failed to create collection:', error);
+    logger.error('Failed to create collection:', error);
     return NextResponse.json(
       {
         success: false,

@@ -36,7 +36,7 @@ export default function FilesPage() {
           .single();
 
         if (profileError || !profile) {
-          console.error('Error getting user profile:', profileError);
+          logger.error('Error getting user profile:', profileError);
           router.push('/login');
           return;
         }
@@ -46,7 +46,7 @@ export default function FilesPage() {
           role: profile.role as 'coach' | 'client' | 'admin',
         });
       } catch (error) {
-        console.error('Error in getUser:', error);
+        logger.error('Error in getUser:', error);
         router.push('/login');
       } finally {
         setLoading(false);

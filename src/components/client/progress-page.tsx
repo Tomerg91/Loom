@@ -31,7 +31,8 @@ import {
 } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
+import { logger } from '@/lib/logger';
+import {
   Tabs,
   TabsContent,
   TabsList,
@@ -201,7 +202,7 @@ export function ClientProgressPage() {
           sessionsData.data || []
         );
       } catch (error) {
-        console.error('Failed to fetch progress data:', error);
+        logger.error('Failed to fetch progress data:', error);
         // Return empty state on error
         return combineProgressData({}, [], []);
       }

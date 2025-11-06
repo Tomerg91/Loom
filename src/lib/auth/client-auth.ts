@@ -1,6 +1,7 @@
 import { supabase as clientSupabase } from '@/modules/platform/supabase/client';
 
 import type { AuthUser, SignInData, SignUpData } from './auth';
+import { logger } from '@/lib/logger';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
@@ -113,7 +114,7 @@ export class ClientAuthService {
     requiresMFA?: boolean;
   }> {
     try {
-      console.log('[ClientAuthService.signIn] Starting signin for:', data.email);
+      logger.debug('[ClientAuthService.signIn] Starting signin for:', data.email);
 
       const response = await fetch('/api/auth/signin', {
         method: 'POST',
@@ -126,10 +127,10 @@ export class ClientAuthService {
         }),
       });
 
-      console.log('[ClientAuthService.signIn] API response status:', response.status);
+      logger.debug('[ClientAuthService.signIn] API response status:', response.status);
 
       const payload = await response.json().catch(() => null);
-      console.log('[ClientAuthService.signIn] API payload:', {
+      logger.debug('[ClientAuthService.signIn] API payload:', {
         success: payload?.success,
         requiresMFA: payload?.data?.requiresMFA,
         hasUser: !!payload?.data?.user,
@@ -138,7 +139,7 @@ export class ClientAuthService {
 
       if (!response.ok || !payload?.success) {
         const errorMessage = payload?.error || 'Invalid email or password';
-        console.error('[ClientAuthService.signIn] API error:', errorMessage);
+        logger.error('[ClientAuthService.signIn] API error:', errorMessage);
         return { user: null, error: errorMessage };
       }
 
@@ -146,7 +147,7 @@ export class ClientAuthService {
 
       if (resultData.requiresMFA) {
         const mfaUser = resultData.user as AuthUser | undefined;
-        console.log('[ClientAuthService.signIn] MFA required');
+        logger.debug('[ClientAuthService.signIn] MFA required');
         if (mfaUser) {
           // Ensure MFA flag is set so the UI can route appropriately
           return {
@@ -168,7 +169,7 @@ export class ClientAuthService {
         | { accessToken?: string | null; refreshToken?: string | null }
         | undefined;
 
-      console.log('[ClientAuthService.signIn] Setting session, hasTokens:', {
+      logger.debug('[ClientAuthService.signIn] Setting session, hasTokens:', {
         hasAccessToken: !!session?.accessToken,
         hasRefreshToken: !!session?.refreshToken,
       });
@@ -179,11 +180,11 @@ export class ClientAuthService {
         if (user) {
           this.currentUserId = user.id;
         }
-        console.log('[ClientAuthService.signIn] Stored access token and user ID as fallback', {
+        logger.debug('[ClientAuthService.signIn] Stored access token and user ID as fallback', {
           userId: user?.id,
         });
 
-        console.log('[ClientAuthService.signIn] Calling setSession with timeout...');
+        logger.debug('[ClientAuthService.signIn] Calling setSession with timeout...');
 
         // Set session with a timeout to prevent hanging on Vercel Edge Runtime
         const setSessionPromise = this.supabase.auth.setSession({
@@ -201,35 +202,35 @@ export class ClientAuthService {
         try {
           const result = await Promise.race([setSessionPromise, timeoutPromise]);
           if (result?.error) {
-            console.warn(
+            logger.warn(
               '[ClientAuthService.signIn] Failed to hydrate Supabase session:',
               result.error
             );
           } else {
-            console.log('[ClientAuthService.signIn] Session set successfully');
+            logger.debug('[ClientAuthService.signIn] Session set successfully');
           }
         } catch (timeoutError) {
-          console.warn('[ClientAuthService.signIn] setSession timed out:', timeoutError);
+          logger.warn('[ClientAuthService.signIn] setSession timed out:', timeoutError);
           // Don't fail signin just because setSession timed out
           // The tokens from API response will be used for navigation and API calls
         }
       } else {
-        console.warn('[ClientAuthService.signIn] No session tokens in API response');
+        logger.warn('[ClientAuthService.signIn] No session tokens in API response');
       }
 
       if (user) {
         // Cache for subsequent getCurrentUser calls
         this.cacheUserProfile(user.id, user, 120000);
-        console.log('[ClientAuthService.signIn] Cached user profile');
+        logger.debug('[ClientAuthService.signIn] Cached user profile');
       }
 
-      console.log('[ClientAuthService.signIn] Returning success with user:', !!user);
+      logger.debug('[ClientAuthService.signIn] Returning success with user:', !!user);
       return {
         user: user ?? null,
         error: null,
       };
     } catch (error) {
-      console.error('[ClientAuthService.signIn] Caught error:', error);
+      logger.error('[ClientAuthService.signIn] Caught error:', error);
       return {
         user: null,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -269,12 +270,12 @@ export class ClientAuthService {
       const userId = user?.id || this.currentUserId;
 
       if (!userId) {
-        console.log('[ClientAuthService] No Supabase user found and no fallback user ID');
+        logger.debug('[ClientAuthService] No Supabase user found and no fallback user ID');
         return null;
       }
 
       const usingFallbackUserId = !user?.id && !!this.currentUserId;
-      console.log('[ClientAuthService] Getting current user:', {
+      logger.debug('[ClientAuthService] Getting current user:', {
         userId,
         email: user?.email,
         metadataRole: user?.user_metadata?.role,
@@ -284,7 +285,7 @@ export class ClientAuthService {
       // Check cache first
       const cached = this.getCachedUserProfile(userId);
       if (cached) {
-        console.log('[ClientAuthService] Returning cached user profile');
+        logger.debug('[ClientAuthService] Returning cached user profile');
         return cached;
       }
 
@@ -299,7 +300,7 @@ export class ClientAuthService {
 
       // Fallback: construct user from Supabase metadata if API fails
       if (user) {
-        console.warn(
+        logger.warn(
           '[ClientAuthService] API fetch failed, constructing from user_metadata'
         );
         const fallbackUser: AuthUser = {
@@ -321,10 +322,10 @@ export class ClientAuthService {
 
       // If using fallback userId but no Supabase user and API failed, return null
       // (This shouldn't normally happen if signin succeeded, but safety-check anyway)
-      console.warn('[ClientAuthService] Could not fetch user profile and no metadata available');
+      logger.warn('[ClientAuthService] Could not fetch user profile and no metadata available');
       return null;
     } catch (error) {
-      console.error('[ClientAuthService] Error getting current user:', error);
+      logger.error('[ClientAuthService] Error getting current user:', error);
       return null;
     }
   }
@@ -339,7 +340,7 @@ export class ClientAuthService {
       } = await this.supabase.auth.getSession();
       return session;
     } catch (error) {
-      console.error('Error getting session:', error);
+      logger.error('Error getting session:', error);
       return null;
     }
   }
@@ -500,7 +501,7 @@ export class ClientAuthService {
         headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
-      console.log('[ClientAuthService] Fetching user profile:', {
+      logger.debug('[ClientAuthService] Fetching user profile:', {
         userId,
         hasAccessToken: !!accessToken,
         usingFallbackToken: !session?.access_token && !!fallbackAccessToken,
@@ -510,7 +511,7 @@ export class ClientAuthService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(
+        logger.error(
           '[ClientAuthService] Failed to fetch user profile from API:',
           {
             status: response.status,
@@ -522,14 +523,14 @@ export class ClientAuthService {
       }
 
       const { data } = await response.json();
-      console.log('[ClientAuthService] User profile fetched successfully:', {
+      logger.debug('[ClientAuthService] User profile fetched successfully:', {
         userId: data?.id,
         role: data?.role,
         email: data?.email,
       });
       return data;
     } catch (error) {
-      console.error(
+      logger.error(
         '[ClientAuthService] Error fetching user profile from API:',
         error
       );
@@ -556,7 +557,7 @@ export class ClientAuthService {
         headers,
       });
     } catch (error) {
-      console.error('Error updating last seen via API:', error);
+      logger.error('Error updating last seen via API:', error);
     }
   }
 }

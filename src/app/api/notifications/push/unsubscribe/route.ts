@@ -10,6 +10,7 @@ import {
 } from '@/lib/api/utils';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { PushNotificationService } from '@/lib/services/push-notification-service';
+import { logger } from '@/lib/logger';
 
 // POST /api/notifications/push/unsubscribe - Unsubscribe from push notifications
 export const POST = withErrorHandling(
@@ -34,7 +35,7 @@ export const POST = withErrorHandling(
           'Successfully unsubscribed from push notifications'
         );
       } catch (error) {
-        console.error('Error unsubscribing from push notifications:', error);
+        logger.error('Error unsubscribing from push notifications:', error);
         return createErrorResponse(
           'Failed to unsubscribe from push notifications',
           HTTP_STATUS.INTERNAL_SERVER_ERROR

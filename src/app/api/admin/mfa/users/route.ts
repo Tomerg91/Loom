@@ -7,6 +7,7 @@ import { getMfaStatistics, getMfaUserStatuses } from '@/lib/database/mfa-admin';
 import type { GetMfaUsersOptions } from '@/lib/database/mfa-admin';
 import * as rateLimitModule from '@/lib/security/rate-limit';
 import { authService } from '@/lib/services/auth-service';
+import { logger } from '@/lib/logger';
 
 // Provide a minimal Next.js runtime config for tests that instantiate NextRequest directly.
 type MinimalNextConfig = {
@@ -137,7 +138,7 @@ const handleRequest = async (request: NextRequest): Promise<NextResponse> => {
       if (statsResult.success) {
         statistics = statsResult.data;
       } else {
-        console.error('Failed to fetch MFA statistics:', statsResult.error);
+        logger.error('Failed to fetch MFA statistics:', statsResult.error);
         // Don't fail the request if statistics fail, just log the error
       }
     }
@@ -154,7 +155,7 @@ const handleRequest = async (request: NextRequest): Promise<NextResponse> => {
 
     return ApiResponseHelper.success(response);
   } catch (error) {
-    console.error('Get MFA users API error:', error);
+    logger.error('Get MFA users API error:', error);
 
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);

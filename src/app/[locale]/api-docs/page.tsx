@@ -85,7 +85,7 @@ export default function ApiDocumentationPage() {
         setLoading(false);
       })
       .catch(error => {
-        console.error('Failed to load API specification:', error);
+        logger.error('Failed to load API specification:', error);
         setLoading(false);
       });
 
@@ -508,9 +508,9 @@ try {
   }
 
   const { data: session } = await response.json();
-  console.log('Session booked:', session);
+  logger.debug('Session booked:', session);
 } catch (error) {
-  console.error('Booking failed:', error.message);
+  logger.error('Booking failed:', error.message);
 }`}
                         </pre>
                       </div>

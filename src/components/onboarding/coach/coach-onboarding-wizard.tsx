@@ -28,6 +28,7 @@ import { AvailabilityStep } from './steps/availability-step';
 import { PricingStep } from './steps/pricing-step';
 import { ProfileStep } from './steps/profile-step';
 import { ReviewStep } from './steps/review-step';
+import { logger } from '@/lib/logger';
 
 
 
@@ -171,7 +172,7 @@ export function CoachOnboardingWizard({
         throw new Error(result.message || 'Failed to complete onboarding');
       }
     } catch (error) {
-      console.error('Onboarding submission error:', error);
+      logger.error('Onboarding submission error:', error);
       setSubmitError(
         error instanceof Error ? error.message : 'An unexpected error occurred'
       );

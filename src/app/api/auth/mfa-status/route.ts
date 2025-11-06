@@ -11,6 +11,7 @@ import {
 } from '@/lib/api/utils';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { createMfaService } from '@/lib/services/mfa-service';
+import { logger } from '@/lib/logger';
 
 // GET /api/auth/mfa-status - Get user's MFA status (server-side only)
 export const GET = withErrorHandling(
@@ -34,7 +35,7 @@ export const GET = withErrorHandling(
             mfaVerified = session?.mfaVerified || false;
           } catch (error) {
             // Invalid MFA session - ignore and continue
-            console.warn('Invalid MFA session cookie:', error);
+            logger.warn('Invalid MFA session cookie:', error);
           }
         }
         
@@ -49,7 +50,7 @@ export const GET = withErrorHandling(
           mfaRequired: mfaStatus.isEnabled
         });
       } catch (error) {
-        console.error('Error fetching MFA status:', error);
+        logger.error('Error fetching MFA status:', error);
         return createErrorResponse(
           'Failed to fetch MFA status',
           HTTP_STATUS.INTERNAL_SERVER_ERROR

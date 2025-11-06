@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { authService } from '@/lib/services/auth-service';
 import { parseTaskListQueryParams } from '@/modules/tasks/api/query-helpers';
+import { logger } from '@/lib/logger';
 import {
   TaskService,
   TaskServiceError,
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       );
     }
 
-    console.error('Client tasks API error:', error);
+    logger.error('Client tasks API error:', error);
     return ApiResponseHelper.internalError('Failed to fetch client tasks');
   }
 }

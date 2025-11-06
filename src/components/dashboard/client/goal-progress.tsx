@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 
 interface GoalProgressProps {
@@ -72,7 +73,7 @@ export function ClientGoalProgress({ userId, locale }: GoalProgressProps) {
           .eq('client_id', userId)
           .order('created_at', { ascending: false });
 
-        console.log('[ClientGoalProgress] Supabase response', { data, error });
+        logger.debug('[ClientGoalProgress] Supabase response', { data, error });
 
         if (error) {
           throw error;
@@ -106,7 +107,7 @@ export function ClientGoalProgress({ userId, locale }: GoalProgressProps) {
           });
         }
       } catch (error) {
-        console.error('[ClientGoalProgress] Failed to load goals', error);
+        logger.error('[ClientGoalProgress] Failed to load goals', error);
         if (isMounted) {
           setErrorMessage(error instanceof Error ? error.message : String(error));
         }

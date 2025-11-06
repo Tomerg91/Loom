@@ -6,6 +6,7 @@
  */
 
 import { createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 // Rate limiting configuration
 export const MFA_RATE_LIMITS = {
@@ -85,7 +86,7 @@ export class MFARateLimiter {
         .order('created_at', { ascending: false });
 
       if (userError) {
-        console.error('Error checking user rate limit:', userError);
+        logger.error('Error checking user rate limit:', userError);
         return { allowed: false, remainingAttempts: 0, resetTime: now };
       }
 
@@ -148,7 +149,7 @@ export class MFARateLimiter {
       };
 
     } catch (error) {
-      console.error('Rate limit check failed:', error);
+      logger.error('Rate limit check failed:', error);
       // Fail closed - deny access on error
       return { allowed: false, remainingAttempts: 0, resetTime: new Date() };
     }
@@ -170,7 +171,7 @@ export class MFARateLimiter {
         .gte('created_at', oneHourAgo.toISOString());
 
       if (error) {
-        console.error('Error checking IP rate limit:', error);
+        logger.error('Error checking IP rate limit:', error);
         return { allowed: false, remainingAttempts: 0, resetTime: now };
       }
 
@@ -208,7 +209,7 @@ export class MFARateLimiter {
       };
 
     } catch (error) {
-      console.error('IP rate limit check failed:', error);
+      logger.error('IP rate limit check failed:', error);
       return { allowed: false, remainingAttempts: 0, resetTime: new Date() };
     }
   }
@@ -235,7 +236,7 @@ export class MFARateLimiter {
         .order('created_at', { ascending: false });
 
       if (error || !attempts) {
-        console.error('Error analyzing suspicious activity:', error);
+        logger.error('Error analyzing suspicious activity:', error);
         return {
           isSuspicious: false,
           riskLevel: 'low',
@@ -338,7 +339,7 @@ export class MFARateLimiter {
       };
 
     } catch (error) {
-      console.error('Suspicious activity analysis failed:', error);
+      logger.error('Suspicious activity analysis failed:', error);
       return {
         isSuspicious: false,
         riskLevel: 'low',
@@ -374,7 +375,7 @@ export class MFARateLimiter {
           })
         });
     } catch (error) {
-      console.error('Failed to log security event:', error);
+      logger.error('Failed to log security event:', error);
     }
   }
 
@@ -416,7 +417,7 @@ export class MFARateLimiter {
       return MFA_RATE_LIMITS.SHORT_BLOCK_DURATION;
 
     } catch (error) {
-      console.error('Progressive block calculation failed:', error);
+      logger.error('Progressive block calculation failed:', error);
       return MFA_RATE_LIMITS.SHORT_BLOCK_DURATION;
     }
   }

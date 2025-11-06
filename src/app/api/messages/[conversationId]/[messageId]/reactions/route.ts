@@ -10,6 +10,7 @@ import {
 } from '@/lib/api/utils';
 import { MessagingService } from '@/lib/database/messaging';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { logger } from '@/lib/logger';
 
 // POST /api/messages/[conversationId]/[messageId]/reactions - Add reaction to message
 export const POST = withErrorHandling(
@@ -74,7 +75,7 @@ export const POST = withErrorHandling(
           HTTP_STATUS.CREATED
         );
       } catch (error) {
-        console.error('Error adding message reaction:', error);
+        logger.error('Error adding message reaction:', error);
         return createErrorResponse(
           'Failed to add reaction',
           HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -138,7 +139,7 @@ export const DELETE = withErrorHandling(
           'Reaction removed successfully'
         );
       } catch (error) {
-        console.error('Error removing message reaction:', error);
+        logger.error('Error removing message reaction:', error);
         return createErrorResponse(
           'Failed to remove reaction',
           HTTP_STATUS.INTERNAL_SERVER_ERROR

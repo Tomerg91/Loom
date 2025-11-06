@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 
 import { getServerUser } from '@/lib/auth/auth';
 import { fetchCoachOverviewData } from '@/modules/dashboard/server/loaders';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,7 @@ export async function GET() {
         ? error.message
         : 'Unable to load coach overview data';
 
-    console.error('Failed to load coach overview', error);
+    logger.error('Failed to load coach overview', error);
 
     return NextResponse.json(
       { success: false, error: 'INTERNAL_ERROR', message },

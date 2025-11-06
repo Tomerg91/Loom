@@ -14,6 +14,7 @@ import type {
   ResourceCategory,
 } from '@/types/resources';
 import { normalizeResourceCategory } from '@/types/resources';
+import { logger } from '@/lib/logger';
 
 /**
  * Track client progress on a resource
@@ -61,7 +62,7 @@ export async function trackResourceProgress(
   if (error) {
     // Log RLS policy violations for debugging
     if (error.code === 'PGRST301' || error.message.includes('policy')) {
-      console.error('[RLS Policy Violation] Failed to track progress:', {
+      logger.error('[RLS Policy Violation] Failed to track progress:', {
         resourceId,
         clientId,
         action,
@@ -80,7 +81,7 @@ export async function trackResourceProgress(
     });
 
     if (rpcError) {
-      console.error('Failed to increment view count:', rpcError);
+      logger.error('Failed to increment view count:', rpcError);
       // Don't throw - this is a non-critical analytics operation
     }
   }

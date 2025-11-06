@@ -5,6 +5,7 @@ import {
 } from '@/lib/supabase/server';
 import type { Notification, NotificationType } from '@/types';
 import type { Database } from '@/types/supabase';
+import { logger } from '@/lib/logger';
 
 // API-specific interfaces
 interface GetNotificationsOptions {
@@ -72,7 +73,7 @@ export class NotificationService {
     const { data, error } = await queryBuilder;
 
     if (error) {
-      console.error('Error fetching notifications:', error);
+      logger.error('Error fetching notifications:', error);
       return [];
     }
 
@@ -90,7 +91,7 @@ export class NotificationService {
       .is('read_at', null);
 
     if (error) {
-      console.error('Error fetching unread count:', error);
+      logger.error('Error fetching unread count:', error);
       return 0;
     }
 
@@ -122,7 +123,7 @@ export class NotificationService {
     });
 
     if (error) {
-      console.error('Error creating notification:', error);
+      logger.error('Error creating notification:', error);
       return null;
     }
 
@@ -140,7 +141,7 @@ export class NotificationService {
       .single();
 
     if (error) {
-      console.error('Error fetching notification:', error);
+      logger.error('Error fetching notification:', error);
       return null;
     }
 
@@ -160,7 +161,7 @@ export class NotificationService {
     });
 
     if (error) {
-      console.error('Error marking notifications as read:', error);
+      logger.error('Error marking notifications as read:', error);
       return 0;
     }
 
@@ -181,7 +182,7 @@ export class NotificationService {
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error marking notification as read:', error);
+      logger.error('Error marking notification as read:', error);
       return false;
     }
 
@@ -202,7 +203,7 @@ export class NotificationService {
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error deleting notification:', error);
+      logger.error('Error deleting notification:', error);
       return false;
     }
 
@@ -219,7 +220,7 @@ export class NotificationService {
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error deleting all notifications:', error);
+      logger.error('Error deleting all notifications:', error);
       return false;
     }
 
@@ -243,7 +244,7 @@ export class NotificationService {
       .limit(limit);
 
     if (error) {
-      console.error('Error fetching notifications by type:', error);
+      logger.error('Error fetching notifications by type:', error);
       return [];
     }
 
@@ -319,7 +320,7 @@ export class NotificationService {
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error fetching notifications by IDs:', error);
+      logger.error('Error fetching notifications by IDs:', error);
       return [];
     }
 
@@ -342,7 +343,7 @@ export class NotificationService {
       .select('id');
 
     if (error) {
-      console.error('Error marking multiple notifications as read:', error);
+      logger.error('Error marking multiple notifications as read:', error);
       return { count: 0, processedIds: [] };
     }
 
@@ -367,7 +368,7 @@ export class NotificationService {
       .select('id');
 
     if (error) {
-      console.error('Error deleting multiple notifications:', error);
+      logger.error('Error deleting multiple notifications:', error);
       return { count: 0, processedIds: [] };
     }
 
@@ -400,7 +401,7 @@ export class NotificationService {
       .select('id');
 
     if (error) {
-      console.error('Error archiving multiple notifications:', error);
+      logger.error('Error archiving multiple notifications:', error);
       return { count: 0, processedIds: [] };
     }
 
@@ -448,7 +449,7 @@ export class NotificationService {
     const { data, error } = await queryBuilder;
 
     if (error) {
-      console.error('Error fetching notifications for export:', error);
+      logger.error('Error fetching notifications for export:', error);
       return [];
     }
 
@@ -503,7 +504,7 @@ export class NotificationService {
     const { data, error } = await queryBuilder;
 
     if (error) {
-      console.error('Error fetching paginated notifications:', error);
+      logger.error('Error fetching paginated notifications:', error);
       return [];
     }
 
@@ -549,7 +550,7 @@ export class NotificationService {
     const { count, error } = await queryBuilder;
 
     if (error) {
-      console.error('Error getting notifications count:', error);
+      logger.error('Error getting notifications count:', error);
       return 0;
     }
 
@@ -603,7 +604,7 @@ export class NotificationService {
       .order('scheduled_for', { ascending: true });
 
     if (error) {
-      console.error('Error fetching scheduled notifications:', error);
+      logger.error('Error fetching scheduled notifications:', error);
       return [];
     }
 
@@ -620,7 +621,7 @@ export class NotificationService {
       .eq('id', notificationId);
 
     if (error) {
-      console.error('Error marking notification as sent:', error);
+      logger.error('Error marking notification as sent:', error);
       return false;
     }
 

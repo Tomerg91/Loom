@@ -17,6 +17,7 @@ import React, { createContext, useContext, useCallback, useState, useEffect, use
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 export type EnhancedToastType = 'success' | 'error' | 'warning' | 'info' | 'loading' | 'notification';
 
@@ -126,7 +127,7 @@ export function EnhancedToastProvider({
       oscillator.start(audioContext.current.currentTime);
       oscillator.stop(audioContext.current.currentTime + 0.3);
     } catch (error) {
-      console.warn('Could not play notification sound:', error);
+      logger.warn('Could not play notification sound:', error);
     }
   }, [enableSounds]);
 

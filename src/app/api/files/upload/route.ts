@@ -5,6 +5,7 @@ import { ApiError } from '@/lib/api/errors';
 import { fileUploadRateLimit } from '@/lib/security/file-rate-limit';
 import { fileService } from '@/lib/services/file-service';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schema for file upload
@@ -183,13 +184,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (dbError) {
-      console.error('Database error storing file metadata:', dbError);
+      logger.error('Database error storing file metadata:', dbError);
       
       // Clean up uploaded file if database insert fails
       try {
         await fileService.deleteFile(uploadResult.url!);
       } catch (cleanupError) {
-        console.error('Failed to clean up uploaded file:', cleanupError);
+        logger.error('Failed to clean up uploaded file:', cleanupError);
       }
 
       return NextResponse.json(
@@ -211,7 +212,7 @@ export async function POST(request: NextRequest) {
         });
 
       if (sessionFileError) {
-        console.error('Error creating session-file association:', sessionFileError);
+        logger.error('Error creating session-file association:', sessionFileError);
         // Don't fail the entire upload for this, but log the error
       }
     }
@@ -230,7 +231,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('File upload error:', error);
+    logger.error('File upload error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

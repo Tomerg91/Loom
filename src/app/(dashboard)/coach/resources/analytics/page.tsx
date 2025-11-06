@@ -197,13 +197,13 @@ export default function ResourceAnalyticsPage() {
             permission="view"
             selectedCollections={[]}
             onEnabledChange={(enabled) => {
-              console.log('Auto-share enabled:', enabled);
+              logger.debug('Auto-share enabled:', enabled);
             }}
             onPermissionChange={(permission) => {
-              console.log('Permission changed:', permission);
+              logger.debug('Permission changed:', permission);
             }}
             onSave={async () => {
-              console.log('Settings saved');
+              logger.debug('Settings saved');
             }}
           />
         </TabsContent>

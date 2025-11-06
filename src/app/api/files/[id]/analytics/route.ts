@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
 import { fileDatabase } from '@/lib/database/files';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schema
@@ -145,7 +146,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Get file analytics error:', error);
+    logger.error('Get file analytics error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

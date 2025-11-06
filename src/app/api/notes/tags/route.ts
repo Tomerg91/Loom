@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
       .not('tags', 'is', null);
 
     if (error) {
-      console.error('Error fetching tags:', error);
+      logger.error('Error fetching tags:', error);
       return NextResponse.json({ error: 'Failed to fetch tags' }, { status: 500 });
     }
 
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
       count: uniqueTags.length
     });
   } catch (error) {
-    console.error('Error in tags GET:', error);
+    logger.error('Error in tags GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

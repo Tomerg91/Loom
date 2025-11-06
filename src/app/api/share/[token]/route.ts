@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 // GET /api/share/[token] - Access shared file (API endpoint for programmatic access)
 export async function GET(
@@ -144,7 +145,7 @@ export async function GET(
     }
 
   } catch (error) {
-    console.error('Share access error:', error);
+    logger.error('Share access error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -176,7 +177,7 @@ export async function POST(
     return await GET(newRequest, { params });
 
   } catch (error) {
-    console.error('Share POST access error:', error);
+    logger.error('Share POST access error:', error);
     return NextResponse.json(
       { error: 'Invalid request body' },
       { status: 400 }

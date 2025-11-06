@@ -23,6 +23,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createClient } from '@/lib/supabase/server';
 import type { ClientResourceItem } from '@/types/resources';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,7 +124,7 @@ export async function GET(request: NextRequest) {
     const { data: resources, error } = await query;
 
     if (error) {
-      console.error('Error fetching client resources:', error);
+      logger.error('Error fetching client resources:', error);
       return NextResponse.json({ error: 'Failed to fetch resources' }, { status: 500 });
     }
 
@@ -193,7 +194,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error in client resources API:', error);
+    logger.error('Error in client resources API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

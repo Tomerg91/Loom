@@ -5,6 +5,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 import { useLocaleDirection } from '@/modules/i18n/hooks';
+import { logger } from '@/lib/logger';
 
 const buttonVariants = cva(
   'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-normal tracking-normal ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 will-change-transform active:scale-[0.98] relative overflow-hidden touch-target rtl:flex-row-reverse gap-2',
@@ -83,7 +84,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Ensure icon-only buttons have proper aria-label
     const shouldHaveAriaLabel = iconOnly && !ariaLabel && !children;
     if (shouldHaveAriaLabel && process.env.NODE_ENV === 'development') {
-      console.warn('Icon-only buttons should have an aria-label for accessibility');
+      logger.warn('Icon-only buttons should have an aria-label for accessibility');
     }
 
     const baseClassName = cn(
@@ -128,7 +129,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild) {
       if (!React.isValidElement(children)) {
         if (process.env.NODE_ENV === 'development') {
-          console.error('Button with `asChild` expects a single React element child.');
+          logger.error('Button with `asChild` expects a single React element child.');
         }
         return null;
       }

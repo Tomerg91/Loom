@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { FileMetadata } from '@/lib/services/file-management-service';
+import { logger } from '@/lib/logger';
 
 interface UseFilesParams {
   ownerId?: string;
@@ -66,7 +67,7 @@ export function useFiles(params: UseFilesParams = {}) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch files';
       setError(errorMessage);
-      console.error('Error fetching files:', err);
+      logger.error('Error fetching files:', err);
     } finally {
       setLoading(false);
     }
@@ -188,7 +189,7 @@ export function useFiles(params: UseFilesParams = {}) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch shared files';
       setError(errorMessage);
-      console.error('Error fetching shared files:', err);
+      logger.error('Error fetching shared files:', err);
     } finally {
       setLoading(false);
     }

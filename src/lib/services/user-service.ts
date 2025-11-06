@@ -1,6 +1,7 @@
 import { ApiError } from '@/lib/api/errors';
 import { getSupabaseClient } from '@/lib/db';
 import type { Database } from '@/types/supabase';
+import { logger } from '@/lib/logger';
 
 type UserRole = Database['public']['Tables']['users']['Row']['role'];
 type UserStatus = Database['public']['Tables']['users']['Row']['status'];
@@ -78,7 +79,7 @@ class UserService {
       const { data: users, error } = await query;
 
       if (error) {
-        console.error('Database error fetching users:', error);
+        logger.error('Database error fetching users:', error);
         throw new ApiError('DATABASE_ERROR', 'Failed to fetch users');
       }
 
@@ -108,7 +109,7 @@ class UserService {
         },
       };
     } catch (error) {
-      console.error('Error fetching users:', error);
+      logger.error('Error fetching users:', error);
       if (error instanceof ApiError) {
         throw error;
       }
@@ -147,7 +148,7 @@ class UserService {
           // No rows returned
           return null;
         }
-        console.error('Database error fetching user by ID:', error);
+        logger.error('Database error fetching user by ID:', error);
         throw new ApiError('DATABASE_ERROR', 'Failed to fetch user');
       }
 
@@ -172,7 +173,7 @@ class UserService {
         lastLoginAt: user.last_seen_at,
       };
     } catch (error) {
-      console.error('Error fetching user by ID:', error);
+      logger.error('Error fetching user by ID:', error);
       if (error instanceof ApiError) {
         throw error;
       }
@@ -227,7 +228,7 @@ class UserService {
           // No rows returned (user not found)
           return null;
         }
-        console.error('Database error updating user:', error);
+        logger.error('Database error updating user:', error);
         throw new ApiError('DATABASE_ERROR', 'Failed to update user');
       }
 
@@ -252,7 +253,7 @@ class UserService {
         lastLoginAt: updatedUser.last_seen_at,
       };
     } catch (error) {
-      console.error('Error updating user:', error);
+      logger.error('Error updating user:', error);
 
       if (error instanceof ApiError) {
         throw error;
@@ -269,13 +270,13 @@ class UserService {
       const { error } = await supabase.from('users').delete().eq('id', id);
 
       if (error) {
-        console.error('Database error deleting user:', error);
+        logger.error('Database error deleting user:', error);
         throw new ApiError('DATABASE_ERROR', 'Failed to delete user');
       }
 
       return true;
     } catch (error) {
-      console.error('Error deleting user:', error);
+      logger.error('Error deleting user:', error);
       if (error instanceof ApiError) {
         throw error;
       }
@@ -323,7 +324,7 @@ class UserService {
         byStatus,
       };
     } catch (error) {
-      console.error('Error fetching user stats:', error);
+      logger.error('Error fetching user stats:', error);
       throw new ApiError('DATABASE_ERROR', 'Failed to fetch user statistics');
     }
   }

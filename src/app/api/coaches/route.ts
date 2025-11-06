@@ -4,6 +4,7 @@ import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/a
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { logger } from '@/lib/logger';
 
 interface Coach {
   id: string;
@@ -194,7 +195,7 @@ const rateLimitedHandler = rateLimit(200, 60000)( // 200 requests per minute
     return propagateCookies(authResponse, successResponse);
 
   } catch (error) {
-    console.error('Coaches API error:', error);
+    logger.error('Coaches API error:', error);
 
     const errorResponse = error instanceof ApiError
       ? ApiResponseHelper.error(error.code, error.message, error.statusCode)

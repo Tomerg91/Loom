@@ -6,6 +6,7 @@
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 import { realtimeClient } from './realtime-client';
+import { logger } from '@/lib/logger';
 
 type NotificationPayload = RealtimePostgresChangesPayload<{ user_id: string } & Record<string, unknown>>;
 
@@ -28,7 +29,7 @@ export class NotificationSystemVerifier {
    * Run all verification tests
    */
   async runAllTests(): Promise<TestResult[]> {
-    console.log('🚀 Starting comprehensive notification system verification...');
+    logger.debug('🚀 Starting comprehensive notification system verification...');
     this.results = [];
 
     await this.testConnectionStatus();
@@ -40,7 +41,7 @@ export class NotificationSystemVerifier {
       await this.testErrorHandling();
       await this.testFallbackMechanisms();
     } else {
-      console.warn('⚠️ User ID not provided, skipping user-specific tests');
+      logger.warn('⚠️ User ID not provided, skipping user-specific tests');
     }
 
     await this.testPerformanceOptimizations();
@@ -129,7 +130,7 @@ export class NotificationSystemVerifier {
       const channelName = realtimeClient.subscribeToNotifications(
         this.userId,
         (payload: NotificationPayload) => {
-          console.log('Test notification received:', payload);
+          logger.debug('Test notification received:', payload);
         }
       );
 
@@ -338,24 +339,24 @@ export class NotificationSystemVerifier {
     const passedTests = this.results.filter(r => r.passed).length;
     const failedTests = totalTests - passedTests;
     
-    console.log('\n📊 Verification Summary:');
-    console.log(`✅ Passed: ${passedTests}/${totalTests}`);
-    console.log(`❌ Failed: ${failedTests}/${totalTests}`);
-    console.log(`⚡ Success Rate: ${((passedTests / totalTests) * 100).toFixed(1)}%`);
+    logger.debug('\n📊 Verification Summary:');
+    logger.debug(`✅ Passed: ${passedTests}/${totalTests}`);
+    logger.debug(`❌ Failed: ${failedTests}/${totalTests}`);
+    logger.debug(`⚡ Success Rate: ${((passedTests / totalTests) * 100).toFixed(1)}%`);
     
     if (failedTests > 0) {
-      console.log('\n❌ Failed Tests:');
+      logger.debug('\n❌ Failed Tests:');
       this.results
         .filter(r => !r.passed)
         .forEach(r => {
-          console.log(`  - ${r.test}: ${r.details}`);
+          logger.debug(`  - ${r.test}: ${r.details}`);
         });
     }
     
-    console.log('\n⏱️ Performance:');
+    logger.debug('\n⏱️ Performance:');
     const totalDuration = this.results.reduce((sum, r) => sum + (r.duration || 0), 0);
-    console.log(`  - Total verification time: ${totalDuration}ms`);
-    console.log(`  - Average test time: ${(totalDuration / totalTests).toFixed(1)}ms`);
+    logger.debug(`  - Total verification time: ${totalDuration}ms`);
+    logger.debug(`  - Average test time: ${(totalDuration / totalTests).toFixed(1)}ms`);
   }
 
   /**
@@ -375,5 +376,5 @@ export async function verifyNotificationSystem(userId?: string): Promise<TestRes
 // Browser console helper
 if (typeof window !== 'undefined') {
   (window as any).verifyNotifications = verifyNotificationSystem;
-  console.log('🔧 Notification verification available: verifyNotifications(userId)');
+  logger.debug('🔧 Notification verification available: verifyNotifications(userId)');
 }

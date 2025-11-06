@@ -7,13 +7,20 @@ import { SessionParticipantsService } from './services/session-participants';
 import { SessionSchedulingService } from './services/session-scheduling';
 import { SessionWorkflowService } from './services/session-workflow';
 
-// Re-export interfaces for backward compatibility
-export type {
+// Import and re-export interfaces for backward compatibility
+import type {
   GetSessionsOptions,
   GetSessionsCountOptions,
   CreateSessionData,
   UpdateSessionData,
 } from './services/base-session';
+
+export type {
+  GetSessionsOptions,
+  GetSessionsCountOptions,
+  CreateSessionData,
+  UpdateSessionData,
+};
 
 /**
  * Refactored SessionService using composition pattern

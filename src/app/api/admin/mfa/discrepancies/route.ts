@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getMfaDiscrepancies } from '@/lib/database/mfa-admin';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/admin/mfa/discrepancies
@@ -26,7 +27,7 @@ export async function GET() {
       data: result.data,
     });
   } catch (error) {
-    console.error('Unexpected error in GET /api/admin/mfa/discrepancies:', error);
+    logger.error('Unexpected error in GET /api/admin/mfa/discrepancies:', error);
     return NextResponse.json(
       {
         success: false,

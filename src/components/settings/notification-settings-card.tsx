@@ -27,6 +27,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/toast-provider';
 import { useUser } from '@/lib/auth/use-user';
+import { logger } from '@/lib/logger';
 
 interface NotificationSettings {
   email: {
@@ -110,7 +111,7 @@ export function NotificationSettingsCard() {
       toast.success('Settings Updated', 'Your notification preferences have been saved successfully.');
     },
     onError: (error) => {
-      console.error('Failed to update notification settings:', error);
+      logger.error('Failed to update notification settings:', error);
       toast.error('Update Failed', 'Failed to update notification settings. Please try again.');
     },
   });

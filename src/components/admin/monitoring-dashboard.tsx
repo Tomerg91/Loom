@@ -28,6 +28,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { alertManager } from '@/lib/monitoring/alerting';
+import { logger } from '@/lib/logger';
 
 // Types for monitoring data
 interface SystemHealth {
@@ -146,7 +147,7 @@ export default function MonitoringDashboard() {
 
       setLastUpdated(new Date());
     } catch (error) {
-      console.error('Failed to fetch monitoring data:', error);
+      logger.error('Failed to fetch monitoring data:', error);
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { handlePreflight } from '@/lib/api/utils';
 import { createAuthService } from '@/lib/auth/auth';
+import { logger } from '@/lib/logger';
 
 export async function POST(_request: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function POST(_request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Sign-out error:', error);
+    logger.error('Sign-out error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

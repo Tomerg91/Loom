@@ -14,6 +14,7 @@ import {
 } from '@/modules/sessions/server/task-service';
 import type { SessionUpdateTaskInput } from '@/modules/sessions/types';
 import { sessionUpdateTaskSchema } from '@/modules/sessions/validators/task';
+import { logger } from '@/lib/logger';
 
 const taskService = new TaskService();
 
@@ -67,7 +68,7 @@ async function getAuthenticatedActor(
       .single();
 
     if (profileError) {
-      console.warn(
+      logger.warn(
         'Failed to fetch user profile for task route:',
         profileError.message
       );
@@ -81,7 +82,7 @@ async function getAuthenticatedActor(
       authResponse,
     };
   } catch (error) {
-    console.error('Task item API authentication error:', error);
+    logger.error('Task item API authentication error:', error);
     return { response: createUnauthorizedResponse() };
   }
 }
@@ -107,7 +108,7 @@ export const GET = async (request: NextRequest, context: RouteContext) => {
       const errorResponse = createErrorResponse(error.message, error.status);
       return propagateCookies(authResponse, errorResponse);
     }
-    console.error('Task retrieval error:', error);
+    logger.error('Task retrieval error:', error);
     const errorResponse = createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -137,7 +138,7 @@ export const PATCH = async (request: NextRequest, context: RouteContext) => {
   try {
     body = await request.json();
   } catch (error) {
-    console.warn('Failed to parse task update payload:', error);
+    logger.warn('Failed to parse task update payload:', error);
     const errorResponse = createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
     return propagateCookies(authResponse, errorResponse);
   }
@@ -163,7 +164,7 @@ export const PATCH = async (request: NextRequest, context: RouteContext) => {
       const errorResponse = createErrorResponse(error.message, error.status);
       return propagateCookies(authResponse, errorResponse);
     }
-    console.error('Task update error:', error);
+    logger.error('Task update error:', error);
     const errorResponse = createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -199,7 +200,7 @@ export const DELETE = async (_request: NextRequest, context: RouteContext) => {
     if (error instanceof TaskServiceError) {
       return createErrorResponse(error.message, error.status);
     }
-    console.error('Task deletion error:', error);
+    logger.error('Task deletion error:', error);
     return createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR

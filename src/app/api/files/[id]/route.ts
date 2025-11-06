@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { fileManagementService } from '@/lib/services/file-management-service';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(result.data);
   } catch (error) {
-    console.error(`GET /api/files/[id] error:`, error);
+    logger.error(`GET /api/files/[id] error:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -95,7 +96,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(result.data);
   } catch (error) {
-    console.error(`PATCH /api/files/[id] error:`, error);
+    logger.error(`PATCH /api/files/[id] error:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -133,7 +134,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(`DELETE /api/files/[id] error:`, error);
+    logger.error(`DELETE /api/files/[id] error:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

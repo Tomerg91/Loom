@@ -10,6 +10,7 @@ import type {
   AttachmentType,
 } from '@/types';
 import type { Database } from '@/types/supabase';
+import { logger } from '@/lib/logger';
 
 interface SendMessageParams {
   conversationId: string;
@@ -110,7 +111,7 @@ export class MessagingService {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching user conversations:', error);
+      logger.error('Error fetching user conversations:', error);
       throw error;
     }
 
@@ -186,7 +187,7 @@ export class MessagingService {
     const { count, error } = await query;
 
     if (error) {
-      console.error('Error counting user conversations:', error);
+      logger.error('Error counting user conversations:', error);
       throw error;
     }
 
@@ -247,7 +248,7 @@ export class MessagingService {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching conversation messages:', error);
+      logger.error('Error fetching conversation messages:', error);
       throw error;
     }
 
@@ -270,7 +271,7 @@ export class MessagingService {
     const { count, error } = await query;
 
     if (error) {
-      console.error('Error counting conversation messages:', error);
+      logger.error('Error counting conversation messages:', error);
       throw error;
     }
 
@@ -306,7 +307,7 @@ export class MessagingService {
         .single();
 
       if (messageError) {
-        console.error('Error inserting message:', messageError);
+        logger.error('Error inserting message:', messageError);
         throw messageError;
       }
 
@@ -328,14 +329,14 @@ export class MessagingService {
           );
 
         if (attachmentError) {
-          console.error('Error inserting attachments:', attachmentError);
+          logger.error('Error inserting attachments:', attachmentError);
           // Don't throw here, message is already sent
         }
       }
 
       return message as Message;
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
       throw error;
     }
   }
@@ -349,13 +350,13 @@ export class MessagingService {
       });
 
       if (error) {
-        console.error('Error marking conversation as read:', error);
+        logger.error('Error marking conversation as read:', error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error('Error marking conversation as read:', error);
+      logger.error('Error marking conversation as read:', error);
       throw error;
     }
   }
@@ -368,13 +369,13 @@ export class MessagingService {
       });
 
       if (error) {
-        console.error('Error getting unread message count:', error);
+        logger.error('Error getting unread message count:', error);
         return 0;
       }
 
       return data || 0;
     } catch (error) {
-      console.error('Error getting unread message count:', error);
+      logger.error('Error getting unread message count:', error);
       return 0;
     }
   }
@@ -391,13 +392,13 @@ export class MessagingService {
         .single();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-        console.error('Error checking conversation access:', error);
+        logger.error('Error checking conversation access:', error);
         return false;
       }
 
       return !!data;
     } catch (error) {
-      console.error('Error checking conversation access:', error);
+      logger.error('Error checking conversation access:', error);
       return false;
     }
   }
@@ -410,13 +411,13 @@ export class MessagingService {
       });
 
       if (error) {
-        console.error('Error checking if user can message user:', error);
+        logger.error('Error checking if user can message user:', error);
         return false;
       }
 
       return data || false;
     } catch (error) {
-      console.error('Error checking if user can message user:', error);
+      logger.error('Error checking if user can message user:', error);
       return false;
     }
   }
@@ -429,13 +430,13 @@ export class MessagingService {
       });
 
       if (error) {
-        console.error('Error getting or creating direct conversation:', error);
+        logger.error('Error getting or creating direct conversation:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Error getting or creating direct conversation:', error);
+      logger.error('Error getting or creating direct conversation:', error);
       throw error;
     }
   }
@@ -455,13 +456,13 @@ export class MessagingService {
         .eq('user_id', userId);
 
       if (error) {
-        console.error('Error updating conversation participant:', error);
+        logger.error('Error updating conversation participant:', error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error('Error updating conversation participant:', error);
+      logger.error('Error updating conversation participant:', error);
       throw error;
     }
   }
@@ -480,13 +481,13 @@ export class MessagingService {
         .eq('created_by', userId); // Only creator can update conversation details
 
       if (error) {
-        console.error('Error updating conversation:', error);
+        logger.error('Error updating conversation:', error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error('Error updating conversation:', error);
+      logger.error('Error updating conversation:', error);
       throw error;
     }
   }
@@ -500,13 +501,13 @@ export class MessagingService {
         .eq('user_id', userId);
 
       if (error) {
-        console.error('Error leaving conversation:', error);
+        logger.error('Error leaving conversation:', error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error('Error leaving conversation:', error);
+      logger.error('Error leaving conversation:', error);
       throw error;
     }
   }
@@ -539,13 +540,13 @@ export class MessagingService {
         .single();
 
       if (error) {
-        console.error('Error adding message reaction:', error);
+        logger.error('Error adding message reaction:', error);
         throw error;
       }
 
       return data as MessageReaction;
     } catch (error) {
-      console.error('Error adding message reaction:', error);
+      logger.error('Error adding message reaction:', error);
       throw error;
     }
   }
@@ -566,13 +567,13 @@ export class MessagingService {
         .eq('emoji', emoji);
 
       if (error) {
-        console.error('Error removing message reaction:', error);
+        logger.error('Error removing message reaction:', error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error('Error removing message reaction:', error);
+      logger.error('Error removing message reaction:', error);
       throw error;
     }
   }
@@ -590,13 +591,13 @@ export class MessagingService {
         });
 
       if (error) {
-        console.error('Error setting typing indicator:', error);
+        logger.error('Error setting typing indicator:', error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error('Error setting typing indicator:', error);
+      logger.error('Error setting typing indicator:', error);
       throw error;
     }
   }
@@ -610,13 +611,13 @@ export class MessagingService {
         .eq('user_id', userId);
 
       if (error) {
-        console.error('Error removing typing indicator:', error);
+        logger.error('Error removing typing indicator:', error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error('Error removing typing indicator:', error);
+      logger.error('Error removing typing indicator:', error);
       throw error;
     }
   }
@@ -642,13 +643,13 @@ export class MessagingService {
         .gt('expires_at', new Date().toISOString());
 
       if (error) {
-        console.error('Error getting typing indicators:', error);
+        logger.error('Error getting typing indicators:', error);
         throw error;
       }
 
       return data?.map((indicator: any) => indicator.users) || [];
     } catch (error) {
-      console.error('Error getting typing indicators:', error);
+      logger.error('Error getting typing indicators:', error);
       throw error;
     }
   }

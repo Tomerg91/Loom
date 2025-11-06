@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { fileUploadRateLimit } from '@/lib/security/file-rate-limit';
 import { fileService } from '@/lib/services/file-service';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schema for chunked upload initialization
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('Chunked upload error:', error);
+    logger.error('Chunked upload error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -374,13 +375,13 @@ async function handleChunkedUploadComplete(request: NextRequest, userId: string)
       .single();
 
     if (dbError) {
-      console.error('Database error storing file metadata:', dbError);
+      logger.error('Database error storing file metadata:', dbError);
       
       // Clean up uploaded file
       try {
         await fileService.deleteFile(uploadResult.url!);
       } catch (cleanupError) {
-        console.error('Failed to clean up uploaded file:', cleanupError);
+        logger.error('Failed to clean up uploaded file:', cleanupError);
       }
 
       return NextResponse.json(
@@ -402,7 +403,7 @@ async function handleChunkedUploadComplete(request: NextRequest, userId: string)
         });
 
       if (sessionFileError) {
-        console.error('Error creating session-file association:', sessionFileError);
+        logger.error('Error creating session-file association:', sessionFileError);
       }
     }
 
@@ -423,7 +424,7 @@ async function handleChunkedUploadComplete(request: NextRequest, userId: string)
     });
 
   } catch (error) {
-    console.error('Error completing chunked upload:', error);
+    logger.error('Error completing chunked upload:', error);
     
     // Clean up upload session
     chunkedUploads.delete(uploadId);
@@ -536,7 +537,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Get chunked upload status error:', error);
+    logger.error('Get chunked upload status error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

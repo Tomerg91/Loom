@@ -7,6 +7,7 @@
 
 import * as Sentry from '@sentry/nextjs';
 import type { SeverityLevel } from '@sentry/nextjs';
+import { logger } from '@/lib/logger';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -95,20 +96,20 @@ const logToConsole = (
 
   if (level === 'error') {
     if (errorCandidate instanceof Error) {
-      console.error(prefix, message, payload, errorCandidate);
+      logger.error(prefix, message, payload, errorCandidate);
       return;
     }
-    console.error(prefix, message, payload, errorCandidate);
+    logger.error(prefix, message, payload, errorCandidate);
     return;
   }
 
   if (level === 'warn') {
-    console.warn(prefix, message, payload);
+    logger.warn(prefix, message, payload);
     return;
   }
 
   if (level === 'info') {
-    console.info(prefix, message, payload);
+    logger.info(prefix, message, payload);
     return;
   }
 

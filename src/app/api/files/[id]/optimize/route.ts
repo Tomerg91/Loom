@@ -5,6 +5,7 @@ import { fileDatabase } from '@/lib/database/files';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { fileOptimizationService } from '@/lib/services/file-optimization';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schema
@@ -203,7 +204,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('File optimization error:', error);
+    logger.error('File optimization error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -287,7 +288,7 @@ export async function GET(
           };
         }
       } catch (error) {
-        console.error('Failed to get image metadata:', error);
+        logger.error('Failed to get image metadata:', error);
       }
     }
 
@@ -315,7 +316,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Get optimization recommendations error:', error);
+    logger.error('Get optimization recommendations error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -434,7 +434,7 @@ export class SecurityMonitor {
     
     // In production, this should send to a security monitoring service
     if (process.env.NODE_ENV === 'production') {
-      console.warn('Security Event:', { type, details, request });
+      logger.warn('Security Event:', { type, details, request });
     }
   }
   

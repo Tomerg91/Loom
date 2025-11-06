@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { fileManagementService } from '@/lib/services/file-management-service';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schemas
@@ -245,7 +246,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Bulk file sharing error:', error);
+    logger.error('Bulk file sharing error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -387,7 +388,7 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Bulk revoke shares error:', error);
+    logger.error('Bulk revoke shares error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -539,7 +540,7 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Bulk update shares error:', error);
+    logger.error('Bulk update shares error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { logger } from '@/lib/logger';
 
 const verifyTokenSchema = z.object({
   token_hash: z.string().min(1, 'Token hash is required'),
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       });
 
     } catch (verifyError) {
-      console.error('Token verification error:', verifyError);
+      logger.error('Token verification error:', verifyError);
       return NextResponse.json(
         { error: 'Invalid or expired verification token' },
         { status: 400 }
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Verify endpoint error:', error);
+    logger.error('Verify endpoint error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -106,7 +107,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
 
   } catch (error) {
-    console.error('Verify GET error:', error);
+    logger.error('Verify GET error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

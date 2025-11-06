@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 // POST /api/shares/cleanup - Cleanup expired temporary shares
 // This endpoint should be called by a cron job or scheduled task
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     const cleanedCount = await temporarySharesDatabase.cleanupExpiredShares();
 
     // Log the cleanup operation
-    console.log(`Cleaned up ${cleanedCount} expired temporary shares`);
+    logger.debug(`Cleaned up ${cleanedCount} expired temporary shares`);
 
     // Optionally, get statistics about remaining shares
     const supabase = await createClient();
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Cleanup expired shares error:', error);
+    logger.error('Cleanup expired shares error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -149,7 +150,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Get cleanup statistics error:', error);
+    logger.error('Get cleanup statistics error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

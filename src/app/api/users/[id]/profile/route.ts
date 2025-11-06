@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { createAdminClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return ApiResponseHelper.success(authUser);
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    logger.error('Error fetching user profile:', error);
     return ApiResponseHelper.internalError('Failed to fetch user profile');
   }
 }

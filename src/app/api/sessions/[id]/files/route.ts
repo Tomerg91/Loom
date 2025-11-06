@@ -5,6 +5,7 @@ import { fileDatabase } from '@/lib/database/files';
 import { sessionFilesDatabase } from '@/lib/database/session-files';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schemas
@@ -154,7 +155,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Get session files error:', error);
+    logger.error('Get session files error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -278,7 +279,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Attach session file error:', error);
+    logger.error('Attach session file error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -404,7 +405,7 @@ export async function PUT(
     });
 
   } catch (error) {
-    console.error('Update session file error:', error);
+    logger.error('Update session file error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -526,7 +527,7 @@ export async function DELETE(
     });
 
   } catch (error) {
-    console.error('Remove session file error:', error);
+    logger.error('Remove session file error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

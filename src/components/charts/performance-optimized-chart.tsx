@@ -5,6 +5,7 @@ import React, { useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
 
 // Performance optimization wrapper for large datasets
 interface PerformanceOptimizedChartProps {
@@ -105,9 +106,9 @@ export const useChartPerformance = () => {
 
     // Log performance metrics for debugging
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Chart Performance: ${duration.toFixed(2)}ms for ${data.length} points`);
+      logger.debug(`Chart Performance: ${duration.toFixed(2)}ms for ${data.length} points`);
       if (duration > 100) {
-        console.warn('Slow chart render detected. Consider data optimization.');
+        logger.warn('Slow chart render detected. Consider data optimization.');
       }
     }
   };

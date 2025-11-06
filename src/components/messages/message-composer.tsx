@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast-provider';
 import { useTypingIndicators } from '@/lib/realtime/hooks';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 interface MessageComposerProps {
   conversationId: string;
@@ -145,7 +146,7 @@ export function MessageComposer({
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
     onError: (error: Error) => {
-      console.error('Failed to send message:', error);
+      logger.error('Failed to send message:', error);
       toast.error('Error', error.message || 'Failed to send message');
     },
     onSettled: () => {

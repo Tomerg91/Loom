@@ -1,6 +1,7 @@
 import { onCLS, onINP, onFCP, onLCP, onTTFB, type Metric } from 'web-vitals';
 
 import { trackWebVitals } from '@/lib/monitoring/analytics';
+import { logger } from '@/lib/logger';
 
 // Web Vitals thresholds
 const VITALS_THRESHOLDS = {
@@ -53,7 +54,7 @@ export const collectWebVitals = (callback?: (metric: WebVital) => void) => {
     
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[Web Vitals] ${metric.name}:`, {
+      logger.debug(`[Web Vitals] ${metric.name}:`, {
         value: metric.value,
         rating: enhancedMetric.rating,
         delta: metric.delta,
@@ -104,7 +105,7 @@ export class PerformanceMonitor {
         observer.observe({ entryTypes: ['longtask'] });
         this.observers.push(observer);
       } catch {
-        console.warn('Long task observer not supported');
+        logger.warn('Long task observer not supported');
       }
     }
   }
@@ -124,7 +125,7 @@ export class PerformanceMonitor {
         observer.observe({ entryTypes: ['layout-shift'] });
         this.observers.push(observer);
       } catch {
-        console.warn('Layout shift observer not supported');
+        logger.warn('Layout shift observer not supported');
       }
     }
   }
@@ -144,7 +145,7 @@ export class PerformanceMonitor {
         observer.observe({ entryTypes: ['paint'] });
         this.observers.push(observer);
       } catch {
-        console.warn('Paint timing observer not supported');
+        logger.warn('Paint timing observer not supported');
       }
     }
   }
@@ -164,7 +165,7 @@ export class PerformanceMonitor {
         observer.observe({ entryTypes: ['resource'] });
         this.observers.push(observer);
       } catch {
-        console.warn('Resource timing observer not supported');
+        logger.warn('Resource timing observer not supported');
       }
     }
   }
@@ -176,7 +177,7 @@ export class PerformanceMonitor {
       try {
         observer.disconnect();
       } catch (error) {
-        console.warn('Error disconnecting performance observer:', error);
+        logger.warn('Error disconnecting performance observer:', error);
       }
     });
     this.observers = [];

@@ -24,6 +24,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Note, CreateNoteData, UpdateNoteData, useAutosaveNote } from '@/lib/queries/notes';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 interface NoteEditorModalProps {
   isOpen: boolean;
@@ -180,7 +181,7 @@ export function NoteEditorModal({
       }
       onClose();
     } catch (error) {
-      console.error('Failed to save note:', error);
+      logger.error('Failed to save note:', error);
     }
   };
 

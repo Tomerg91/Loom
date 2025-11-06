@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { onCLS, onINP, onFCP, onLCP, onTTFB, type Metric } from 'web-vitals';
+import { logger } from '@/lib/logger';
 
 interface WebVitalsMetric {
   id: string;
@@ -62,7 +63,7 @@ function reportWebVital(metric: WebVitalsMetric) {
   
   // Report to console in development
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[Web Vitals] ${metric.name}:`, {
+    logger.debug(`[Web Vitals] ${metric.name}:`, {
       value: metric.value,
       rating: metric.rating,
       delta: metric.delta
@@ -93,7 +94,7 @@ export function usePerformanceMonitoring() {
       const longTaskObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           if (entry.duration > 50) { // Tasks longer than 50ms
-            console.warn('[Performance] Long task detected:', {
+            logger.warn('[Performance] Long task detected:', {
               duration: entry.duration,
               startTime: entry.startTime,
             });
@@ -114,7 +115,7 @@ export function usePerformanceMonitoring() {
           
           const layoutShiftScore = (entry as any).value;
           if (layoutShiftScore > 0.1) {
-            console.warn('[Performance] Significant layout shift:', {
+            logger.warn('[Performance] Significant layout shift:', {
               value: layoutShiftScore,
               startTime: entry.startTime,
               sources: (entry as any).sources,
@@ -147,7 +148,7 @@ export function RoutePerformanceTracker({ route }: { route: string }) {
       const routeLoadTime = endTime - startTime;
       
       if (routeLoadTime > 2000) { // Routes taking longer than 2 seconds
-        console.warn(`[Performance] Slow route transition to ${route}:`, {
+        logger.warn(`[Performance] Slow route transition to ${route}:`, {
           duration: routeLoadTime,
           route,
         });
@@ -168,7 +169,7 @@ export function useRenderTracking(componentName: string) {
       const renderTime = renderEnd - renderStart;
       
       if (renderTime > 16) { // Renders taking longer than 16ms (60fps threshold)
-        console.log(`[Render Performance] ${componentName}:`, {
+        logger.debug(`[Render Performance] ${componentName}:`, {
           duration: renderTime,
           timestamp: renderStart,
         });

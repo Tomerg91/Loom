@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { trackBusinessMetric } from '@/lib/monitoring/sentry';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { logger } from '@/lib/logger';
 
 // Performance metrics collection endpoint
 const rateLimitedPerformance = rateLimit(200, 60000)( // 200 requests per minute
@@ -48,7 +49,7 @@ const rateLimitedPerformance = rateLimit(200, 60000)( // 200 requests per minute
         
         // Log performance issues
         if (metric.rating === 'poor') {
-          console.warn(`Poor performance detected: ${metric.metric} = ${metric.value}`, {
+          logger.warn(`Poor performance detected: ${metric.metric} = ${metric.value}`, {
             url: metric.url,
             userId: metric.userId,
             sessionId: metric.sessionId,

@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createClient } from '@/lib/supabase/server';
 import type { ResourceCollection } from '@/types/resources';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,7 +64,7 @@ export async function GET(_request: NextRequest) {
       .order('sort_order', { ascending: true });
 
     if (error) {
-      console.error('Error fetching client collections:', error);
+      logger.error('Error fetching client collections:', error);
       return NextResponse.json({ error: 'Failed to fetch collections' }, { status: 500 });
     }
 
@@ -99,7 +100,7 @@ export async function GET(_request: NextRequest) {
       data: accessibleCollections,
     });
   } catch (error) {
-    console.error('Error in client collections API:', error);
+    logger.error('Error in client collections API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

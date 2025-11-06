@@ -328,7 +328,7 @@ export default function CoachSessionsPage() {
         break;
       case 'reschedule':
         // In real app, would open reschedule dialog
-        console.log('Reschedule sessions:', selectedSessions);
+        logger.debug('Reschedule sessions:', selectedSessions);
         break;
     }
     setSelectedSessions([]);

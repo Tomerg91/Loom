@@ -12,6 +12,7 @@ import {
 } from '@/lib/api/utils';
 import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { logger } from '@/lib/logger';
 
 const resendSchema = z.object({
   email: z
@@ -67,7 +68,7 @@ export const POST = withErrorHandling(
 
         if (error) {
           // Don't reveal if email exists for security
-          console.warn('Resend verification failed:', { email, error });
+          logger.warn('Resend verification failed:', { email, error });
 
           // Return success even if email doesn't exist (security best practice)
           return createSuccessResponse(
@@ -81,7 +82,7 @@ export const POST = withErrorHandling(
         }
 
         // Log successful resend for auditing
-        console.info('Verification email resent:', {
+        logger.info('Verification email resent:', {
           email,
           timestamp: new Date().toISOString(),
           ip: request.headers.get('x-forwarded-for') || 'unknown',
@@ -98,7 +99,7 @@ export const POST = withErrorHandling(
 
         return applyCorsHeaders(response, request);
       } catch (error) {
-        console.error('Resend verification error:', {
+        logger.error('Resend verification error:', {
           error: error instanceof Error ? error.message : 'Unknown error',
           stack: error instanceof Error ? error.stack : undefined,
           timestamp: new Date().toISOString(),

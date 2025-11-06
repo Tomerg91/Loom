@@ -50,6 +50,7 @@ import type { Session } from '@/types';
 
 import { RateSessionDialog } from './rate-session-dialog';
 import { RescheduleSessionDialog } from './reschedule-session-dialog';
+import { logger } from '@/lib/logger';
 
 interface SessionDetailViewProps {
   sessionId: string;
@@ -175,7 +176,7 @@ export function SessionDetailView({ sessionId }: SessionDetailViewProps) {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('File download error:', error);
+      logger.error('File download error:', error);
     }
   };
 

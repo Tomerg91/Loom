@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
 import { createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
+import { logger } from '@/lib/logger';
 
 const createNoteSchema = z.object({
   clientId: z.string().min(1).optional(),
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest) {
     const { data: notes, error } = await query;
 
     if (error) {
-      console.error('Error fetching notes:', error);
+      logger.error('Error fetching notes:', error);
       const errorResponse = createErrorResponse('Failed to fetch notes', HTTP_STATUS.INTERNAL_SERVER_ERROR);
       return propagateCookies(authResponse, errorResponse);
     }
@@ -189,7 +190,7 @@ export async function GET(request: NextRequest) {
     });
     return propagateCookies(authResponse, successResponse);
   } catch (error) {
-    console.error('Error in notes GET:', error);
+    logger.error('Error in notes GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -291,7 +292,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating note:', error);
+      logger.error('Error creating note:', error);
       const errorResponse = createErrorResponse('Failed to create note', HTTP_STATUS.INTERNAL_SERVER_ERROR);
       return propagateCookies(authResponse, errorResponse);
     }
@@ -322,7 +323,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Error in notes POST:', error);
+    logger.error('Error in notes POST:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

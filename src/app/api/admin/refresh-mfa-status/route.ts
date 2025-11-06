@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 /**
  * API endpoint to refresh the user_mfa_status_unified materialized view
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
     const cronSecret = process.env.CRON_SECRET;
 
     if (!cronSecret) {
-      console.error('CRON_SECRET environment variable not set');
+      logger.error('CRON_SECRET environment variable not set');
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
     const duration = Date.now() - startTime;
 
     if (error) {
-      console.error('Error refreshing MFA status view:', error);
+      logger.error('Error refreshing MFA status view:', error);
       return NextResponse.json(
         {
           error: 'Failed to refresh MFA status view',
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error('Unexpected error in refresh-mfa-status:', error);
+    logger.error('Unexpected error in refresh-mfa-status:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',

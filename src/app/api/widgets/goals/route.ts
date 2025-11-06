@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ApiResponse } from '@/lib/api/types';
 import { getServerUser } from '@/lib/auth/auth';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export interface GoalData {
   goal: string;
@@ -272,7 +273,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     });
 
   } catch (error) {
-    console.error('Error fetching goals analysis:', error);
+    logger.error('Error fetching goals analysis:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch goals analysis' },
       { status: 500 }

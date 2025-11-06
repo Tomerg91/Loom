@@ -16,6 +16,7 @@ import { sessionNotificationService } from '@/lib/notifications/session-notifica
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { rateLimit } from '@/lib/security/rate-limit';
 import type { Session } from '@/types';
+import { logger } from '@/lib/logger';
 
 const bookSessionSchema = z.object({
   coachId: z.string().uuid('Invalid coach ID format'),
@@ -66,7 +67,7 @@ export const POST = withErrorHandling(
       validatedData = bookSessionSchema.parse(body);
     } catch (error) {
       // Log invalid booking attempt
-      console.warn('Invalid session booking attempt:', {
+      logger.warn('Invalid session booking attempt:', {
         userId: user.id,
         ip: request.headers.get('x-forwarded-for') || 'unknown',
         userAgent: request.headers.get('user-agent'),
@@ -86,7 +87,7 @@ export const POST = withErrorHandling(
     }
 
     // Log session booking attempt for auditing
-    console.info('Session booking attempted:', {
+    logger.info('Session booking attempted:', {
       userId: user.id,
       coachId: validatedData.coachId,
       scheduledAt: validatedData.scheduledAt,
@@ -173,7 +174,7 @@ export const POST = withErrorHandling(
       .single();
 
     if (error) {
-      console.error('Error creating session:', error);
+      logger.error('Error creating session:', error);
       return propagateCookies(
         authResponse,
         createErrorResponse(
@@ -214,12 +215,12 @@ export const POST = withErrorHandling(
     try {
       await sessionNotificationService.onSessionBooked(transformedSession);
     } catch (error) {
-      console.error('Error creating session notifications:', error);
+      logger.error('Error creating session notifications:', error);
       // Don't fail the session creation if notifications fail
     }
 
     // Log successful session booking for auditing
-    console.info('Session booked successfully:', {
+    logger.info('Session booked successfully:', {
       sessionId: transformedSession.id,
       userId: user.id,
       coachId: validatedData.coachId,

@@ -86,6 +86,7 @@ import { useDebounce } from '@/lib/hooks/use-debounce';
 import { useOfflineNotificationQueue } from '@/lib/notifications/offline-queue';
 import { useRealtimeNotifications } from '@/lib/realtime/hooks';
 import type { Notification, NotificationType } from '@/types';
+import { logger } from '@/lib/logger';
 
 interface NotificationsResponse {
   data: Notification[];
@@ -318,7 +319,7 @@ function NotificationCenterComponent() {
           }
         });
       } catch (error) {
-        console.warn('Could not play notification sound:', error);
+        logger.warn('Could not play notification sound:', error);
       }
     }
   }, [notificationSounds]);
@@ -435,7 +436,7 @@ function NotificationCenterComponent() {
           };
         });
       } else {
-        console.error('Failed to mark notification as read:', error);
+        logger.error('Failed to mark notification as read:', error);
         toast.error('Error', 'Failed to mark notification as read. Please try again.');
       }
     },
@@ -481,7 +482,7 @@ function NotificationCenterComponent() {
           };
         });
       } else {
-        console.error('Failed to mark all notifications as read:', error);
+        logger.error('Failed to mark all notifications as read:', error);
         toast.error('Error', 'Failed to mark all notifications as read. Please try again.');
       }
     },
@@ -529,7 +530,7 @@ function NotificationCenterComponent() {
           };
         });
       } else {
-        console.error('Failed to delete notification:', error);
+        logger.error('Failed to delete notification:', error);
         toast.error('Error', 'Failed to delete notification. Please try again.');
       }
     },
@@ -623,7 +624,7 @@ function NotificationCenterComponent() {
         });
         setSelectedNotifications(new Set());
       } else {
-        console.error(`Failed to ${action} notifications:`, error);
+        logger.error(`Failed to ${action} notifications:`, error);
         toast.error('Error', `Failed to ${action} notifications. Please try again.`);
       }
     },
@@ -652,7 +653,7 @@ function NotificationCenterComponent() {
       toast.success('Success', `Notifications exported as ${format.toUpperCase()}`);
     },
     onError: (error) => {
-      console.error('Failed to export notifications:', error);
+      logger.error('Failed to export notifications:', error);
       toast.error('Error', 'Failed to export notifications. Please try again.');
     },
   });
@@ -750,7 +751,7 @@ function NotificationCenterComponent() {
       // Navigate to the target path
       await router.push(targetPath);
     } catch (error) {
-      console.error('Navigation error:', error);
+      logger.error('Navigation error:', error);
       toast.error('Error', 'Failed to navigate. Please try again.');
     }
   }, [markAsReadMutation, setIsOpen, router, user?.role, toast]);

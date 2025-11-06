@@ -8,6 +8,7 @@ import type {
   TableStatistics,
   AffectedCoach,
 } from '@/types/resource-validation';
+import { logger } from '@/lib/logger';
 import {
   getCheckSeverity,
   getCheckTitle,
@@ -327,7 +328,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('Failed to validate resource library:', error);
+    logger.error('Failed to validate resource library:', error);
     return NextResponse.json(
       {
         success: false,

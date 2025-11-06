@@ -5,6 +5,7 @@ import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 const getSessionsQuerySchema = z.object({
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const { data: sessions, error, count } = await query;
 
     if (error) {
-      console.error('Database error fetching sessions:', error);
+      logger.error('Database error fetching sessions:', error);
       throw new ApiError('DATABASE_ERROR', 'Failed to fetch sessions');
     }
 
@@ -107,7 +108,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     });
 
   } catch (error) {
-    console.error('Get admin sessions API error:', error);
+    logger.error('Get admin sessions API error:', error);
 
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);

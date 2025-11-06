@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { logger } from '@/lib/logger';
 
 
 interface SharedFile {
@@ -164,7 +165,7 @@ export function ClientSharedFiles({ userId }: ClientSharedFilesProps) {
           body: JSON.stringify({ shareId }),
         });
       } catch (error) {
-        console.error('Failed to track access:', error);
+        logger.error('Failed to track access:', error);
       }
       
       // Open download URL in new tab

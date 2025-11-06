@@ -131,7 +131,7 @@ export default function SharePage() {
         })
       });
     } catch (error) {
-      console.error('Failed to log access:', error);
+      logger.error('Failed to log access:', error);
     }
   };
 

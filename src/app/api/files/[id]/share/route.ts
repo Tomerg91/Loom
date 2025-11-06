@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAuthService } from '@/lib/auth/auth';
 import { fileManagementService } from '@/lib/services/file-management-service';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(result.data, { status: 201 });
   } catch (error) {
     const paramsData = await params;
-    console.error(`POST /api/files/${paramsData.id}/share error:`, error);
+    logger.error(`POST /api/files/${paramsData.id}/share error:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -145,7 +146,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(shares || []);
   } catch (error) {
     const paramsData = await params;
-    console.error(`GET /api/files/${paramsData.id}/share error:`, error);
+    logger.error(`GET /api/files/${paramsData.id}/share error:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -215,7 +216,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true });
   } catch (error) {
     const paramsData = await params;
-    console.error(`DELETE /api/files/${paramsData.id}/share error:`, error);
+    logger.error(`DELETE /api/files/${paramsData.id}/share error:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

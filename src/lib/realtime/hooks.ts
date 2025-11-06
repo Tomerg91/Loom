@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useUser } from '@/lib/auth/use-user';
 
 import { realtimeClient } from './realtime-client';
+import { logger } from '@/lib/logger';
 
 
 // Debounce utility for subscription management
@@ -36,7 +37,7 @@ type ConnectionStatus = {
 // Browser notification helpers
 const requestNotificationPermission = async (): Promise<NotificationPermission> => {
   if (!('Notification' in window)) {
-    console.warn('This browser does not support notifications');
+    logger.warn('This browser does not support notifications');
     return 'denied';
   }
 
@@ -79,10 +80,10 @@ const playNotificationSound = () => {
     const audio = new Audio('/sounds/notification.wav');
     audio.volume = 0.5;
     audio.play().catch(error => {
-      console.warn('Could not play notification sound:', error);
+      logger.warn('Could not play notification sound:', error);
     });
   } catch (error) {
-    console.warn('Could not play notification sound:', error);
+    logger.warn('Could not play notification sound:', error);
   }
 };
 
@@ -106,7 +107,7 @@ export function useRealtimeNotifications() {
   // Memoized callback for notification handling to prevent unnecessary re-renders
   const handleNotificationChange = useCallback(async (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
     try {
-      console.log('Notification change:', payload.eventType, payload.table);
+      logger.debug('Notification change:', payload.eventType, payload.table);
       setLastError(null); // Clear previous errors on successful processing
       
       // Invalidate notifications query to refetch data
@@ -116,7 +117,7 @@ export function useRealtimeNotifications() {
       if (payload.eventType === 'INSERT') {
         const notification = payload.new;
         if (notification && !notification.read_at) {
-          console.log('New notification received:', notification.title);
+          logger.debug('New notification received:', notification.title);
           
           try {
             // Get user's notification preferences with fallback
@@ -128,7 +129,7 @@ export function useRealtimeNotifications() {
                 preferences = prefsData.data;
               }
             } catch (prefError) {
-              console.warn('Could not fetch notification preferences, using defaults:', prefError);
+              logger.warn('Could not fetch notification preferences, using defaults:', prefError);
             }
 
             // Show browser notification with fallback behavior
@@ -146,7 +147,7 @@ export function useRealtimeNotifications() {
               playNotificationSound();
             }
           } catch (error) {
-            console.warn('Error processing notification preferences:', error);
+            logger.warn('Error processing notification preferences:', error);
             // Graceful degradation - show notification if permission granted
             if (notificationPermission === 'granted') {
               showBrowserNotification(
@@ -159,7 +160,7 @@ export function useRealtimeNotifications() {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error processing notification';
-      console.error('Error handling notification change:', errorMessage);
+      logger.error('Error handling notification change:', errorMessage);
       setLastError(errorMessage);
     }
   }, [queryClient, notificationPermission]);
@@ -181,14 +182,14 @@ export function useRealtimeNotifications() {
       setLastError(null);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to subscribe to notifications';
-      console.error('Subscription error:', errorMessage);
+      logger.error('Subscription error:', errorMessage);
       setLastError(errorMessage);
       
       // Implement retry logic with exponential backoff
       if (retryCountRef.current < maxRetries) {
         retryCountRef.current++;
         const delay = Math.pow(2, retryCountRef.current) * 1000; // Exponential backoff
-        console.log(`Retrying subscription in ${delay}ms (attempt ${retryCountRef.current}/${maxRetries})`);
+        logger.debug(`Retrying subscription in ${delay}ms (attempt ${retryCountRef.current}/${maxRetries})`);
         
         setTimeout(() => {
           if (user?.id) {
@@ -196,7 +197,7 @@ export function useRealtimeNotifications() {
           }
         }, delay);
       } else {
-        console.error('Max retry attempts reached, enabling fallback polling');
+        logger.error('Max retry attempts reached, enabling fallback polling');
         enableFallbackPolling();
       }
     }
@@ -207,7 +208,7 @@ export function useRealtimeNotifications() {
     if (fallbackPollingActive || !user?.id) return;
     
     setFallbackPollingActive(true);
-    console.log('Enabling fallback polling for notifications');
+    logger.debug('Enabling fallback polling for notifications');
     
     const poll = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -221,7 +222,7 @@ export function useRealtimeNotifications() {
     if (!fallbackPollingActive) return;
     
     setFallbackPollingActive(false);
-    console.log('Disabling fallback polling for notifications');
+    logger.debug('Disabling fallback polling for notifications');
     
     if (fallbackTimerRef.current) {
       clearInterval(fallbackTimerRef.current);
@@ -296,7 +297,7 @@ export function useRealtimeNotifications() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Reconnection failed';
       setLastError(errorMessage);
-      console.error('Manual reconnection failed:', errorMessage);
+      logger.error('Manual reconnection failed:', errorMessage);
     }
   }, [user?.id, debouncedSubscribe]);
 
@@ -338,7 +339,7 @@ export function useRealtimeSessions() {
     if (!user?.id) return;
 
     const handleSessionChange = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      console.log('Session change:', payload);
+      logger.debug('Session change:', payload);
       
       // Invalidate session-related queries
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
@@ -350,9 +351,9 @@ export function useRealtimeSessions() {
       if (payload.eventType === 'UPDATE') {
         const session = payload.new;
         if (session?.status === 'cancelled') {
-          console.log('Session cancelled:', session.title);
+          logger.debug('Session cancelled:', session.title);
         } else if (session?.status === 'completed') {
-          console.log('Session completed:', session.title);
+          logger.debug('Session completed:', session.title);
         }
       }
     };
@@ -388,7 +389,7 @@ export function useRealtimeCoachNotes() {
     if (!user?.id || user.role !== 'coach') return;
 
     const handleNotesChange = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      console.log('Coach notes change:', payload);
+      logger.debug('Coach notes change:', payload);
       queryClient.invalidateQueries({ queryKey: ['coach-notes'] });
     };
 
@@ -418,7 +419,7 @@ export function useRealtimeReflections() {
     if (!user?.id || user.role !== 'client') return;
 
     const handleReflectionsChange = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      console.log('Reflections change:', payload);
+      logger.debug('Reflections change:', payload);
       queryClient.invalidateQueries({ queryKey: ['reflections'] });
       queryClient.invalidateQueries({ queryKey: ['recent-reflections'] });
     };
@@ -450,7 +451,7 @@ export function useRealtimeAvailability(coachId?: string) {
     if (!targetCoachId) return;
 
     const handleAvailabilityChange = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      console.log('Availability change:', payload);
+      logger.debug('Availability change:', payload);
       queryClient.invalidateQueries({ queryKey: ['coach-availability'] });
       queryClient.invalidateQueries({ queryKey: ['timeSlots'] });
     };
@@ -555,7 +556,7 @@ export function useRealtimeConnection() {
     try {
       await realtimeClient.reconnect();
     } catch (error) {
-      console.error('Manual reconnection failed:', error);
+      logger.error('Manual reconnection failed:', error);
     }
   }, []);
 
@@ -579,7 +580,7 @@ export function useRealtimeMessages(conversationId?: string) {
     if (!user?.id || !conversationId) return;
 
     const handleMessageChange = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      console.log('Message change:', payload);
+      logger.debug('Message change:', payload);
       
       // Invalidate conversation and messages queries
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
@@ -590,7 +591,7 @@ export function useRealtimeMessages(conversationId?: string) {
       if (payload.eventType === 'INSERT') {
         const message = payload.new;
         if (message && message.sender_id !== user.id) {
-          console.log('New message received:', message.content);
+          logger.debug('New message received:', message.content);
           
           // Show browser notification if enabled
           if (typeof window !== 'undefined' && Notification.permission === 'granted') {
@@ -632,7 +633,7 @@ export function useRealtimeConversations() {
     if (!user?.id) return;
 
     const handleConversationChange = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      console.log('Conversation change:', payload);
+      logger.debug('Conversation change:', payload);
       
       // Invalidate conversations query
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
@@ -667,7 +668,7 @@ export function useTypingIndicators(conversationId?: string) {
     if (!user?.id || !conversationId) return;
 
     const handleTypingChange = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      console.log('Typing indicator change:', payload);
+      logger.debug('Typing indicator change:', payload);
       
       // Refetch typing indicators
       fetch(`/api/messages/${conversationId}/typing`)
@@ -677,7 +678,7 @@ export function useTypingIndicators(conversationId?: string) {
             setTypingUsers(data.data);
           }
         })
-        .catch(err => console.error('Error fetching typing indicators:', err));
+        .catch(err => logger.error('Error fetching typing indicators:', err));
     };
 
     subscriptionRef.current = realtimeClient.subscribeToTypingIndicators(
@@ -704,7 +705,7 @@ export function useTypingIndicators(conversationId?: string) {
         body: JSON.stringify({ typing }),
       });
     } catch (error) {
-      console.error('Error setting typing indicator:', error);
+      logger.error('Error setting typing indicator:', error);
     }
   }, [conversationId]);
 

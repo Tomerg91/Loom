@@ -11,6 +11,7 @@ import { withApiOptimization, optimizeQuery } from '@/lib/performance/api-optimi
 import { CacheTTL } from '@/lib/performance/cache';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { logger } from '@/lib/logger';
 
 // Apply rate limiting to prevent user enumeration attacks
 const rateLimitedHandler = rateLimit(120, 60000, { // 120 requests per minute for better UX
@@ -42,7 +43,7 @@ export const GET = withErrorHandling(
         if (!user) {
           // Log authentication check failure for monitoring (reduced logging)
           if (process.env.NODE_ENV === 'development') {
-            console.warn('User profile request without authentication:', {
+            logger.warn('User profile request without authentication:', {
               timestamp: new Date().toISOString(),
               ip: request.headers.get('x-forwarded-for') || 'unknown'
             });
@@ -77,7 +78,7 @@ export const GET = withErrorHandling(
       } catch (error) {
         // Minimal error logging in production
         if (process.env.NODE_ENV === 'development') {
-          console.error('Get current user error:', {
+          logger.error('Get current user error:', {
             error: error instanceof Error ? error.message : 'Unknown error',
             timestamp: new Date().toISOString()
           });

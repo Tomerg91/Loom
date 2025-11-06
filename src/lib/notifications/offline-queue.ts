@@ -34,7 +34,7 @@ class OfflineNotificationQueue {
         this.queue = JSON.parse(stored);
       }
     } catch (error) {
-      console.warn('Failed to load notification queue from storage:', error);
+      logger.warn('Failed to load notification queue from storage:', error);
     }
   }
 
@@ -42,12 +42,12 @@ class OfflineNotificationQueue {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.queue));
     } catch (error) {
-      console.warn('Failed to save notification queue to storage:', error);
+      logger.warn('Failed to save notification queue to storage:', error);
     }
   }
 
   private onOffline() {
-    console.log('Network went offline - notification actions will be queued');
+    logger.debug('Network went offline - notification actions will be queued');
   }
 
   private generateId(): string {
@@ -70,7 +70,7 @@ class OfflineNotificationQueue {
     if (navigator.onLine) {
       this.processQueue();
     } else {
-      console.log('Action queued for when connection is restored:', action);
+      logger.debug('Action queued for when connection is restored:', action);
     }
   }
 
@@ -80,7 +80,7 @@ class OfflineNotificationQueue {
     }
 
     this.isProcessing = true;
-    console.log(`Processing ${this.queue.length} queued notification actions...`);
+    logger.debug(`Processing ${this.queue.length} queued notification actions...`);
 
     const itemsToProcess = [...this.queue];
     
@@ -90,7 +90,7 @@ class OfflineNotificationQueue {
         // Remove successful item from queue
         this.queue = this.queue.filter(q => q.id !== item.id);
       } catch (error) {
-        console.error('Failed to process queued notification action:', error);
+        logger.error('Failed to process queued notification action:', error);
         
         // Increment retry count
         const queuedItem = this.queue.find(q => q.id === item.id);
@@ -99,7 +99,7 @@ class OfflineNotificationQueue {
           
           // Remove if max retries exceeded
           if (queuedItem.retryCount >= this.maxRetries) {
-            console.error('Max retries exceeded for notification action, removing from queue:', queuedItem);
+            logger.error('Max retries exceeded for notification action, removing from queue:', queuedItem);
             this.queue = this.queue.filter(q => q.id !== item.id);
           }
         }
@@ -113,7 +113,7 @@ class OfflineNotificationQueue {
       // Schedule retry for remaining items
       setTimeout(() => this.processQueue(), this.retryDelay);
     } else {
-      console.log('All queued notification actions processed successfully');
+      logger.debug('All queued notification actions processed successfully');
     }
   }
 
@@ -187,7 +187,7 @@ class OfflineNotificationQueue {
   public clearQueue() {
     this.queue = [];
     this.saveToStorage();
-    console.log('Notification queue cleared');
+    logger.debug('Notification queue cleared');
   }
 }
 

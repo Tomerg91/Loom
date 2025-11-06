@@ -8,6 +8,7 @@ import {
   type Role,
 } from '@/lib/auth/permissions';
 import { config } from '@/lib/config';
+import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/supabase';
 
@@ -139,7 +140,7 @@ export function validateRequestBody<T>(
   } catch (error) {
     if (error instanceof ZodError) {
       // Log validation failures for security monitoring
-      console.warn('Request validation failed:', {
+      logger.warn('Request validation failed:', {
         issues: error.issues.map(issue => ({
           path: issue.path.join('.'),
           message: issue.message,
@@ -292,7 +293,7 @@ export function withErrorHandling<T extends unknown[]>(
     try {
       return await handler(...args);
     } catch (error) {
-      console.error('API Error:', error);
+      logger.error('API Error:', error);
 
       if (error instanceof Error) {
         return createErrorResponse(
@@ -325,7 +326,7 @@ export function withRequestLogging(
       Math.random().toString(36).slice(2);
     const start = Date.now();
     if (enabled) {
-      console.info('[API REQ]', {
+      logger.info('[API REQ]', {
         id,
         name: opts.name || 'handler',
         method: request.method,
@@ -341,7 +342,7 @@ export function withRequestLogging(
       const res = await handler(request, ...rest);
       if (enabled) {
         res.headers.set('X-Request-ID', id);
-        console.info('[API RES]', {
+        logger.info('[API RES]', {
           id,
           name: opts.name || 'handler',
           status: res.status,
@@ -351,7 +352,7 @@ export function withRequestLogging(
       return res;
     } catch (err) {
       if (enabled) {
-        console.error('[API ERR]', {
+        logger.error('[API ERR]', {
           id,
           name: opts.name || 'handler',
           error: err instanceof Error ? err.message : String(err),
@@ -407,7 +408,7 @@ export function requireAuth<T extends unknown[]>(
         const { data, error } = await supabase.auth.getUser(token);
 
         if (error) {
-          console.warn('Authentication failed:', {
+          logger.warn('Authentication failed:', {
             error: error.message,
             timestamp: new Date().toISOString(),
             ip: request.headers.get('x-forwarded-for') || 'unknown',
@@ -426,7 +427,7 @@ export function requireAuth<T extends unknown[]>(
           await supabase.auth.getSession();
 
         if (sessionError) {
-          console.warn('Session lookup failed:', {
+          logger.warn('Session lookup failed:', {
             error: sessionError.message,
             timestamp: new Date().toISOString(),
             ip: request.headers.get('x-forwarded-for') || 'unknown',
@@ -473,7 +474,7 @@ export function requireAuth<T extends unknown[]>(
         .single();
 
       if (profileError) {
-        console.warn('User profile lookup failed:', {
+        logger.warn('User profile lookup failed:', {
           userId: authUser.id,
           error: profileError.message,
           timestamp: new Date().toISOString(),
@@ -538,7 +539,7 @@ export function requireAuth<T extends unknown[]>(
 
       return handler(user, request, ...args);
     } catch (error) {
-      console.error('Authentication error:', {
+      logger.error('Authentication error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
         ip: request.headers.get('x-forwarded-for') || 'unknown',
@@ -601,7 +602,7 @@ function createSecurityMiddleware<T extends unknown[]>(
             ...logContext(user, ...args),
           };
 
-          console.warn('Access denied:', context);
+          logger.warn('Access denied:', context);
 
           return createErrorResponse(
             errorMessage(user, ...args),
@@ -610,7 +611,7 @@ function createSecurityMiddleware<T extends unknown[]>(
         }
 
         // Log successful access for auditing
-        console.debug('Access granted:', {
+        logger.debug('Access granted:', {
           userId: user.id,
           role: user.role,
           timestamp: new Date().toISOString(),
@@ -619,7 +620,7 @@ function createSecurityMiddleware<T extends unknown[]>(
 
         return await handler(user, ...args);
       } catch (error) {
-        console.warn('Security check failed:', {
+        logger.warn('Security check failed:', {
           userId: user.id,
           role: user.role,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -729,7 +730,7 @@ export function requireOwnership<T extends unknown[]>(
         }
       }
 
-      console.warn('Ownership access denied:', {
+      logger.warn('Ownership access denied:', {
         userId: user.id,
         role: user.role,
         ownerId,
@@ -741,7 +742,7 @@ export function requireOwnership<T extends unknown[]>(
         HTTP_STATUS.FORBIDDEN
       );
     } catch (error) {
-      console.error('Ownership check failed:', {
+      logger.error('Ownership check failed:', {
         userId: user.id,
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
@@ -790,7 +791,7 @@ export function rateLimit(
 
       // Check if IP is blocked
       if (blockedIPs.has(ip)) {
-        console.warn('Blocked IP attempted access:', {
+        logger.warn('Blocked IP attempted access:', {
           ip,
           path: request.nextUrl.pathname,
           userAgent: request.headers.get('user-agent'),
@@ -844,7 +845,7 @@ export function rateLimit(
 
         if (current.count > maxRequests) {
           // Log rate limit violation
-          console.warn('Rate limit exceeded:', {
+          logger.warn('Rate limit exceeded:', {
             ip,
             path: request.nextUrl.pathname,
             count: current.count,
@@ -860,7 +861,7 @@ export function rateLimit(
             blockedIPs.add(ip);
             setTimeout(() => blockedIPs.delete(ip), blockDuration);
 
-            console.error('IP blocked due to excessive requests:', {
+            logger.error('IP blocked due to excessive requests:', {
               ip,
               blockDuration: blockDuration / 1000 / 60,
               timestamp: new Date().toISOString(),

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { MfaDiscrepancyTable, type MfaDiscrepancy } from './mfa-discrepancy-table';
+import { logger } from '@/lib/logger';
 
 interface MfaHealthStats {
   totalDiscrepancies: number;
@@ -49,7 +50,7 @@ export function MfaHealthDashboard() {
         throw new Error(result.error || 'Failed to load discrepancies');
       }
     } catch (err) {
-      console.error('Error fetching MFA discrepancies:', err);
+      logger.error('Error fetching MFA discrepancies:', err);
       setError(err instanceof Error ? err.message : 'Failed to load MFA discrepancies');
     } finally {
       setIsLoading(false);
@@ -83,9 +84,9 @@ export function MfaHealthDashboard() {
       // After refreshing the view, fetch updated discrepancies
       await fetchDiscrepancies();
 
-      console.log('View refreshed:', result);
+      logger.debug('View refreshed:', result);
     } catch (err) {
-      console.error('Error refreshing view:', err);
+      logger.error('Error refreshing view:', err);
       setError(
         err instanceof Error ? err.message : 'Failed to refresh materialized view'
       );

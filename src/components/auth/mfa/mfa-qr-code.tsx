@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { logger } from '@/lib/logger';
 
 
 export interface MfaQrCodeProps {
@@ -132,7 +133,7 @@ export function MfaQrCode({
       await navigator.clipboard.writeText(uri);
       // You might want to show a toast here
     } catch (err) {
-      console.error('Failed to copy URI to clipboard:', err);
+      logger.error('Failed to copy URI to clipboard:', err);
     }
   };
 

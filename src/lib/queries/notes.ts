@@ -8,6 +8,7 @@ import {
   UseMutationOptions
 } from '@tanstack/react-query';
 import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api/client-api-request';
+import { logger } from '@/lib/logger';
 
 // Types
 export interface Note {
@@ -308,7 +309,7 @@ export const useAutosaveNote = (id: string, _debounceMs: number = 1000) => {
       queryClient.setQueryData(noteKeys.detail(id), data);
     },
     onError: (error) => {
-      console.error('Autosave failed:', error);
+      logger.error('Autosave failed:', error);
       // Could show a subtle error indicator here
     },
   });
