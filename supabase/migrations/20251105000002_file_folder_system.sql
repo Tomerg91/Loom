@@ -156,7 +156,7 @@ BEGIN
     SELECT * FROM folder_hierarchy
     ORDER BY path;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
 -- Function to get folder contents (files and subfolders)
 CREATE OR REPLACE FUNCTION get_folder_contents(
@@ -219,7 +219,7 @@ BEGIN
 
     RETURN result;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
 -- Function to create a new folder
 CREATE OR REPLACE FUNCTION create_folder(
@@ -260,7 +260,7 @@ BEGIN
 
     RETURN v_folder_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
 -- Function to move file to folder
 CREATE OR REPLACE FUNCTION move_file_to_folder(
@@ -308,7 +308,7 @@ BEGIN
 
     RETURN TRUE;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
 -- Function to update folder statistics
 CREATE OR REPLACE FUNCTION update_folder_stats(p_folder_id UUID)
@@ -332,7 +332,7 @@ BEGIN
         updated_at = NOW()
     WHERE id = p_folder_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
 -- Function to delete folder (with safety checks)
 CREATE OR REPLACE FUNCTION delete_folder(
@@ -375,7 +375,7 @@ BEGIN
 
     RETURN TRUE;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
 -- RLS Policies for file_folders
 ALTER TABLE file_folders ENABLE ROW LEVEL SECURITY;
