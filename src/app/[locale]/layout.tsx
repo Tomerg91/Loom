@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Assistant, Inter } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
 
@@ -18,23 +17,21 @@ import { LocaleLayoutClient } from './locale-layout-client';
 export const dynamic = 'force-static';
 export const revalidate = 3600; // Refresh cached chrome every hour to pick up CMS tweaks
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  weight: ['300', '400', '500', '600', '700'],
-  preload: true,
-  display: 'swap',
-  fallback: ['system-ui', 'arial'],
-});
+// Temporary: Use system fonts due to network restrictions preventing Google Fonts download
+// TODO: Re-enable Google Fonts when network access is available
+// import { Assistant, Inter } from 'next/font/google';
+// const inter = Inter({ subsets: ['latin'], variable: '--font-inter', weight: ['300', '400', '500', '600', '700'], preload: true, display: 'swap', fallback: ['system-ui', 'arial'] });
+// const assistant = Assistant({ subsets: ['hebrew'], variable: '--font-assistant', weight: ['300', '400', '500', '600', '700'], preload: true, display: 'swap', fallback: ['system-ui', 'Arial', 'sans-serif'] });
 
-const assistant = Assistant({
-  subsets: ['hebrew'],
+const inter = {
+  variable: '--font-inter',
+  className: '',
+};
+
+const assistant = {
   variable: '--font-assistant',
-  weight: ['300', '400', '500', '600', '700'],
-  preload: true,
-  display: 'swap',
-  fallback: ['system-ui', 'Arial', 'sans-serif'],
-});
+  className: '',
+};
 
 export function generateStaticParams() {
   return routing.locales.map(locale => ({ locale }));

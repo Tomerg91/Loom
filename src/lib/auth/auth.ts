@@ -241,6 +241,7 @@ export type CreateAuthServiceOptions =
 export class AuthService {
   private supabase: ServerSupabaseClient | typeof clientSupabase;
   private userService: ReturnType<ReturnType<typeof getCreateUserService>>;
+  private isServer: boolean;
   private userProfileCache = new Map<
     string,
     { data: AuthUser; expires: number }
@@ -252,6 +253,7 @@ export class AuthService {
 
   private constructor(isServer = true, supabase?: ServerSupabaseClient) {
     // Use the request-scoped server client when provided or fall back to the shared browser client
+    this.isServer = isServer;
     this.supabase = isServer && supabase ? supabase : clientSupabase;
 
     const createUserService = getCreateUserService();
