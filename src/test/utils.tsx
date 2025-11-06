@@ -1,4 +1,3 @@
- 
 import {
   QueryClient,
   QueryClientProvider,
@@ -62,6 +61,53 @@ export const mockAuthStore = {
   updateUser: vi.fn(),
 };
 
+// Mock Supabase Realtime Channel
+export const createMockRealtimeChannel = () => {
+  const eventHandlers: Record<string, Array<(payload: unknown) => void>> = {};
+
+  const channel = {
+    on: vi.fn((event: string, callback: (payload: unknown) => void) => {
+      if (!eventHandlers[event]) {
+        eventHandlers[event] = [];
+      }
+      eventHandlers[event].push(callback);
+      return channel;
+    }),
+    off: vi.fn((event?: string) => {
+      if (event && eventHandlers[event]) {
+        delete eventHandlers[event];
+      } else {
+        Object.keys(eventHandlers).forEach(key => delete eventHandlers[key]);
+      }
+      return channel;
+    }),
+    subscribe: vi.fn((callback?: (status: string) => void) => {
+      if (callback) {
+        setTimeout(() => callback('SUBSCRIBED'), 0);
+      }
+      return Promise.resolve({ error: null });
+    }),
+    unsubscribe: vi.fn(() => {
+      Object.keys(eventHandlers).forEach(key => delete eventHandlers[key]);
+      return Promise.resolve({ error: null });
+    }),
+    send: vi.fn((_event: unknown) => {
+      return Promise.resolve('ok');
+    }),
+    // Helper method for tests to trigger events
+    _triggerEvent: (event: string, payload: unknown) => {
+      if (eventHandlers[event]) {
+        eventHandlers[event].forEach(handler => handler(payload));
+      }
+    },
+    _channelName: undefined as string | undefined,
+  };
+  return channel;
+};
+
+// Create a shared mock channel instance
+export const mockChannel = createMockRealtimeChannel();
+
 // Mock Supabase client
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const mockSupabaseClient: any = {
@@ -98,6 +144,15 @@ export const mockSupabaseClient: any = {
       remove: vi.fn().mockResolvedValue({ data: null, error: null }),
     }),
   },
+  // Realtime support
+  channel: vi.fn((channelName: string) => {
+    const channel = createMockRealtimeChannel();
+    // Store channel name for testing purposes
+    channel._channelName = channelName;
+    return channel;
+  }),
+  removeChannel: vi.fn(() => Promise.resolve({ error: null })),
+  getChannels: vi.fn(() => []),
 };
 
 // Custom render function with providers
@@ -116,9 +171,7 @@ export function renderWithProviders(
 ) {
   function Wrapper({ children }: { children: ReactNode }) {
     return (
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
   }
 

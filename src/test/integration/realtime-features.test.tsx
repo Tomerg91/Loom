@@ -332,10 +332,9 @@ const SessionCollaboration = ({ sessionId, userId }: { sessionId: string; userId
   );
 };
 
-describe.skip('Real-time Features Integration', () => {
-  // SKIPPED: These tests require proper Supabase Realtime client mocking
-  // Current issue: mockChannel.on() is undefined in integration tests
-  // TODO: Implement proper Supabase Realtime mock setup
+describe('Real-time Features Integration', () => {
+  // Re-enabled: Supabase Realtime client mocking is now properly implemented in test utils
+  // The mockSupabaseClient now includes channel() method with full realtime support
   beforeEach(() => {
     vi.clearAllMocks();
     setupTestEnvironment();

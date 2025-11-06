@@ -78,43 +78,76 @@ export const GET = compose(async function(request: NextRequest) {
 
 async function checkDatabaseHealth(supabase: any) {
   const startTime = Date.now();
-  
+
   try {
-    // Test database connectivity and performance
-    const { data, error } = await supabase
-      .from('users')
-      .select('count', { count: 'exact', head: true });
-    
+    // Get comprehensive database health summary using our new function
+    const { data: healthSummary, error: summaryError } = await supabase
+      .rpc('get_database_health_summary');
+
+    // Get connection pool stats
+    const { data: poolStats, error: poolError } = await supabase
+      .rpc('get_connection_pool_stats');
+
     const responseTime = Date.now() - startTime;
-    
-    if (error) {
+
+    if (summaryError || poolError) {
+      // Fallback to basic health check
+      const { error } = await supabase
+        .from('users')
+        .select('count', { count: 'exact', head: true });
+
       return {
-        status: 'error' as const,
+        status: error ? ('error' as const) : ('healthy' as const),
         connections: 0,
         maxConnections: 100,
         responseTime,
+        message: error ? 'Health check functions unavailable' : undefined,
       };
     }
 
-    // Get connection info (simplified - would need actual pool stats in production)
-    const connections = Math.floor(Math.random() * 20) + 5; // Placeholder for real connection count
-    const maxConnections = 100;
+    // Parse connection pool stats
+    let connections = 0;
+    let maxConnections = 100;
+    let poolStatus = 'healthy';
 
-    const status: 'warning' | 'healthy' = responseTime > 1000 ? 'warning' : 'healthy';
+    if (poolStats && Array.isArray(poolStats)) {
+      const totalConn = poolStats.find((s: any) => s.metric === 'total_connections');
+      const maxConn = poolStats.find((s: any) => s.metric === 'max_connections');
+      const utilization = poolStats.find((s: any) => s.metric === 'utilization_percentage');
+
+      if (totalConn) connections = Number(totalConn.value || 0);
+      if (maxConn) maxConnections = Number(maxConn.value || 100);
+      if (utilization) poolStatus = utilization.status;
+    }
+
+    // Determine overall status from health summary
+    let status: 'healthy' | 'warning' | 'error' = 'healthy';
+    if (healthSummary) {
+      const overallStatus = healthSummary.overall_status;
+      if (overallStatus === 'critical') status = 'error';
+      else if (overallStatus === 'warning') status = 'warning';
+      else status = 'healthy';
+    } else if (responseTime > 1000 || poolStatus !== 'healthy') {
+      status = 'warning';
+    }
 
     return {
       status,
       connections,
       maxConnections,
       responseTime,
+      summary: healthSummary,
+      poolStats: poolStats,
     };
 
-  } catch (_error) {
+  } catch (error) {
+    console.error('Database health check failed:', error);
     return {
       status: 'error' as const,
       connections: 0,
       maxConnections: 100,
       responseTime: Date.now() - startTime,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

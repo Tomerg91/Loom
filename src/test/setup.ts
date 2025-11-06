@@ -189,6 +189,44 @@ global.ResizeObserver = class ResizeObserver {
 // Mock fetch globally to handle API calls in tests
 global.fetch = vi.fn();
 
+// FileList polyfill for JSDOM
+// JSDOM doesn't properly implement FileList.item() method
+// This polyfill adds the missing functionality for file upload tests
+class FileListPolyfill {
+  private files: File[];
+
+  constructor(files: File[]) {
+    this.files = files;
+    // Make the FileList array-like by adding numeric indices
+    files.forEach((file, index) => {
+      (this as any)[index] = file;
+    });
+  }
+
+  get length(): number {
+    return this.files.length;
+  }
+
+  item(index: number): File | null {
+    return this.files[index] || null;
+  }
+
+  [Symbol.iterator](): Iterator<File> {
+    return this.files[Symbol.iterator]();
+  }
+
+  // Array-like access
+  [key: number]: File;
+}
+
+// Add FileList to global scope
+(global as any).FileList = FileListPolyfill;
+
+// Helper function to create FileList for tests
+export const createFileList = (files: File[]): FileList => {
+  return new FileListPolyfill(files) as unknown as FileList;
+};
+
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   useRouter: () => ({

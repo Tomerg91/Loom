@@ -187,11 +187,9 @@ const FileManager = ({ userId, userRole }: { userId: string; userRole: string })
 // Mock React for the component
 const React = { useState: vi.fn() };
 
-describe.skip('File Management Workflow Integration', () => {
-  // SKIPPED: These tests require proper FileList mocking in JSDOM environment
-  // FileList.item() method is not properly polyfilled in vitest/jsdom
-  // Issue: https://github.com/jsdom/jsdom/issues/2555
-  // TODO: Re-enable once FileList polyfill is added to test setup
+describe('File Management Workflow Integration', () => {
+  // Re-enabled: FileList polyfill has been added to test setup
+  // The FileList.item() method is now properly implemented for JSDOM tests
   beforeEach(() => {
     vi.clearAllMocks();
     setupTestEnvironment();
