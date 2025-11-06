@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
 import { createErrorResponse, HTTP_STATUS } from '@/lib/api/utils';
 import { getCachedData, CacheKeys, CacheTTL, CacheInvalidation } from '@/lib/performance/cache';
+import { logger } from '@/lib/logger';
 
 const createReflectionSchema = z.object({
   sessionId: z.string().optional(),
@@ -141,7 +142,7 @@ export async function GET(request: NextRequest) {
     });
     return propagateCookies(authResponse, successResponse);
   } catch (error) {
-    console.error('Error in reflections GET:', error);
+    logger.error('Error in reflections GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -204,7 +205,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating reflection:', error);
+      logger.error('Error creating reflection:', error);
       const errorResponse = createErrorResponse('Failed to create reflection', HTTP_STATUS.INTERNAL_SERVER_ERROR);
       return propagateCookies(authResponse, errorResponse);
     }
@@ -235,7 +236,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Error in reflections POST:', error);
+    logger.error('Error in reflections POST:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

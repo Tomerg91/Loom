@@ -6,6 +6,7 @@ import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { analyticsService } from '@/lib/services/analytics-service';
+import { logger } from '@/lib/logger';
 
 
 const analyticsQuerySchema = z.object({
@@ -76,7 +77,7 @@ const rateLimitedHandler = rateLimit(30, 60000)( // 30 requests per minute for a
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         const operation = ['overview', 'userGrowth', 'sessionMetrics', 'coachPerformance'][index];
-        console.error(`Analytics API - Failed to fetch ${operation}:`, result.reason);
+        logger.error(`Analytics API - Failed to fetch ${operation}:`, result.reason);
       }
     });
 
@@ -92,7 +93,7 @@ const rateLimitedHandler = rateLimit(30, 60000)( // 30 requests per minute for a
     return ApiResponseHelper.success(analyticsData);
 
   } catch (error) {
-    console.error('Analytics API error:', error);
+    logger.error('Analytics API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);

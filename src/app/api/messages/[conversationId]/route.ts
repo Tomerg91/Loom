@@ -10,6 +10,7 @@ import {
 } from '@/lib/api/utils';
 import { MessagingService } from '@/lib/database/messaging';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { logger } from '@/lib/logger';
 
 // GET /api/messages/[conversationId] - Get messages for a specific conversation
 export const GET = withErrorHandling(
@@ -80,7 +81,7 @@ export const GET = withErrorHandling(
           },
         });
       } catch (error) {
-        console.error('Error fetching conversation messages:', error);
+        logger.error('Error fetching conversation messages:', error);
         return createErrorResponse(
           'Failed to fetch messages',
           HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -151,7 +152,7 @@ export const PUT = withErrorHandling(
           'Conversation updated successfully'
         );
       } catch (error) {
-        console.error('Error updating conversation:', error);
+        logger.error('Error updating conversation:', error);
         return createErrorResponse(
           'Failed to update conversation',
           HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -205,7 +206,7 @@ export const DELETE = withErrorHandling(
           'Left conversation successfully'
         );
       } catch (error) {
-        console.error('Error leaving conversation:', error);
+        logger.error('Error leaving conversation:', error);
         return createErrorResponse(
           'Failed to leave conversation',
           HTTP_STATUS.INTERNAL_SERVER_ERROR

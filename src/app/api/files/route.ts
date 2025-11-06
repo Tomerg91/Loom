@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { fileManagementService } from '@/lib/services/file-management-service';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/files - Get files with filtering and pagination
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result.data);
   } catch (error) {
-    console.error('GET /api/files error:', error);
+    logger.error('GET /api/files error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result.data, { status: 201 });
   } catch (error) {
-    console.error('POST /api/files error:', error);
+    logger.error('POST /api/files error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

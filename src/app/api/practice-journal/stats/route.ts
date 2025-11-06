@@ -4,6 +4,7 @@ import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { authService } from '@/lib/services/auth-service';
 import { createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export interface PracticeJournalStats {
   totalEntries: number;
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return ApiResponseHelper.success(stats);
   } catch (error) {
-    console.error('Error fetching practice journal statistics:', error);
+    logger.error('Error fetching practice journal statistics:', error);
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }

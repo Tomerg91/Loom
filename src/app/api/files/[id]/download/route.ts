@@ -8,6 +8,7 @@ import { getCorsHeadersForPublicEndpoint } from '@/lib/security/cors';
 import { fileDownloadRateLimit } from '@/lib/security/file-rate-limit';
 import { fileManagementService } from '@/lib/services/file-management-service';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 // Validation schema for download options
 const downloadOptionsSchema = z.object({
@@ -169,7 +170,7 @@ export async function GET(
       }
 
       if (fileBuffer.byteLength !== file.fileSize) {
-        console.warn(`File size mismatch: expected ${file.fileSize}, got ${fileBuffer.byteLength}`);
+        logger.warn(`File size mismatch: expected ${file.fileSize}, got ${fileBuffer.byteLength}`);
       }
 
       // Update download count
@@ -246,7 +247,7 @@ export async function GET(
         });
       }
 
-      console.error('Storage error during download:', storageError);
+      logger.error('Storage error during download:', storageError);
       throw new Error(`Download failed: ${errorMessage}`);
     }
 
@@ -263,7 +264,7 @@ export async function GET(
       });
     }
 
-    console.error('File download error:', error);
+    logger.error('File download error:', error);
 
     // Return appropriate error response
     if (errorMessage.includes('not found')) {
@@ -320,7 +321,7 @@ export async function POST(
     return getResponse;
 
   } catch (error) {
-    console.error('File download POST error:', error);
+    logger.error('File download POST error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

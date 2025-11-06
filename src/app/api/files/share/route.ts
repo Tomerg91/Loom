@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { fileManagementService } from '@/lib/services/file-management-service';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schemas
@@ -194,7 +195,7 @@ export async function POST(request: NextRequest) {
         });
 
       } catch (error) {
-        console.error('Error creating share for user:', targetUserId, error);
+        logger.error('Error creating share for user:', targetUserId, error);
         shareErrors.push({
           userId: targetUserId,
           error: error instanceof Error ? error.message : 'Failed to create share'
@@ -212,7 +213,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('File sharing error:', error);
+    logger.error('File sharing error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -358,7 +359,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Get file shares error:', error);
+    logger.error('Get file shares error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -467,7 +468,7 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Revoke file share error:', error);
+    logger.error('Revoke file share error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

@@ -15,6 +15,7 @@ import type {
 } from '@/types/resources';
 
 import { mapFileUploadToResource } from './utils';
+import { logger } from '@/lib/logger';
 
 /**
  * Get all collections for a coach
@@ -222,7 +223,7 @@ export async function addResourcesToCollection(
   if (error) {
     // Log RLS policy violations for debugging
     if (error.code === 'PGRST301' || error.message.includes('policy')) {
-      console.error('[RLS Policy Violation] Failed to add resources to collection:', {
+      logger.error('[RLS Policy Violation] Failed to add resources to collection:', {
         collectionId,
         resourceIds,
         error: error.message,

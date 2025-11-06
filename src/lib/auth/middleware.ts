@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 import { createServerClient } from '@/modules/platform/supabase/server';
 import { UserRole } from '@/types';
+import { logger } from '@/lib/logger';
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -136,7 +137,7 @@ export async function authMiddleware(request: NextRequest) {
 
     return NextResponse.next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    logger.error('Auth middleware error:', error);
 
     // If there's an error and it's a protected route, redirect to signin
     if (protectedRoutes.some(route => pathname.startsWith(route))) {

@@ -5,6 +5,7 @@ import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { adminAnalyticsService } from '@/lib/database/admin-analytics';
+import { logger } from '@/lib/logger';
 
 
 const dashboardQuerySchema = z.object({
@@ -92,7 +93,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     return ApiResponseHelper.success(dashboardData);
 
   } catch (error) {
-    console.error('Admin dashboard API error:', error);
+    logger.error('Admin dashboard API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);

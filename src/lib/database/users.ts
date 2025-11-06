@@ -6,6 +6,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { Result, type Result as ResultType } from '@/lib/types/result';
 import type { User, UserRole, UserStatus } from '@/types';
 import type { Database } from '@/types/supabase';
+import { logger } from '@/lib/logger';
 
 // API-specific interfaces
 interface GetUsersOptions {
@@ -205,7 +206,7 @@ export class UserService {
       .eq('status', 'active');
 
     if (error) {
-      console.error('Error fetching coach clients:', error);
+      logger.error('Error fetching coach clients:', error);
       return [];
     }
 
@@ -233,7 +234,7 @@ export class UserService {
     const { data, error } = await queryBuilder;
 
     if (error) {
-      console.error('Error searching users:', error);
+      logger.error('Error searching users:', error);
       return [];
     }
 
@@ -253,7 +254,7 @@ export class UserService {
       .eq('id', userId);
 
     if (error) {
-      console.error('Error updating user status:', error);
+      logger.error('Error updating user status:', error);
       return false;
     }
 
@@ -276,7 +277,7 @@ export class UserService {
         return Result.error('User not found');
       }
 
-      console.log(
+      logger.debug(
         `Starting GDPR-compliant deletion for user ${userId} (${user.email})`
       );
 
@@ -309,7 +310,7 @@ export class UserService {
         .eq('id', userId);
 
       if (userUpdateError) {
-        console.error('Error anonymizing user record:', userUpdateError);
+        logger.error('Error anonymizing user record:', userUpdateError);
         return Result.error(
           `Failed to anonymize user record: ${userUpdateError.message}`
         );
@@ -317,12 +318,12 @@ export class UserService {
 
       // Log completion with any encountered issues
       if (deletionResults.hasErrors) {
-        console.warn(
+        logger.warn(
           `User deletion completed with some issues for user ${userId}. Check logs above for details.`
         );
         await this.logDeletionCompletion(userId, user.email, deletionResults);
       } else {
-        console.log(
+        logger.debug(
           `Successfully deleted user ${userId} and all related data in compliance with GDPR`
         );
         await this.logDeletionCompletion(userId, user.email, deletionResults);
@@ -332,7 +333,7 @@ export class UserService {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('Unexpected error in deleteUser:', error);
+      logger.error('Unexpected error in deleteUser:', error);
 
       // Try to log the failure for audit purposes
       try {
@@ -356,7 +357,7 @@ export class UserService {
           risk_level: 'critical',
         });
       } catch (auditError) {
-        console.error('Failed to log deletion failure:', auditError);
+        logger.error('Failed to log deletion failure:', auditError);
       }
 
       return Result.error(`Unexpected error: ${message}`);
@@ -377,16 +378,16 @@ export class UserService {
       operation: () => Promise<void>
     ) => {
       try {
-        console.log(`Executing deletion step: ${stepName}`);
+        logger.debug(`Executing deletion step: ${stepName}`);
         await operation();
-        console.log(`✓ Completed: ${stepName}`);
+        logger.debug(`✓ Completed: ${stepName}`);
       } catch (error) {
         hasErrors = true;
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
         const stepError = `${stepName}: ${errorMessage}`;
         errorSummary.push(stepError);
-        console.error(`✗ Failed: ${stepError}`);
+        logger.error(`✗ Failed: ${stepError}`);
       }
     };
 
@@ -427,11 +428,11 @@ export class UserService {
     );
 
     if (hasErrors) {
-      console.warn(
+      logger.warn(
         `Cascaded deletion completed with ${errorSummary.length} errors for user ${userId}`
       );
     } else {
-      console.log(
+      logger.debug(
         `Cascaded deletion completed successfully for user ${userId}`
       );
     }
@@ -451,7 +452,7 @@ export class UserService {
     const results = await Promise.allSettled(deletions);
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        console.error(`Failed to delete MFA data (${index}):`, result.reason);
+        logger.error(`Failed to delete MFA data (${index}):`, result.reason);
       }
     });
   }
@@ -467,7 +468,7 @@ export class UserService {
       .or(`shared_by.eq.${userId},shared_with.eq.${userId}`);
 
     if (shareError) {
-      console.error('Error deleting file shares:', shareError);
+      logger.error('Error deleting file shares:', shareError);
     }
 
     // Remove session file associations for user's files
@@ -484,7 +485,7 @@ export class UserService {
         .in('file_id', fileIds);
 
       if (sessionFileError) {
-        console.error(
+        logger.error(
           'Error deleting session file associations:',
           sessionFileError
         );
@@ -502,7 +503,7 @@ export class UserService {
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error deleting notifications:', error);
+      logger.error('Error deleting notifications:', error);
     }
   }
 
@@ -516,7 +517,7 @@ export class UserService {
       .eq('coach_id', userId);
 
     if (error) {
-      console.error('Error deleting coach availability:', error);
+      logger.error('Error deleting coach availability:', error);
     }
   }
 
@@ -538,7 +539,7 @@ export class UserService {
     const results = await Promise.allSettled(deletions);
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        console.error(
+        logger.error(
           `Failed to delete notes/reflections (${index}):`,
           result.reason
         );
@@ -556,7 +557,7 @@ export class UserService {
       .or(`coach_id.eq.${userId},client_id.eq.${userId}`);
 
     if (error) {
-      console.error('Error deleting sessions:', error);
+      logger.error('Error deleting sessions:', error);
     }
   }
 
@@ -577,7 +578,7 @@ export class UserService {
       .eq('user_id', userId);
 
     if (dbError) {
-      console.error('Error deleting file records:', dbError);
+      logger.error('Error deleting file records:', dbError);
     }
 
     // Delete actual files from storage (if any)
@@ -589,13 +590,13 @@ export class UserService {
             .remove([file.storage_path]);
 
           if (storageError) {
-            console.error(
+            logger.error(
               `Error deleting file from storage: ${file.storage_path}`,
               storageError
             );
           }
         } catch (error) {
-          console.error(
+          logger.error(
             `Failed to delete file from storage: ${file.storage_path}`,
             error
           );
@@ -637,7 +638,7 @@ export class UserService {
     const results = await Promise.allSettled(deletions);
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        console.error(
+        logger.error(
           `Failed to delete messaging data (${index}):`,
           result.reason
         );
@@ -669,7 +670,7 @@ export class UserService {
     const results = await Promise.allSettled(deletions);
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        console.error(
+        logger.error(
           `Failed to delete enhanced MFA data (${index}):`,
           result.reason
         );
@@ -714,7 +715,7 @@ export class UserService {
     const results = await Promise.allSettled(deletions);
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        console.error(
+        logger.error(
           `Failed to delete notification system data (${index}):`,
           result.reason
         );
@@ -768,7 +769,7 @@ export class UserService {
     const results = await Promise.allSettled(anonymizations);
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        console.error(
+        logger.error(
           `Failed to anonymize security logs (${index}):`,
           result.reason
         );
@@ -808,7 +809,7 @@ export class UserService {
     const results = await Promise.allSettled(anonymizations);
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        console.error(
+        logger.error(
           `Failed to anonymize audit logs (${index}):`,
           result.reason
         );
@@ -845,7 +846,7 @@ export class UserService {
         risk_level: 'high',
       });
     } catch (error) {
-      console.error('Error logging user deletion audit:', error);
+      logger.error('Error logging user deletion audit:', error);
       // Don't fail the deletion if audit logging fails
     }
   }
@@ -883,7 +884,7 @@ export class UserService {
         risk_level: results.hasErrors ? 'high' : 'medium',
       });
     } catch (error) {
-      console.error('Error logging deletion completion:', error);
+      logger.error('Error logging deletion completion:', error);
       // Don't fail the deletion if audit logging fails
     }
   }
@@ -943,7 +944,7 @@ export class UserService {
       );
 
       if (totalError || completedError || upcomingError || clientError) {
-        console.error('Error fetching coach stats:', {
+        logger.error('Error fetching coach stats:', {
           totalError,
           completedError,
           upcomingError,
@@ -981,7 +982,7 @@ export class UserService {
           .in('status', ['scheduled', 'in_progress']);
 
       if (totalError || completedError || upcomingError) {
-        console.error('Error fetching client stats:', {
+        logger.error('Error fetching client stats:', {
           totalError,
           completedError,
           upcomingError,
@@ -1040,7 +1041,7 @@ export class UserService {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching users with pagination:', error);
+      logger.error('Error fetching users with pagination:', error);
       return [];
     }
 
@@ -1074,7 +1075,7 @@ export class UserService {
     const { count, error } = await query;
 
     if (error) {
-      console.error('Error counting users:', error);
+      logger.error('Error counting users:', error);
       return 0;
     }
 

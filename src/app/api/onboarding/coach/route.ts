@@ -14,6 +14,7 @@ import {
   type AuthenticatedUser,
 } from '@/lib/api/utils';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 // Validation Schemas
 const availabilitySlotSchema = z.object({
@@ -147,17 +148,17 @@ const coachProfileHandler = requireCoach(
     ]);
 
     if (profileError) {
-      console.error('Failed to load coach profile:', profileError);
+      logger.error('Failed to load coach profile:', profileError);
       return createErrorResponse('Failed to load coach profile data', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
     if (availabilityError) {
-      console.error('Failed to load coach availability:', availabilityError);
+      logger.error('Failed to load coach availability:', availabilityError);
       return createErrorResponse('Failed to load availability data', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
     if (userError) {
-      console.error('Failed to load user onboarding status:', userError);
+      logger.error('Failed to load user onboarding status:', userError);
       return createErrorResponse('Failed to load onboarding status', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
@@ -220,7 +221,7 @@ const updateCoachProfileHandler = requireCoach(
       .maybeSingle();
 
     if (existingProfileError) {
-      console.error('Failed to load existing coach profile:', existingProfileError);
+      logger.error('Failed to load existing coach profile:', existingProfileError);
       return createErrorResponse('Failed to load existing coach profile', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
@@ -249,7 +250,7 @@ const updateCoachProfileHandler = requireCoach(
       }, { onConflict: 'coach_id' });
 
     if (profileError) {
-      console.error('Failed to update coach profile:', profileError);
+      logger.error('Failed to update coach profile:', profileError);
       return createErrorResponse('Failed to save coach profile', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
@@ -259,7 +260,7 @@ const updateCoachProfileHandler = requireCoach(
       .eq('coach_id', user.id);
 
     if (deleteAvailabilityError) {
-      console.error('Failed to reset coach availability:', deleteAvailabilityError);
+      logger.error('Failed to reset coach availability:', deleteAvailabilityError);
       return createErrorResponse('Failed to reset availability', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
@@ -280,7 +281,7 @@ const updateCoachProfileHandler = requireCoach(
         .insert(availabilityRecords);
 
       if (insertAvailabilityError) {
-        console.error('Failed to save coach availability:', insertAvailabilityError);
+        logger.error('Failed to save coach availability:', insertAvailabilityError);
         return createErrorResponse('Failed to save availability', HTTP_STATUS.INTERNAL_SERVER_ERROR);
       }
     }
@@ -299,7 +300,7 @@ const updateCoachProfileHandler = requireCoach(
       .eq('id', user.id);
 
     if (userUpdateError) {
-      console.error('Failed to update user onboarding status:', userUpdateError);
+      logger.error('Failed to update user onboarding status:', userUpdateError);
       return createErrorResponse('Failed to update onboarding status', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
@@ -310,7 +311,7 @@ const updateCoachProfileHandler = requireCoach(
       .maybeSingle();
 
     if (refreshedUserError) {
-      console.warn('Failed to fetch refreshed user after onboarding update:', refreshedUserError);
+      logger.warn('Failed to fetch refreshed user after onboarding update:', refreshedUserError);
     }
 
     return createSuccessResponse(
@@ -415,7 +416,7 @@ async function handleCoachOnboarding(
       .single();
 
     if (profileError) {
-      console.error('Error creating/updating coach profile:', profileError);
+      logger.error('Error creating/updating coach profile:', profileError);
       return createErrorResponse(
         'Failed to save coach profile. Please try again.',
         HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -430,7 +431,7 @@ async function handleCoachOnboarding(
         .eq('id', user.id);
 
       if (avatarError) {
-        console.warn('Error updating avatar URL:', avatarError);
+        logger.warn('Error updating avatar URL:', avatarError);
         // Non-critical error, continue with onboarding
       }
     }
@@ -442,7 +443,7 @@ async function handleCoachOnboarding(
       .eq('coach_id', user.id);
 
     if (deleteError) {
-      console.error('Error deleting old availability slots:', deleteError);
+      logger.error('Error deleting old availability slots:', deleteError);
       // Non-critical error, but log it
     }
 
@@ -461,7 +462,7 @@ async function handleCoachOnboarding(
       .insert(availabilityRecords);
 
     if (availabilityError) {
-      console.error('Error creating availability slots:', availabilityError);
+      logger.error('Error creating availability slots:', availabilityError);
       return createErrorResponse(
         'Failed to save availability slots. Please try again.',
         HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -479,7 +480,7 @@ async function handleCoachOnboarding(
       .eq('id', user.id);
 
     if (userUpdateError) {
-      console.warn('Error updating user timezone:', userUpdateError);
+      logger.warn('Error updating user timezone:', userUpdateError);
       // Non-critical error
     }
 
@@ -501,7 +502,7 @@ async function handleCoachOnboarding(
       .single();
 
     if (fetchError) {
-      console.error('Error fetching complete profile:', fetchError);
+      logger.error('Error fetching complete profile:', fetchError);
       // Still return success since data was saved
     }
 
@@ -523,7 +524,7 @@ async function handleCoachOnboarding(
       });
     } catch (auditError) {
       // Non-critical error, just log it
-      console.warn('Failed to log audit event:', auditError);
+      logger.warn('Failed to log audit event:', auditError);
     }
 
     return createSuccessResponse(
@@ -536,7 +537,7 @@ async function handleCoachOnboarding(
       HTTP_STATUS.CREATED
     );
   } catch (error) {
-    console.error('Unexpected error during coach onboarding:', error);
+    logger.error('Unexpected error during coach onboarding:', error);
     return createErrorResponse(
       'An unexpected error occurred while processing your onboarding. Please try again.',
       HTTP_STATUS.INTERNAL_SERVER_ERROR

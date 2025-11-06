@@ -1,5 +1,6 @@
 import { ANALYTICS_CONFIG, getSessionRate, getDefaultCoachRating } from '@/lib/config/analytics-constants';
 import { createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export interface AdminAnalyticsOverview {
   totalUsers: number;
@@ -120,7 +121,7 @@ class AdminAnalyticsService {
     try {
       return this.getOverviewFallback(startDate, endDate);
     } catch (error) {
-      console.error('Error fetching overview analytics:', error);
+      logger.error('Error fetching overview analytics:', error);
       throw new Error('Unable to fetch analytics data: Database connection or query failed');
     }
   }
@@ -228,7 +229,7 @@ class AdminAnalyticsService {
         averageSessionsPerUser,
       };
     } catch (error) {
-      console.error('Error in fallback overview analytics:', error);
+      logger.error('Error in fallback overview analytics:', error);
       // Return error state rather than empty data to signal issues
       throw new Error('Unable to fetch analytics data: Database connection or query failed');
     }
@@ -238,7 +239,7 @@ class AdminAnalyticsService {
     try {
       return this.getUserGrowthFallback(startDate, endDate);
     } catch (error) {
-      console.error('Error fetching user growth analytics:', error);
+      logger.error('Error fetching user growth analytics:', error);
       return [];
     }
   }
@@ -306,7 +307,7 @@ class AdminAnalyticsService {
 
       return userGrowthData;
     } catch (error) {
-      console.error('Error in fallback user growth analytics:', error);
+      logger.error('Error in fallback user growth analytics:', error);
       return [];
     }
   }
@@ -315,7 +316,7 @@ class AdminAnalyticsService {
     try {
       return this.getSessionMetricsFallback(startDate, endDate);
     } catch (error) {
-      console.error('Error fetching session metrics analytics:', error);
+      logger.error('Error fetching session metrics analytics:', error);
       return [];
     }
   }
@@ -376,7 +377,7 @@ class AdminAnalyticsService {
 
       return sessionMetricsData;
     } catch (error) {
-      console.error('Error in fallback session metrics analytics:', error);
+      logger.error('Error in fallback session metrics analytics:', error);
       return [];
     }
   }
@@ -385,7 +386,7 @@ class AdminAnalyticsService {
     try {
       return this.getCoachPerformanceFallback(startDate, endDate);
     } catch (error) {
-      console.error('Error fetching coach performance analytics:', error);
+      logger.error('Error fetching coach performance analytics:', error);
       return [];
     }
   }
@@ -475,7 +476,7 @@ class AdminAnalyticsService {
       // Sort by total sessions descending
       return coachPerformance.sort((a, b) => b.totalSessions - a.totalSessions);
     } catch (error) {
-      console.error('Error in fallback coach performance analytics:', error);
+      logger.error('Error in fallback coach performance analytics:', error);
       return [];
     }
   }
@@ -604,7 +605,7 @@ class AdminAnalyticsService {
         topActiveUsers,
       };
     } catch (error) {
-      console.error('Error fetching user analytics:', error);
+      logger.error('Error fetching user analytics:', error);
       return {
         totalUsers: 0,
         activeUsers: 0,
@@ -653,7 +654,7 @@ class AdminAnalyticsService {
         },
       };
     } catch (error) {
-      console.error('Error fetching system health:', error);
+      logger.error('Error fetching system health:', error);
       return {
         database: {
           status: 'error',
@@ -705,7 +706,7 @@ class AdminAnalyticsService {
         type: 'application/json',
       });
     } catch (error) {
-      console.error('Error exporting analytics data:', error);
+      logger.error('Error exporting analytics data:', error);
       throw new Error('Failed to export analytics data');
     }
   }

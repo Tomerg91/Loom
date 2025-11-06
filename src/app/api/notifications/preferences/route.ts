@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger';
 
 // Validation schema for notification preferences
 const notificationPreferencesSchema = z.object({
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-      console.error('Error fetching notification preferences:', error)
+      logger.error('Error fetching notification preferences:', error)
       return NextResponse.json(
         { error: 'Failed to fetch notification preferences' },
         { status: 500 }
@@ -114,7 +115,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: apiPreferences })
 
   } catch (error) {
-    console.error('Notification preferences GET error:', error)
+    logger.error('Notification preferences GET error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -189,7 +190,7 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error updating notification preferences:', error)
+      logger.error('Error updating notification preferences:', error)
       return NextResponse.json(
         { error: 'Failed to update notification preferences' },
         { status: 500 }
@@ -240,7 +241,7 @@ export async function PUT(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Notification preferences PUT error:', error)
+    logger.error('Notification preferences PUT error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -13,6 +13,7 @@ import {
 import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { createServerClientWithRequest } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 const mfaCompletionSchema = z.object({
   userId: z.string().uuid('Invalid user ID format'),
@@ -66,7 +67,7 @@ export const POST = withErrorHandling(
       });
 
       if (!validation.success) {
-        console.warn('Invalid MFA completion request:', {
+        logger.warn('Invalid MFA completion request:', {
           ip: request.headers.get('x-forwarded-for') || 'unknown',
           userAgent: request.headers.get('user-agent'),
           validationErrors: validation.error.details,
@@ -84,14 +85,14 @@ export const POST = withErrorHandling(
         await supabase.auth.getSession();
 
       if (sessionError) {
-        console.warn('Failed to read Supabase session before MFA completion:', {
+        logger.warn('Failed to read Supabase session before MFA completion:', {
           userId,
           error: sessionError.message,
         });
       }
 
       if (!sessionResult?.session) {
-        console.warn('MFA completion attempted without active session', {
+        logger.warn('MFA completion attempted without active session', {
           userId,
           ip: request.headers.get('x-forwarded-for') || 'unknown',
         });
@@ -108,7 +109,7 @@ export const POST = withErrorHandling(
         await supabase.auth.refreshSession();
 
       if (refreshError) {
-        console.warn('Failed to refresh Supabase session after MFA verification:', {
+        logger.warn('Failed to refresh Supabase session after MFA verification:', {
           userId,
           error: refreshError.message,
         });
@@ -127,7 +128,7 @@ export const POST = withErrorHandling(
       });
 
       if (!currentUser || currentUser.id !== userId) {
-        console.error('User mismatch detected during MFA completion:', {
+        logger.error('User mismatch detected during MFA completion:', {
           expectedUserId: userId,
           actualUserId: currentUser?.id,
         });
@@ -179,7 +180,7 @@ export const POST = withErrorHandling(
           }
         }
       } catch (error) {
-        console.warn('Failed to load MFA status after verification:', {
+        logger.warn('Failed to load MFA status after verification:', {
           userId,
           error: error instanceof Error ? error.message : 'unknown error',
         });
@@ -195,7 +196,7 @@ export const POST = withErrorHandling(
           : null;
 
       if (!sessionPayload) {
-        console.warn('MFA completion succeeded but session tokens were not available', {
+        logger.warn('MFA completion succeeded but session tokens were not available', {
           userId,
         });
       }

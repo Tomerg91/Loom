@@ -15,6 +15,7 @@ import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { strongPasswordSchema } from '@/lib/security/password';
 import type { Language } from '@/types';
+import { logger } from '@/lib/logger';
 
 const SUPPORTED_LANGUAGES = ['en', 'he'] as const satisfies readonly Language[];
 const DEFAULT_LANGUAGE = (SUPPORTED_LANGUAGES as readonly string[]).includes(
@@ -115,7 +116,7 @@ export const POST = withErrorHandling(
 
         if (!validation.success) {
           // Log signup attempt for security monitoring
-          console.warn('Invalid signup attempt:', {
+          logger.warn('Invalid signup attempt:', {
             ip: request.headers.get('x-forwarded-for') || 'unknown',
             userAgent: request.headers.get('user-agent'),
             timestamp: new Date().toISOString(),
@@ -162,7 +163,7 @@ export const POST = withErrorHandling(
 
         if (error) {
           // Log failed signup for security monitoring
-          console.warn('Signup failed:', {
+          logger.warn('Signup failed:', {
             email: signupData.email,
             role: signupData.role,
             error,
@@ -201,7 +202,7 @@ export const POST = withErrorHandling(
         }
 
         // Log successful signup for auditing
-        console.info('User signup successful:', {
+        logger.info('User signup successful:', {
           userId: user.id,
           email: user.email,
           role: user.role,
@@ -233,7 +234,7 @@ export const POST = withErrorHandling(
         return applyCorsHeaders(response, request);
       } catch (error) {
         // Log error for monitoring
-        console.error('Signup error:', {
+        logger.error('Signup error:', {
           error: error instanceof Error ? error.message : 'Unknown error',
           stack: error instanceof Error ? error.stack : undefined,
           timestamp: new Date().toISOString(),

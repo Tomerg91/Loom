@@ -11,6 +11,7 @@ import { z } from 'zod';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
+import { logger } from '@/lib/logger';
 
 // Request validation schema
 const generateRequestSchema = z.object({
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
     const { data: setupData, error } = await mfaService.generateMfaSetup(user.id, user.email);
 
     if (error || !setupData) {
-      console.error('Failed to generate MFA setup:', error);
+      logger.error('Failed to generate MFA setup:', error);
       return NextResponse.json(
         { error: error || 'Failed to generate MFA setup' },
         { status: 500 }
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('MFA generation error:', error);
+    logger.error('MFA generation error:', error);
     
     return NextResponse.json(
       { 

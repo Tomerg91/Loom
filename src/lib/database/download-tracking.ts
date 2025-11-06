@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { Database } from '@/types/supabase';
+import { logger } from '@/lib/logger';
 
 type FileDownloadLog = Database['public']['Tables']['file_download_logs']['Row'];
 type FileAnalyticsSummary = Database['public']['Tables']['file_analytics_summary']['Row'];
@@ -624,7 +625,7 @@ class DownloadTrackingDatabase {
       .eq('id', downloadId);
 
     if (error) {
-      console.error('Failed to update download log:', error);
+      logger.error('Failed to update download log:', error);
     }
   }
 }

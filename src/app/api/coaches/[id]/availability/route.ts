@@ -11,6 +11,7 @@ import {
 import { uuidSchema } from '@/lib/api/validation';
 import { getCoachAvailability, setCoachAvailability } from '@/lib/database/availability';
 import { createCorsResponse } from '@/lib/security/cors';
+import { logger } from '@/lib/logger';
 
 const availabilitySlotSchema = z.object({
   dayOfWeek: z.number().min(0).max(6),
@@ -74,7 +75,7 @@ export const GET = withErrorHandling(async (request: NextRequest, { params }: Ro
     const successResponse = createSuccessResponse(timeSlots);
     return propagateCookies(authResponse, successResponse);
   } catch (error) {
-    console.error('Error fetching coach availability:', error);
+    logger.error('Error fetching coach availability:', error);
     const errorResponse = createErrorResponse(
       'Failed to fetch availability',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -142,7 +143,7 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
       return propagateCookies(authResponse, errorResponse);
     }
 
-    console.error('Error in availability POST:', error);
+    logger.error('Error in availability POST:', error);
     const errorResponse = createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     return propagateCookies(authResponse, errorResponse);
   }

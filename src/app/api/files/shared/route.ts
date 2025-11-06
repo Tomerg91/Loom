@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { fileManagementService } from '@/lib/services/file-management-service';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/files/shared - Get files shared with the current user
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result.data);
   } catch (error) {
-    console.error('GET /api/files/shared error:', error);
+    logger.error('GET /api/files/shared error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

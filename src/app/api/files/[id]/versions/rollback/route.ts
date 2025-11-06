@@ -5,6 +5,7 @@ import { fileVersionsDatabase } from '@/lib/database/file-versions';
 import { fileDatabase } from '@/lib/database/files';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schema
@@ -108,7 +109,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Rollback file version error:', error);
+    logger.error('Rollback file version error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

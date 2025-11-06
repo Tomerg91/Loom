@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/client';
 import { createServerClient } from '@/lib/supabase/server';
 import type { Session, SessionStatus } from '@/types';
 import type { Database } from '@/types/supabase';
+import { logger } from '@/lib/logger';
 
 // API-specific interfaces
 export interface GetSessionsOptions {
@@ -167,6 +168,6 @@ export abstract class BaseSessionService {
    * Log error with consistent formatting
    */
   protected logError(operation: string, error: unknown) {
-    console.error(`Error ${operation}:`, error);
+    logger.error(`Error ${operation}:`, error);
   }
 }

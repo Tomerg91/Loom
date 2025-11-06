@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createServerClientWithRequest } from '@/lib/supabase/server';
 import { resolveRedirect } from '@/lib/utils/redirect';
+import { logger } from '@/lib/logger';
 
 // POST /api/auth/signin/browser
 // Accepts form POST from the browser, sets HTTP-only cookies, and 303-redirects.
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     if (!email || !password) {
       const signinUrl = new URL(resolveRedirect(locale, '/auth/signin', { allowAuthPaths: true }), request.url);
       signinUrl.searchParams.set('error', 'missing_credentials');
-      if (log) console.info('[RES]', { id: reqId, path: request.nextUrl.pathname, status: 303, durMs: Date.now() - start, reason: 'missing creds' });
+      if (log) logger.info('[RES]', { id: reqId, path: request.nextUrl.pathname, status: 303, durMs: Date.now() - start, reason: 'missing creds' });
       return NextResponse.redirect(signinUrl, { status: 303 });
     }
 
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     if (error || !data?.session) {
       const signinUrl = new URL(resolveRedirect(locale, '/auth/signin', { allowAuthPaths: true }), request.url);
       signinUrl.searchParams.set('error', 'invalid_credentials');
-      if (log) console.info('[RES]', { id: reqId, path: request.nextUrl.pathname, status: 303, durMs: Date.now() - start, reason: 'invalid creds' });
+      if (log) logger.info('[RES]', { id: reqId, path: request.nextUrl.pathname, status: 303, durMs: Date.now() - start, reason: 'invalid creds' });
       return NextResponse.redirect(signinUrl, { status: 303 });
     }
 
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     if (log) {
       res.headers.set('X-Request-ID', reqId);
-      console.info('[RES]', { id: reqId, path: request.nextUrl.pathname, status: 303, redirect: redirectResolved, durMs: Date.now() - start, mfa: requiresMFA });
+      logger.info('[RES]', { id: reqId, path: request.nextUrl.pathname, status: 303, redirect: redirectResolved, durMs: Date.now() - start, mfa: requiresMFA });
     }
     return res;
   } catch (_err) {

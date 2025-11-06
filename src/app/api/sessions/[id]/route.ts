@@ -15,6 +15,7 @@ import {
   SessionSchedulerService,
 } from '@/modules/sessions/server/queries';
 import {
+import { logger } from '@/lib/logger';
   sessionUpdateSchema,
   type SessionUpdateInput,
 } from '@/modules/sessions/validators/session';
@@ -54,7 +55,7 @@ async function getAuthenticatedActor(
       .single();
 
     if (profileError) {
-      console.warn(
+      logger.warn(
         'Failed to fetch user profile for session update API:',
         profileError.message
       );
@@ -68,7 +69,7 @@ async function getAuthenticatedActor(
       authResponse,
     };
   } catch (error) {
-    console.error('Session update API authentication error:', error);
+    logger.error('Session update API authentication error:', error);
     return {
       error: 'Internal server error',
       authResponse,
@@ -99,7 +100,7 @@ export const PATCH = async (
   try {
     body = await request.json();
   } catch (error) {
-    console.warn('Failed to parse session update payload:', error);
+    logger.warn('Failed to parse session update payload:', error);
     return propagateCookies(
       authResponse,
       createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST)
@@ -129,7 +130,7 @@ export const PATCH = async (
         createErrorResponse(error.message, error.status)
       );
     }
-    console.error('Sessions API PATCH error:', error);
+    logger.error('Sessions API PATCH error:', error);
     return propagateCookies(
       authResponse,
       createErrorResponse(

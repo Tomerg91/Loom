@@ -21,6 +21,7 @@ import {
 import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
+import { logger } from '@/lib/logger';
 
 // MFA signin completion schema
 const mfaSignInSchema = z.object({
@@ -107,7 +108,7 @@ export const POST = withErrorHandling(
       });
 
       if (!validation.success) {
-        console.warn('Invalid MFA signin attempt:', {
+        logger.warn('Invalid MFA signin attempt:', {
           ip: getClientIP(request) || 'unknown',
           userAgent: getUserAgent(request),
           timestamp: new Date().toISOString(),
@@ -125,7 +126,7 @@ export const POST = withErrorHandling(
       // Check additional MFA rate limiting
       const mfaRateLimit = checkMFARateLimit(userId);
       if (mfaRateLimit.blocked) {
-        console.warn('MFA rate limit exceeded:', {
+        logger.warn('MFA rate limit exceeded:', {
           userId,
           remainingTime: mfaRateLimit.remainingTime,
           ip: getClientIP(request) || 'unknown',
@@ -156,7 +157,7 @@ export const POST = withErrorHandling(
         // Record failed MFA attempt
         recordFailedMFAAttempt(userId);
         
-        console.warn('MFA verification failed:', {
+        logger.warn('MFA verification failed:', {
           userId,
           method,
           error: verificationResult.error,
@@ -185,7 +186,7 @@ export const POST = withErrorHandling(
       const user = await authService.getCurrentUser();
 
       if (!user || user.id !== userId) {
-        console.error('User mismatch after MFA verification:', {
+        logger.error('User mismatch after MFA verification:', {
           expectedUserId: userId,
           actualUser: user?.id || 'null',
           timestamp: new Date().toISOString()
@@ -199,7 +200,7 @@ export const POST = withErrorHandling(
 
       // Verify user is still active
       if (user.status !== 'active') {
-        console.warn('Inactive account completing MFA signin:', {
+        logger.warn('Inactive account completing MFA signin:', {
           userId: user.id,
           status: user.status,
           timestamp: new Date().toISOString(),
@@ -216,7 +217,7 @@ export const POST = withErrorHandling(
       const mfaStatus = await mfaService.getMFAStatus(userId);
 
       // Log successful MFA signin completion
-      console.info('MFA signin completed successfully:', {
+      logger.info('MFA signin completed successfully:', {
         userId: user.id,
         email: user.email,
         role: user.role,
@@ -260,7 +261,7 @@ export const POST = withErrorHandling(
       return applyCorsHeaders(response, request);
 
     } catch (error) {
-      console.error('MFA signin completion error:', {
+      logger.error('MFA signin completion error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),

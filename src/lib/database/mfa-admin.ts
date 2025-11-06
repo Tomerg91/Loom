@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { Result, type Result as ResultType } from '@/lib/types/result';
+import { logger } from '@/lib/logger';
 
 // Types for MFA admin operations
 export interface UserMfaStatus {
@@ -152,7 +153,7 @@ export class MfaAdminService {
         const { data: searchMatches, error: searchError } = await searchQuery;
 
         if (searchError) {
-          console.error('Error searching users for MFA status view:', searchError);
+          logger.error('Error searching users for MFA status view:', searchError);
           return Result.error(
             `Failed to search users: ${searchError.message}`
           );
@@ -210,7 +211,7 @@ export class MfaAdminService {
       const { data, error, count } = await viewQuery;
 
       if (error) {
-        console.error('Error fetching MFA user statuses from unified view:', error);
+        logger.error('Error fetching MFA user statuses from unified view:', error);
         return Result.error(`Failed to fetch MFA user statuses: ${error.message}`);
       }
 
@@ -226,7 +227,7 @@ export class MfaAdminService {
           .in('id', userIds);
 
         if (userDetailsError) {
-          console.error('Error fetching user profile details for MFA admin view:', userDetailsError);
+          logger.error('Error fetching user profile details for MFA admin view:', userDetailsError);
         } else {
           (userDetails || []).forEach(user => {
             userDetailsMap.set(user.id, user as UserProfileRow);
@@ -275,7 +276,7 @@ export class MfaAdminService {
         limit,
       });
     } catch (error) {
-      console.error('Unexpected error in getMfaUserStatuses:', error);
+      logger.error('Unexpected error in getMfaUserStatuses:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to fetch MFA user statuses'
       );
@@ -292,7 +293,7 @@ export class MfaAdminService {
         .select('user_id, role, mfa_enabled');
 
       if (unifiedError) {
-        console.error('Error fetching unified MFA statuses for statistics:', unifiedError);
+        logger.error('Error fetching unified MFA statuses for statistics:', unifiedError);
         return Result.error(
           `Failed to fetch MFA statistics: ${unifiedError.message}`
         );
@@ -308,7 +309,7 @@ export class MfaAdminService {
           .in('id', userIds);
 
         if (userStatesError) {
-          console.error('Error fetching user activation states for MFA statistics:', userStatesError);
+          logger.error('Error fetching user activation states for MFA statistics:', userStatesError);
         } else {
           activeUsers = new Set(
             (userStates || [])
@@ -344,12 +345,12 @@ export class MfaAdminService {
           .gte('created_at', thirtyDaysAgo);
 
         if (failuresError) {
-          console.error('Error fetching MFA failures (table might not exist):', failuresError);
+          logger.error('Error fetching MFA failures (table might not exist):', failuresError);
         } else {
           mfaFailures = count || 0;
         }
       } catch (error) {
-        console.error('MFA attempts table might not exist:', error);
+        logger.error('MFA attempts table might not exist:', error);
         // Use default value of 0
       }
 
@@ -376,7 +377,7 @@ export class MfaAdminService {
 
       return Result.success(statistics);
     } catch (error) {
-      console.error('Unexpected error in getMfaStatistics:', error);
+      logger.error('Unexpected error in getMfaStatistics:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to fetch MFA statistics'
       );
@@ -393,7 +394,7 @@ export class MfaAdminService {
       });
 
       if (error) {
-        console.error('Error fetching unified MFA status via RPC:', error);
+        logger.error('Error fetching unified MFA status via RPC:', error);
         return Result.error(`Failed to fetch user MFA status: ${error.message}`);
       }
 
@@ -433,7 +434,7 @@ export class MfaAdminService {
         hasBackupCodes: !!payload.has_backup_codes,
       });
     } catch (error) {
-      console.error('Unexpected error in getUserMfaStatus:', error);
+      logger.error('Unexpected error in getUserMfaStatus:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to fetch user MFA status'
       );
@@ -455,7 +456,7 @@ export class MfaAdminService {
         .eq('id', userId);
 
       if (updateError) {
-        console.error('Error enabling MFA for user:', updateError);
+        logger.error('Error enabling MFA for user:', updateError);
         return Result.error(`Failed to enable MFA for user: ${updateError.message}`);
       }
 
@@ -474,17 +475,17 @@ export class MfaAdminService {
           });
 
         if (logError) {
-          console.error('Error logging MFA enable action:', logError);
+          logger.error('Error logging MFA enable action:', logError);
           // Don't fail the operation for logging errors
         }
       } catch (error) {
-        console.error('MFA events table might not exist:', error);
+        logger.error('MFA events table might not exist:', error);
         // Don't fail the operation for logging errors
       }
 
       return Result.success(undefined);
     } catch (error) {
-      console.error('Unexpected error in enableMfaForUser:', error);
+      logger.error('Unexpected error in enableMfaForUser:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to enable MFA for user'
       );
@@ -507,7 +508,7 @@ export class MfaAdminService {
         .eq('id', userId);
 
       if (updateUserError) {
-        console.error('Error disabling MFA for user:', updateUserError);
+        logger.error('Error disabling MFA for user:', updateUserError);
         return Result.error(`Failed to disable MFA for user: ${updateUserError.message}`);
       }
 
@@ -525,11 +526,11 @@ export class MfaAdminService {
           .eq('user_id', userId);
 
         if (updateMfaError) {
-          console.error('Error updating MFA table for user (table might not exist):', updateMfaError);
+          logger.error('Error updating MFA table for user (table might not exist):', updateMfaError);
           // Continue even if MFA table update fails - the main users table is updated
         }
       } catch (error) {
-        console.error('MFA table operations failed (table might not exist):', error);
+        logger.error('MFA table operations failed (table might not exist):', error);
         // Continue - this is not critical for the operation
       }
 
@@ -548,15 +549,15 @@ export class MfaAdminService {
           });
 
         if (logError) {
-          console.error('Error logging MFA disable action:', logError);
+          logger.error('Error logging MFA disable action:', logError);
         }
       } catch (error) {
-        console.error('MFA events table might not exist:', error);
+        logger.error('MFA events table might not exist:', error);
       }
 
       return Result.success(undefined);
     } catch (error) {
-      console.error('Unexpected error in disableMfaForUser:', error);
+      logger.error('Unexpected error in disableMfaForUser:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to disable MFA for user'
       );
@@ -581,11 +582,11 @@ export class MfaAdminService {
           .eq('user_id', userId);
 
         if (updateMfaError) {
-          console.error('Error resetting MFA table for user (table might not exist):', updateMfaError);
+          logger.error('Error resetting MFA table for user (table might not exist):', updateMfaError);
           // Continue even if MFA table update fails
         }
       } catch (error) {
-        console.error('MFA table operations failed (table might not exist):', error);
+        logger.error('MFA table operations failed (table might not exist):', error);
         // Continue - this is not critical for the operation
       }
 
@@ -600,7 +601,7 @@ export class MfaAdminService {
         .eq('id', userId);
 
       if (updateUserError) {
-        console.error('Error updating user MFA status:', updateUserError);
+        logger.error('Error updating user MFA status:', updateUserError);
         // Continue even if user table update fails
       }
 
@@ -611,7 +612,7 @@ export class MfaAdminService {
         .eq('user_id', userId);
 
       if (trustedDevicesError) {
-        console.error('Error removing trusted devices:', trustedDevicesError);
+        logger.error('Error removing trusted devices:', trustedDevicesError);
         // Continue even if trusted devices removal fails
       }
 
@@ -630,15 +631,15 @@ export class MfaAdminService {
           });
 
         if (logError) {
-          console.error('Error logging MFA reset action:', logError);
+          logger.error('Error logging MFA reset action:', logError);
         }
       } catch (error) {
-        console.error('MFA events table might not exist:', error);
+        logger.error('MFA events table might not exist:', error);
       }
 
       return Result.success(undefined);
     } catch (error) {
-      console.error('Unexpected error in resetMfaForUser:', error);
+      logger.error('Unexpected error in resetMfaForUser:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to reset MFA for user'
       );
@@ -666,7 +667,7 @@ export class MfaAdminService {
 
       return Result.success(defaultSettings);
     } catch (error) {
-      console.error('Unexpected error in getMfaEnforcementSettings:', error);
+      logger.error('Unexpected error in getMfaEnforcementSettings:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to fetch MFA enforcement settings'
       );
@@ -696,16 +697,16 @@ export class MfaAdminService {
           });
 
         if (logError) {
-          console.error('Error logging settings update:', logError);
+          logger.error('Error logging settings update:', logError);
         }
       } catch (error) {
-        console.error('MFA events table might not exist:', error);
+        logger.error('MFA events table might not exist:', error);
         // Continue - this is not critical
       }
 
       return Result.success(undefined);
     } catch (error) {
-      console.error('Unexpected error in saveMfaEnforcementSettings:', error);
+      logger.error('Unexpected error in saveMfaEnforcementSettings:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to save MFA enforcement settings'
       );
@@ -779,7 +780,7 @@ export class MfaAdminService {
         const { data, error, count: queryCount } = await query;
 
         if (error) {
-          console.error('Error fetching MFA events:', error);
+          logger.error('Error fetching MFA events:', error);
         } else {
           count = queryCount || 0;
           
@@ -796,7 +797,7 @@ export class MfaAdminService {
           }));
         }
       } catch (error) {
-        console.error('MFA events table might not exist:', error);
+        logger.error('MFA events table might not exist:', error);
         // Return empty results instead of failing
       }
 
@@ -807,7 +808,7 @@ export class MfaAdminService {
         limit,
       });
     } catch (error) {
-      console.error('Unexpected error in getMfaAuditLog:', error);
+      logger.error('Unexpected error in getMfaAuditLog:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to fetch MFA audit log'
       );
@@ -883,7 +884,7 @@ export const getMfaDiscrepancies = async (): Promise<ResultType<{
       `);
 
     if (error) {
-      console.error('Error fetching MFA discrepancies:', error);
+      logger.error('Error fetching MFA discrepancies:', error);
       return Result.error(`Failed to fetch MFA discrepancies: ${error.message}`);
     }
 
@@ -905,7 +906,7 @@ export const getMfaDiscrepancies = async (): Promise<ResultType<{
       total: discrepancies.length,
     });
   } catch (error) {
-    console.error('Unexpected error in getMfaDiscrepancies:', error);
+    logger.error('Unexpected error in getMfaDiscrepancies:', error);
     return Result.error(
       error instanceof Error ? error.message : 'Failed to fetch MFA discrepancies'
     );

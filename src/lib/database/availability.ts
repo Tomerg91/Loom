@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
 import { createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface TimeSlot {
   startTime: string;
@@ -48,7 +49,7 @@ export class AvailabilityService {
         .eq('is_available', true);
 
       if (slotsError) {
-        console.error('Error fetching availability slots:', slotsError);
+        logger.error('Error fetching availability slots:', slotsError);
         return [];
       }
 
@@ -73,7 +74,7 @@ export class AvailabilityService {
         .in('status', ['scheduled', 'in_progress', 'cancelled']);
 
       if (sessionsError) {
-        console.error('Error fetching existing sessions:', sessionsError);
+        logger.error('Error fetching existing sessions:', sessionsError);
         return [];
       }
 
@@ -129,7 +130,7 @@ export class AvailabilityService {
 
       return timeSlots.sort((a, b) => a.startTime.localeCompare(b.startTime));
     } catch (error) {
-      console.error('Error in getCoachAvailability:', error);
+      logger.error('Error in getCoachAvailability:', error);
       return [];
     }
   }
@@ -150,7 +151,7 @@ export class AvailabilityService {
         .eq('coach_id', coachId);
 
       if (deactivateError) {
-        console.error('Error deactivating existing slots:', deactivateError);
+        logger.error('Error deactivating existing slots:', deactivateError);
         return false;
       }
 
@@ -169,13 +170,13 @@ export class AvailabilityService {
         .insert(availabilityRecords);
 
       if (insertError) {
-        console.error('Error inserting availability slots:', insertError);
+        logger.error('Error inserting availability slots:', insertError);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error in setCoachAvailability:', error);
+      logger.error('Error in setCoachAvailability:', error);
       return false;
     }
   }
@@ -194,7 +195,7 @@ export class AvailabilityService {
         .order('start_time');
 
       if (error) {
-        console.error('Error fetching coach schedule:', error);
+        logger.error('Error fetching coach schedule:', error);
         return [];
       }
 
@@ -205,7 +206,7 @@ export class AvailabilityService {
         timezone: slot.timezone || 'UTC',
       }));
     } catch (error) {
-      console.error('Error in getCoachSchedule:', error);
+      logger.error('Error in getCoachSchedule:', error);
       return [];
     }
   }
@@ -267,7 +268,7 @@ export class AvailabilityService {
 
       return !existingSessions || existingSessions.length === 0;
     } catch (error) {
-      console.error('Error in isCoachAvailable:', error);
+      logger.error('Error in isCoachAvailable:', error);
       return false;
     }
   }

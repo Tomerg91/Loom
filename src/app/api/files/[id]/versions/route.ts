@@ -95,7 +95,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Get file versions error:', error);
+    logger.error('Get file versions error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -225,7 +225,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Create file version error:', error);
+    logger.error('Create file version error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }

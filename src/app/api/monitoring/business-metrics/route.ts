@@ -4,6 +4,7 @@ import { trackBusinessMetric } from '@/lib/monitoring/sentry';
 import { adminSecurityMiddleware } from '@/lib/security/admin-middleware';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 // Business metrics collection endpoint
 const rateLimitedMetrics = rateLimit(100, 60000)( // 100 requests per minute
@@ -150,7 +151,7 @@ async function getUserEngagementMetrics(supabase: any, last24h: Date, last7d: Da
       user_retention_7d: calculateRetentionRate(activeUsers7d?.length || 0, newUsers7d?.length || 0),
     };
   } catch (error) {
-    console.error('Error collecting user engagement metrics:', error);
+    logger.error('Error collecting user engagement metrics:', error);
     return {
       active_users_24h: 0,
       active_users_7d: 0,
@@ -213,7 +214,7 @@ async function getSessionMetrics(supabase: any, last24h: Date, last7d: Date, las
       avg_session_rating: Math.round((avgRating || 0) * 10) / 10,
     };
   } catch (error) {
-    console.error('Error collecting session metrics:', error);
+    logger.error('Error collecting session metrics:', error);
     return {
       sessions_booked_24h: 0,
       sessions_booked_7d: 0,
@@ -276,7 +277,7 @@ async function getFileMetrics(supabase: any, last24h: Date, last7d: Date, last30
       avg_file_size_mb: uploads7d?.length ? Math.round(totalStorageUsed / uploads7d.length / (1024 * 1024)) : 0,
     };
   } catch (error) {
-    console.error('Error collecting file metrics:', error);
+    logger.error('Error collecting file metrics:', error);
     return {
       files_uploaded_24h: 0,
       files_uploaded_7d: 0,
@@ -326,7 +327,7 @@ async function getAuthMetrics(supabase: any, last24h: Date, last7d: Date, last30
       mfa_enabled_users: mfaUsers?.length || 0,
     };
   } catch (error) {
-    console.error('Error collecting auth metrics:', error);
+    logger.error('Error collecting auth metrics:', error);
     return {
       login_attempts_24h: 0,
       login_attempts_7d: 0,
@@ -356,7 +357,7 @@ async function getPerformanceMetrics(supabase: any, last24h: Date, last7d: Date,
       },
     };
   } catch (error) {
-    console.error('Error collecting performance metrics:', error);
+    logger.error('Error collecting performance metrics:', error);
     return {
       avg_page_load_time_ms: 0,
       avg_api_response_time_ms: 0,

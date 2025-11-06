@@ -10,6 +10,7 @@ import {
 } from '@/lib/api/utils';
 import { MessagingService } from '@/lib/database/messaging';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { logger } from '@/lib/logger';
 
 // POST /api/messages/[conversationId]/read - Mark conversation as read
 export const POST = withErrorHandling(
@@ -48,7 +49,7 @@ export const POST = withErrorHandling(
           'Conversation marked as read'
         );
       } catch (error) {
-        console.error('Error marking conversation as read:', error);
+        logger.error('Error marking conversation as read:', error);
         return createErrorResponse(
           'Failed to mark conversation as read',
           HTTP_STATUS.INTERNAL_SERVER_ERROR

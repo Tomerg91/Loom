@@ -4,6 +4,7 @@ import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface Client {
   id: string;
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     // Verify authentication and get user from Authorization header
     const user = await getAuthenticatedUser(request);
 
-    console.log('[/api/coach/clients] Auth check:', {
+    logger.debug('[/api/coach/clients] Auth check:', {
       hasUser: !!user,
       userId: user?.id,
       userRole: user?.role,
@@ -63,12 +64,12 @@ export async function GET(request: NextRequest): Promise<Response> {
     });
 
     if (!user) {
-      console.error('[/api/coach/clients] No user found');
+      logger.error('[/api/coach/clients] No user found');
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
     if (user.role !== 'coach') {
-      console.error('[/api/coach/clients] User is not a coach:', {
+      logger.error('[/api/coach/clients] User is not a coach:', {
         userId: user.id,
         role: user.role
       });
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const supabase = createClient();
 
-    console.log('[/api/coach/clients] Fetching clients for coach:', coachId);
+    logger.debug('[/api/coach/clients] Fetching clients for coach:', coachId);
 
     // Get recent clients with session statistics
     const { data: sessionsWithClients, error } = await supabase
@@ -108,11 +109,11 @@ export async function GET(request: NextRequest): Promise<Response> {
       .order('scheduled_at', { ascending: false });
 
     if (error) {
-      console.error('[/api/coach/clients] Error fetching sessions:', error);
+      logger.error('[/api/coach/clients] Error fetching sessions:', error);
       throw new ApiError('FETCH_CLIENTS_FAILED', 'Failed to fetch clients', 500);
     }
 
-    console.log('[/api/coach/clients] Sessions query result:', {
+    logger.debug('[/api/coach/clients] Sessions query result:', {
       count: sessionsWithClients?.length || 0,
       hasData: !!sessionsWithClients
     });
@@ -193,13 +194,13 @@ export async function GET(request: NextRequest): Promise<Response> {
       ]);
 
       if (feedbackResult.error) {
-        console.warn('[/api/coach/clients] Failed to load session feedback', feedbackResult.error);
+        logger.warn('[/api/coach/clients] Failed to load session feedback', feedbackResult.error);
       }
       if (ratingsResult.error) {
-        console.warn('[/api/coach/clients] Failed to load session ratings', ratingsResult.error);
+        logger.warn('[/api/coach/clients] Failed to load session ratings', ratingsResult.error);
       }
       if (goalsResult.error) {
-        console.warn('[/api/coach/clients] Failed to load client goals', goalsResult.error);
+        logger.warn('[/api/coach/clients] Failed to load client goals', goalsResult.error);
       }
 
       const ratingMap = new Map<string, number[]>();
@@ -298,7 +299,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     // Apply limit
     clients = clients.slice(0, limit);
 
-    console.log('[/api/coach/clients] Returning clients:', {
+    logger.debug('[/api/coach/clients] Returning clients:', {
       count: clients.length,
       clientIds: clients.map(c => c.id)
     });
@@ -306,7 +307,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     return ApiResponseHelper.success(clients);
 
   } catch (error) {
-    console.error('Coach clients API error:', error);
+    logger.error('Coach clients API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message, error.statusCode);

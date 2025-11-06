@@ -17,6 +17,7 @@ import { getSessionById, updateSession } from '@/lib/database/sessions';
 import { sessionNotificationService } from '@/lib/notifications/session-notifications';
 import { createCorsResponse } from '@/lib/security/cors';
 import type { Session } from '@/types';
+import { logger } from '@/lib/logger';
 
 const rescheduleSessionSchema = z.object({
   newScheduledAt: z.string().min(1, 'New scheduled time is required'),
@@ -180,7 +181,7 @@ export const POST = withErrorHandling(
         },
       });
     } catch (error) {
-      console.error('Error sending reschedule notification:', error);
+      logger.error('Error sending reschedule notification:', error);
     }
 
     return propagateCookies(

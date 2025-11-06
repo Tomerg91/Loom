@@ -11,6 +11,7 @@ import { z } from 'zod';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
+import { logger } from '@/lib/logger';
 
 // Request validation schema
 const setupRequestSchema = z.object({
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('MFA setup error:', error);
+    logger.error('MFA setup error:', error);
     
     return NextResponse.json(
       { 

@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { getCoachSessionRate } from '@/lib/coach-dashboard/coach-profile';
 import { getDefaultCoachRating } from '@/lib/config/analytics-constants';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface DashboardStats {
   totalSessions: number;
@@ -24,12 +25,12 @@ export async function GET(request: NextRequest): Promise<Response> {
     const user = await getAuthenticatedUser(request);
 
     if (!user) {
-      console.error('[/api/coach/stats] Authentication failed: No user found');
+      logger.error('[/api/coach/stats] Authentication failed: No user found');
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
     if (user.role !== 'coach') {
-      console.error('[/api/coach/stats] Authorization failed: User is not a coach', {
+      logger.error('[/api/coach/stats] Authorization failed: User is not a coach', {
         userId: user.id,
         role: user.role
       });
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const coachId = user.id;
     const supabase = createClient();
 
-    console.log('[/api/coach/stats] Fetching stats for coach:', coachId);
+    logger.debug('[/api/coach/stats] Fetching stats for coach:', coachId);
 
     // Calculate date ranges
     const now = new Date();
@@ -62,12 +63,12 @@ export async function GET(request: NextRequest): Promise<Response> {
     ]);
 
     if (sessionsResult.error) {
-      console.error('[/api/coach/stats] Error fetching sessions:', sessionsResult.error);
+      logger.error('[/api/coach/stats] Error fetching sessions:', sessionsResult.error);
     }
 
     const sessionStats = sessionsResult.data ?? [];
 
-    console.log('[/api/coach/stats] Sessions query result:', {
+    logger.debug('[/api/coach/stats] Sessions query result:', {
       count: sessionStats.length,
       hasError: !!sessionsResult.error,
       error: sessionsResult.error?.message,
@@ -128,10 +129,10 @@ export async function GET(request: NextRequest): Promise<Response> {
       ]);
 
       if (feedbackResult.error) {
-        console.warn('[/api/coach/stats] Failed to load session feedback', feedbackResult.error);
+        logger.warn('[/api/coach/stats] Failed to load session feedback', feedbackResult.error);
       }
       if (ratingsResult.error) {
-        console.warn('[/api/coach/stats] Failed to load session ratings', ratingsResult.error);
+        logger.warn('[/api/coach/stats] Failed to load session ratings', ratingsResult.error);
       }
 
       const ratingBySession = new Map<string, number>();
@@ -176,12 +177,12 @@ export async function GET(request: NextRequest): Promise<Response> {
       totalRevenue,
     };
 
-    console.log('[/api/coach/stats] Returning stats:', stats);
+    logger.debug('[/api/coach/stats] Returning stats:', stats);
 
     return ApiResponseHelper.success(stats);
 
   } catch (error) {
-    console.error('Coach stats API error:', error);
+    logger.error('Coach stats API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);

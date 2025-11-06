@@ -5,6 +5,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { getMfaStatistics } from '@/lib/database/mfa-admin';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { authService } from '@/lib/services/auth-service';
+import { logger } from '@/lib/logger';
 
 // Apply rate limiting for MFA statistics queries
 const rateLimitedHandler = rateLimit(30, 60000)( // 30 requests per minute for statistics
@@ -25,7 +26,7 @@ const rateLimitedHandler = rateLimit(30, 60000)( // 30 requests per minute for s
       return ApiResponseHelper.success(result.data);
 
     } catch (error) {
-      console.error('Get MFA statistics API error:', error);
+      logger.error('Get MFA statistics API error:', error);
       
       if (error instanceof ApiError) {
         return ApiResponseHelper.error(error.code, error.message);

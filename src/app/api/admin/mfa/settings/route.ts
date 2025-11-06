@@ -6,6 +6,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { getMfaEnforcementSettings, saveMfaEnforcementSettings } from '@/lib/database/mfa-admin';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { authService } from '@/lib/services/auth-service';
+import { logger } from '@/lib/logger';
 
 
 const mfaSettingsSchema = z.object({
@@ -39,7 +40,7 @@ const getHandler = rateLimit(20, 60000)( // 20 requests per minute for getting s
       return ApiResponseHelper.success(result.data);
 
     } catch (error) {
-      console.error('Get MFA settings API error:', error);
+      logger.error('Get MFA settings API error:', error);
       
       if (error instanceof ApiError) {
         return ApiResponseHelper.error(error.code, error.message);
@@ -86,7 +87,7 @@ const postHandler = rateLimit(10, 60000)( // 10 requests per minute for updating
         });
 
     } catch (error) {
-      console.error('Save MFA settings API error:', error);
+      logger.error('Save MFA settings API error:', error);
       
       if (error instanceof ApiError) {
         return ApiResponseHelper.error(error.code, error.message);

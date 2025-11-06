@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/admin/performance-metrics
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (metricsError) {
-      console.error('Error fetching performance metrics:', metricsError);
+      logger.error('Error fetching performance metrics:', metricsError);
       return NextResponse.json(
         {
           success: false,
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
     const { data: mfaPerformance, error: mfaError } = await supabase.rpc('get_mfa_query_performance');
 
     if (mfaError) {
-      console.error('Error fetching MFA performance:', mfaError);
+      logger.error('Error fetching MFA performance:', mfaError);
     }
 
     // Fetch Resource Library query performance
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
     );
 
     if (resourceError) {
-      console.error('Error fetching Resource Library performance:', resourceError);
+      logger.error('Error fetching Resource Library performance:', resourceError);
     }
 
     // Fetch detailed slow queries if requested
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
       });
 
       if (slowQueriesError) {
-        console.error('Error fetching slow queries:', slowQueriesError);
+        logger.error('Error fetching slow queries:', slowQueriesError);
       } else {
         slowQueries = slowQueriesData;
       }
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
     const { data: systemStats, error: statsError } = await supabase.rpc('get_system_statistics');
 
     if (statsError) {
-      console.error('Error fetching system statistics:', statsError);
+      logger.error('Error fetching system statistics:', statsError);
     }
 
     return NextResponse.json({
@@ -136,7 +137,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Unexpected error in performance metrics API:', error);
+    logger.error('Unexpected error in performance metrics API:', error);
     return NextResponse.json(
       {
         success: false,
@@ -182,7 +183,7 @@ export async function POST() {
     const { data: resetResult, error: resetError } = await supabase.rpc('reset_performance_stats');
 
     if (resetError) {
-      console.error('Error resetting performance stats:', resetError);
+      logger.error('Error resetting performance stats:', resetError);
       return NextResponse.json(
         {
           success: false,
@@ -202,7 +203,7 @@ export async function POST() {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Unexpected error resetting performance stats:', error);
+    logger.error('Unexpected error resetting performance stats:', error);
     return NextResponse.json(
       {
         success: false,

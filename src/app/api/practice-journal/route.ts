@@ -9,6 +9,7 @@ import {
 } from '@/lib/api/practice-journal/transformers';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 // GET: Fetch practice journal entries
 export async function GET(request: NextRequest): Promise<Response> {
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       },
     });
   } catch (error) {
-    console.error('Error fetching practice journal entries:', error);
+    logger.error('Error fetching practice journal entries:', error);
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
@@ -166,7 +167,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     return ApiResponseHelper.created(entry, 'Practice journal entry created successfully');
   } catch (error) {
-    console.error('Error creating practice journal entry:', error);
+    logger.error('Error creating practice journal entry:', error);
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }

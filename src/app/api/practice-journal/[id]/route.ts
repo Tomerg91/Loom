@@ -9,6 +9,7 @@ import {
 } from '@/lib/api/practice-journal/transformers';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -64,7 +65,7 @@ export async function GET(
 
     return ApiResponseHelper.success<PracticeJournalEntry>(entry);
   } catch (error) {
-    console.error('Error fetching practice journal entry:', error);
+    logger.error('Error fetching practice journal entry:', error);
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
@@ -183,7 +184,7 @@ export async function PUT(
       'Practice journal entry updated successfully'
     );
   } catch (error) {
-    console.error('Error updating practice journal entry:', error);
+    logger.error('Error updating practice journal entry:', error);
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }
@@ -244,7 +245,7 @@ export async function DELETE(
 
     return ApiResponseHelper.success(null, 'Practice journal entry deleted successfully');
   } catch (error) {
-    console.error('Error deleting practice journal entry:', error);
+    logger.error('Error deleting practice journal entry:', error);
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message, error.statusCode);
     }

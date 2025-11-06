@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
 import { fileDatabase } from '@/lib/database/files';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schema
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
           toDateStr
         );
       } catch (error) {
-        console.error(`Failed to get analytics for file ${fileId}:`, error);
+        logger.error(`Failed to get analytics for file ${fileId}:`, error);
         detailedAnalytics[fileId] = null;
       }
     }
@@ -228,7 +229,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Get analytics dashboard error:', error);
+    logger.error('Get analytics dashboard error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

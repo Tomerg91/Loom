@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { fileManagementService } from '@/lib/services/file-management-service';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/folders - Get folder structure and contents
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
       total: filesResult.data.total,
     });
   } catch (error) {
-    console.error('GET /api/folders error:', error);
+    logger.error('GET /api/folders error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
       { status: 501 }
     );
   } catch (error) {
-    console.error('POST /api/folders error:', error);
+    logger.error('POST /api/folders error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

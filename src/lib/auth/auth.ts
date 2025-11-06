@@ -9,6 +9,7 @@ import {
   createAdminClient,
 } from '@/modules/platform/supabase/server';
 import type { Language, User, UserRole, UserStatus } from '@/types';
+import { logger } from '@/lib/logger';
 
 type AuthMetadata = Record<string, unknown> | null | undefined;
 
@@ -403,7 +404,7 @@ export class AuthService {
 
     if (!status) {
       status = 'active';
-      console.warn(
+      logger.warn(
         '[AuthService] Falling back to active status from auth metadata due to missing profile data.',
         {
           userId: supabaseUser.id,
@@ -647,7 +648,7 @@ export class AuthService {
         }
       } catch (adminError) {
         // Non-fatal: fallback below
-        console.warn(
+        logger.warn(
           'Admin profile fetch/upsert failed after signup:',
           adminError
         );
@@ -697,7 +698,7 @@ export class AuthService {
     session: AuthSessionTokens | null;
   }> {
     try {
-      console.log('[AuthService] signIn: Starting authentication...');
+      logger.debug('[AuthService] signIn: Starting authentication...');
 
       const { data: authData, error: authError } =
         await this.supabase.auth.signInWithPassword({
@@ -705,7 +706,7 @@ export class AuthService {
           password: data.password,
         });
 
-      console.log('[AuthService] signIn: Supabase auth completed', {
+      logger.debug('[AuthService] signIn: Supabase auth completed', {
         success: !authError,
         hasUser: !!authData?.user
       });
@@ -719,7 +720,7 @@ export class AuthService {
       }
 
       let activeSession = authData.session ?? null;
-      console.log('[AuthService] signIn: authData.session check', {
+      logger.debug('[AuthService] signIn: authData.session check', {
         hasAuthDataSession: !!authData.session,
         hasAccessToken: !!authData.session?.access_token,
         hasRefreshToken: !!authData.session?.refresh_token,
@@ -727,29 +728,29 @@ export class AuthService {
       });
 
       if (authData.session?.access_token && authData.session?.refresh_token) {
-        console.log('[AuthService] signIn: Calling setSession with tokens');
+        logger.debug('[AuthService] signIn: Calling setSession with tokens');
         const { data: sessionData, error: sessionError } =
           await this.supabase.auth.setSession({
             access_token: authData.session.access_token,
             refresh_token: authData.session.refresh_token,
           });
 
-        console.log('[AuthService] signIn: setSession result', {
+        logger.debug('[AuthService] signIn: setSession result', {
           hasError: !!sessionError,
           hasSessionData: !!sessionData,
           errorMessage: sessionError?.message
         });
 
         if (sessionError) {
-          console.error('Failed to hydrate Supabase session after sign-in:', {
+          logger.error('Failed to hydrate Supabase session after sign-in:', {
             error: sessionError.message,
           });
         } else if (sessionData?.session) {
           activeSession = sessionData.session;
-          console.log('[AuthService] signIn: Updated activeSession from setSession');
+          logger.debug('[AuthService] signIn: Updated activeSession from setSession');
         }
       } else {
-        console.warn('[AuthService] signIn: authData.session missing tokens');
+        logger.warn('[AuthService] signIn: authData.session missing tokens');
       }
 
       const sessionTokens: AuthSessionTokens | null = activeSession
@@ -766,10 +767,10 @@ export class AuthService {
       // the environment is missing the key (e.g., local dev without secrets).
       // IMPORTANT: Skip admin client in browser - service role key should only be used server-side
       const isBrowser = typeof window !== 'undefined';
-      console.log('[AuthService] signIn: Environment check', { isBrowser, isServer: this.isServer });
+      logger.debug('[AuthService] signIn: Environment check', { isBrowser, isServer: this.isServer });
 
       if (this.isServer && !isBrowser) {
-        console.log('[AuthService] signIn: Using admin client (server-side)');
+        logger.debug('[AuthService] signIn: Using admin client (server-side)');
         try {
           const adminClient = createAdminClient();
 
@@ -780,7 +781,7 @@ export class AuthService {
             .eq('id', authData.user.id);
 
           if (lastSeenError) {
-            console.warn(
+            logger.warn(
               '[AuthService] Failed to update last_seen_at with admin client:',
               {
                 userId: authData.user.id,
@@ -797,7 +798,7 @@ export class AuthService {
             .eq('id', authData.user.id)
             .single();
 
-          console.log('[AuthService] signIn: Admin profile fetch completed', {
+          logger.debug('[AuthService] signIn: Admin profile fetch completed', {
             success: !profileError,
             hasData: !!profileData
           });
@@ -833,7 +834,7 @@ export class AuthService {
             rememberDeviceEnabled: profileData.remember_device_enabled ?? false,
           };
           } else if (profileError) {
-            console.warn(
+            logger.warn(
               '[AuthService] Admin client profile fetch failed after signin:',
               {
                 userId: authData.user.id,
@@ -842,25 +843,25 @@ export class AuthService {
             );
           }
         } catch (adminError) {
-          console.warn('[AuthService] Admin client unavailable during signin:', {
+          logger.warn('[AuthService] Admin client unavailable during signin:', {
             userId: authData.user.id,
             error: adminError instanceof Error ? adminError.message : adminError,
           });
         }
       } else {
-        console.log('[AuthService] signIn: Skipping admin client (browser-side or isServer=false)');
+        logger.debug('[AuthService] signIn: Skipping admin client (browser-side or isServer=false)');
       }
 
       if (!authUser) {
-        console.log('[AuthService] signIn: Using fallback user profile fetch');
+        logger.debug('[AuthService] signIn: Using fallback user profile fetch');
 
         const updateResult = await this.userService.updateLastSeen(
           authData.user.id
         );
-        console.log('[AuthService] signIn: updateLastSeen completed', { success: updateResult.success });
+        logger.debug('[AuthService] signIn: updateLastSeen completed', { success: updateResult.success });
 
         if (!updateResult.success) {
-          console.warn(
+          logger.warn(
             '[AuthService] updateLastSeen fallback failed after signin:',
             {
               userId: authData.user.id,
@@ -869,16 +870,16 @@ export class AuthService {
           );
         }
 
-        console.log('[AuthService] signIn: Fetching user profile...');
+        logger.debug('[AuthService] signIn: Fetching user profile...');
         const profileResult = await this.userService.getUserProfile(
           authData.user.id
         );
-        console.log('[AuthService] signIn: getUserProfile completed', { success: profileResult.success });
+        logger.debug('[AuthService] signIn: getUserProfile completed', { success: profileResult.success });
 
         if (profileResult.success) {
           authUser = this.mapUserProfileToAuthUser(profileResult.data);
         } else {
-          console.warn(
+          logger.warn(
             '[AuthService] getUserProfile fallback failed after signin:',
             {
               userId: authData.user.id,
@@ -888,10 +889,10 @@ export class AuthService {
         }
       }
 
-      console.log('[AuthService] signIn: Final auth user check', { hasAuthUser: !!authUser });
+      logger.debug('[AuthService] signIn: Final auth user check', { hasAuthUser: !!authUser });
 
       if (!authUser) {
-        console.warn(
+        logger.warn(
           '[AuthService] Falling back to auth metadata after profile lookups failed during signin',
           {
             userId: authData.user.id,
@@ -900,7 +901,7 @@ export class AuthService {
         authUser = this.buildAuthUserFromAuthMetadata(authData.user);
       }
 
-      console.log('[AuthService] signIn: Returning with session tokens', {
+      logger.debug('[AuthService] signIn: Returning with session tokens', {
         hasSessionTokens: !!sessionTokens,
         sessionTokensKeys: sessionTokens ? Object.keys(sessionTokens) : null,
         activeSessionExists: !!activeSession
@@ -973,7 +974,7 @@ export class AuthService {
 
       return null;
     } catch (error) {
-      console.error('Error getting current user:', error);
+      logger.error('Error getting current user:', error);
       return null;
     }
   }
@@ -988,7 +989,7 @@ export class AuthService {
       } = await this.supabase.auth.getSession();
       return session;
     } catch (error) {
-      console.error('Error getting session:', error);
+      logger.error('Error getting session:', error);
       return null;
     }
   }
@@ -1129,7 +1130,7 @@ export class AuthService {
 
       return null;
     } catch (error) {
-      console.error('Error updating user:', error);
+      logger.error('Error updating user:', error);
       return null;
     }
   }

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { fileVersionsDatabase } from '@/lib/database/file-versions';
 import { fileDatabase } from '@/lib/database/files';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schema
@@ -107,7 +108,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Compare file versions error:', error);
+    logger.error('Compare file versions error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -152,7 +153,7 @@ export async function GET(
     return await POST(fakeRequest, { params });
 
   } catch (error) {
-    console.error('Compare file versions GET error:', error);
+    logger.error('Compare file versions GET error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

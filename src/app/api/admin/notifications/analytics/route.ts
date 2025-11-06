@@ -11,6 +11,7 @@ import {
 } from '@/lib/api/utils';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 const AnalyticsQuerySchema = z.object({
   range: z.enum(['1d', '7d', '30d', '90d']).default('7d'),
@@ -104,7 +105,7 @@ export const GET = withErrorHandling(
           .lte('created_at', endDate.toISOString());
 
         if (notificationsError) {
-          console.error('Error fetching notifications:', notificationsError);
+          logger.error('Error fetching notifications:', notificationsError);
           throw new Error('Failed to fetch notifications data');
         }
 
@@ -303,7 +304,7 @@ export const GET = withErrorHandling(
 
         return createSuccessResponse(analytics);
       } catch (error) {
-        console.error('Error fetching notification analytics:', error);
+        logger.error('Error fetching notification analytics:', error);
         
         if (error instanceof z.ZodError) {
           return createErrorResponse(

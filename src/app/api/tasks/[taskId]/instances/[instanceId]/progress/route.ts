@@ -13,6 +13,7 @@ import {
   ProgressServiceError,
 } from '@/modules/tasks/services/progress-service';
 import { createProgressUpdateSchema } from '@/modules/tasks/types/progress';
+import { logger } from '@/lib/logger';
 
 const progressService = new ProgressService();
 
@@ -58,7 +59,7 @@ async function getAuthenticatedActor(): Promise<
       .single();
 
     if (profileError) {
-      console.warn(
+      logger.warn(
         'Failed to fetch user profile for progress API:',
         profileError.message
       );
@@ -71,7 +72,7 @@ async function getAuthenticatedActor(): Promise<
       },
     };
   } catch (error) {
-    console.error('Progress API authentication error:', error);
+    logger.error('Progress API authentication error:', error);
     return { response: createUnauthorizedResponse() };
   }
 }
@@ -89,7 +90,7 @@ export const POST = async (request: NextRequest, context: RouteContext) => {
   try {
     body = await request.json();
   } catch (error) {
-    console.warn('Failed to parse progress update payload:', error);
+    logger.warn('Failed to parse progress update payload:', error);
     return createErrorResponse('Invalid JSON body', HTTP_STATUS.BAD_REQUEST);
   }
 
@@ -119,7 +120,7 @@ export const POST = async (request: NextRequest, context: RouteContext) => {
       return createErrorResponse(error.message, error.status);
     }
 
-    console.error('Progress update error:', error);
+    logger.error('Progress update error:', error);
     return createErrorResponse(
       'Internal server error',
       HTTP_STATUS.INTERNAL_SERVER_ERROR

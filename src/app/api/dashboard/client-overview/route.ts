@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 
 import { getServerUser } from '@/lib/auth/auth';
 import { fetchClientOverviewData } from '@/modules/dashboard/server/client-loaders';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,7 @@ export async function GET() {
         ? error.message
         : 'Unable to load client overview data';
 
-    console.error('Failed to load client overview', error);
+    logger.error('Failed to load client overview', error);
 
     return NextResponse.json(
       { success: false, error: 'INTERNAL_ERROR', message },

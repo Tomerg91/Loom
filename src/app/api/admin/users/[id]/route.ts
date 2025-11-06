@@ -6,6 +6,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { authService } from '@/lib/services/auth-service';
 import { UserService } from '@/lib/services/user-service';
 import { commonValidators } from '@/lib/validation/common';
+import { logger } from '@/lib/logger';
 
 const updateUserSchema = z.object({
   firstName: z.string().min(1).optional(),
@@ -40,7 +41,7 @@ export async function GET(
     return ApiResponseHelper.success(user);
 
   } catch (error) {
-    console.error('Get user API error:', error);
+    logger.error('Get user API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);
@@ -90,7 +91,7 @@ export async function PUT(
     });
 
   } catch (error) {
-    console.error('Update user API error:', error);
+    logger.error('Update user API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);
@@ -131,7 +132,7 @@ export async function DELETE(
     });
 
   } catch (error) {
-    console.error('Delete user API error:', error);
+    logger.error('Delete user API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);

@@ -10,6 +10,7 @@ import {
 } from '@/lib/api/utils';
 import { MessagingService } from '@/lib/database/messaging';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { logger } from '@/lib/logger';
 
 // POST /api/messages/[conversationId]/typing - Set typing indicator
 export const POST = withErrorHandling(
@@ -56,7 +57,7 @@ export const POST = withErrorHandling(
           typing ? 'Typing indicator set' : 'Typing indicator removed'
         );
       } catch (error) {
-        console.error('Error managing typing indicator:', error);
+        logger.error('Error managing typing indicator:', error);
         return createErrorResponse(
           'Failed to manage typing indicator',
           HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -102,7 +103,7 @@ export const GET = withErrorHandling(
           data: typingUsers,
         });
       } catch (error) {
-        console.error('Error fetching typing indicators:', error);
+        logger.error('Error fetching typing indicators:', error);
         return createErrorResponse(
           'Failed to fetch typing indicators',
           HTTP_STATUS.INTERNAL_SERVER_ERROR

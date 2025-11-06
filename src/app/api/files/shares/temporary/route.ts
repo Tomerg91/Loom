@@ -7,6 +7,7 @@ import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { fileManagementService } from '@/lib/services/file-management-service';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 
 // Validation schema for creating temporary share
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
-      console.error('Error creating temporary share:', insertError);
+      logger.error('Error creating temporary share:', insertError);
       return NextResponse.json(
         { error: 'Failed to create temporary share' },
         { status: 500 }
@@ -181,7 +182,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Create temporary share error:', error);
+    logger.error('Create temporary share error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -273,7 +274,7 @@ export async function GET(request: NextRequest) {
     const { data: shares, error: sharesError, count } = await query;
 
     if (sharesError) {
-      console.error('Error fetching temporary shares:', sharesError);
+      logger.error('Error fetching temporary shares:', sharesError);
       return NextResponse.json(
         { error: 'Failed to fetch temporary shares' },
         { status: 500 }
@@ -344,7 +345,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('List temporary shares error:', error);
+    logger.error('List temporary shares error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -398,7 +399,7 @@ export async function DELETE(request: NextRequest) {
         .lt('expires_at', new Date().toISOString());
 
       if (deleteError) {
-        console.error('Error deleting expired shares:', deleteError);
+        logger.error('Error deleting expired shares:', deleteError);
         return NextResponse.json(
           { error: 'Failed to delete expired shares' },
           { status: 500 }
@@ -427,7 +428,7 @@ export async function DELETE(request: NextRequest) {
       .in('id', share_ids);
 
     if (validateError) {
-      console.error('Error validating shares:', validateError);
+      logger.error('Error validating shares:', validateError);
       return NextResponse.json(
         { error: 'Failed to validate shares' },
         { status: 500 }
@@ -454,7 +455,7 @@ export async function DELETE(request: NextRequest) {
       .in('id', validShareIds);
 
     if (deleteError) {
-      console.error('Error deleting shares:', deleteError);
+      logger.error('Error deleting shares:', deleteError);
       return NextResponse.json(
         { error: 'Failed to delete shares' },
         { status: 500 }
@@ -468,7 +469,7 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Bulk delete temporary shares error:', error);
+    logger.error('Bulk delete temporary shares error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

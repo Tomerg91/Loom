@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -32,13 +33,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .eq('id', userId);
 
     if (updateError) {
-      console.error('Error updating last seen:', updateError);
+      logger.error('Error updating last seen:', updateError);
       return ApiResponseHelper.internalError('Failed to update last seen timestamp');
     }
 
     return ApiResponseHelper.success(null, 'Last seen timestamp updated successfully');
   } catch (error) {
-    console.error('Error updating last seen:', error);
+    logger.error('Error updating last seen:', error);
     return ApiResponseHelper.internalError('Failed to update last seen timestamp');
   }
 }

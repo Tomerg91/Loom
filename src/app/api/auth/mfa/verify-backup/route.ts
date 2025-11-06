@@ -12,6 +12,7 @@ import { z } from 'zod';
 
 import { rateLimit } from '@/lib/security/rate-limit';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
+import { logger } from '@/lib/logger';
 
 // Request validation schema
 const verifyBackupRequestSchema = z.object({
@@ -155,7 +156,7 @@ export const POST = rateLimitedPOST(async function(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Backup code verify error:', error);
+    logger.error('Backup code verify error:', error);
     
     return NextResponse.json(
       { 
@@ -218,7 +219,7 @@ export const GET = rateLimitedGET(async function(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Backup code availability check error:', error);
+    logger.error('Backup code availability check error:', error);
     
     return NextResponse.json(
       { 

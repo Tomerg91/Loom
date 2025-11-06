@@ -4,6 +4,7 @@ import { createPaymentService } from '@/lib/database';
 import { verifyTranzilaSignature } from '@/lib/payments/tranzila';
 import { applySecurityHeaders } from '@/lib/security/headers';
 import { rateLimit } from '@/lib/security/rate-limit';
+import { logger } from '@/lib/logger';
 
 // Simple in-memory idempotency (replace with DB persistence in production)
 const seen = new Set<string>();
@@ -56,7 +57,7 @@ async function handler(req: NextRequest): Promise<NextResponse> {
 
     return applySecurityHeaders(req, NextResponse.json({ ok: true }, { status: 200 }));
   } catch (e) {
-    console.error('Tranzila IPN error', e);
+    logger.error('Tranzila IPN error', e);
     return applySecurityHeaders(req, NextResponse.json({ ok: false }, { status: 500 }));
   }
 }

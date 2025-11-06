@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createAuthService } from '@/lib/auth/auth';
 import { createMfaService } from '@/lib/services/mfa-service';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('MFA status error:', error);
+    logger.error('MFA status error:', error);
     
     return NextResponse.json(
       { 

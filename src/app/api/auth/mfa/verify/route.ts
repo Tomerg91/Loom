@@ -18,6 +18,7 @@ import {
 } from '@/lib/api/utils';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
+import { logger } from '@/lib/logger';
 
 // Cookie name for MFA trusted device token
 const MFA_TRUSTED_DEVICE_COOKIE = 'mfa_trusted_device';
@@ -56,7 +57,7 @@ export const POST = withErrorHandling(
         requestData = await verifyRequestSchema.parseAsync(body);
       } catch (validationError) {
         // Log invalid MFA verification attempt
-        console.warn('Invalid MFA verification attempt:', {
+        logger.warn('Invalid MFA verification attempt:', {
           ip: request.headers.get('x-forwarded-for') || 'unknown',
           userAgent: request.headers.get('user-agent'),
           timestamp: new Date().toISOString(),
@@ -77,7 +78,7 @@ export const POST = withErrorHandling(
       const userAgent = getUserAgent(request);
 
       // Log MFA verification attempt for security monitoring
-      console.info('MFA verification attempt:', {
+      logger.info('MFA verification attempt:', {
         userId: requestData.userId,
         method: requestData.method,
         ipAddress,
@@ -91,7 +92,7 @@ export const POST = withErrorHandling(
       // Check if user requires MFA
       const requiresMFA = await mfaService.requiresMFA(requestData.userId);
       if (!requiresMFA) {
-        console.warn('MFA verification attempted for user without MFA:', {
+        logger.warn('MFA verification attempted for user without MFA:', {
           userId: requestData.userId,
           ipAddress,
           timestamp: new Date().toISOString(),
@@ -114,7 +115,7 @@ export const POST = withErrorHandling(
 
       if (!result.success) {
         // Log failed MFA verification for security monitoring
-        console.warn('MFA verification failed:', {
+        logger.warn('MFA verification failed:', {
           userId: requestData.userId,
           method: requestData.method,
           error: result.error,
@@ -140,7 +141,7 @@ export const POST = withErrorHandling(
       const mfaStatus = await mfaService.getMFAStatus(requestData.userId);
 
       // Log successful MFA verification for auditing
-      console.info('MFA verification successful:', {
+      logger.info('MFA verification successful:', {
         userId: requestData.userId,
         method: requestData.method,
         backupCodesRemaining: mfaStatus.backupCodesRemaining,
@@ -162,7 +163,7 @@ export const POST = withErrorHandling(
             maxAge: tokenResult.maxAgeSeconds,
           };
         } else {
-          console.warn('Trusted device token issuance failed:', {
+          logger.warn('Trusted device token issuance failed:', {
             userId: requestData.userId,
             error: tokenResult.error,
           });
@@ -206,7 +207,7 @@ export const POST = withErrorHandling(
       return response;
     } catch (error) {
       // Log error for monitoring
-      console.error('MFA verify error:', {
+      logger.error('MFA verify error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),
@@ -242,7 +243,7 @@ export const GET = withErrorHandling(
       const uuidRegex =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(userId)) {
-        console.warn('Invalid MFA status check attempt:', {
+        logger.warn('Invalid MFA status check attempt:', {
           userId,
           ip: request.headers.get('x-forwarded-for') || 'unknown',
           timestamp: new Date().toISOString(),
@@ -269,7 +270,7 @@ export const GET = withErrorHandling(
       );
     } catch (error) {
       // Log error for monitoring
-      console.error('MFA status check error:', {
+      logger.error('MFA status check error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),

@@ -4,6 +4,7 @@ import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { authService } from '@/lib/services/auth-service';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface ClientDetailResponse {
   id: string;
@@ -125,7 +126,7 @@ export async function GET(
       .limit(1);
 
     if (notesError) {
-      console.warn('[/api/coach/clients/:id] Failed to load coach notes', notesError);
+      logger.warn('[/api/coach/clients/:id] Failed to load coach notes', notesError);
     }
 
     const feedbackPromise = sessionIds.length > 0
@@ -164,13 +165,13 @@ export async function GET(
     ]);
 
     if (feedbackResult.error) {
-      console.warn('[/api/coach/clients/:id] Failed to load session feedback', feedbackResult.error);
+      logger.warn('[/api/coach/clients/:id] Failed to load session feedback', feedbackResult.error);
     }
     if (ratingsResult.error) {
-      console.warn('[/api/coach/clients/:id] Failed to load session ratings', ratingsResult.error);
+      logger.warn('[/api/coach/clients/:id] Failed to load session ratings', ratingsResult.error);
     }
     if (goalsResult.error) {
-      console.warn('[/api/coach/clients/:id] Failed to load client goals', goalsResult.error);
+      logger.warn('[/api/coach/clients/:id] Failed to load client goals', goalsResult.error);
     }
 
     const totalSessions = sessions?.length || 0;
@@ -283,7 +284,7 @@ export async function GET(
     return ApiResponseHelper.success(clientDetail);
 
   } catch (error) {
-    console.error('Client detail API error:', error);
+    logger.error('Client detail API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message, error.statusCode);
@@ -343,7 +344,7 @@ export async function PUT(
       .single();
 
     if (fetchError) {
-      console.warn('[/api/coach/clients/:id] Failed to fetch existing coach note', fetchError);
+      logger.warn('[/api/coach/clients/:id] Failed to fetch existing coach note', fetchError);
     }
 
     if (existingNote) {
@@ -380,7 +381,7 @@ export async function PUT(
     return ApiResponseHelper.success({ message: 'Client notes updated successfully' });
 
   } catch (error) {
-    console.error('Update client notes API error:', error);
+    logger.error('Update client notes API error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message, error.statusCode);

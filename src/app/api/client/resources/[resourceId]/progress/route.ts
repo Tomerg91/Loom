@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 import type { TrackProgressRequest } from '@/types/resources';
 
@@ -133,7 +134,7 @@ export async function POST(
         .single();
 
       if (error) {
-        console.error('Error updating progress:', error);
+        logger.error('Error updating progress', error);
         return NextResponse.json({ error: 'Failed to update progress' }, { status: 500 });
       }
 
@@ -169,7 +170,7 @@ export async function POST(
         .single();
 
       if (error) {
-        console.error('Error creating progress:', error);
+        logger.error('Error creating progress', error);
         return NextResponse.json({ error: 'Failed to create progress record' }, { status: 500 });
       }
 
@@ -223,7 +224,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error('Error in progress tracking API:', error);
+    logger.error('Error in progress tracking API', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

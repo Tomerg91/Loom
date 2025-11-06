@@ -6,6 +6,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { config } from '@/lib/config';
 import { authService } from '@/lib/services/auth-service';
 import { fileService } from '@/lib/services/file-service';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     });
 
   } catch (error) {
-    console.error('Avatar upload error:', error);
+    logger.error('Avatar upload error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);
@@ -83,7 +84,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
       try {
         await fileService.deleteFile(user.avatarUrl);
       } catch (error) {
-        console.warn('Failed to delete previous avatar file:', error);
+        logger.warn('Failed to delete previous avatar file:', error);
         // Continue with database update even if file deletion fails
       }
     }
@@ -99,7 +100,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
     });
 
   } catch (error) {
-    console.error('Avatar removal error:', error);
+    logger.error('Avatar removal error:', error);
     
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);

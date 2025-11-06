@@ -1,4 +1,5 @@
 import { BaseSessionService } from './base-session';
+import { logger } from '@/lib/logger';
 
 /**
  * Session scheduling and availability service
@@ -205,7 +206,7 @@ export class SessionSchedulingService extends BaseSessionService {
     );
 
     if (hasConflict) {
-      console.warn('Cannot reschedule: time slot has conflict');
+      logger.warn('Cannot reschedule: time slot has conflict');
       return false;
     }
 
