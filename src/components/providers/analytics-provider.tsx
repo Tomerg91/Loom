@@ -5,15 +5,15 @@ import { useEffect } from 'react';
 
 // Use the app's active AuthProvider hook to avoid context mismatch
 import { useUser } from '@/lib/auth/use-user';
-import { 
 import { logger } from '@/lib/logger';
-  GA_TRACKING_ID, 
-  POSTHOG_KEY, 
+import {
+  GA_TRACKING_ID,
+  POSTHOG_KEY,
   POSTHOG_HOST,
   pageView,
   trackPageView,
   posthogIdentify,
-  collectWebVitals 
+  collectWebVitals
 } from '@/lib/monitoring/analytics';
 
 declare global {
