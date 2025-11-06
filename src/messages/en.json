@@ -775,6 +775,20 @@
       "unshare": "We couldn't stop sharing the entry.",
       "load": "We couldn't load your practice journal.",
       "loadInsights": "We couldn't load practice insights."
+    },
+    "success": {
+      "created": "Practice entry saved successfully",
+      "updated": "Practice entry updated successfully",
+      "deleted": "Practice entry deleted successfully",
+      "shared": "Entry shared with your coach",
+      "unshared": "Sharing removed"
+    },
+    "error": {
+      "loadFailed": "Failed to load practice entries",
+      "createFailed": "Failed to create practice entry",
+      "updateFailed": "Failed to update practice entry",
+      "deleteFailed": "Failed to delete practice entry",
+      "shareFailed": "Failed to share practice entry"
     }
   },
   "mfa": {
