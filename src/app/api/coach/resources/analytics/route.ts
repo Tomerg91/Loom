@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { getLibraryAnalytics } from '@/lib/database/resources';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,7 @@ export async function GET() {
       data: analytics,
     });
   } catch (error) {
-    console.error('Failed to fetch library analytics:', error);
+    logger.error('Failed to fetch library analytics', error);
     return NextResponse.json(
       {
         success: false,

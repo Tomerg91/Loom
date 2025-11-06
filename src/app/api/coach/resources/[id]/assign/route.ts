@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
-  getResourceById,
-  updateResource,
-  deleteResource,
-  type UpdateResourceData,
+  assignResourceToClient,
+  unassignResourceFromClient,
+  getResourceAssignments,
 } from '@/lib/database/resources';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
@@ -12,75 +11,15 @@ import { logger } from '@/lib/logger';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/coach/resources/[id]
- * Get a single resource by ID
+ * POST /api/coach/resources/[id]/assign
+ * Assign a resource to one or more clients
  */
-export async function GET(
+export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const supabase = await createClient();
-
-    // Verify authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Fetch resource
-    const resource = await getResourceById(id);
-
-    if (!resource) {
-      return NextResponse.json(
-        { success: false, error: 'Resource not found' },
-        { status: 404 }
-      );
-    }
-
-    // Verify ownership (coaches can only see their own resources)
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (userData?.role === 'coach' && resource.coach_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: resource,
-    });
-  } catch (error) {
-    logger.error('Failed to fetch resource', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch resource',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * PUT /api/coach/resources/[id]
- * Update a resource
- */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
+    const { id: resourceId } = await params;
     const supabase = await createClient();
 
     // Verify authentication
@@ -106,31 +45,48 @@ export async function PUT(
 
     // Parse request body
     const body = await request.json();
-    const updateData: UpdateResourceData = {
-      title: body.title,
-      description: body.description,
-      type: body.type,
-      url: body.url,
-      thumbnail_url: body.thumbnail_url,
-      tags: body.tags,
-      category: body.category,
-      duration_minutes: body.duration_minutes,
-    };
+    const { client_ids, notes } = body;
 
-    // Update resource
-    const resource = await updateResource(id, user.id, updateData);
+    if (!client_ids || !Array.isArray(client_ids) || client_ids.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'client_ids array is required',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Assign resource to each client
+    const assignments = await Promise.all(
+      client_ids.map((clientId: string) =>
+        assignResourceToClient(resourceId, clientId, user.id, notes)
+      )
+    );
 
     return NextResponse.json({
       success: true,
-      data: resource,
-      message: 'Resource updated successfully',
-    });
+      data: assignments,
+      message: `Resource assigned to ${assignments.length} client(s)`,
+    }, { status: 201 });
   } catch (error) {
-    logger.error('Failed to update resource', error);
+    logger.error('Failed to assign resource', error);
+
+    // Handle unique constraint violation (resource already assigned)
+    if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Resource already assigned to one or more clients',
+        },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to update resource',
+        error: 'Failed to assign resource',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
@@ -139,15 +95,15 @@ export async function PUT(
 }
 
 /**
- * DELETE /api/coach/resources/[id]
- * Delete a resource
+ * GET /api/coach/resources/[id]/assign
+ * Get all assignments for a resource
  */
-export async function DELETE(
+export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id: resourceId } = await params;
     const supabase = await createClient();
 
     // Verify authentication
@@ -171,19 +127,87 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Delete resource
-    await deleteResource(id, user.id);
+    // Get assignments
+    const assignments = await getResourceAssignments(resourceId, user.id);
 
     return NextResponse.json({
       success: true,
-      message: 'Resource deleted successfully',
+      data: assignments,
+      count: assignments.length,
     });
   } catch (error) {
-    logger.error('Failed to delete resource', error);
+    logger.error('Failed to fetch resource assignments', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to delete resource',
+        error: 'Failed to fetch assignments',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/coach/resources/[id]/assign
+ * Unassign a resource from a client
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: resourceId } = await params;
+    const supabase = await createClient();
+
+    // Verify authentication
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify coach role
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (userData?.role !== 'coach') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Parse request body for assignment_id
+    const { searchParams } = request.nextUrl;
+    const assignmentId = searchParams.get('assignment_id');
+
+    if (!assignmentId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'assignment_id query parameter is required',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Unassign resource
+    await unassignResourceFromClient(assignmentId, user.id);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Resource unassigned successfully',
+    });
+  } catch (error) {
+    logger.error('Failed to unassign resource', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to unassign resource',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
