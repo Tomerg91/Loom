@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileMetadata } from '@/lib/services/file-management-service';
+import { logger } from '@/lib/logger';
 
 interface FilePreviewProps {
   file: FileMetadata;
@@ -73,7 +74,7 @@ const sanitizeUrl = (url: string): string => {
         parsedUrl.hostname.includes(domain)
       );
       if (!isValidDomain && !parsedUrl.hostname.includes('localhost')) {
-        console.warn('Untrusted domain blocked:', parsedUrl.hostname);
+        logger.warn('Untrusted domain blocked:', parsedUrl.hostname);
         return '';
       }
     }
@@ -135,7 +136,7 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
             className="rounded"
             unoptimized={true} // For external URLs
             onError={() => {
-              console.error('Failed to load image:', sanitizedUrl);
+              logger.error('Failed to load image:', sanitizedUrl);
             }}
             loader={({ src }) => {
               // Custom loader for secure URL handling
@@ -157,7 +158,7 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
           preload="metadata"
           controlsList="nodownload" // Prevent unauthorized downloads
           onError={() => {
-            console.error('Failed to load video:', sanitizedUrl);
+            logger.error('Failed to load video:', sanitizedUrl);
           }}
         >
           <source src={sanitizedUrl} type={fileType} />
@@ -178,7 +179,7 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
             className="w-full max-w-sm"
             controlsList="nodownload" // Prevent unauthorized downloads
             onError={() => {
-              console.error('Failed to load audio:', sanitizedUrl);
+              logger.error('Failed to load audio:', sanitizedUrl);
             }}
           >
             <source src={sanitizedUrl} type={fileType} />
@@ -204,7 +205,7 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
               onClick={(e) => {
                 if (!sanitizedUrl) {
                   e.preventDefault();
-                  console.error('Invalid PDF URL blocked');
+                  logger.error('Invalid PDF URL blocked');
                 }
               }}
             >
@@ -234,7 +235,7 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
             onClick={(e) => {
               if (!sanitizedUrl) {
                 e.preventDefault();
-                console.error('Invalid text file URL blocked');
+                logger.error('Invalid text file URL blocked');
               }
             }}
           >
@@ -263,7 +264,7 @@ const FilePreviewContent = ({ file }: { file: FileMetadata }) => {
             onClick={(e) => {
               if (!sanitizedUrl) {
                 e.preventDefault();
-                console.error('Invalid file URL blocked');
+                logger.error('Invalid file URL blocked');
               }
             }}
           >
@@ -296,7 +297,7 @@ export function FilePreview({ file, open, onClose, onShare, onDelete }: FilePrev
                   onClick={(e) => {
                     if (!file.storageUrl || !sanitizeUrl(file.storageUrl)) {
                       e.preventDefault();
-                      console.error('Invalid download URL blocked');
+                      logger.error('Invalid download URL blocked');
                     }
                   }}
                 >

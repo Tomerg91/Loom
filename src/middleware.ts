@@ -95,7 +95,7 @@ async function refreshSessionOnResponse(
     const supabase = createServerClientWithRequest(request, response);
     await supabase.auth.getSession();
   } catch (error) {
-    console.warn('Failed to refresh Supabase session in middleware:', error);
+    logger.warn('Failed to refresh Supabase session in middleware:', error);
   }
   return response;
 }
@@ -119,7 +119,7 @@ async function applyFinalisers(
   res = await refreshSessionOnResponse(request, res);
   if (logRequests) {
     res.headers.set('X-Request-ID', reqId);
-    console.info('[RES]', {
+    logger.info('[RES]', {
       id: reqId,
       path: request.nextUrl.pathname,
       status: res.status,
@@ -152,7 +152,7 @@ export async function middleware(request: NextRequest) {
   const start = Date.now();
 
   if (logRequests) {
-    console.info('[REQ]', {
+    logger.info('[REQ]', {
       id: reqId,
       method: request.method,
       path: pathname,
@@ -168,7 +168,7 @@ export async function middleware(request: NextRequest) {
     const res = NextResponse.next();
     if (logRequests) {
       res.headers.set('X-Request-ID', reqId);
-      console.info('[RES]', {
+      logger.info('[RES]', {
         id: reqId,
         path: pathname,
         status: 200,
@@ -188,7 +188,7 @@ export async function middleware(request: NextRequest) {
       const res = new NextResponse('Forbidden', { status: 403 });
       if (logRequests) {
         res.headers.set('X-Request-ID', reqId);
-        console.warn('[RES]', {
+        logger.warn('[RES]', {
           id: reqId,
           path: pathname,
           status: 403,
@@ -246,7 +246,7 @@ export async function middleware(request: NextRequest) {
             }
           );
         } catch (error) {
-          console.warn('Failed to validate trusted device token:', error);
+          logger.warn('Failed to validate trusted device token:', error);
         }
       }
     }

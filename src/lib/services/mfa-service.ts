@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import * as speakeasy from 'speakeasy';
 
 import { supabase as clientSupabase } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 // Secure environment validation - NO FALLBACKS ALLOWED
 function validateMfaEnvironment() {
@@ -205,7 +206,7 @@ export class MfaService {
       // Return iv + encrypted data (CBC mode doesn't use auth tags)
       return iv.toString('hex') + ':' + encrypted;
     } catch (error) {
-      console.error('Failed to encrypt MFA secret:', error);
+      logger.error('Failed to encrypt MFA secret:', error);
       throw new Error('Failed to encrypt MFA secret');
     }
   }
@@ -241,7 +242,7 @@ export class MfaService {
 
       return decrypted;
     } catch (error) {
-      console.error('Failed to decrypt MFA secret:', error);
+      logger.error('Failed to decrypt MFA secret:', error);
       throw new Error('Failed to decrypt MFA secret');
     }
   }
@@ -273,7 +274,7 @@ export class MfaService {
 
         userEmail = userProfile.email;
       } catch (dbError) {
-        console.error('Failed to fetch user email for MFA setup:', dbError);
+        logger.error('Failed to fetch user email for MFA setup:', dbError);
         return {
           secret: null,
           error: 'Failed to retrieve user information for MFA setup',
@@ -344,7 +345,7 @@ export class MfaService {
       });
 
       if (saveError) {
-        console.error('Failed to save MFA settings:', saveError);
+        logger.error('Failed to save MFA settings:', saveError);
         return { success: false, error: 'Failed to save MFA settings' };
       }
 
@@ -387,7 +388,7 @@ export class MfaService {
         .eq('user_id', userId);
 
       if (removeError) {
-        console.error('Failed to remove MFA settings:', removeError);
+        logger.error('Failed to remove MFA settings:', removeError);
         return { success: false, error: 'Failed to remove MFA settings' };
       }
 
@@ -431,7 +432,7 @@ export class MfaService {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error checking rate limit:', error);
+        logger.error('Error checking rate limit:', error);
         return { allowed: false };
       }
 
@@ -459,7 +460,7 @@ export class MfaService {
         remainingAttempts: MFA_CONFIG.RATE_LIMIT_MAX - newAttempts,
       };
     } catch (error) {
-      console.error('Error in rate limiting:', error);
+      logger.error('Error in rate limiting:', error);
       return { allowed: false };
     }
   }
@@ -481,7 +482,7 @@ export class MfaService {
       if (userId) {
         const rateCheck = await this.checkRateLimit(userId, 'totp');
         if (!rateCheck.allowed) {
-          console.warn(
+          logger.warn(
             `Rate limit exceeded for user ${userId} TOTP verification`
           );
           return false;
@@ -499,7 +500,7 @@ export class MfaService {
 
       return verified;
     } catch (error) {
-      console.error('Error verifying TOTP code:', error);
+      logger.error('Error verifying TOTP code:', error);
       return false;
     }
   }
@@ -585,7 +586,7 @@ export class MfaService {
         .eq('user_id', userId);
 
       if (updateError) {
-        console.error('Failed to mark backup code as used:', updateError);
+        logger.error('Failed to mark backup code as used:', updateError);
         return { success: false, error: 'Failed to process backup code' };
       }
 
@@ -602,7 +603,7 @@ export class MfaService {
         remainingAttempts: remainingCodes,
       };
     } catch (error) {
-      console.error('Error verifying backup code:', error);
+      logger.error('Error verifying backup code:', error);
       return {
         success: false,
         error:
@@ -640,7 +641,7 @@ export class MfaService {
         .eq('user_id', userId);
 
       if (updateError) {
-        console.error('Failed to save backup codes:', updateError);
+        logger.error('Failed to save backup codes:', updateError);
         return {
           codes: null,
           error: 'Failed to save backup codes to database',
@@ -657,7 +658,7 @@ export class MfaService {
       // Return plain text codes to user (only time they'll see them)
       return { codes: newBackupCodes, error: null };
     } catch (error) {
-      console.error('Error regenerating backup codes:', error);
+      logger.error('Error regenerating backup codes:', error);
       return {
         codes: null,
         error:
@@ -712,7 +713,7 @@ export class MfaService {
         });
 
       if (saveError) {
-        console.error('Failed to save trusted device:', saveError);
+        logger.error('Failed to save trusted device:', saveError);
         throw new Error('Failed to save trusted device to database');
       }
 
@@ -753,7 +754,7 @@ export class MfaService {
         .eq('id', deviceId);
 
       if (deleteError) {
-        console.error('Failed to remove trusted device:', deleteError);
+        logger.error('Failed to remove trusted device:', deleteError);
         throw new Error('Failed to remove trusted device from database');
       }
 
@@ -803,7 +804,7 @@ export class MfaService {
 
       return true;
     } catch (error) {
-      console.error('Error checking trusted device:', error);
+      logger.error('Error checking trusted device:', error);
       return false;
     }
   }
@@ -854,7 +855,7 @@ export class MfaService {
         });
 
       if (upsertError) {
-        console.error('Failed to persist trusted device token:', upsertError);
+        logger.error('Failed to persist trusted device token:', upsertError);
         return {
           success: false,
           error: 'Failed to persist trusted device token',
@@ -880,7 +881,7 @@ export class MfaService {
         ),
       };
     } catch (error) {
-      console.error('Error issuing trusted device token:', error);
+      logger.error('Error issuing trusted device token:', error);
       return {
         success: false,
         error:
@@ -938,7 +939,7 @@ export class MfaService {
 
       return true;
     } catch (error) {
-      console.error('Error validating trusted device token:', error);
+      logger.error('Error validating trusted device token:', error);
       return false;
     }
   }
@@ -964,7 +965,7 @@ export class MfaService {
         .order('last_used_at', { ascending: false });
 
       if (fetchError) {
-        console.error('Failed to fetch trusted devices:', fetchError);
+        logger.error('Failed to fetch trusted devices:', fetchError);
         return { devices: [], error: 'Failed to fetch trusted devices' };
       }
 
@@ -986,7 +987,7 @@ export class MfaService {
 
       return { devices: trustedDevices, error: null };
     } catch (error) {
-      console.error('Error getting trusted devices:', error);
+      logger.error('Error getting trusted devices:', error);
       return {
         devices: [],
         error:
@@ -1020,7 +1021,7 @@ export class MfaService {
         .limit(Math.min(limit, 100)); // Cap at 100 for performance
 
       if (fetchError) {
-        console.error('Failed to fetch security events:', fetchError);
+        logger.error('Failed to fetch security events:', fetchError);
         return { events: [], error: 'Failed to fetch security events' };
       }
 
@@ -1040,7 +1041,7 @@ export class MfaService {
 
       return { events: securityEvents, error: null };
     } catch (error) {
-      console.error('Error getting security events:', error);
+      logger.error('Error getting security events:', error);
       return {
         events: [],
         error:
@@ -1059,7 +1060,7 @@ export class MfaService {
   ): Promise<void> {
     try {
       if (!event.userId || !event.type) {
-        console.error('Invalid security event: userId and type are required');
+        logger.error('Invalid security event: userId and type are required');
         return;
       }
 
@@ -1079,11 +1080,11 @@ export class MfaService {
         });
 
       if (insertError) {
-        console.error('Failed to log security event to database:', insertError);
+        logger.error('Failed to log security event to database:', insertError);
         // Don't throw here as logging failures shouldn't break the main flow
       }
     } catch (error) {
-      console.error('Failed to log security event:', error);
+      logger.error('Failed to log security event:', error);
       // Don't throw here as logging failures shouldn't break the main flow
     }
   }
@@ -1107,7 +1108,7 @@ export class MfaService {
 
       return secret.base32;
     } catch (error) {
-      console.error('Failed to generate secure TOTP secret:', error);
+      logger.error('Failed to generate secure TOTP secret:', error);
       throw new Error('Failed to generate secure TOTP secret');
     }
   }
@@ -1131,7 +1132,7 @@ export class MfaService {
 
         codes.push(formattedCode);
       } catch (error) {
-        console.error('Failed to generate secure backup code:', error);
+        logger.error('Failed to generate secure backup code:', error);
         throw new Error('Failed to generate secure backup codes');
       }
     }
@@ -1147,7 +1148,7 @@ export class MfaService {
     try {
       return crypto.randomUUID();
     } catch (error) {
-      console.error('Failed to generate secure ID:', error);
+      logger.error('Failed to generate secure ID:', error);
       throw new Error('Failed to generate secure ID');
     }
   }
@@ -1172,7 +1173,7 @@ export class MfaService {
 
       return 'fp_' + baseFingerprint.substring(0, 24);
     } catch (error) {
-      console.error('Failed to generate secure device fingerprint:', error);
+      logger.error('Failed to generate secure device fingerprint:', error);
       throw new Error('Failed to generate secure device fingerprint');
     }
   }
@@ -1248,7 +1249,7 @@ export class MfaService {
           };
         }
 
-        console.error('Failed to fetch MFA status:', fetchError);
+        logger.error('Failed to fetch MFA status:', fetchError);
         throw new Error('Failed to fetch MFA status');
       }
 
@@ -1266,7 +1267,7 @@ export class MfaService {
         backupCodesRemaining,
       };
     } catch (error) {
-      console.error('Error getting MFA status:', error);
+      logger.error('Error getting MFA status:', error);
       return {
         isEnabled: false,
         isSetup: false,
@@ -1284,7 +1285,7 @@ export class MfaService {
       const status = await this.getMFAStatus(userId);
       return status.isEnabled;
     } catch (error) {
-      console.error('Error checking MFA requirement:', error);
+      logger.error('Error checking MFA requirement:', error);
       return false;
     }
   }
@@ -1401,7 +1402,7 @@ export class MfaService {
         .eq('user_id', userId);
 
       if (updateError) {
-        console.error('Failed to enable MFA:', updateError);
+        logger.error('Failed to enable MFA:', updateError);
         return { success: false, error: 'Failed to enable MFA' };
       }
 
@@ -1416,7 +1417,7 @@ export class MfaService {
 
       return { success: true };
     } catch (error) {
-      console.error('Error enabling MFA:', error);
+      logger.error('Error enabling MFA:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to enable MFA',
@@ -1479,7 +1480,7 @@ export class MfaService {
         .eq('user_id', userId);
 
       if (updateError) {
-        console.error('Failed to disable MFA:', updateError);
+        logger.error('Failed to disable MFA:', updateError);
         return { success: false, error: 'Failed to disable MFA' };
       }
 
@@ -1494,7 +1495,7 @@ export class MfaService {
 
       return { success: true };
     } catch (error) {
-      console.error('Error disabling MFA:', error);
+      logger.error('Error disabling MFA:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to disable MFA',
@@ -1598,7 +1599,7 @@ export class MfaService {
         },
       };
     } catch (error) {
-      console.error('Error validating MFA session:', error);
+      logger.error('Error validating MFA session:', error);
       return {
         session: null,
         error:
@@ -1644,7 +1645,7 @@ export class MfaService {
         });
 
       if (insertError) {
-        console.error('Failed to create MFA session:', insertError);
+        logger.error('Failed to create MFA session:', insertError);
         return {
           session: undefined,
           error: 'Failed to create MFA session in database',
@@ -1715,13 +1716,13 @@ export class MfaService {
         .eq('session_token', sessionToken);
 
       if (updateError) {
-        console.error('Failed to update MFA session:', updateError);
+        logger.error('Failed to update MFA session:', updateError);
         return { success: false, error: 'Failed to update session' };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Error completing MFA session:', error);
+      logger.error('Error completing MFA session:', error);
       return {
         success: false,
         error:

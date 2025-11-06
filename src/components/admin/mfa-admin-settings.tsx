@@ -31,6 +31,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { logger } from '@/lib/logger';
 
 interface MfaAdminSettingsProps {
   onSaveSettings?: (settings: MfaEnforcementSettings) => Promise<void>;
@@ -143,7 +144,7 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
         setSettings(result.data);
       }
     } catch (error) {
-      console.error('Error fetching MFA settings:', error);
+      logger.error('Error fetching MFA settings:', error);
       setError('Failed to load MFA settings');
     }
   }, []);
@@ -183,7 +184,7 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
         setStatistics(payload.statistics);
       }
     } catch (error) {
-      console.error('Error fetching user MFA statuses:', error);
+      logger.error('Error fetching user MFA statuses:', error);
       setError('Failed to load user MFA data');
     } finally {
       setIsLoadingUsers(false);
@@ -204,7 +205,7 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
         setStatistics(result.data);
       }
     } catch (error) {
-      console.error('Error fetching MFA statistics:', error);
+      logger.error('Error fetching MFA statistics:', error);
       setError('Failed to load MFA statistics');
     } finally {
       setIsLoadingStats(false);
@@ -234,7 +235,7 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
         await fetchStatistics();
       }
     } catch (error) {
-      console.error(`Error ${action}ing MFA:`, error);
+      logger.error(`Error ${action}ing MFA:`, error);
       setError(`Failed to ${action} MFA for user`);
     }
   };
@@ -284,7 +285,7 @@ export function MfaAdminSettings({ onSaveSettings }: MfaAdminSettingsProps) {
         await onSaveSettings(settings);
       }
     } catch (error) {
-      console.error('Failed to save MFA settings:', error);
+      logger.error('Failed to save MFA settings:', error);
       setError('Failed to save MFA settings');
     } finally {
       setIsLoading(false);

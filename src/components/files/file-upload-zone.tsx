@@ -34,6 +34,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { logger } from '@/lib/logger';
 
 
 export interface UploadFile {
@@ -102,7 +103,7 @@ const sanitizePreviewUrl = (url: string): string => {
     const parsedUrl = new URL(url);
     // Only allow blob URLs for local previews and data URLs for fallbacks
     if (!['blob:', 'data:'].includes(parsedUrl.protocol)) {
-      console.warn('Invalid preview URL protocol blocked:', parsedUrl.protocol);
+      logger.warn('Invalid preview URL protocol blocked:', parsedUrl.protocol);
       return '';
     }
     return url;
@@ -238,7 +239,7 @@ export function FileUploadZone({
           const blobUrl = URL.createObjectURL(file);
           previewUrl = sanitizePreviewUrl(blobUrl);
         } catch (error) {
-          console.error('Failed to create preview URL:', error);
+          logger.error('Failed to create preview URL:', error);
         }
       }
       
@@ -571,7 +572,7 @@ export function FileUploadZone({
                           className="object-cover rounded"
                           unoptimized={true} // For blob URLs
                           onError={() => {
-                            console.error('Failed to load preview:', uploadFile.previewUrl);
+                            logger.error('Failed to load preview:', uploadFile.previewUrl);
                           }}
                           loader={({ src }) => {
                             return sanitizePreviewUrl(src) || '/images/fallback-image.svg';
@@ -713,7 +714,7 @@ export function FileUploadZone({
                       className="object-cover rounded"
                       unoptimized={true} // For blob URLs
                       onError={() => {
-                        console.error('Failed to load preview:', editingFile.previewUrl);
+                        logger.error('Failed to load preview:', editingFile.previewUrl);
                       }}
                       loader={({ src }) => {
                         return sanitizePreviewUrl(src) || '/images/fallback-image.svg';

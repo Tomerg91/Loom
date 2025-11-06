@@ -9,7 +9,7 @@ export default getRequestConfig(async ({ locale }: { locale?: string }) => {
     // Use default locale for undefined or invalid locales
     // Only warn if locale was provided but invalid (not undefined)
     if (resolvedLocale && resolvedLocale !== routing.defaultLocale) {
-      console.warn(`Invalid locale requested: ${resolvedLocale}, falling back to default`);
+      logger.warn(`Invalid locale requested: ${resolvedLocale}, falling back to default`);
     }
     resolvedLocale = routing.defaultLocale;
   }

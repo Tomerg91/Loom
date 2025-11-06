@@ -6,6 +6,7 @@
 import { createClient } from '@/lib/supabase/server';
 
 import { getCachedData, CacheKeys, CacheTTL } from './cache';
+import { logger } from '@/lib/logger';
 
 // Connection pool configuration
 const CONNECTION_POOL_CONFIG = {
@@ -51,7 +52,7 @@ export class QueryOptimizer {
         
         results[key] = result;
       } catch (error) {
-        console.error(`Batch query failed for key ${key}:`, error);
+        logger.error(`Batch query failed for key ${key}:`, error);
         throw error;
       }
     });
@@ -410,7 +411,7 @@ export class DatabasePerformanceMonitor {
     
     // Log slow queries
     if (duration > 1000) { // Queries taking longer than 1 second
-      console.warn(`[DB Performance] Slow query detected: ${queryName}`, {
+      logger.warn(`[DB Performance] Slow query detected: ${queryName}`, {
         duration: `${duration.toFixed(2)}ms`,
         averageTime: `${(times.reduce((a, b) => a + b, 0) / times.length).toFixed(2)}ms`
       });

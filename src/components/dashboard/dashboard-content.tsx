@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 
 import { ClientDashboard } from './client/client-dashboard';
 import { CoachDashboard } from './coach/coach-dashboard';
+import { logger } from '@/lib/logger';
 
 interface DashboardContentProps {
   locale: string;
@@ -23,7 +24,7 @@ export function DashboardContent({ locale }: DashboardContentProps) {
 
   // Add detailed logging for debugging
   useEffect(() => {
-    console.log('[DashboardContent] Auth State:', {
+    logger.debug('[DashboardContent] Auth State:', {
       hasUser: !!user,
       userId: user?.id,
       userRole: user?.role,
@@ -48,7 +49,7 @@ export function DashboardContent({ locale }: DashboardContentProps) {
 
   // No user - should be caught by RouteGuard
   if (!user) {
-    console.error('[DashboardContent] No user found after loading completed');
+    logger.error('[DashboardContent] No user found after loading completed');
     return (
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <Card className="border-dashed border-muted-foreground/40 bg-muted/10 text-center">

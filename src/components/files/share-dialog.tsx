@@ -35,6 +35,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
 import { FileMetadata } from '@/lib/services/file-management-service';
+import { logger } from '@/lib/logger';
 
 interface ShareDialogProps {
   file: FileMetadata;
@@ -100,7 +101,7 @@ export function ShareDialog({ file, open, onClose }: ShareDialogProps) {
         })));
       }
     } catch (error) {
-      console.error('Error fetching shares:', error);
+      logger.error('Error fetching shares:', error);
     }
   };
 

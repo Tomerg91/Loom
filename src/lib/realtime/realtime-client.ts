@@ -3,6 +3,7 @@
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 type SubscriptionCallback<T extends { [key: string]: any } = { [key: string]: any }> = (payload: RealtimePostgresChangesPayload<T>) => void;
 
@@ -53,14 +54,14 @@ export class RealtimeClient {
             error: null,
           };
           this.isReconnecting = false;
-          console.log('Realtime connection established');
+          logger.debug('Realtime connection established');
         } else {
           this.connectionStatus = {
             ...this.connectionStatus,
             isConnected: false,
             lastDisconnected: new Date(),
           };
-          console.log('Realtime connection lost');
+          logger.debug('Realtime connection lost');
           this.scheduleReconnection();
         }
         
@@ -73,12 +74,12 @@ export class RealtimeClient {
 
     // Listen for network events
     window.addEventListener('online', () => {
-      console.log('Network came online, attempting reconnection...');
+      logger.debug('Network came online, attempting reconnection...');
       this.reconnect();
     });
 
     window.addEventListener('offline', () => {
-      console.log('Network went offline');
+      logger.debug('Network went offline');
       this.connectionStatus = {
         ...this.connectionStatus,
         isConnected: false,
@@ -113,7 +114,7 @@ export class RealtimeClient {
       try {
         listener(this.connectionStatus);
       } catch (error) {
-        console.error('Error in connection listener:', error);
+        logger.error('Error in connection listener:', error);
       }
     });
   }
@@ -138,12 +139,12 @@ export class RealtimeClient {
       try {
         // Additional security check: ensure the payload is for the correct user
         if (payload.new && payload.new.user_id !== userId) {
-          console.warn('Received notification for different user, ignoring');
+          logger.warn('Received notification for different user, ignoring');
           return;
         }
         callback(payload);
       } catch (error) {
-        console.error('Error processing notification payload:', error);
+        logger.error('Error processing notification payload:', error);
       }
     };
 
@@ -166,9 +167,9 @@ export class RealtimeClient {
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log(`Subscribed to notifications for user: ${userId}`);
+          logger.debug(`Subscribed to notifications for user: ${userId}`);
         } else if (status === 'CHANNEL_ERROR') {
-          console.error(`Failed to subscribe to notifications for user: ${userId}`);
+          logger.error(`Failed to subscribe to notifications for user: ${userId}`);
           this.connectionStatus = {
             ...this.connectionStatus,
             error: `Subscription failed for ${channelName}`,
@@ -376,13 +377,13 @@ export class RealtimeClient {
       })
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        console.log('Presence sync:', state);
+        logger.debug('Presence sync:', state);
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('User joined:', key, newPresences);
+        logger.debug('User joined:', key, newPresences);
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('User left:', key, leftPresences);
+        logger.debug('User left:', key, leftPresences);
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -421,13 +422,13 @@ export class RealtimeClient {
    * Unsubscribe from all channels
    */
   unsubscribeAll() {
-    console.log(`Unsubscribing from ${this.channels.size} channels`);
+    logger.debug(`Unsubscribing from ${this.channels.size} channels`);
     for (const [channelName, channel] of this.channels) {
       try {
         this.supabase.removeChannel(channel);
-        console.log(`Unsubscribed from ${channelName}`);
+        logger.debug(`Unsubscribed from ${channelName}`);
       } catch (error) {
-        console.error(`Error unsubscribing from ${channelName}:`, error);
+        logger.error(`Error unsubscribing from ${channelName}:`, error);
       }
     }
     this.channels.clear();
@@ -567,7 +568,7 @@ export class RealtimeClient {
    */
   async reconnect() {
     if (this.isReconnecting) {
-      console.log('Reconnection already in progress');
+      logger.debug('Reconnection already in progress');
       return;
     }
 
@@ -575,7 +576,7 @@ export class RealtimeClient {
     this.connectionStatus.reconnectionAttempts++;
     
     try {
-      console.log(`Attempting reconnection (${this.connectionStatus.reconnectionAttempts}/${this.maxReconnectionAttempts})`);
+      logger.debug(`Attempting reconnection (${this.connectionStatus.reconnectionAttempts}/${this.maxReconnectionAttempts})`);
       
       // Clear existing timer
       if (this.reconnectionTimer) {
@@ -592,7 +593,7 @@ export class RealtimeClient {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       if (this.supabase.realtime.isConnected()) {
-        console.log('Reconnection successful');
+        logger.debug('Reconnection successful');
         this.connectionStatus = {
           ...this.connectionStatus,
           isConnected: true,
@@ -604,7 +605,7 @@ export class RealtimeClient {
         throw new Error('Connection not established after reconnect attempt');
       }
     } catch (error) {
-      console.error('Reconnection failed:', error);
+      logger.error('Reconnection failed:', error);
       this.connectionStatus = {
         ...this.connectionStatus,
         error: error instanceof Error ? error.message : 'Unknown reconnection error',
@@ -613,7 +614,7 @@ export class RealtimeClient {
       if (this.connectionStatus.reconnectionAttempts < this.maxReconnectionAttempts) {
         this.scheduleReconnection();
       } else {
-        console.error('Max reconnection attempts reached');
+        logger.error('Max reconnection attempts reached');
         this.connectionStatus.error = 'Max reconnection attempts reached';
       }
     } finally {

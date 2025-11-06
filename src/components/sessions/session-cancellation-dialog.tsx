@@ -32,6 +32,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useUser } from '@/lib/auth/use-user';
 import { Session } from '@/types';
+import { logger } from '@/lib/logger';
 
 interface SessionCancellationDialogProps {
   session: Session | null;
@@ -116,7 +117,7 @@ export function SessionCancellationDialog({
       // Show success message with actual policy information
       if (result?.cancellationPolicy) {
         const policy = result.cancellationPolicy;
-        console.log('Session cancelled successfully:', {
+        logger.debug('Session cancelled successfully:', {
           type: policy.type,
           feeAmount: policy.feeAmount,
           refundPercentage: policy.refundPercentage,

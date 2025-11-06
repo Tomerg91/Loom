@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { memoryCache, CacheTTL } from './cache';
+import { logger } from '@/lib/logger';
 
 // Response optimization wrapper
 export function withApiOptimization(handler: (req: NextRequest) => Promise<NextResponse>) {
@@ -42,7 +43,7 @@ export function withApiOptimization(handler: (req: NextRequest) => Promise<NextR
       
       return response;
     } catch (error) {
-      console.error('API error:', error);
+      logger.error('API error:', error);
       const response = NextResponse.json(
         { error: 'Internal server error' }, 
         { status: 500 }

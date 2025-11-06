@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 // Theme colors for consistent styling
 const ENHANCED_CHART_COLORS = {
@@ -116,10 +117,10 @@ const useChartExport = () => {
       }
       // For PNG/PDF, would need additional libraries like html2canvas or puppeteer
       else {
-        console.warn('PNG/PDF export requires additional dependencies');
+        logger.warn('PNG/PDF export requires additional dependencies');
       }
     } catch (error) {
-      console.error('Chart export failed:', error);
+      logger.error('Chart export failed:', error);
     }
   };
 

@@ -24,6 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { formatDate } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 const connectedDevices = [
   {
@@ -121,24 +122,24 @@ export function SecuritySettingsCard() {
 
   // MFA handlers
   const handleMfaToggle = async (enabled: boolean) => {
-    console.log('Toggling MFA:', enabled);
+    logger.debug('Toggling MFA:', enabled);
     // In a real app, this would call your API
     setMfaEnabled(enabled);
   };
 
   const handleMfaSetup = async () => {
-    console.log('MFA setup completed');
+    logger.debug('MFA setup completed');
     // In a real app, this would save the MFA configuration
     setMfaEnabled(true);
   };
 
   const handleRegenerateBackupCodes = async () => {
-    console.log('Regenerating backup codes');
+    logger.debug('Regenerating backup codes');
     // In a real app, this would call your API to regenerate codes
   };
 
   const handleRemoveTrustedDevice = async (deviceId: string) => {
-    console.log('Removing trusted device:', deviceId);
+    logger.debug('Removing trusted device:', deviceId);
     // In a real app, this would call your API to remove the device
   };
 

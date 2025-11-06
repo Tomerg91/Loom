@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRealtimeSessions } from '@/lib/realtime/hooks';
 import type { Session, SessionStatus } from '@/types';
+import { logger } from '@/lib/logger';
 
 interface SessionStatusProps {
   session: Session;
@@ -112,7 +113,7 @@ export function SessionStatus({ session, onStatusChange, showActions = true }: S
       setLocalSession(updatedSession.data);
       onStatusChange?.(newStatus);
     } catch (error) {
-      console.error('Error updating session status:', error);
+      logger.error('Error updating session status:', error);
     }
   };
 

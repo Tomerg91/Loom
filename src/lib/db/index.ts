@@ -175,7 +175,7 @@ class SupabaseQueryBuilder implements QueryBuilder {
 
       return data || [];
     } catch (error) {
-      console.error('Database query error:', error);
+      logger.error('Database query error:', error);
       throw error;
     }
   }
@@ -239,7 +239,7 @@ class SupabaseUpdateBuilder implements UpdateBuilder {
         throw dbError;
       }
     } catch (error) {
-      console.error('Database update error:', error);
+      logger.error('Database update error:', error);
       throw error;
     }
   }
@@ -292,7 +292,7 @@ class SupabaseDeleteBuilder implements DeleteBuilder {
         throw dbError;
       }
     } catch (error) {
-      console.error('Database delete error:', error);
+      logger.error('Database delete error:', error);
       throw error;
     }
   }
@@ -340,7 +340,7 @@ class SupabaseInsertBuilder implements InsertBuilder {
 
       return data;
     } catch (error) {
-      console.error('Database insert error:', error);
+      logger.error('Database insert error:', error);
       throw error;
     }
   }

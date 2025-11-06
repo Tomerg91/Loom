@@ -358,7 +358,7 @@ export const useNotificationStore = create<NotificationStore>()(
             // Clear queue after successful processing
             get().clearOfflineQueue();
           } catch (error) {
-            console.error('Failed to process offline queue:', error);
+            logger.error('Failed to process offline queue:', error);
           }
         },
 

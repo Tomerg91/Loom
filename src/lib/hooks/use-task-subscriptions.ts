@@ -33,7 +33,7 @@ import { taskKeys } from './use-tasks';
  * function TaskDetailPage({ instanceId }) {
  *   const { isConnected } = useProgressSubscription(instanceId, {
  *     onUpdate: (progress) => {
- *       console.log('Progress updated:', progress.completionPercentage);
+ *       logger.debug('Progress updated:', progress.completionPercentage);
  *     }
  *   });
  *
@@ -64,7 +64,7 @@ export function useProgressSubscription(
     setIsConnected(isRealtimeConnected());
 
     const callback: ProgressUpdateCallback = (payload) => {
-      console.log('Progress update:', payload.eventType);
+      logger.debug('Progress update:', payload.eventType);
 
       // Update connection state
       setIsConnected(true);
@@ -148,7 +148,7 @@ export function useTaskAssignmentSubscription(
 
     const callback: TaskAssignmentCallback = (payload) => {
       if (payload.eventType === 'INSERT') {
-        console.log('New task assignment:', payload.new);
+        logger.debug('New task assignment:', payload.new);
 
         // Update connection state
         setIsConnected(true);
@@ -231,7 +231,7 @@ export function useTaskUpdateSubscription(
     setIsConnected(isRealtimeConnected());
 
     const callback: TaskUpdateCallback = (payload) => {
-      console.log('Task update:', payload.eventType);
+      logger.debug('Task update:', payload.eventType);
 
       // Update connection state
       setIsConnected(true);
@@ -321,7 +321,7 @@ export function useInstanceStatusSubscription(
         const newStatus = payload.new.status;
 
         if (oldStatus !== newStatus) {
-          console.log(`Task status changed: ${oldStatus} -> ${newStatus}`);
+          logger.debug(`Task status changed: ${oldStatus} -> ${newStatus}`);
 
           // Update connection state
           setIsConnected(true);

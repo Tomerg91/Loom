@@ -1,6 +1,7 @@
 import dynamic from 'next/dynamic';
 import { ComponentType, createElement, ReactNode } from 'react';
 import type { DynamicOptionsLoadingProps } from 'next/dynamic';
+import { logger } from '@/lib/logger';
 
 // Default loading component - matches Next.js dynamic loading component signature
 const DefaultLoadingComponent = () =>
@@ -223,7 +224,7 @@ export function trackComponentLoad(componentName: string, startTime: number) {
 
     // Console log in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Component ${componentName} loaded in ${Math.round(loadTime)}ms`);
+      logger.debug(`Component ${componentName} loaded in ${Math.round(loadTime)}ms`);
     }
   }
 }

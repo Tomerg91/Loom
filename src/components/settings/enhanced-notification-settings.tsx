@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/toast-provider';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { useUser } from '@/lib/auth/use-user';
+import { logger } from '@/lib/logger';
 
 interface NotificationPreferences {
   email: {
@@ -125,7 +126,7 @@ export function EnhancedNotificationSettings() {
       toast.success('Success', 'Notification preferences saved successfully');
     },
     onError: (error) => {
-      console.error('Error saving preferences:', error);
+      logger.error('Error saving preferences:', error);
       toast.error('Error', 'Failed to save notification preferences');
     },
   });

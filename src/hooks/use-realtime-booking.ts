@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@/lib/auth/use-user';
 import { useRealtimeAvailability, useRealtimeConnection } from '@/lib/realtime/hooks';
 import { realtimeClient } from '@/lib/realtime/realtime-client';
+import { logger } from '@/lib/logger';
 
 
 export interface TimeSlot {
@@ -64,7 +65,7 @@ export function useRealtimeBooking(initialCoachId?: string) {
     if (!selectedCoach || !isConnected) return;
 
     const handleAvailabilityChange = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      console.log('Real-time availability change:', payload);
+      logger.debug('Real-time availability change:', payload);
       
       // Invalidate availability queries to trigger refetch
       queryClient.invalidateQueries({ 

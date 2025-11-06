@@ -1,5 +1,6 @@
 import { ApiError } from '@/lib/api/errors';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface FileValidationOptions {
   maxSize: number;
@@ -204,7 +205,7 @@ class FileService {
 
       return uploadResult;
     } catch (error) {
-      console.error('File upload error:', error);
+      logger.error('File upload error:', error);
       return {
         success: false,
         error: 'File upload failed',
@@ -247,11 +248,11 @@ class FileService {
             p_scan_details: scanResult.details || 'No details available',
           });
 
-          console.warn(
+          logger.warn(
             `File quarantined: ${file.name} - ${scanResult.threatName}`
           );
         } catch (quarantineError) {
-          console.error('Failed to quarantine file:', quarantineError);
+          logger.error('Failed to quarantine file:', quarantineError);
         }
       }
 
@@ -262,7 +263,7 @@ class FileService {
           (scanResult.safe ? 'File passed virus scan' : 'Threat detected'),
       };
     } catch (error) {
-      console.error('Virus scan error:', error);
+      logger.error('Virus scan error:', error);
 
       // In case of scan failure, be conservative and reject the file
       return {
@@ -360,7 +361,7 @@ class FileService {
           // Classify the error to determine if we should retry
           const { type, retryable } = this.classifyStorageError(error);
 
-          console.error(
+          logger.error(
             `Supabase storage upload error (attempt ${attempt}/${this.MAX_RETRY_ATTEMPTS}):`,
             {
               error,
@@ -397,7 +398,7 @@ class FileService {
           .from(bucketName)
           .getPublicUrl(fileName);
 
-        console.log(
+        logger.debug(
           `File uploaded successfully on attempt ${attempt}:`,
           fileName
         );
@@ -413,7 +414,7 @@ class FileService {
         // Classify the error to determine if we should retry
         const { type, retryable } = this.classifyStorageError(error);
 
-        console.error(
+        logger.error(
           `Supabase upload error (attempt ${attempt}/${this.MAX_RETRY_ATTEMPTS}):`,
           {
             error,
@@ -493,16 +494,16 @@ class FileService {
         .remove([filePath]);
 
       if (error) {
-        console.error('Supabase storage deletion error:', error);
+        logger.error('Supabase storage deletion error:', error);
         throw new ApiError(
           'FILE_DELETE_FAILED',
           error.message || 'Failed to delete file from storage'
         );
       }
 
-      console.log('File deleted successfully:', filePath);
+      logger.debug('File deleted successfully:', filePath);
     } catch (error) {
-      console.error('File deletion error:', error);
+      logger.error('File deletion error:', error);
       if (error instanceof ApiError) {
         throw error;
       }
@@ -549,7 +550,7 @@ class FileService {
         lastModified: new Date(fileInfo.updated_at || fileInfo.created_at),
       };
     } catch (error) {
-      console.error('Error getting file metadata:', error);
+      logger.error('Error getting file metadata:', error);
       return null;
     }
   }
@@ -580,13 +581,13 @@ class FileService {
         .createSignedUrl(filePath, expiresIn);
 
       if (error) {
-        console.error('Error creating signed URL:', error);
+        logger.error('Error creating signed URL:', error);
         return null;
       }
 
       return data.signedUrl;
     } catch (error) {
-      console.error('Error creating signed URL:', error);
+      logger.error('Error creating signed URL:', error);
       return null;
     }
   }

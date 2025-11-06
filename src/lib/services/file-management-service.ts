@@ -3,6 +3,7 @@ import { Result } from '@/lib/types/result';
 import { Database } from '@/types/supabase';
 
 import { fileService } from './file-service';
+import { logger } from '@/lib/logger';
 
 // Type definitions
 type Tables = Database['public']['Tables'];
@@ -185,7 +186,7 @@ class FileManagementService {
 
       return Result.success(await this.mapFileUploadRow(fileRecord));
     } catch (error) {
-      console.error('File upload error:', error);
+      logger.error('File upload error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'File upload failed'
       );
@@ -283,7 +284,7 @@ class FileManagementService {
         total: count || 0,
       });
     } catch (error) {
-      console.error('Get files error:', error);
+      logger.error('Get files error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get files'
       );
@@ -334,7 +335,7 @@ class FileManagementService {
 
       return Result.success(fileData);
     } catch (error) {
-      console.error('Get file error:', error);
+      logger.error('Get file error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get file'
       );
@@ -413,7 +414,7 @@ class FileManagementService {
 
       return Result.success(share);
     } catch (error) {
-      console.error('Share file error:', error);
+      logger.error('Share file error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to share file'
       );
@@ -467,7 +468,7 @@ class FileManagementService {
 
       return Result.success(sessionFile);
     } catch (error) {
-      console.error('Attach file to session error:', error);
+      logger.error('Attach file to session error:', error);
       return Result.error(
         error instanceof Error
           ? error.message
@@ -514,7 +515,7 @@ class FileManagementService {
 
       return Result.success(files);
     } catch (error) {
-      console.error('Get session files error:', error);
+      logger.error('Get session files error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get session files'
       );
@@ -558,7 +559,7 @@ class FileManagementService {
 
       return Result.success(undefined);
     } catch (error) {
-      console.error('Delete file error:', error);
+      logger.error('Delete file error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to delete file'
       );
@@ -598,7 +599,7 @@ class FileManagementService {
 
       return Result.success(await this.mapFileUploadRow(updatedFile));
     } catch (error) {
-      console.error('Update file error:', error);
+      logger.error('Update file error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to update file'
       );
@@ -645,7 +646,7 @@ class FileManagementService {
 
       return Result.success(files || []);
     } catch (error) {
-      console.error('Get shared files error:', error);
+      logger.error('Get shared files error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get shared files'
       );
@@ -772,7 +773,7 @@ class FileManagementService {
 
       return Result.success(data.signedUrl);
     } catch (error) {
-      console.error('Get file URL error:', error);
+      logger.error('Get file URL error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get file URL'
       );

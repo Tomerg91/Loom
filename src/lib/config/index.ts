@@ -260,26 +260,26 @@ export class AppConfig {
 
       for (const envVar of requiredEnvVars) {
         if (!process.env[envVar]) {
-          console.error(`Missing required environment variable: ${envVar}`);
+          logger.error(`Missing required environment variable: ${envVar}`);
           return false;
         }
       }
 
       // Validate configuration values
       if (this.cache.ROLE_CACHE_TTL <= 0) {
-        console.error('Invalid cache TTL configuration');
+        logger.error('Invalid cache TTL configuration');
         return false;
       }
 
       if (this.session.MIN_DURATION_MINUTES >= this.session.MAX_DURATION_MINUTES) {
-        console.error('Invalid session duration configuration');
+        logger.error('Invalid session duration configuration');
         return false;
       }
 
-      console.log(`✅ Configuration validated for ${this.environment} environment`);
+      logger.debug(`✅ Configuration validated for ${this.environment} environment`);
       return true;
     } catch (error) {
-      console.error('Configuration validation failed:', error);
+      logger.error('Configuration validation failed:', error);
       return false;
     }
   }

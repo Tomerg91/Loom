@@ -1,6 +1,7 @@
 'use client';
 
 import { onCLS, onINP, onLCP, onFCP, onTTFB, Metric } from 'web-vitals';
+import { logger } from '@/lib/logger';
 
 // Web Vitals thresholds (Google's recommendations)
 const THRESHOLDS = {
@@ -70,10 +71,10 @@ class WebVitalsMonitor {
       onTTFB(this.handleMetric.bind(this), { reportAllChanges: true });
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('Web Vitals monitoring initialized successfully');
+        logger.debug('Web Vitals monitoring initialized successfully');
       }
     } catch (error) {
-      console.warn('Failed to initialize Web Vitals monitoring:', error);
+      logger.warn('Failed to initialize Web Vitals monitoring:', error);
       
       // Report the initialization error but don't break the application
       if (typeof window !== 'undefined' && 'Sentry' in window) {
@@ -102,7 +103,7 @@ class WebVitalsMonitor {
     
     // Log additional metric details in development
     if (process.env.NODE_ENV === 'development') {
-      console.log('Web Vitals Metric:', {
+      logger.debug('Web Vitals Metric:', {
         name: metric.name,
         value: metric.value,
         rating: metric.rating,
@@ -136,7 +137,7 @@ class WebVitalsMonitor {
       // Log performance issues in development
       if (process.env.NODE_ENV === 'development') {
         const color = data.rating === 'good' ? 'green' : data.rating === 'needs-improvement' ? 'orange' : 'red';
-        console.log(
+        logger.debug(
           `%c${data.metric}: ${data.value.toFixed(2)}ms (${data.rating})`,
           `color: ${color}; font-weight: bold;`
         );
@@ -145,7 +146,7 @@ class WebVitalsMonitor {
       // Send to API for server-side analytics
       this.sendToAPI(data);
     } catch (error) {
-      console.warn('Error reporting metric:', error);
+      logger.warn('Error reporting metric:', error);
       
       // Don't let reporting errors break the monitoring
       if (typeof window !== 'undefined' && 'Sentry' in window) {
@@ -170,7 +171,7 @@ class WebVitalsMonitor {
           },
         });
       } catch (error) {
-        console.warn('Failed to send to Google Analytics:', error);
+        logger.warn('Failed to send to Google Analytics:', error);
       }
     }
   }
@@ -190,7 +191,7 @@ class WebVitalsMonitor {
           },
         });
       } catch (error) {
-        console.warn('Failed to send to Sentry:', error);
+        logger.warn('Failed to send to Sentry:', error);
       }
     }
   }
@@ -207,7 +208,7 @@ class WebVitalsMonitor {
           value: data.value,
         });
       } catch (error) {
-        console.warn('Failed to send to Next.js Analytics:', error);
+        logger.warn('Failed to send to Next.js Analytics:', error);
       }
     }
   }
@@ -225,7 +226,7 @@ class WebVitalsMonitor {
       }
     } catch (error) {
       // Silently fail - don't impact user experience
-      console.warn('Failed to send performance data:', error);
+      logger.warn('Failed to send performance data:', error);
     }
   }
 
@@ -290,7 +291,7 @@ class WebVitalsMonitor {
       observer.observe({ entryTypes: ['resource'] });
     } catch (error) {
       // Observer not supported in this browser
-      console.warn('Performance observer not supported');
+      logger.warn('Performance observer not supported');
     }
   }
 
@@ -354,7 +355,7 @@ class WebVitalsMonitor {
 
     // Development logging
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Performance: ${name} = ${value.toFixed(2)}ms`, metadata);
+      logger.debug(`Performance: ${name} = ${value.toFixed(2)}ms`, metadata);
     }
   }
 
@@ -457,6 +458,6 @@ export function usePerformanceTracking(componentName: string) {
 if (typeof window !== 'undefined') {
   // Wait for page load to avoid interfering with initial metrics
   window.addEventListener('load', () => {
-    console.log('Web Vitals monitoring initialized');
+    logger.debug('Web Vitals monitoring initialized');
   });
 }

@@ -28,6 +28,7 @@ import { Separator } from '@/components/ui/separator';
 import { MfaBackupCodes } from './mfa-backup-codes';
 import { MfaQrCode } from './mfa-qr-code';
 import { MfaVerificationInput } from './mfa-verification-input';
+import { logger } from '@/lib/logger';
 
 export interface MfaSetupWizardProps {
   onComplete: (data: MfaSetupData) => void;
@@ -82,7 +83,7 @@ export function MfaSetupWizard({ onComplete, onCancel, isLoading = false }: MfaS
           throw new Error('Invalid MFA data received');
         }
       } catch (error) {
-        console.error('Error generating secure MFA data:', error);
+        logger.error('Error generating secure MFA data:', error);
         setError(error instanceof Error ? error.message : 'Failed to generate MFA data');
       }
     };

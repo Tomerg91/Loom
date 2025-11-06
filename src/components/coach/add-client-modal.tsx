@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { logger } from '@/lib/logger';
 
 
 interface AddClientModalProps {
@@ -60,7 +61,7 @@ export function AddClientModal({ open, onOpenChange, onSuccess }: AddClientModal
       setFormData({ firstName: '', lastName: '', email: '', phone: '' });
       onOpenChange(false);
     } catch (error) {
-      console.error('Error adding client:', error);
+      logger.error('Error adding client:', error);
       toast.error(error instanceof Error ? error.message : t('error'));
     } finally {
       setLoading(false);

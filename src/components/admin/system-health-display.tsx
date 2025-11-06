@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { logger } from '@/lib/logger';
 
 interface SystemHealth {
   database: {
@@ -54,7 +55,7 @@ export function SystemHealthDisplay() {
         throw new Error(result.error || 'Failed to fetch system health');
       }
     } catch (err) {
-      console.error('Failed to fetch system health:', err);
+      logger.error('Failed to fetch system health:', err);
       setError('Unable to fetch real-time system health data');
       // Use mock data as fallback for development
       setHealth(generateMockHealthData());

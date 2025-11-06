@@ -10,6 +10,7 @@ import type { NextRequest } from 'next/server';
 
 import { createServerClientWithRequest } from '@/modules/platform/supabase/server';
 import type { UserRole } from '@/types';
+import { logger } from '@/lib/logger';
 
 function isUserRole(value: unknown): value is UserRole {
   return value === 'admin' || value === 'coach' || value === 'client';
@@ -60,7 +61,7 @@ export async function getSessionContext(
     const { data, error } = await supabase.auth.getSession();
 
     if (error) {
-      console.warn(
+      logger.warn(
         '[auth] Failed to fetch Supabase session in middleware:',
         error
       );
@@ -83,7 +84,7 @@ export async function getSessionContext(
 
     return { session, user, role, mfaEnabled, mfaVerified };
   } catch (error) {
-    console.warn('[auth] Unexpected error resolving session context:', error);
+    logger.warn('[auth] Unexpected error resolving session context:', error);
     return {
       session: null,
       user: null,

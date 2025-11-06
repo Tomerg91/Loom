@@ -11,6 +11,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { NextRequest, NextResponse } from 'next/server';
 
 import {
+import { logger } from '@/lib/logger';
   PLACEHOLDER_SUPABASE_ANON_KEY,
   PLACEHOLDER_SUPABASE_URL,
   serverEnv,
@@ -154,7 +155,7 @@ export const createServerClientWithRequest = (
               sameSite: sameSiteValue,
             });
           } catch (error) {
-            console.warn('Failed to set cookie in middleware:', error);
+            logger.warn('Failed to set cookie in middleware:', error);
           }
         });
       },
@@ -195,7 +196,7 @@ export const createClient = (): ServerSupabaseClient => {
                 value,
               })) as SupabaseCookie[];
           } catch (error) {
-            console.warn('Failed to read cookies:', error);
+            logger.warn('Failed to read cookies:', error);
             return [] as SupabaseCookie[];
           }
         },
@@ -215,7 +216,7 @@ export const createClient = (): ServerSupabaseClient => {
                 sameSite: sameSiteValue,
               });
             } catch (error) {
-              console.warn('Failed to set cookie:', error);
+              logger.warn('Failed to set cookie:', error);
             }
           });
         },

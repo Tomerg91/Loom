@@ -37,6 +37,7 @@ import { FileBrowser, FileItem } from './file-browser';
 import { FileOrganizationPanel, VirtualFolder, TagInfo } from './file-organization-panel';
 import { FileSharingDialog } from './file-sharing-dialog';
 import { FileUploadZone, UploadFile } from './file-upload-zone';
+import { logger } from '@/lib/logger';
 
 
 interface FileManagementPageProps {
@@ -204,7 +205,7 @@ export function FileManagementPage({
       ];
       setVirtualFolders(mockFolders);
     } catch (error) {
-      console.error('Failed to load virtual folders:', error);
+      logger.error('Failed to load virtual folders:', error);
     }
   };
 
@@ -226,7 +227,7 @@ export function FileManagementPage({
 
       setAvailableTags(tags);
     } catch (error) {
-      console.error('Failed to load tags:', error);
+      logger.error('Failed to load tags:', error);
     }
   };
 
@@ -342,7 +343,7 @@ export function FileManagementPage({
         handleDeleteFile(fileId);
         break;
       default:
-        console.log('File action:', action, fileId);
+        logger.debug('File action:', action, fileId);
         break;
     }
   };
@@ -396,14 +397,14 @@ export function FileManagementPage({
 
   const handleCreateTag = (tag: { name: string; color?: string; description?: string }) => {
     // In real app, this would create the tag via API
-    console.log('Create tag:', tag);
+    logger.debug('Create tag:', tag);
     loadTags();
   };
 
   const handleDeleteTag = (tagName: string) => {
     if (!confirm(`Are you sure you want to delete the tag "${tagName}"?`)) return;
     // In real app, this would remove the tag from all files via API
-    console.log('Delete tag:', tagName);
+    logger.debug('Delete tag:', tagName);
     loadTags();
   };
 
@@ -635,7 +636,7 @@ export function FileManagementPage({
               files={filteredFiles}
               loading={loading}
               onFileAction={handleFileAction}
-              onFileDownload={(file) => console.log('Download file:', file)}
+              onFileDownload={(file) => logger.debug('Download file:', file)}
               onFileShare={(file) => {
                 setShareTargetFile(file);
                 setShareDialogOpen(true);

@@ -13,7 +13,7 @@ export async function withDatabaseErrorHandling<T>(
   try {
     return await operation();
   } catch (error) {
-    console.error(`Database error: ${errorMessage}`, error);
+    logger.error(`Database error: ${errorMessage}`, error);
 
     // Treat objects that look like DatabaseError as such
     if (isDatabaseErrorObject(error)) {

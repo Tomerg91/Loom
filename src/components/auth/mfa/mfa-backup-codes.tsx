@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 export interface MfaBackupCodesProps {
   codes: string[];
@@ -50,7 +51,7 @@ export function MfaBackupCodes({
       setCopiedIndex(index);
       setTimeout(() => setCopiedIndex(null), 2000);
     } catch (err) {
-      console.error('Failed to copy code:', err);
+      logger.error('Failed to copy code:', err);
     }
   };
 
@@ -61,7 +62,7 @@ export function MfaBackupCodes({
       setCopiedIndex(-1); // Special index for "copy all"
       setTimeout(() => setCopiedIndex(null), 2000);
     } catch (err) {
-      console.error('Failed to copy codes:', err);
+      logger.error('Failed to copy codes:', err);
     }
   };
 

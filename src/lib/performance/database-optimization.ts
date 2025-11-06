@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 // Database query optimization utilities
 export class DatabaseOptimizer {
@@ -35,7 +36,7 @@ export class DatabaseOptimizer {
         if (result.status === 'fulfilled') {
           results.push(result.value);
         } else {
-          console.error('Batch operation failed:', result.reason);
+          logger.error('Batch operation failed:', result.reason);
           throw result.reason;
         }
       }
@@ -134,7 +135,7 @@ export class DatabaseOptimizer {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Database query error:', error);
+      logger.error('Database query error:', error);
       throw error;
     }
 
@@ -190,7 +191,7 @@ export class DatabaseOptimizer {
     });
 
     if (error) {
-      console.error('Dashboard metrics query error:', error);
+      logger.error('Dashboard metrics query error:', error);
       throw error;
     }
 
@@ -275,7 +276,7 @@ export class DatabaseOptimizer {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Notifications query error:', error);
+      logger.error('Notifications query error:', error);
       throw error;
     }
 
@@ -308,7 +309,7 @@ export class DatabaseOptimizer {
       const { data, error } = await query.select();
       
       if (error) {
-        console.error(`Bulk insert error for table ${table}:`, error);
+        logger.error(`Bulk insert error for table ${table}:`, error);
         throw error;
       }
       
@@ -344,7 +345,7 @@ export class DatabaseOptimizer {
         if (result.status === 'fulfilled') {
           results.push(...(result.value.data || []));
         } else {
-          console.error('Bulk update error:', result.reason);
+          logger.error('Bulk update error:', result.reason);
         }
       }
     }
@@ -410,7 +411,7 @@ export class DatabaseOptimizer {
       const endTime = performance.now();
       
       if (error) {
-        console.error('Query analysis error:', error);
+        logger.error('Query analysis error:', error);
         return {
           executionTime: endTime - startTime,
           planningTime: 0,
@@ -432,7 +433,7 @@ export class DatabaseOptimizer {
         suggestions,
       };
     } catch (error) {
-      console.error('Query analysis failed:', error);
+      logger.error('Query analysis failed:', error);
       return {
         executionTime: performance.now() - startTime,
         planningTime: 0,

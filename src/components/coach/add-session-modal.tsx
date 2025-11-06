@@ -19,6 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+import { logger } from '@/lib/logger';
   Select,
   SelectContent,
   SelectItem,
@@ -106,7 +107,7 @@ export function AddSessionModal({ open, onOpenChange, coachId, onSuccess }: AddS
       });
       onOpenChange(false);
     } catch (error) {
-      console.error('Error creating session:', error);
+      logger.error('Error creating session:', error);
       toast.error(error instanceof Error ? error.message : t('error'));
     } finally {
       setLoading(false);

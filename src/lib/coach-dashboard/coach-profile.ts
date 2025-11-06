@@ -24,7 +24,7 @@ export async function getCoachSessionRate(
     .maybeSingle();
 
   if (error) {
-    console.warn('[coach-profile] Failed to load coach profile for rate', {
+    logger.warn('[coach-profile] Failed to load coach profile for rate', {
       coachId,
       error: error.message,
     });

@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export interface VirusScanResult {
   safe: boolean;
@@ -89,11 +90,11 @@ class VirusScanningService {
 
       return scanResult;
     } catch (error) {
-      console.error('Virus scan failed:', error);
+      logger.error('Virus scan failed:', error);
 
       // Fallback to local scan if external provider fails
       if (provider !== 'local') {
-        console.warn(`${provider} scan failed, falling back to local scan`);
+        logger.warn(`${provider} scan failed, falling back to local scan`);
         return this.scanFile(file, { ...options, scanProvider: 'local' });
       }
 
@@ -557,7 +558,7 @@ class VirusScanningService {
         scanId: data.scan_id || undefined,
       };
     } catch (error) {
-      console.warn('Failed to get cached scan result:', error);
+      logger.warn('Failed to get cached scan result:', error);
       return null;
     }
   }
@@ -584,7 +585,7 @@ class VirusScanningService {
         created_at: new Date().toISOString(),
       });
     } catch (error) {
-      console.warn('Failed to cache scan result:', error);
+      logger.warn('Failed to cache scan result:', error);
     }
   }
 
@@ -613,7 +614,7 @@ class VirusScanningService {
         created_at: new Date().toISOString(),
       });
     } catch (error) {
-      console.warn('Failed to log scan activity:', error);
+      logger.warn('Failed to log scan activity:', error);
     }
   }
 

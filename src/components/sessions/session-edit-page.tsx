@@ -31,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useUser } from '@/lib/auth/use-user';
 
 import { SessionFileManager } from './session-file-manager';
+import { logger } from '@/lib/logger';
 
 interface Session {
   id: string;
@@ -139,7 +140,7 @@ export function SessionEditPage({ sessionId }: SessionEditPageProps) {
       router.push(`/sessions/${sessionId}`);
     },
     onError: (error) => {
-      console.error('Failed to update session:', error);
+      logger.error('Failed to update session:', error);
     },
   });
 

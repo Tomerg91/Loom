@@ -21,13 +21,13 @@ export async function getAuthenticatedUser(
     // Extract the Authorization header
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.error('[AUTH] No Authorization header or invalid format');
+      logger.error('[AUTH] No Authorization header or invalid format');
       return null;
     }
 
     const accessToken = authHeader.slice(7); // Remove "Bearer " prefix
     if (!accessToken) {
-      console.error('[AUTH] Empty access token');
+      logger.error('[AUTH] Empty access token');
       return null;
     }
 
@@ -38,7 +38,7 @@ export async function getAuthenticatedUser(
     const { data, error } = await supabase.auth.getUser(accessToken);
 
     if (error || !data.user) {
-      console.error('[AUTH] Failed to validate token:', error?.message);
+      logger.error('[AUTH] Failed to validate token:', error?.message);
       return null;
     }
 
@@ -49,7 +49,7 @@ export async function getAuthenticatedUser(
     const role = supabaseUser.user_metadata?.role as 'admin' | 'coach' | 'client' | undefined;
 
     if (!role) {
-      console.error('[AUTH] User has no role in metadata');
+      logger.error('[AUTH] User has no role in metadata');
       return null;
     }
 
@@ -63,7 +63,7 @@ export async function getAuthenticatedUser(
       createdAt: supabaseUser.created_at || new Date().toISOString(),
     };
   } catch (error) {
-    console.error('[AUTH] Error getting authenticated user:', error);
+    logger.error('[AUTH] Error getting authenticated user:', error);
     return null;
   }
 }

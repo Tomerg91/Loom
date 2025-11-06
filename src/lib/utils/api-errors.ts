@@ -137,7 +137,7 @@ function logError(error: unknown, context: string, metadata?: Record<string, unk
 
   // In production, this should be sent to a logging service like Sentry
   // For now, we use console.error with structured format
-  console.error(JSON.stringify({
+  logger.error(JSON.stringify({
     timestamp,
     context,
     error: errorMessage,

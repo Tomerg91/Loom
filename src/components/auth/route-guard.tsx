@@ -11,6 +11,7 @@ import type { Permission } from '@/lib/permissions/permissions';
 import { useUser, useAuthLoading } from '@/lib/store/auth-store';
 import { resolveRedirect } from '@/lib/utils/redirect';
 import type { UserRole } from '@/types';
+import { logger } from '@/lib/logger';
 
 interface RouteGuardProps {
   children: React.ReactNode;
@@ -80,7 +81,7 @@ export function RouteGuard({
           loginUrl.searchParams.set('redirectTo', safeReturnPath);
           return `${loginUrl.pathname}${loginUrl.search}`;
         } catch (error) {
-          console.warn('Failed to construct login redirect URL:', error);
+          logger.warn('Failed to construct login redirect URL:', error);
           return baseLoginPath;
         }
       };

@@ -29,6 +29,7 @@ import { completeMfa } from '@/modules/auth/api/mfa';
 import { mfaQueryKeys, useMfaVerification } from '@/modules/auth/hooks/useMfa';
 import { supabase } from '@/modules/platform/supabase/client';
 import type { MfaMethod } from '@/modules/auth/types';
+import { logger } from '@/lib/logger';
 
 const mfaVerificationSchema = z.object({
   code: z
@@ -141,7 +142,7 @@ export function MfaVerificationForm({
         });
 
         if (sessionError) {
-          console.warn('Failed to hydrate Supabase session after MFA completion:', sessionError);
+          logger.warn('Failed to hydrate Supabase session after MFA completion:', sessionError);
         }
       }
 
@@ -170,12 +171,12 @@ export function MfaVerificationForm({
       }
 
       if (result.warning) {
-        console.warn('MFA verification warning:', result.warning);
+        logger.warn('MFA verification warning:', result.warning);
       }
 
       if (completion.mfa?.warnings?.length) {
         completion.mfa.warnings.forEach(message => {
-          console.warn('MFA completion warning:', message);
+          logger.warn('MFA completion warning:', message);
         });
       }
     } catch (err) {

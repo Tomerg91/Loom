@@ -221,7 +221,7 @@ export function createPaginatedRoute<T, FilterParams = object>(
         },
       });
     } catch (error) {
-      console.error(`Error fetching ${entityName}:`, error);
+      logger.error(`Error fetching ${entityName}:`, error);
       return createErrorResponse(
         `Failed to fetch ${entityName}`, 
         HTTP_STATUS.INTERNAL_SERVER_ERROR

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import React from 'react';
+import { logger } from '@/lib/logger';
 
 // Cache configuration
 export const CACHE_CONFIG = {
@@ -52,7 +53,7 @@ export const getOptimizedImageUrl = (
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
     if (!baseUrl || baseUrl.startsWith('MISSING_') || baseUrl.startsWith('INVALID_')) {
-      console.warn('Invalid or missing NEXT_PUBLIC_APP_URL, using relative URL');
+      logger.warn('Invalid or missing NEXT_PUBLIC_APP_URL, using relative URL');
       // Return original src if we can't construct a proper URL
       return src;
     }
@@ -65,7 +66,7 @@ export const getOptimizedImageUrl = (
     url.searchParams.set('q', quality.toString());
     return url.toString();
   } catch (error) {
-    console.error('Error constructing optimized image URL:', error);
+    logger.error('Error constructing optimized image URL:', error);
     return src; // Fallback to original src
   }
 };
@@ -324,7 +325,7 @@ export const performanceMiddleware = (handler: (request: NextRequest) => Promise
       return response;
     } catch (error) {
       const duration = Date.now() - start;
-      console.error(`Request failed after ${duration}ms:`, error);
+      logger.error(`Request failed after ${duration}ms:`, error);
       throw error;
     }
   };

@@ -32,6 +32,7 @@ import type {
   BulkShareResponse,
 } from '@/types/resources';
 import { normalizeResourceCategory } from '@/types/resources';
+import { logger } from '@/lib/logger';
 
 /**
  * Resource Library Service Class
@@ -126,7 +127,7 @@ class ResourceLibraryService {
         total: resources.length, // TODO: Get actual total count for pagination
       });
     } catch (error) {
-      console.error('Get resources error:', error);
+      logger.error('Get resources error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get resources'
       );
@@ -153,7 +154,7 @@ class ResourceLibraryService {
 
       return Result.success(resource);
     } catch (error) {
-      console.error('Get resource error:', error);
+      logger.error('Get resource error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get resource'
       );
@@ -337,7 +338,7 @@ class ResourceLibraryService {
 
       return Result.success(shares);
     } catch (error) {
-      console.error('Get resource shares error:', error);
+      logger.error('Get resource shares error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get shares'
       );
@@ -364,7 +365,7 @@ class ResourceLibraryService {
 
       return Result.success(collections);
     } catch (error) {
-      console.error('Get collections error:', error);
+      logger.error('Get collections error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get collections'
       );
@@ -391,7 +392,7 @@ class ResourceLibraryService {
 
       return Result.success(collection);
     } catch (error) {
-      console.error('Get collection error:', error);
+      logger.error('Get collection error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get collection'
       );
@@ -621,7 +622,7 @@ class ResourceLibraryService {
 
       return Result.success(analytics);
     } catch (error) {
-      console.error('Get resource analytics error:', error);
+      logger.error('Get resource analytics error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get analytics'
       );
@@ -642,7 +643,7 @@ class ResourceLibraryService {
 
       return Result.success(analytics);
     } catch (error) {
-      console.error('Get library analytics error:', error);
+      logger.error('Get library analytics error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get library analytics'
       );
@@ -667,7 +668,7 @@ class ResourceLibraryService {
 
       return Result.success(settings);
     } catch (error) {
-      console.error('Get settings error:', error);
+      logger.error('Get settings error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get settings'
       );
@@ -731,7 +732,7 @@ class ResourceLibraryService {
 
       return Result.success(usage);
     } catch (error) {
-      console.error('Get storage usage error:', error);
+      logger.error('Get storage usage error:', error);
       return Result.error(
         error instanceof Error ? error.message : 'Failed to get storage usage'
       );

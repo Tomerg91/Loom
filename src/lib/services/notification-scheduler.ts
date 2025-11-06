@@ -3,6 +3,7 @@ import type { NotificationType } from '@/types';
 
 import { EmailNotificationService } from './email-notification-service';
 import { PushNotificationService } from './push-notification-service';
+import { logger } from '@/lib/logger';
 
 export interface ScheduledNotification {
   id: string;
@@ -86,13 +87,13 @@ export class NotificationScheduler {
         .single();
 
       if (error) {
-        console.error('Error scheduling notification:', error);
+        logger.error('Error scheduling notification:', error);
         return null;
       }
 
       return data.id;
     } catch (error) {
-      console.error('Error scheduling notification:', error);
+      logger.error('Error scheduling notification:', error);
       return null;
     }
   }
@@ -231,9 +232,9 @@ export class NotificationScheduler {
         }
       }
 
-      console.log(`Scheduled reminders for ${participants.length} participants for session: ${sessionTitle}`);
+      logger.debug(`Scheduled reminders for ${participants.length} participants for session: ${sessionTitle}`);
     } catch (error) {
-      console.error('Error scheduling session reminders:', error);
+      logger.error('Error scheduling session reminders:', error);
     }
   }
 
@@ -273,13 +274,13 @@ export class NotificationScheduler {
       const { data, error } = await query.select('id');
 
       if (error) {
-        console.error('Error cancelling scheduled notifications:', error);
+        logger.error('Error cancelling scheduled notifications:', error);
         return 0;
       }
 
       return data.length;
     } catch (error) {
-      console.error('Error cancelling scheduled notifications:', error);
+      logger.error('Error cancelling scheduled notifications:', error);
       return 0;
     }
   }
@@ -293,7 +294,7 @@ export class NotificationScheduler {
     failed: number;
   }> {
     if (this.isProcessing) {
-      console.log('Notification processing already in progress, skipping...');
+      logger.debug('Notification processing already in progress, skipping...');
       return { processed: 0, sent: 0, failed: 0 };
     }
 
@@ -317,16 +318,16 @@ export class NotificationScheduler {
         .limit(100); // Process in batches of 100
 
       if (error) {
-        console.error('Error fetching pending notifications:', error);
+        logger.error('Error fetching pending notifications:', error);
         return { processed, sent, failed };
       }
 
       if (!notifications || notifications.length === 0) {
-        console.log('No pending notifications to process');
+        logger.debug('No pending notifications to process');
         return { processed, sent, failed };
       }
 
-      console.log(`Processing ${notifications.length} pending notifications...`);
+      logger.debug(`Processing ${notifications.length} pending notifications...`);
 
       // Process each notification
       for (const notification of notifications) {
@@ -385,7 +386,7 @@ export class NotificationScheduler {
           // Small delay to avoid overwhelming services
           await new Promise(resolve => setTimeout(resolve, 100));
         } catch (error) {
-          console.error(`Error processing notification ${notification.id}:`, error);
+          logger.error(`Error processing notification ${notification.id}:`, error);
           failed++;
           
           await this.supabase
@@ -399,9 +400,9 @@ export class NotificationScheduler {
         }
       }
 
-      console.log(`Notification processing complete: ${sent} sent, ${failed} failed out of ${processed} processed`);
+      logger.debug(`Notification processing complete: ${sent} sent, ${failed} failed out of ${processed} processed`);
     } catch (error) {
-      console.error('Error in processPendingNotifications:', error);
+      logger.error('Error in processPendingNotifications:', error);
     } finally {
       this.isProcessing = false;
     }
@@ -422,7 +423,7 @@ export class NotificationScheduler {
         .single();
 
       if (userError || !user) {
-        console.error('User not found for notification:', notification.id);
+        logger.error('User not found for notification:', notification.id);
         return false;
       }
 
@@ -476,11 +477,11 @@ export class NotificationScheduler {
           return !inappError;
 
         default:
-          console.error('Unknown notification channel:', notification.channel);
+          logger.error('Unknown notification channel:', notification.channel);
           return false;
       }
     } catch (error) {
-      console.error('Error sending notification:', error);
+      logger.error('Error sending notification:', error);
       return false;
     }
   }
@@ -516,7 +517,7 @@ export class NotificationScheduler {
         return timeInMinutes >= startInMinutes && timeInMinutes <= endInMinutes;
       }
     } catch (error) {
-      console.error('Error checking quiet hours:', error);
+      logger.error('Error checking quiet hours:', error);
       return false;
     }
   }
@@ -552,7 +553,7 @@ export class NotificationScheduler {
         logsDeleted: oldLogs?.length || 0,
       };
     } catch (error) {
-      console.error('Error cleaning up old data:', error);
+      logger.error('Error cleaning up old data:', error);
       return { notificationsDeleted: 0, logsDeleted: 0 };
     }
   }
@@ -565,7 +566,7 @@ export class NotificationScheduler {
       this.stopProcessing();
     }
 
-    console.log(`Starting notification processor with ${intervalMs}ms interval`);
+    logger.debug(`Starting notification processor with ${intervalMs}ms interval`);
     
     this.processingInterval = setInterval(async () => {
       await this.processPendingNotifications();
@@ -582,7 +583,7 @@ export class NotificationScheduler {
     if (this.processingInterval) {
       clearInterval(this.processingInterval);
       this.processingInterval = null;
-      console.log('Stopped notification processor');
+      logger.debug('Stopped notification processor');
     }
   }
 
@@ -616,7 +617,7 @@ export class NotificationScheduler {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching notification stats:', error);
+        logger.error('Error fetching notification stats:', error);
         return { total: 0, pending: 0, sent: 0, failed: 0, byChannel: {}, byType: {} };
       }
 
@@ -637,7 +638,7 @@ export class NotificationScheduler {
 
       return stats;
     } catch (error) {
-      console.error('Error calculating notification stats:', error);
+      logger.error('Error calculating notification stats:', error);
       return { total: 0, pending: 0, sent: 0, failed: 0, byChannel: {}, byType: {} };
     }
   }

@@ -24,7 +24,7 @@ export class EmailService {
     recipientName: string
   ): Promise<boolean> {
     if (!this.apiKey) {
-      console.warn('Email service not configured - RESEND_API_KEY missing');
+      logger.warn('Email service not configured - RESEND_API_KEY missing');
       return false;
     }
 
@@ -48,14 +48,14 @@ export class EmailService {
 
       if (!response.ok) {
         const error = await response.text();
-        console.error('Failed to send email:', error);
+        logger.error('Failed to send email:', error);
         return false;
       }
 
-      console.log('Email sent successfully for notification:', notification.id);
+      logger.debug('Email sent successfully for notification:', notification.id);
       return true;
     } catch (error) {
-      console.error('Error sending email:', error);
+      logger.error('Error sending email:', error);
       return false;
     }
   }
@@ -312,7 +312,7 @@ export class EmailService {
     userRole: 'client' | 'coach'
   ): Promise<boolean> {
     if (!this.apiKey) {
-      console.warn('Email service not configured - RESEND_API_KEY missing');
+      logger.warn('Email service not configured - RESEND_API_KEY missing');
       return false;
     }
 
@@ -386,7 +386,7 @@ export class EmailService {
 
       return response.ok;
     } catch (error) {
-      console.error('Error sending welcome email:', error);
+      logger.error('Error sending welcome email:', error);
       return false;
     }
   }
