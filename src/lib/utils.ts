@@ -28,13 +28,13 @@ export function createMappingFunction<T extends string, R>(
  * Generic factory for creating formatting functions with locale support
  * Consolidates date, time, and number formatting patterns
  */
-export function createFormatterFactory<TInput, TOutput>(
-  baseFormatter: (input: TInput, options?: any) => TOutput,
-  defaultOptions: any = {}
+export function createFormatterFactory<TInput, TOutput, TOptions = Record<string, unknown>>(
+  baseFormatter: (input: TInput, options?: TOptions) => TOutput,
+  defaultOptions: Partial<TOptions> = {} as Partial<TOptions>
 ) {
-  return (customOptions: any = {}) => {
+  return (customOptions: Partial<TOptions> = {}) => {
     const mergedOptions = { ...defaultOptions, ...customOptions };
-    return (input: TInput) => baseFormatter(input, mergedOptions);
+    return (input: TInput) => baseFormatter(input, mergedOptions as TOptions);
   };
 }
 
