@@ -92,7 +92,7 @@ async function checkDatabaseHealth(supabase: any) {
 
     if (summaryError || poolError) {
       // Fallback to basic health check
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .select('count', { count: 'exact', head: true });
 
