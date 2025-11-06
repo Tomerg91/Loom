@@ -10,7 +10,7 @@ import {
 import { PushNotificationService } from '@/lib/services/push-notification-service';
 
 // GET /api/notifications/push/vapid-key - Get VAPID public key
-export const GET = withErrorHandling(async (request: NextRequest) => {
+export const GET = withErrorHandling(async (_request: NextRequest) => {
   try {
     const pushService = new PushNotificationService(true);
     const vapidPublicKey = pushService.getVapidPublicKey();
@@ -33,6 +33,6 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 });
 
 // OPTIONS /api/notifications/push/vapid-key - Handle CORS preflight
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return handlePreflight(request);
 }

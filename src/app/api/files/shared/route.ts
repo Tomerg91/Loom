@@ -6,7 +6,7 @@ import { fileManagementService } from '@/lib/services/file-management-service';
 /**
  * GET /api/files/shared - Get files shared with the current user
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Authenticate user
     const authService = createAuthService(true);

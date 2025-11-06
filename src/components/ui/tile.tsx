@@ -60,7 +60,7 @@ const Tile = React.forwardRef<HTMLDivElement, TileProps>(
     children,
     ...props
   }, ref) => {
-    const Component = asChild ? React.Fragment : 'div'
+    const _Component = asChild ? React.Fragment : 'div'
 
     const content = children || (
       <div className="flex flex-col space-y-3">

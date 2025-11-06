@@ -5,7 +5,7 @@ import { rateLimit } from '@/lib/security/rate-limit';
 
 // Performance metrics collection endpoint
 const rateLimitedPerformance = rateLimit(200, 60000)( // 200 requests per minute
-  async (request: NextRequest) => {
+  async (_request: NextRequest) => {
     const start = Date.now();
     
     try {
@@ -81,7 +81,7 @@ const rateLimitedPerformance = rateLimit(200, 60000)( // 200 requests per minute
 );
 
 // GET /api/monitoring/performance - Get performance metrics summary
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const start = Date.now();
     
@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/monitoring/performance - Submit performance metrics
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   return rateLimitedPerformance(request);
 }
 

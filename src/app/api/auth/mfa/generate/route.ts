@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract client information for audit logging
-    const ipAddress = getClientIP(request);
-    const userAgent = getUserAgent(request);
+    const _ipAddress = getClientIP(request);
+    const _userAgent = getUserAgent(request);
 
     // Store the generated secret temporarily for verification
     // In production, you might want to store this in a secure temporary store

@@ -39,7 +39,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       );
     }
 
-    const supabase = await createClient();
+    const _supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10');
     const status = searchParams.get('status');

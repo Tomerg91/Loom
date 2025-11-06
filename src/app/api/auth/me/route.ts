@@ -9,7 +9,7 @@ import {
 import { createAuthService } from '@/lib/auth/auth';
 import { withApiOptimization, optimizeQuery } from '@/lib/performance/api-optimization';
 import { CacheTTL } from '@/lib/performance/cache';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createCorsResponse } from '@/lib/security/cors';
 import { rateLimit } from '@/lib/security/rate-limit';
 
 // Apply rate limiting to prevent user enumeration attacks

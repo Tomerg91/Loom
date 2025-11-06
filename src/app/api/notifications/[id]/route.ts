@@ -8,7 +8,7 @@ import {
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { NotificationService } from '@/lib/database/notifications';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createCorsResponse } from '@/lib/security/cors';
 
 interface RouteContext {
   params: Promise<{

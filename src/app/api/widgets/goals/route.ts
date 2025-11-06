@@ -23,7 +23,7 @@ export interface GoalsResponse {
   completedGoals: number;
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<GoalsResponse>>> {
+export async function GET(_request: NextRequest): Promise<NextResponse<ApiResponse<GoalsResponse>>> {
   try {
     const user = await getServerUser();
     if (!user) {

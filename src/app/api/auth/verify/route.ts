@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createAuthService } from '@/lib/auth/auth';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createCorsResponse } from '@/lib/security/cors';
 
 const verifyTokenSchema = z.object({
   token_hash: z.string().min(1, 'Token hash is required'),

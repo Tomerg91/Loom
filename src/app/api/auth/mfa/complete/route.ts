@@ -11,7 +11,7 @@ import {
   withRequestLogging,
 } from '@/lib/api/utils';
 import { createAuthService } from '@/lib/auth/auth';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createCorsResponse } from '@/lib/security/cors';
 import { createServerClientWithRequest } from '@/lib/supabase/server';
 
 const mfaCompletionSchema = z.object({

@@ -8,13 +8,13 @@ import { createClient } from '@/lib/supabase/server';
 
 
 // Validation schemas
-const createVersionSchema = z.object({
+const _createVersionSchema = z.object({
   description: z.string().max(1000).optional(),
   change_summary: z.string().max(500).optional(),
   is_major_version: z.boolean().default(false),
 });
 
-const rollbackVersionSchema = z.object({
+const _rollbackVersionSchema = z.object({
   target_version: z.number().int().min(1),
   description: z.string().max(500).optional(),
 });

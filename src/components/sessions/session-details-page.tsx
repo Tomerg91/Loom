@@ -104,7 +104,7 @@ export function SessionDetailsPage({ sessionId }: SessionDetailsPageProps) {
     },
   });
 
-  const cancelSessionMutation = useMutation({
+  const _cancelSessionMutation = useMutation({
     mutationFn: async (data: { reason?: string; cancellationType?: string }) => {
       const response = await fetch(`/api/sessions/${sessionId}/cancel`, {
         method: 'POST',

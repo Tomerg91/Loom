@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
-import { adminSystemService, MaintenanceAction, MaintenanceActionParams } from '@/lib/database/admin-system';
+import { adminSystemServiceParams } from '@/lib/database/admin-system';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { authService } from '@/lib/services/auth-service';
 

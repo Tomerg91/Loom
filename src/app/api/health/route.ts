@@ -4,7 +4,7 @@ import { compose, withRateLimit } from '@/lib/api';
 import { createPublicCorsResponse } from '@/lib/security/cors';
 import { createClient } from '@/lib/supabase/server';
 
-async function baseHealthHandler(request: NextRequest) {
+async function baseHealthHandler(_request: NextRequest) {
   const start = Date.now();
   
   try {
@@ -88,7 +88,7 @@ async function baseHealthHandler(request: NextRequest) {
 // GET /api/health - Health check endpoint
 export const GET = compose(baseHealthHandler, withRateLimit());
 
-async function baseHeadHandler(request: NextRequest) {
+async function baseHeadHandler(_request: NextRequest) {
   try {
     const supabase = await createClient();
     const { error } = await supabase
@@ -106,7 +106,7 @@ async function baseHeadHandler(request: NextRequest) {
 export const HEAD = compose(baseHeadHandler, withRateLimit());
 
 // OPTIONS /api/health - Handle CORS preflight
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return createPublicCorsResponse();
 }
 

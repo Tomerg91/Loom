@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 import { 
@@ -51,7 +51,7 @@ function generateTimeSeriesData(notifications: any[], startDate: Date, endDate: 
 // GET /api/admin/notifications/analytics - Get notification analytics
 export const GET = withErrorHandling(
   rateLimit(60, 60000)( // 60 requests per minute
-    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
+    requireAuth(async (user, request: NextRequest, _context: { params: Promise<{}> }) => {
       // Check admin permissions
       if (user.role !== 'admin') {
         return createErrorResponse(
@@ -92,9 +92,9 @@ export const GET = withErrorHandling(
         }
 
         // Build base query conditions
-        const dateCondition = `created_at >= '${startDate.toISOString()}' AND created_at <= '${endDate.toISOString()}'`;
-        const channelCondition = query.channel ? `AND channel = '${query.channel}'` : '';
-        const typeCondition = query.type ? `AND type = '${query.type}'` : '';
+        const _dateCondition = `created_at >= '${startDate.toISOString()}' AND created_at <= '${endDate.toISOString()}'`;
+        const _channelCondition = query.channel ? `AND channel = '${query.channel}'` : '';
+        const _typeCondition = query.type ? `AND type = '${query.type}'` : '';
 
         // Get overview statistics from existing notifications table
         const { data: allNotifications, error: notificationsError } = await supabase

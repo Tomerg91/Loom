@@ -18,7 +18,7 @@ export interface PracticeJournalStats {
 }
 
 // GET: Fetch practice journal statistics for current user
-export async function GET(request: NextRequest): Promise<Response> {
+export async function GET(_request: NextRequest): Promise<Response> {
   try {
     const session = await authService.getSession();
     if (!session?.user) {

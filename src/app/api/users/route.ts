@@ -18,7 +18,7 @@ import { rateLimit } from '@/lib/security/rate-limit';
 // GET /api/users - List users with pagination (Admin only)
 export const GET = withErrorHandling(
   rateLimit(200, 60000)( // 200 requests per minute for admin endpoints
-    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
+    requireAuth(async (user, _request: NextRequest, context: { params: Promise<{}> }) => {
       // Check if user has admin role (required for listing all users)
       if (user.role !== 'admin') {
         return createErrorResponse(
@@ -80,6 +80,6 @@ export const GET = withErrorHandling(
 );
 
 // OPTIONS /api/users - Handle CORS preflight
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return handlePreflight(request);
 }

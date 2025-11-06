@@ -14,7 +14,7 @@ import { rateLimit } from '@/lib/security/rate-limit';
 // GET /api/messages - Get conversations list with last message and unread count
 export const GET = withErrorHandling(
   rateLimit(200, 60000)( // 200 requests per minute
-    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
+    requireAuth(async (user, request: NextRequest, _context: { params: Promise<{}> }) => {
       const { searchParams } = request.nextUrl;
       const page = parseInt(searchParams.get('page') || '1');
       const limit = parseInt(searchParams.get('limit') || '20');

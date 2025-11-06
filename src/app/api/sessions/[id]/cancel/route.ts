@@ -10,7 +10,7 @@ import {
 } from '@/lib/api/utils';
 import { uuidSchema } from '@/lib/api/validation';
 import { getSessionById, cancelSession } from '@/lib/database/sessions';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createCorsResponse } from '@/lib/security/cors';
 
 interface RouteParams {
   params: Promise<{ id: string }>;

@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAuthService } from '@/lib/auth/auth';
 import { createMfaService } from '@/lib/services/mfa-service';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get authenticated user
     const authService = createAuthService(true);

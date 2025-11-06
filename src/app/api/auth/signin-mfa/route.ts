@@ -19,7 +19,7 @@ import {
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { createAuthService } from '@/lib/auth/auth';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createCorsResponse } from '@/lib/security/cors';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
 
 // MFA signin completion schema

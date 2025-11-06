@@ -5,7 +5,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { adminSystemService } from '@/lib/database/admin-system';
 import { authService } from '@/lib/services/auth-service';
 
-export async function GET(request: NextRequest): Promise<Response> {
+export async function GET(_request: NextRequest): Promise<Response> {
   try {
     // Verify admin access
     const session = await authService.getSession();
