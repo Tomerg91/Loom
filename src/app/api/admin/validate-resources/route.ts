@@ -8,8 +8,8 @@ import type {
   TableStatistics,
   AffectedCoach,
 } from '@/types/resource-validation';
-import {
 import { logger } from '@/lib/logger';
+import {
   getCheckSeverity,
   getCheckTitle,
   getCheckDescription,

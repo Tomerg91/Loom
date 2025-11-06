@@ -14,8 +14,8 @@ import {
   SessionSchedulerError,
   SessionSchedulerService,
 } from '@/modules/sessions/server/queries';
-import {
 import { logger } from '@/lib/logger';
+import {
   sessionUpdateSchema,
   type SessionUpdateInput,
 } from '@/modules/sessions/validators/session';
