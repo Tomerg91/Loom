@@ -27,10 +27,9 @@ CREATE INDEX IF NOT EXISTS idx_sessions_client_status_scheduled
   ON sessions(client_id, status, scheduled_at DESC)
   WHERE status IN ('scheduled', 'in_progress');
 
--- Upcoming sessions for both coach and client
 CREATE INDEX IF NOT EXISTS idx_sessions_upcoming
   ON sessions(scheduled_at, status)
-  WHERE status = 'scheduled' AND scheduled_at > NOW();
+  WHERE status = 'scheduled';
 
 -- Recent completed sessions
 CREATE INDEX IF NOT EXISTS idx_sessions_completed_recent
@@ -200,7 +199,7 @@ CREATE INDEX IF NOT EXISTS idx_resource_progress_file_accessed
 -- Recently accessed resources
 CREATE INDEX IF NOT EXISTS idx_resource_progress_recent_access
   ON resource_client_progress(client_id, last_accessed_at DESC)
-  WHERE last_accessed_at > NOW() - INTERVAL '30 days';
+  WHERE last_accessed_at IS NOT NULL;
 
 -- ============================================================================
 -- 11. TASKS DOMAIN INDEXES (if exists)
