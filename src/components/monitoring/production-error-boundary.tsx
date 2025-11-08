@@ -166,7 +166,7 @@ export class ProductionErrorBoundary extends Component<
           context.userId = userData.id;
           context.userRole = userData.role;
         }
-      } catch () {
+      } catch (_error) {
         // Ignore errors accessing localStorage
       }
       
@@ -176,7 +176,7 @@ export class ProductionErrorBoundary extends Component<
         if (sessionId) {
           context.sessionId = sessionId;
         }
-      } catch () {
+      } catch (_error) {
         // Ignore errors accessing sessionStorage
       }
     }

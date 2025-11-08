@@ -288,7 +288,7 @@ class WebVitalsMonitor {
 
     try {
       observer.observe({ entryTypes: ['resource'] });
-    } catch () {
+    } catch (_error) {
       // Observer not supported in this browser
       console.warn('Performance observer not supported');
     }

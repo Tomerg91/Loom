@@ -684,7 +684,7 @@ class AdminSystemService {
             success: true,
             message: `${service} service restarted successfully`
           });
-        } catch () {
+        } catch (_error) {
           results.push({
             service,
             success: false,

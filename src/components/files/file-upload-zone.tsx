@@ -356,7 +356,7 @@ export function FileUploadZone({
               try {
                 const result = JSON.parse(xhr.responseText);
                 resolve(result);
-              } catch () {
+              } catch (_error) {
                 reject(new Error('Invalid response format'));
               }
             } else {

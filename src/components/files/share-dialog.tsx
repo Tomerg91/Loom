@@ -137,7 +137,7 @@ export function ShareDialog({ file, open, onClose }: ShareDialogProps) {
           variant: 'destructive'
         });
       }
-    } catch () {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to share file. Please try again.',
@@ -163,7 +163,7 @@ export function ShareDialog({ file, open, onClose }: ShareDialogProps) {
       } else {
         throw new Error('Failed to revoke access');
       }
-    } catch () {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to revoke access. Please try again.',
@@ -201,7 +201,7 @@ export function ShareDialog({ file, open, onClose }: ShareDialogProps) {
             : 'Anyone with the link can now access this file'
         });
       }
-    } catch () {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to update public access setting',

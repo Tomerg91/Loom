@@ -173,7 +173,7 @@ export function FileManager({
         description: `Successfully created folder \"${folderName}\"`,
       });
       refetchFolders();
-    } catch () {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to create folder. Please try again.',
@@ -237,7 +237,7 @@ export function FileManager({
       });
       
       refetchFiles();
-    } catch () {
+    } catch (_error) {
       toast({
         title: 'Upload failed',
         description: 'Some files failed to upload. Please try again.',
@@ -259,7 +259,7 @@ export function FileManager({
         newSet.delete(fileId);
         return newSet;
       });
-    } catch () {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to delete file. Please try again.',
@@ -278,7 +278,7 @@ export function FileManager({
       });
       refetchFiles();
       setSelectedFiles(new Set());
-    } catch () {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to delete some files. Please try again.',

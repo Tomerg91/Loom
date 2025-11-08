@@ -103,7 +103,7 @@ export function usePerformanceMonitoring() {
       
       try {
         longTaskObserver.observe({ entryTypes: ['longtask'] });
-      } catch () {
+      } catch (_error) {
         // Long task API not supported
       }
       
@@ -125,7 +125,7 @@ export function usePerformanceMonitoring() {
       
       try {
         layoutShiftObserver.observe({ entryTypes: ['layout-shift'] });
-      } catch () {
+      } catch (_error) {
         // Layout shift API not supported
       }
       

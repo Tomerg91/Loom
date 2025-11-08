@@ -197,7 +197,7 @@ test.describe('Admin Dashboard', () => {
         try {
           const download = await downloadPromise;
           expect(download.suggestedFilename()).toMatch(/\.(csv|xlsx|pdf)$/);
-        } catch () {
+        } catch (_error) {
           console.log('Export download test skipped - may not be implemented');
         }
       }

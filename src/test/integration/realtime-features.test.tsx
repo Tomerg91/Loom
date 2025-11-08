@@ -205,7 +205,7 @@ const SessionAvailability = ({ coachId }: { coachId: string }) => {
         description: 'Your session has been successfully booked.',
         variant: 'default',
       });
-    } catch () {
+    } catch (_error) {
       // Revert optimistic update on error
       const originalSlot = availableSlots.find((slot: unknown) => slot.id === slotId);
       if (originalSlot) {

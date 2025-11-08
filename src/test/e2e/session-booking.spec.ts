@@ -199,7 +199,7 @@ test.describe('Session Booking Flow', () => {
             })
           });
         });
-      } catch () {
+      } catch (_error) {
         console.log('Could not mock API route - continuing with normal flow');
       }
       

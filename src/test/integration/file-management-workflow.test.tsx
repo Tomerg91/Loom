@@ -103,7 +103,7 @@ const FileManager = ({ userId, userRole }: { userId: string; _userRole: string }
         description: 'File deleted successfully',
         variant: 'default',
       });
-    } catch () {
+    } catch (_error) {
       mockToast({
         title: 'Delete Failed',
         description: 'Failed to delete file',
@@ -121,7 +121,7 @@ const FileManager = ({ userId, userRole }: { userId: string; _userRole: string }
         variant: 'default',
       });
       return result;
-    } catch () {
+    } catch (_error) {
       mockToast({
         title: 'Share Failed',
         description: 'Failed to create share link',
@@ -140,7 +140,7 @@ const FileManager = ({ userId, userRole }: { userId: string; _userRole: string }
         description: `${selectedFiles.length} files deleted`,
         variant: 'default',
       });
-    } catch () {
+    } catch (_error) {
       mockToast({
         title: 'Bulk Delete Failed',
         description: 'Failed to delete selected files',
@@ -432,7 +432,7 @@ describe.skip('File Management Workflow Integration', () => {
             link.click();
             
             URL.revokeObjectURL(url);
-          } catch () {
+          } catch (_error) {
             mockToast({
               title: 'Download Failed',
               description: 'Failed to download file',
@@ -465,7 +465,7 @@ describe.skip('File Management Workflow Integration', () => {
         const handleDownload = async () => {
           try {
             await mockFileService.downloadFile(fileId);
-          } catch () {
+          } catch (_error) {
             mockToast({
               title: 'Download Failed',
               description: 'Failed to download file',
@@ -790,7 +790,7 @@ describe.skip('File Management Workflow Integration', () => {
           
           try {
             await mockFileService.uploadFile(file, { userId: mockUser.id });
-          } catch () {
+          } catch (_error) {
             mockToast({
               title: 'Upload Failed',
               description: 'Storage quota exceeded. Please delete some files.',

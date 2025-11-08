@@ -297,7 +297,7 @@ export function AdvancedFileManager({
         title: 'Success',
         description: 'File deleted successfully',
       });
-    } catch () {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to delete file',
@@ -330,7 +330,7 @@ export function AdvancedFileManager({
         title: 'Success',
         description: `${selectedFiles.size} files deleted successfully`,
       });
-    } catch () {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to delete some files',
@@ -356,7 +356,7 @@ export function AdvancedFileManager({
       );
       setFiles(updatedFiles);
       onFilesChange?.(updatedFiles);
-    } catch () {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to update file',

@@ -289,7 +289,7 @@ class FileService {
       }
 
       return { isValid: true };
-    } catch () {
+    } catch (_error) {
       return { isValid: false, error: 'File content validation failed' };
     }
   }

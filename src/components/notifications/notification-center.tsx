@@ -120,7 +120,7 @@ interface NotificationGroup {
   unreadCount: number;
 }
 
-interface{
+interface NotificationAction {
   id: string;
   type: 'mark_read' | 'delete' | 'archive' | 'snooze' | 'mark_all_read' | 'delete_all' | 'export';
   notificationId?: string;
