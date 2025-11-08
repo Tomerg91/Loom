@@ -67,7 +67,7 @@ import { sessionNotificationService } from '@/lib/notifications/session-notifica
 import { createCorsResponse } from '@/lib/security/cors';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
-import { mockUser mockSupabaseClient } from '@/test/utils';
+import { mockUser, mockSupabaseClient } from '@/test/utils';
 
 const _mockCreateSuccessResponse = vi.mocked(createSuccessResponse);
 const mockCreateErrorResponse = vi.mocked(createErrorResponse);

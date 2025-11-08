@@ -1,6 +1,6 @@
 'use client'
 
-import { Users, Zap, Shield, ArrowRight Play } from 'lucide-react'
+import { Users, Zap, Shield, ArrowRight, Play } from 'lucide-react'
 import * as React from 'react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'

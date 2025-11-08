@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { ReflectionsManagement } from '@/components/client/reflections-management';
-import { renderWithProviders, mockUseQuery, mockUseMutation createMockReflection } from '@/test/utils';
+import { renderWithProviders, mockUseQuery, mockUseMutation, createMockReflection } from '@/test/utils';
 
 // Mock dependencies
 vi.mock('@tanstack/react-query', async () => {

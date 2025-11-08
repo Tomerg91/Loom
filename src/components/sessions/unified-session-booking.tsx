@@ -6,7 +6,7 @@ import { format, addDays, startOfTomorrow } from 'date-fns';
 import { Calendar, Clock, User, AlertCircle, CheckCircle, Wifi, WifiOff, RefreshCw, Loader2, Users, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { useState useCallback, useMemo, memo } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 

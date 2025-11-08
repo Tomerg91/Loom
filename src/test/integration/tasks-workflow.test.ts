@@ -7,7 +7,7 @@
  * 3. Client updates progress
  * 4. Task auto-completes at 100%
  */
-import { describe, it, expect vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // import {} from '@/modules/sessions/server/task-service';
 
