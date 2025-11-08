@@ -11,7 +11,7 @@ import {
   withRequestLogging,
 } from '@/lib/api/utils';
 import { createAuthService } from '@/lib/auth/auth';
-import { createCorsResponse } from '@/lib/security/cors';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 
 const resendSchema = z.object({
   email: z

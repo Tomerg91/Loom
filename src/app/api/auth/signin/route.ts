@@ -10,7 +10,7 @@ import {
   withRequestLogging,
 } from '@/lib/api/utils';
 import { createAuthService } from '@/lib/auth/auth';
-import { createCorsResponse } from '@/lib/security/cors';
+import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { basicPasswordSchema } from '@/lib/security/password';
 import { createServerClientWithRequest } from '@/lib/supabase/server';
 
