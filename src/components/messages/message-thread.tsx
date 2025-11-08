@@ -1,7 +1,7 @@
 'use client';
 
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
+import { format, isToday, isYesterday} from 'date-fns';
 import { 
   MessageCircle, 
   File, 
@@ -15,7 +15,6 @@ import {
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -29,7 +28,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useUser } from '@/lib/auth/use-user';
 import { useRealtimeMessages, useTypingIndicators } from '@/lib/realtime/hooks';
 import { cn } from '@/lib/utils';
-import type { Message, MessageReaction } from '@/types';
+import type { Message} from '@/types';
 
 import { MessageReactions } from './message-reactions';
 
@@ -195,7 +194,7 @@ export function MessageThread({ conversationId, className }: MessageThreadProps)
   };
 
   // Render attachment
-  const renderAttachment = (attachment: any) => {
+  const renderAttachment = (attachment: unknown) => {
     const isImage = attachment.attachmentType === 'image';
     
     return (

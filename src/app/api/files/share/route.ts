@@ -28,7 +28,7 @@ const revokeShareSchema = z.object({
 
 // Helper function to check coach-client relationship
 async function checkCoachClientRelationship(
-  supabase: any,
+  supabase: unknown,
   userId1: string,
   userId2: string
 ): Promise<{ hasRelationship: boolean; userRole: string | null }> {

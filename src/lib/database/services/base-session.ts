@@ -53,7 +53,7 @@ export type DatabaseSession = Database['public']['Tables']['sessions']['Row'] & 
  * Base session service with shared utilities and data mapping functions
  */
 export abstract class BaseSessionService {
-  protected supabase: any;
+  protected supabase: unknown;
 
   constructor(isServer = true) {
     this.supabase = isServer ? createServerClient() : createClient();

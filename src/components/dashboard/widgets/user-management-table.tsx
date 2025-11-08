@@ -1,5 +1,4 @@
 import { MoreHorizontal, Edit, Mail, Trash2 } from 'lucide-react';
-import { useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';

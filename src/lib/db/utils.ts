@@ -64,11 +64,11 @@ export function getPaginationParams(page?: number, limit?: number) {
 /**
  * Safely transforms database row field names from snake_case to camelCase
  */
-export function transformDatabaseRow<T extends Record<string, any>>(
+export function transformDatabaseRow<T extends Record<string, unknown>>(
   row: T,
   fieldMap: Record<keyof T, string>
-): Record<string, any> {
-  const transformed: Record<string, any> = {};
+): Record<string, unknown> {
+  const transformed: Record<string, unknown> = {};
   
   Object.entries(fieldMap).forEach(([dbField, camelField]) => {
     if (row[dbField] !== undefined) {
@@ -107,12 +107,12 @@ export const DB_ERROR_CODES = {
 /**
  * Checks if an error is a specific database error
  */
-export function isDatabaseError(error: any, code: string): error is DatabaseError {
+export function isDatabaseError(error: unknown, code: string): error is DatabaseError {
   return error && error.code === code;
 }
 
 function isDatabaseErrorObject(error: unknown): error is DatabaseError {
-  return typeof error === 'object' && error !== null && 'code' in (error as any);
+  return typeof error === 'object' && error !== null && 'code' in (error as unknown);
 }
 
 /**

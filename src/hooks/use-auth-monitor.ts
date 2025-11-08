@@ -30,7 +30,7 @@ export function useAuthMonitor(options: AuthMonitorOptions = {}) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
-      const { onSessionExpired, onTokenRefreshed, onSignOut, onError } = optionsRef.current;
+      const { onSessionExpired, onTokenRefreshed, onSignOut, _onError} = optionsRef.current;
 
       switch (event) {
         case 'TOKEN_REFRESHED':

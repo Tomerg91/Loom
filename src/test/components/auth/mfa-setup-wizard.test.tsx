@@ -1,13 +1,13 @@
-import { screen, waitFor, fireEvent } from '@testing-library/react';
+import { screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { MfaSetupWizard, type MfaSetupWizardProps } from '@/components/auth/mfa/mfa-setup-wizard';
-import { renderWithProviders, mockFetch, mockApiResponse, waitForNextTick } from '@/test/utils';
+import { renderWithProviders, mockFetch, mockApiResponse} from '@/test/utils';
 
 // Mock MFA sub-components
 vi.mock('@/components/auth/mfa/mfa-qr-code', () => ({
-  MfaQrCode: ({ secret, issuer, accountName }: any) => (
+  MfaQrCode: ({ secret, issuer, accountName }: unknown) => (
     <div data-testid="mfa-qr-code">
       <span data-testid="qr-secret">{secret}</span>
       <span data-testid="qr-issuer">{issuer}</span>
@@ -17,7 +17,7 @@ vi.mock('@/components/auth/mfa/mfa-qr-code', () => ({
 }));
 
 vi.mock('@/components/auth/mfa/mfa-verification-input', () => ({
-  MfaVerificationInput: ({ value, onChange, onSubmit, error, disabled, autoFocus }: any) => (
+  MfaVerificationInput: ({ value, onChange, onSubmit, error, disabled, autoFocus }: unknown) => (
     <div data-testid="mfa-verification-input">
       <input
         data-testid="verification-input"
@@ -33,7 +33,7 @@ vi.mock('@/components/auth/mfa/mfa-verification-input', () => ({
 }));
 
 vi.mock('@/components/auth/mfa/mfa-backup-codes', () => ({
-  MfaBackupCodes: ({ codes }: any) => (
+  MfaBackupCodes: ({ codes }: unknown) => (
     <div data-testid="mfa-backup-codes">
       {codes.map((code: string, index: number) => (
         <div key={index} data-testid={`backup-code-${index}`}>{code}</div>
@@ -378,7 +378,7 @@ describe('MfaSetupWizard', () => {
     });
 
     it('displays error messages', async () => {
-      const errorMessage = 'Invalid verification code';
+      const _errorMessage = 'Invalid verification code';
       renderWithProviders(
         <MfaSetupWizard {...defaultProps} isLoading={false} />
       );
@@ -534,7 +534,7 @@ describe('MfaSetupWizard', () => {
 
   describe('Error Handling', () => {
     it('clears errors on step navigation', async () => {
-      const { rerender } = renderWithProviders(<MfaSetupWizard {...defaultProps} />);
+      const {_rerender} = renderWithProviders(<MfaSetupWizard {...defaultProps} />);
       
       // Navigate to verification step
       const user = userEvent.setup();

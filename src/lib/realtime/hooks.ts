@@ -10,7 +10,7 @@ import { realtimeClient } from './realtime-client';
 
 
 // Debounce utility for subscription management
-function useDebounce<T extends any[]>(callback: (...args: T) => void, delay: number) {
+function useDebounce<T extends unknown[]>(callback: (...args: T) => void, delay: number) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   return useCallback((...args: T) => {
@@ -660,7 +660,7 @@ export function useRealtimeConversations() {
  */
 export function useTypingIndicators(conversationId?: string) {
   const user = useUser();
-  const [typingUsers, setTypingUsers] = useState<any[]>([]);
+  const [typingUsers, setTypingUsers] = useState<unknown[]>([]);
   const subscriptionRef = useRef<string | null>(null);
 
   useEffect(() => {

@@ -25,7 +25,7 @@ vi.mock('@/components/auth/auth-provider', () => ({
 }));
 
 vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, asChild: _asChild, ...props }: any) => (
+  Button: ({ children, asChild: _asChild, ...props }: unknown) => (
     <button {...props}>{children}</button>
   ),
 }));
@@ -48,7 +48,7 @@ describe('SigninForm MFA redirect', () => {
         id: 'user-123',
         email: 'test@example.com',
         mfaEnabled: true,
-      } as any,
+      } as unknown,
       error: null,
     });
   });

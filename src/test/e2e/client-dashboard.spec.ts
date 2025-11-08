@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { createAuthHelper, testConstants, testUtils, getTestUserByEmail } from '../../../tests/helpers';
+import { createAuthHelper} from '../../../tests/helpers';
 
 test.describe('Client Dashboard', () => {
   test.beforeEach(async ({ page }) => {
@@ -199,7 +199,7 @@ test.describe('Client Dashboard', () => {
     
     // Should have toggles for different notification types
     const emailNotifications = page.locator('[data-testid="email-notifications"], input[name*="email"]');
-    const sessionReminders = page.locator('[data-testid="session-reminders"], input[name*="reminder"]');
+    const _sessionReminders = page.locator('[data-testid="session-reminders"], input[name*="reminder"]');
     
     if (await emailNotifications.isVisible()) {
       const isChecked = await emailNotifications.isChecked();

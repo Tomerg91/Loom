@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { format, addDays, subDays } from 'date-fns';
+// import {} from 'date-fns';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { SessionCalendar } from '@/components/sessions/session-calendar';
@@ -98,13 +98,13 @@ describe('SessionCalendar', () => {
     vi.clearAllMocks();
     
     // Mock auth store
-    (useUser as any).mockReturnValue(mockUser);
+    (useUser as unknown).mockReturnValue(mockUser);
     
     // Mock realtime bookings
-    (useRealtimeBookings as any).mockReturnValue(undefined);
+    (useRealtimeBookings as unknown).mockReturnValue(undefined);
     
     // Mock useQuery for calendar sessions
-    (useQuery as any).mockReturnValue(
+    (useQuery as unknown).mockReturnValue(
       mockUseQuery({ data: mockSessions })
     );
 
@@ -225,7 +225,7 @@ describe('SessionCalendar', () => {
         scheduledAt: '2024-01-15T10:00:00Z',
       });
       
-      (useQuery as any).mockReturnValue(
+      (useQuery as unknown).mockReturnValue(
         mockUseQuery({ data: [longTitleSession] })
       );
       
@@ -420,7 +420,7 @@ describe('SessionCalendar', () => {
         }),
       ];
       
-      (useQuery as any).mockReturnValue(
+      (useQuery as unknown).mockReturnValue(
         mockUseQuery({ data: newSessions })
       );
       
@@ -433,7 +433,7 @@ describe('SessionCalendar', () => {
 
   describe('Loading and Error States', () => {
     it('shows loading state while fetching sessions', () => {
-      (useQuery as any).mockReturnValue({
+      (useQuery as unknown).mockReturnValue({
         ...mockUseQuery(null),
         isLoading: true,
       });
@@ -449,7 +449,7 @@ describe('SessionCalendar', () => {
     });
 
     it('shows error state when session fetch fails', () => {
-      (useQuery as any).mockReturnValue({
+      (useQuery as unknown).mockReturnValue({
         ...mockUseQuery(null),
         error: new Error('Failed to load sessions'),
         isError: true,
@@ -462,7 +462,7 @@ describe('SessionCalendar', () => {
     });
 
     it('allows retry after error', async () => {
-      (useQuery as any).mockReturnValue({
+      (useQuery as unknown).mockReturnValue({
         ...mockUseQuery(null),
         error: new Error('Failed to load sessions'),
         isError: true,
@@ -534,7 +534,7 @@ describe('SessionCalendar', () => {
         })
       );
       
-      (useQuery as any).mockReturnValue(
+      (useQuery as unknown).mockReturnValue(
         mockUseQuery({ data: manySessions })
       );
       
@@ -629,7 +629,7 @@ describe('SessionCalendar', () => {
         })
       );
       
-      (useQuery as any).mockReturnValue(
+      (useQuery as unknown).mockReturnValue(
         mockUseQuery({ data: manySessions })
       );
       
@@ -643,7 +643,7 @@ describe('SessionCalendar', () => {
 
   describe('Edge Cases', () => {
     it('handles empty session data', () => {
-      (useQuery as any).mockReturnValue(
+      (useQuery as unknown).mockReturnValue(
         mockUseQuery({ data: [] })
       );
       
@@ -659,7 +659,7 @@ describe('SessionCalendar', () => {
         scheduledAt: 'invalid-date',
       });
       
-      (useQuery as any).mockReturnValue(
+      (useQuery as unknown).mockReturnValue(
         mockUseQuery({ data: [badSession] })
       );
       

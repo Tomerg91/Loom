@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { createAuthHelper, testConstants, testUtils, getTestUserByEmail } from '../../../tests/helpers';
+import { createAuthHelper} from '../../../tests/helpers';
 
 test.describe('Admin Dashboard', () => {
   test.beforeEach(async ({ page }) => {
@@ -78,7 +78,7 @@ test.describe('Admin Dashboard', () => {
       await firstUser.click();
       
       // Should show user details or edit form
-      const userDetails = page.locator('[data-testid="user-details"], .user-details');
+      const _userDetails = page.locator('[data-testid="user-details"], .user-details');
       const editButton = page.locator('[data-testid="edit-user"], button:has-text("Edit")');
       
       if (await editButton.isVisible()) {
@@ -88,7 +88,7 @@ test.describe('Admin Dashboard', () => {
         const editForm = page.locator('[data-testid="user-edit-form"], .edit-form, form');
         if (await editForm.isVisible()) {
           const statusSelect = page.locator('[data-testid="user-status"], select[name*="status"]');
-          const roleSelect = page.locator('[data-testid="user-role"], select[name*="role"]');
+          const _roleSelect = page.locator('[data-testid="user-role"], select[name*="role"]');
           
           if (await statusSelect.isVisible()) {
             await statusSelect.selectOption({ label: 'Active' });
@@ -197,7 +197,7 @@ test.describe('Admin Dashboard', () => {
         try {
           const download = await downloadPromise;
           expect(download.suggestedFilename()).toMatch(/\.(csv|xlsx|pdf)$/);
-        } catch (error) {
+        } catch () {
           console.log('Export download test skipped - may not be implemented');
         }
       }
@@ -281,7 +281,7 @@ test.describe('Admin Dashboard', () => {
     
     if (await userRow.isVisible()) {
       // Look for role change options
-      const roleSelect = page.locator('[data-testid="user-role"], select[name*="role"]').first();
+      const _roleSelect = page.locator('[data-testid="user-role"], select[name*="role"]').first();
       const editButton = page.locator('[data-testid="edit-user"], button:has-text("Edit")').first();
       
       if (await editButton.isVisible()) {

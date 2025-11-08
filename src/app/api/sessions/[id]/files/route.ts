@@ -23,11 +23,11 @@ const updateSessionFileSchema = z.object({
 
 // Helper function to check session access
 async function checkSessionAccess(
-  supabase: any,
+  supabase: unknown,
   sessionId: string,
   userId: string,
   requiredRole?: 'coach' | 'client'
-): Promise<{ hasAccess: boolean; session: any; userRole: string }> {
+): Promise<{ hasAccess: boolean; session: unknown; userRole: string }> {
   // Get session with participant details
   const { data: session, error } = await supabase
     .from('sessions')
@@ -188,7 +188,7 @@ export async function POST(
     const { id } = await params;
 
     // Check session access
-    const { hasAccess, session, userRole } = await checkSessionAccess(
+    const { hasAccess, session, _userRole} = await checkSessionAccess(
       supabase,
       id,
       user.id
@@ -372,7 +372,7 @@ export async function PUT(
     }
 
     // Update the session file
-    const updateFields: any = {};
+    const updateFields: unknown = {};
     if (validatedData.category !== undefined) {
       updateFields.file_category = validatedData.category;
     }

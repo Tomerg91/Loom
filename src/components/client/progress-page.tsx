@@ -7,7 +7,7 @@ import {
   Calendar,
   Star,
   Activity,
-  BarChart3,
+
   Plus
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -23,7 +23,7 @@ import {
   LoadingState,
   ErrorState,
   StatsCard,
-  ChartPlaceholder,
+
   ProgressList,
   SessionList,
   AchievementGrid,
@@ -104,7 +104,7 @@ export function ClientProgressPage() {
   const [activeTab, setActiveTab] = useState('overview');
 
   // Helper function to combine data from real APIs
-  const combineProgressData = (stats: any, goals: any, sessions: any): ProgressData => {
+  const combineProgressData = (stats: unknown, goals: unknown, sessions: unknown): ProgressData => {
     // Calculate insights from session ratings and reflection moods
     const insights = [];
     const now = new Date();
@@ -126,16 +126,16 @@ export function ClientProgressPage() {
         completedSessions: stats.completedSessions || 0,
         upcomingSessions: stats.upcomingSessions || 0,
         totalGoals: goals.length || 0,
-        completedGoals: goals.filter((g: any) => g.status === 'completed').length || stats.goalsAchieved || 0,
+        completedGoals: goals.filter((g: unknown) => g.status === 'completed').length || stats.goalsAchieved || 0,
         overallProgress: Math.round((stats.completedSessions / Math.max(stats.totalSessions, 1)) * 100) || 0,
         streakDays: stats.currentStreak || 0,
         averageRating: stats.averageSessionRating || stats.averageMoodRating || 0,
       },
-      goals: goals.map((goal: any) => ({
+      goals: goals.map((goal: unknown) => ({
         ...goal,
         milestones: goal.milestones || [],
       })),
-      sessions: (sessions || []).map((session: any) => ({
+      sessions: (sessions || []).map((session: unknown) => ({
         id: session.id,
         coachName: `${session.coach?.firstName || ''} ${session.coach?.lastName || ''}`.trim() || 'Coach',
         coachAvatar: session.coach?.avatarUrl,

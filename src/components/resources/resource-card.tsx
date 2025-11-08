@@ -29,7 +29,7 @@ import {
   Users,
   CheckCircle2,
 } from 'lucide-react';
-import Link from 'next/link';
+importfrom 'next/link';
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';

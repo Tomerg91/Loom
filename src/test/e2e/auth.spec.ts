@@ -69,7 +69,7 @@ test.describe('Authentication Flow', () => {
   });
 
   test('signup flow', async ({ page }) => {
-    const authHelper = createAuthHelper(page);
+    const _authHelper = createAuthHelper(page);
     const randomEmail = testUtils.randomEmail();
     
     await page.goto('/auth/signin');

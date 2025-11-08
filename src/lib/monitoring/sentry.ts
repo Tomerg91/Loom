@@ -228,7 +228,7 @@ export const withSentryErrorBoundary = <T extends Record<string, unknown>>(
 ): React.ComponentType<T> => {
   if (SENTRY_DSN) {
     return Sentry.withErrorBoundary(Component, {
-      fallback: options?.fallback || (({ error }: { error?: Error }) => React.createElement('div', null, 'Something went wrong')),
+      fallback: options?.fallback || (({ error: _error }: { error?: Error }) => React.createElement('div', null, 'Something went wrong')),
       beforeCapture: options?.beforeCapture,
     });
   }

@@ -475,7 +475,7 @@ export function SessionDetailView({ sessionId }: SessionDetailViewProps) {
               </TabsList>
 
               <TabsContent value="all" className="space-y-3 mt-4">
-                {filesData.files.map((file: any) => {
+                {filesData.files.map((file: unknown) => {
                   const FileIcon = getFileIcon(file.file.fileType);
                   return (
                     <div
@@ -520,7 +520,7 @@ export function SessionDetailView({ sessionId }: SessionDetailViewProps) {
               {['preparation', 'notes', 'recording', 'resource'].map((category) => (
                 <TabsContent key={category} value={category} className="space-y-3 mt-4">
                   {filesData.filesByCategory[category]?.length > 0 ? (
-                    filesData.filesByCategory[category].map((file: any) => {
+                    filesData.filesByCategory[category].map((file: unknown) => {
                       const FileIcon = getFileIcon(file.file.fileType);
                       return (
                         <div

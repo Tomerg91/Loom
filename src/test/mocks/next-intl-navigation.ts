@@ -1,7 +1,7 @@
 import React from 'react';
 
-export const createNavigation = (_routing: any) => ({
-  Link: ({ href, children, ...props }: any) => (
+export const createNavigation = (_routing: unknown) => ({
+  Link: ({ href, children, ...props }: unknown) => (
     React.createElement('a', { href, ...props }, children)
   ),
   redirect: (url: string) => {

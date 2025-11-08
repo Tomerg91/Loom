@@ -1,12 +1,11 @@
 'use client'
 
-import { Star, Users, Zap, Shield, ArrowRight, Check, Play } from 'lucide-react'
+import { Users, Zap, Shield, ArrowRight Play } from 'lucide-react'
 import * as React from 'react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { Hero } from '@/components/ui/hero'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'

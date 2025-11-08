@@ -32,7 +32,7 @@ export function verifyTranzilaSignature(payload: Record<string, string>, opts: V
 
   const fieldsEnv = (process.env.TRANZILA_SIGN_FIELDS || '').trim();
   const fields = opts.fields || (fieldsEnv ? fieldsEnv.split(',').map(s => s.trim()).filter(Boolean) : undefined);
-  const algo = opts.algo || (process.env.TRANZILA_SIGN_ALGO as any) || 'sha256';
+  const algo = opts.algo || (process.env.TRANZILA_SIGN_ALGO as unknown) || 'sha256';
 
   const base = canonicalize(payload, fields);
   const hmac = crypto.createHmac(algo, secret).update(base, 'utf8').digest('hex');

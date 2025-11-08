@@ -3,7 +3,7 @@
 export interface DashboardStats {
   title: string;
   value: string | number;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<unknown>;
   trend?: {
     value: string;
     isPositive: boolean;
@@ -86,7 +86,7 @@ export interface Session {
 /**
  * Type guard to check if a database Session can be converted to a dashboard Session
  */
-export function isDashboardSession(session: any): session is Session {
+export function isDashboardSession(session: unknown): session is Session {
   return (
     typeof session === 'object' &&
     session !== null &&

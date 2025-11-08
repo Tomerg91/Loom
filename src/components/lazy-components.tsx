@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader} from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Component prop interfaces
@@ -71,7 +71,7 @@ const DashboardSkeleton = () => (
 );
 
 // Error fallback component
-const ErrorFallback = ({ 
+const _ErrorFallback = ({ 
   message = "Component unavailable", 
   onRetry 
 }: { 
@@ -328,7 +328,7 @@ export function LazyAdminAnalyticsWrapper() {
 }
 
 // File manager with custom skeleton
-const FileManagerSkeleton = () => (
+const _FileManagerSkeleton = () => (
   <div className="space-y-4">
     <div className="flex justify-between items-center">
       <Skeleton className="h-8 w-40" />

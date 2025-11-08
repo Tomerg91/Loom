@@ -7,9 +7,9 @@ import {
 } from '@/types/resources';
 import type { Database } from '@/types/supabase';
 
-type FileUpload = Database['public']['Tables']['file_uploads']['Row'];
-type FileShare = Database['public']['Tables']['file_shares']['Row'];
-type SessionFile = Database['public']['Tables']['session_files']['Row'];
+type= Database['public']['Tables']['file_uploads']['Row'];
+type= Database['public']['Tables']['file_shares']['Row'];
+type= Database['public']['Tables']['session_files']['Row'];
 
 // Define types for better type safety
 export interface FileUploadInsert {

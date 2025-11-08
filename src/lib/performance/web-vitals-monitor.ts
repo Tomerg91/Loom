@@ -77,7 +77,7 @@ class WebVitalsMonitor {
       
       // Report the initialization error but don't break the application
       if (typeof window !== 'undefined' && 'Sentry' in window) {
-        (window as any).Sentry.captureException(error, {
+        (window as unknown).Sentry.captureException(error, {
           tags: { component: 'web-vitals-monitor' },
         });
       }
@@ -149,7 +149,7 @@ class WebVitalsMonitor {
       
       // Don't let reporting errors break the monitoring
       if (typeof window !== 'undefined' && 'Sentry' in window) {
-        (window as any).Sentry.captureException(error, {
+        (window as unknown).Sentry.captureException(error, {
           tags: { component: 'web-vitals-reporter' },
         });
       }
@@ -159,7 +159,7 @@ class WebVitalsMonitor {
   private sendToGoogleAnalytics(data: PerformanceData) {
     if (typeof window !== 'undefined' && 'gtag' in window) {
       try {
-        (window as any).gtag('event', 'web_vitals', {
+        (window as unknown).gtag('event', 'web_vitals', {
           event_category: 'Performance',
           event_label: data.metric,
           value: Math.round(data.value),
@@ -178,7 +178,7 @@ class WebVitalsMonitor {
   private sendToSentry(data: PerformanceData) {
     if (typeof window !== 'undefined' && 'Sentry' in window) {
       try {
-        (window as any).Sentry.addBreadcrumb({
+        (window as unknown).Sentry.addBreadcrumb({
           category: 'performance',
           message: `${data.metric}: ${data.value.toFixed(2)}ms (${data.rating})`,
           level: data.rating === 'poor' ? 'warning' : 'info',
@@ -199,7 +199,7 @@ class WebVitalsMonitor {
     // Next.js Analytics integration
     if (typeof window !== 'undefined' && 'NextWebVitalsMetric' in window) {
       try {
-        (window as any).NextWebVitalsMetric({
+        (window as unknown).NextWebVitalsMetric({
           id: data.metric,
           label: data.rating === 'good' ? 'web-vital' : 'poor-web-vital',
           name: data.metric,
@@ -212,7 +212,7 @@ class WebVitalsMonitor {
     }
   }
 
-  private async sendToAPI(data: PerformanceData) {
+  private async sendToAPI(_data: PerformanceData) {
     try {
       // Batch requests to avoid overwhelming the server
       if (this.performanceData.length % 5 === 0) {
@@ -288,7 +288,7 @@ class WebVitalsMonitor {
 
     try {
       observer.observe({ entryTypes: ['resource'] });
-    } catch (error) {
+    } catch () {
       // Observer not supported in this browser
       console.warn('Performance observer not supported');
     }
@@ -344,7 +344,7 @@ class WebVitalsMonitor {
     
     // Send to analytics with metadata
     if (typeof window !== 'undefined' && 'gtag' in window) {
-      (window as any).gtag('event', 'custom_performance', {
+      (window as unknown).gtag('event', 'custom_performance', {
         event_category: 'Performance',
         event_label: name,
         value: Math.round(value),
@@ -416,7 +416,7 @@ export const webVitalsMonitor = new WebVitalsMonitor();
 export function measurePerformance<T>(
   name: string,
   fn: () => T | Promise<T>
-): T extends Promise<any> ? Promise<T> : T {
+): T extends Promise<unknown> ? Promise<T> : T {
   const startTime = performance.now();
   
   const result = fn();
@@ -425,11 +425,11 @@ export function measurePerformance<T>(
     return result.finally(() => {
       const duration = performance.now() - startTime;
       webVitalsMonitor.reportCustomMetric(name, duration);
-    }) as any;
+    }) as unknown;
   } else {
     const duration = performance.now() - startTime;
     webVitalsMonitor.reportCustomMetric(name, duration);
-    return result as any;
+    return result as unknown;
   }
 }
 

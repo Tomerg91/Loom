@@ -85,7 +85,7 @@ const mockCreateServerClient = vi.mocked(createServerClient);
 const mockApiResponseHelper = vi.mocked(ApiResponseHelper);
 
 function createSelectQuery(result: { data: unknown; error: unknown }) {
-  const query: any = {
+  const query: unknown = {
     select: vi.fn(),
     eq: vi.fn(),
   };
@@ -97,7 +97,7 @@ function createSelectQuery(result: { data: unknown; error: unknown }) {
 }
 
 function createReflectionQuery(result: { data: unknown; error: unknown }) {
-  const query: any = {
+  const query: unknown = {
     select: vi.fn(),
     eq: vi.fn(),
     order: vi.fn(),
@@ -113,7 +113,7 @@ function createReflectionQuery(result: { data: unknown; error: unknown }) {
 }
 
 function createInsertQuery(result: { data: unknown; error: unknown }) {
-  const query: any = {
+  const query: unknown = {
     insert: vi.fn(),
     select: vi.fn(),
     single: vi.fn(),
@@ -127,7 +127,7 @@ function createInsertQuery(result: { data: unknown; error: unknown }) {
 }
 
 function createSingleQuery(result: { data: unknown; error: unknown }) {
-  const query: any = {
+  const query: unknown = {
     select: vi.fn(),
     eq: vi.fn(),
     single: vi.fn(),

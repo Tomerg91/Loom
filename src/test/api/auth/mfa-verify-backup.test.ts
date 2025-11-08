@@ -9,7 +9,7 @@ import { NextRequest } from 'next/server';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { POST, GET, PUT, DELETE } from '@/app/api/auth/mfa/verify-backup/route';
-import { mockUser } from '@/test/utils';
+// import {} from '@/test/utils';
 
 // Mock all dependencies
 vi.mock('@/lib/services/mfa-service', () => ({
@@ -23,7 +23,7 @@ vi.mock('@/lib/services/mfa-service', () => ({
 }));
 
 vi.mock('@/lib/security/rate-limit', () => ({
-  rateLimit: vi.fn((limit, window, options) => (handler: any) => handler),
+  rateLimit: vi.fn((_limit, _window, _options) => (handler: unknown) => handler),
 }));
 
 // Import mocked functions
@@ -41,7 +41,7 @@ describe('/api/auth/mfa/verify-backup', () => {
     backupCode: 'ABCD1234',
   };
 
-  let mockMfaServiceInstance: any;
+  let mockMfaServiceInstance: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,7 +60,7 @@ describe('/api/auth/mfa/verify-backup', () => {
     mockGetUserAgent.mockReturnValue('Mozilla/5.0 Test Browser');
     
     // Setup default rate limiting (no-op wrapper)
-    mockRateLimit.mockImplementation((limit, window, options) => (handler) => handler);
+    mockRateLimit.mockImplementation((_limit, _window, _options) => (handler) => handler);
   });
 
   afterEach(() => {
@@ -365,7 +365,7 @@ describe('/api/auth/mfa/verify-backup', () => {
         // Test the keyExtractor function
         const mockRequest = {
           headers: { get: vi.fn() },
-        } as any;
+        } as unknown;
 
         mockGetClientIP.mockReturnValue('192.168.1.100');
 

@@ -13,9 +13,9 @@ import {
   Zap,
   RefreshCw,
   Download,
-  Upload,
+
   Trash2,
-  Copy,
+
   Clock,
   Loader2,
   Play,
@@ -35,7 +35,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -203,7 +203,7 @@ export function AdminSystemPage() {
   const performMaintenanceMutation = useMutation({
     mutationFn: async ({ action, params, requiresConfirmation }: { 
       action: string; 
-      params?: any; 
+      params?: unknown; 
       requiresConfirmation?: boolean;
     }) => {
       const headers: HeadersInit = {
@@ -790,7 +790,7 @@ export function AdminSystemPage() {
                       </div>
                     ) : maintenanceHistory && maintenanceHistory.length > 0 ? (
                       <div className="space-y-2">
-                        {maintenanceHistory.slice(0, 5).map((operation: any) => (
+                        {maintenanceHistory.slice(0, 5).map((operation: unknown) => (
                           <div key={operation.id} className="flex items-center justify-between p-2 border rounded">
                             <div className="flex items-center gap-3">
                               <Badge variant={operation.status === 'completed' ? 'default' : 'destructive'}>

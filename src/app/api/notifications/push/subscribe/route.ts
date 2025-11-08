@@ -25,7 +25,7 @@ const SubscribeSchema = z.object({
 // POST /api/notifications/push/subscribe - Subscribe to push notifications
 export const POST = withErrorHandling(
   rateLimit(10, 60000)( // 10 subscriptions per minute
-    requireAuth(async (user, request: NextRequest, _context: { params: Promise<{}> }) => {
+    requireAuth(async (user, request: NextRequest, _context: { params: Promise<unknown> }) => {
       try {
         const body = await request.json();
         const validatedData = SubscribeSchema.parse(body);

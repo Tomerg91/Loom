@@ -112,16 +112,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
         // Transform data to match widget interface
         const transformedSessions: SessionWidget[] = (sessions || []).map(session => {
-      const coach = session.coach as any;
-      const client = session.client as any;
-      const sessionNotes = notes?.data?.filter((n: any) => (n.sessionId || n.session_id) === session.id) || [];
-      const sessionReflections = reflections?.data?.filter((r: any) => (r.sessionId || r.session_id) === session.id) || [];
+      const coach = session.coach as unknown;
+      const client = session.client as unknown;
+      const sessionNotes = notes?.data?.filter((n: unknown) => (n.sessionId || n.session_id) === session.id) || [];
+      const sessionReflections = reflections?.data?.filter((r: unknown) => (r.sessionId || r.session_id) === session.id) || [];
 
       // Extract insights from notes
       const keyInsights: string[] = [];
       const actionItems: string[] = [];
 
-      sessionNotes.forEach((note: any) => {
+      sessionNotes.forEach((note: unknown) => {
         if (note.title?.toLowerCase().includes('insight') || note.content?.toLowerCase().includes('insight')) {
           // Extract insights from note content
           const insights = extractInsights(note.content);
@@ -135,20 +135,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       });
 
       // Add insights from reflections
-      sessionReflections.forEach((reflection: any) => {
+      sessionReflections.forEach((reflection: unknown) => {
         if (reflection.insights) {
           keyInsights.push(reflection.insights);
         }
       });
 
       // Calculate average mood rating as session rating
-      const moodRatings = sessionReflections.map((r: any) => r.mood_rating).filter((rating): rating is number => rating !== null && rating !== undefined);
+      const moodRatings = sessionReflections.map((r: unknown) => r.mood_rating).filter((rating): rating is number => rating !== null && rating !== undefined);
       const averageRating = moodRatings.length > 0 
         ? Math.round(moodRatings.reduce((sum: number, rating: number) => sum + rating, 0) / moodRatings.length)
         : undefined;
 
       // Determine session status based on scheduled time and current status
-      let sessionStatus: 'completed' | 'upcoming' | 'cancelled' = session.status as any;
+      let sessionStatus: 'completed' | 'upcoming' | 'cancelled' = session.status as unknown;
       if (session.status === 'scheduled') {
         const scheduledTime = new Date(session.scheduled_at);
         const now = new Date();

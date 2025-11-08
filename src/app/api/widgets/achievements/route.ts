@@ -138,7 +138,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
       // Calculate streak (simplified - consecutive weeks with at least one session)
       if (sessions && sessions.length > 0) {
-        const currentStreak = 0;
+        const _currentStreak = 0;
         const weeksSeen = new Set<string>();
         
         for (const session of sessions) {

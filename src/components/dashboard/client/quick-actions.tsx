@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Link } from '@/i18n/routing';
 
 
-interface ClientQuickActionsProps {}
+interface{}
 
 const clientActions = [
   {

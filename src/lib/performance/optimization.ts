@@ -76,7 +76,7 @@ export const createLazyLoader = (threshold: number = 0.1) => {
 
   return new IntersectionObserver(
     (entries) => {
-      entries.forEach((entry: any) => {
+      entries.forEach((entry: unknown) => {
         if (entry.isIntersecting) {
           const target = entry.target as HTMLElement;
           target.dataset.loaded = 'true';
@@ -103,16 +103,16 @@ export const analyzeBundleSize = (stats: { assets?: { name: string; size: number
   
   return {
     totalSize,
-    assets: assets.map((asset: any) => ({
+    assets: assets.map((asset: unknown) => ({
       name: asset.name,
       size: asset.size,
       percentage: (asset.size / totalSize) * 100,
     })),
     jsSize: assets
-      .filter((asset: any) => asset.name.endsWith('.js'))
+      .filter((asset: unknown) => asset.name.endsWith('.js'))
       .reduce((sum: number, asset) => sum + asset.size, 0),
     cssSize: assets
-      .filter((asset: any) => asset.name.endsWith('.css'))
+      .filter((asset: unknown) => asset.name.endsWith('.css'))
       .reduce((sum: number, asset) => sum + asset.size, 0),
   };
 };
@@ -171,7 +171,7 @@ export const optimizeApiResponse = (data: unknown, request: NextRequest) => {
 // Remove unnecessary fields
 const removeUnnecessaryFields = (obj: unknown, fields: string[]): unknown => {
   if (Array.isArray(obj)) {
-    return obj.map((item: any) => removeUnnecessaryFields(item, fields));
+    return obj.map((item: unknown) => removeUnnecessaryFields(item, fields));
   }
   
   if (obj && typeof obj === 'object') {
@@ -190,7 +190,7 @@ const removeUnnecessaryFields = (obj: unknown, fields: string[]): unknown => {
 // Compress large objects
 const compressLargeObjects = (obj: unknown): unknown => {
   if (Array.isArray(obj)) {
-    return obj.map((item: any) => compressLargeObjects(item));
+    return obj.map((item: unknown) => compressLargeObjects(item));
   }
   
   if (obj && typeof obj === 'object') {
@@ -265,7 +265,7 @@ export const monitorMemoryUsage = () => {
 };
 
 // Request deduplication
-const requestCache = new Map<string, Promise<any>>();
+const requestCache = new Map<string, Promise<unknown>>();
 
 export const deduplicateRequest = <T>(
   key: string,
@@ -278,7 +278,7 @@ export const deduplicateRequest = <T>(
   }
   
   const promise = requestFn();
-  requestCache.set(key, promise as Promise<any>);
+  requestCache.set(key, promise as Promise<unknown>);
   
   // Clear cache after TTL
   setTimeout(() => {
@@ -331,7 +331,7 @@ export const performanceMiddleware = (handler: (request: NextRequest) => Promise
 };
 
 // Advanced debounce with immediate execution option
-export function advancedDebounce<T extends (...args: any[]) => any>(
+export function advancedDebounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number,
   immediate: boolean = false
@@ -354,7 +354,7 @@ export function advancedDebounce<T extends (...args: any[]) => any>(
 }
 
 // Throttle with trailing option
-export function advancedThrottle<T extends (...args: any[]) => any>(
+export function advancedThrottle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number,
   options: { leading?: boolean; trailing?: boolean } = {}
@@ -393,7 +393,7 @@ export function advancedThrottle<T extends (...args: any[]) => any>(
 }
 
 // Basic debounce function
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -411,7 +411,7 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 // Basic throttle function
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {

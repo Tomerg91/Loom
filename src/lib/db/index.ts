@@ -137,18 +137,18 @@ class SupabaseQueryBuilder implements QueryBuilder {
   async execute(): Promise<unknown[]> {
     try {
       const supabase = await this.client;
-      let query = supabase.from(this.tableName as any).select(this.fields);
+      let query = supabase.from(this.tableName as unknown).select(this.fields);
 
       // Apply conditions
       this.conditions.forEach(({ field, value }) => {
-        query = query.eq(field as any, value);
+        query = query.eq(field as unknown, value);
       });
 
       // Apply ordering
       if (this.orderByFields.length > 0) {
         this.orderByFields.forEach(field => {
           const [fieldName, direction] = field.split(' ');
-          query = query.order(fieldName as any, { 
+          query = query.order(fieldName as unknown, { 
             ascending: direction?.toLowerCase() !== 'desc' 
           });
         });
@@ -218,11 +218,11 @@ class SupabaseUpdateBuilder implements UpdateBuilder {
   async execute(): Promise<void> {
     try {
       const supabase = await this.client;
-      let query = supabase.from(this.tableName as any).update(this.updateData);
+      let query = supabase.from(this.tableName as unknown).update(this.updateData);
 
       // Apply conditions
       this.conditions.forEach(({ field, value }) => {
-        query = query.eq(field as any, value);
+        query = query.eq(field as unknown, value);
       });
 
       if (this.returningFields) {
@@ -271,11 +271,11 @@ class SupabaseDeleteBuilder implements DeleteBuilder {
   async execute(): Promise<void> {
     try {
       const supabase = await this.client;
-      let query = supabase.from(this.tableName as any).delete();
+      let query = supabase.from(this.tableName as unknown).delete();
 
       // Apply conditions
       this.conditions.forEach(({ field, value }) => {
-        query = query.eq(field as any, value);
+        query = query.eq(field as unknown, value);
       });
 
       if (this.returningFields) {
@@ -322,7 +322,7 @@ class SupabaseInsertBuilder implements InsertBuilder {
   async execute(): Promise<unknown> {
     try {
       const supabase = await this.client;
-      let query = supabase.from(this.tableName as any).insert(this.insertData as any);
+      let query = supabase.from(this.tableName as unknown).insert(this.insertData as unknown);
 
       if (this.returningFields) {
         query = query.select(this.returningFields);

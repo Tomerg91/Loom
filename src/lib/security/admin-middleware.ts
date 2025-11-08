@@ -236,8 +236,8 @@ export async function adminSecurityMiddleware(
 /**
  * Higher-order function to wrap API routes with admin middleware
  */
-export function withAdminSecurity<T extends any[]>(
-  handler: (request: NextRequest, context: { user: any; headers: Record<string, string> }, ...args: T) => Promise<NextResponse>,
+export function withAdminSecurity<T extends unknown[]>(
+  handler: (request: NextRequest, context: { user: unknown; headers: Record<string, string> }, ...args: T) => Promise<NextResponse>,
   options: AdminMiddlewareOptions = {}
 ) {
   return async function(request: NextRequest, ...args: T): Promise<NextResponse> {
@@ -279,8 +279,8 @@ export function withAdminSecurity<T extends any[]>(
 /**
  * Specialized middleware for maintenance operations
  */
-export function withMaintenanceSecurity<T extends any[]>(
-  handler: (request: NextRequest, context: { user: any; headers: Record<string, string> }, ...args: T) => Promise<NextResponse>
+export function withMaintenanceSecurity<T extends unknown[]>(
+  handler: (request: NextRequest, context: { user: unknown; headers: Record<string, string> }, ...args: T) => Promise<NextResponse>
 ) {
   return withAdminSecurity(handler, {
     requireSuperAdmin: false, // Regular admin can perform maintenance

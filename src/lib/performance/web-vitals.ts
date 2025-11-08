@@ -33,7 +33,7 @@ interface WebVital {
 }
 
 // Web Vitals metric type from the library
-type WebVitalsMetric = Metric;
+type= Metric;
 
 // Web Vitals collection
 export const collectWebVitals = (callback?: (metric: WebVital) => void) => {
@@ -85,7 +85,7 @@ export class PerformanceMonitor {
   static resetInstance(): void {
     if (PerformanceMonitor.instance) {
       PerformanceMonitor.instance.disconnect();
-      PerformanceMonitor.instance = null as any;
+      PerformanceMonitor.instance = null as unknown;
     }
   }
 

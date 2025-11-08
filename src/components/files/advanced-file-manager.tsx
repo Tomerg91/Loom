@@ -6,16 +6,16 @@ import {
   Share2, 
   Trash2, 
   Search, 
-  Filter, 
+ 
   Grid, 
   List, 
   Eye, 
-  Edit3, 
+ 
   Clock,
   Users,
-  Shield,
-  AlertTriangle,
-  CheckCircle,
+
+
+
   FileText,
   Image,
   Video,
@@ -28,10 +28,10 @@ import {
   FolderOpen,
   Star,
   StarOff,
-  Link,
-  Calendar,
+
+
   Tag,
-  ExternalLink,
+
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -48,7 +48,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Dialog,
@@ -60,12 +60,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
+
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { 
   Select,
   SelectContent, 
@@ -73,13 +72,11 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
+import {ContentListTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { FileMetadata } from '@/lib/services/file-management-service';
 
 import { FilePreview } from './file-preview';
-import { FileSharingDialog } from './file-sharing-dialog';
 import { FileUploadZone } from './file-upload-zone';
 import { FileVersionHistory } from './file-version-history';
 
@@ -205,8 +202,8 @@ export function AdvancedFileManager({
 
     // Sorting
     filtered.sort((a, b) => {
-      let aValue: any = a[sortField];
-      let bValue: any = b[sortField];
+      let aValue: unknown = a[sortField];
+      let bValue: unknown = b[sortField];
 
       if (sortField === 'createdAt' || sortField === 'updatedAt') {
         aValue = new Date(aValue).getTime();
@@ -300,7 +297,7 @@ export function AdvancedFileManager({
         title: 'Success',
         description: 'File deleted successfully',
       });
-    } catch (error) {
+    } catch () {
       toast({
         title: 'Error',
         description: 'Failed to delete file',
@@ -333,7 +330,7 @@ export function AdvancedFileManager({
         title: 'Success',
         description: `${selectedFiles.size} files deleted successfully`,
       });
-    } catch (error) {
+    } catch () {
       toast({
         title: 'Error',
         description: 'Failed to delete some files',
@@ -359,7 +356,7 @@ export function AdvancedFileManager({
       );
       setFiles(updatedFiles);
       onFilesChange?.(updatedFiles);
-    } catch (error) {
+    } catch () {
       toast({
         title: 'Error',
         description: 'Failed to update file',

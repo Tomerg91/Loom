@@ -8,7 +8,7 @@ import { SigninForm } from '@/components/auth/signin-form';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { renderWithProviders, mockUser, mockFetch } from '@/test/utils';
 
-type AuthStateChangeHandler = (user: any) => Promise<void> | void;
+type AuthStateChangeHandler = (user: unknown) => Promise<void> | void;
 
 const mocks = vi.hoisted(() => {
   const mockPush = vi.fn();

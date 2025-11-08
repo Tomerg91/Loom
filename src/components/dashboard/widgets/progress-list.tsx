@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 
-import { Goal, Milestone } from '../shared/types';
+import { Goal} from '../shared/types';
 import { getPriorityColor, getStatusColor } from '../shared/utils';
 
 interface ProgressListProps {

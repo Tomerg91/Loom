@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { 
-  BarChart3,
+
   TrendingUp,
   TrendingDown,
   Users,
@@ -110,7 +110,7 @@ export function CoachInsightsPage() {
           clientRetentionRate: 85, // Placeholder - would need retention calculation
           sessionCompletionRate: apiData.overview.completionRate,
         },
-        clientProgress: apiData.clientProgress.map((client: any) => ({
+        clientProgress: apiData.clientProgress.map((client: unknown) => ({
           clientId: client.id,
           clientName: client.name,
           progressScore: Math.round((client.averageProgress || client.averageMood || 50) * 20), // Convert 1-5 to 0-100
@@ -119,7 +119,7 @@ export function CoachInsightsPage() {
           lastSession: client.lastSession,
           trend: client.averageProgress > 3 ? 'up' : client.averageProgress < 2.5 ? 'down' : 'stable',
         })),
-        sessionMetrics: apiData.sessionMetrics.map((metric: any) => ({
+        sessionMetrics: apiData.sessionMetrics.map((metric: unknown) => ({
           date: metric.date,
           sessionsCompleted: metric.completed,
           sessionsCancelled: metric.cancelled,

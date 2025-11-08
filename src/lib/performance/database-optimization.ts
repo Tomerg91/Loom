@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabase/server';
 // Database query optimization utilities
 export class DatabaseOptimizer {
   private supabase = createServerClient();
-  private queryCache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+  private queryCache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
 
   // Batch operations to reduce database round trips
   async batchOperations<T>(
@@ -171,7 +171,7 @@ export class DatabaseOptimizer {
     `;
 
     let query: string;
-    let params: any[];
+    let params: unknown[];
 
     if (role === 'admin') {
       query = baseQuery;
@@ -389,7 +389,7 @@ export class DatabaseOptimizer {
   // Query analysis and optimization
   async analyzeQueryPerformance(
     query: string,
-    params?: any[]
+    params?: unknown[]
   ): Promise<{
     executionTime: number;
     planningTime: number;
@@ -472,7 +472,7 @@ export class DatabaseOptimizer {
     return start;
   }
 
-  private getFromCache(key: string): any {
+  private getFromCache(key: string): unknown {
     const cached = this.queryCache.get(key);
     if (!cached) return null;
     
@@ -484,7 +484,7 @@ export class DatabaseOptimizer {
     return cached.data;
   }
 
-  private setCache(key: string, data: any, ttlSeconds: number): void {
+  private setCache(key: string, data: unknown, ttlSeconds: number): void {
     this.queryCache.set(key, {
       data,
       timestamp: Date.now(),
@@ -496,7 +496,7 @@ export class DatabaseOptimizer {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  private generateOptimizationSuggestions(plan: any): string[] {
+  private generateOptimizationSuggestions(plan: unknown): string[] {
     const suggestions: string[] = [];
     
     if (!plan) return suggestions;

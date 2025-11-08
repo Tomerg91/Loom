@@ -60,7 +60,7 @@ export function ClientRecentMessages({ userId, locale }: ClientRecentMessagesPro
       setErrorMessage(null);
 
       try {
-        const supabase = createClient() as any;
+        const supabase = createClient() as unknown;
 
         const { data, error } = await supabase
           .from('messages')
@@ -96,7 +96,7 @@ export function ClientRecentMessages({ userId, locale }: ClientRecentMessagesPro
         const rawMessages = Array.isArray(data) ? data : [];
         const uniqueMessages = new Map<string, MessageItem>();
 
-        rawMessages.forEach((message: any) => {
+        rawMessages.forEach((message: unknown) => {
           const messageId = typeof message.id === 'string' ? message.id : String(message.id ?? '');
           if (!messageId || uniqueMessages.has(messageId)) {
             return;
@@ -107,10 +107,10 @@ export function ClientRecentMessages({ userId, locale }: ClientRecentMessagesPro
             : [];
 
           const currentParticipant = participants.find(
-            (participant: any) => typeof participant?.user_id === 'string' && participant.user_id === userId
+            (participant: unknown) => typeof participant?.user_id === 'string' && participant.user_id === userId
           );
           const otherParticipant = participants.find(
-            (participant: any) => typeof participant?.user_id === 'string' && participant.user_id !== userId
+            (participant: unknown) => typeof participant?.user_id === 'string' && participant.user_id !== userId
           );
 
           const messageReceipts = Array.isArray(message?.message_read_receipts)
@@ -124,7 +124,7 @@ export function ClientRecentMessages({ userId, locale }: ClientRecentMessagesPro
           const senderId = typeof message.sender_id === 'string' ? message.sender_id : userId;
 
           const hasReadReceipt = messageReceipts.some(
-            (receipt: any) => typeof receipt?.user_id === 'string' && receipt.user_id === userId
+            (receipt: unknown) => typeof receipt?.user_id === 'string' && receipt.user_id === userId
           );
 
           const lastReadAt =

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { createAuthHelper, testConstants, testUtils, getTestUserByEmail } from '../../../tests/helpers';
+import { createAuthHelper} from '../../../tests/helpers';
 
 test.describe('Coach Dashboard', () => {
   test.beforeEach(async ({ page }) => {
@@ -193,7 +193,7 @@ test.describe('Coach Dashboard', () => {
         await startButton.click();
         
         // Should show in-session interface
-        const sessionTimer = page.locator('[data-testid="session-timer"], .timer, .session-active');
+        const _sessionTimer = page.locator('[data-testid="session-timer"], .timer, .session-active');
         const endButton = page.locator('[data-testid="end-session-button"], button:has-text("End"), button:has-text("Complete")');
         
         if (await endButton.isVisible()) {
@@ -316,7 +316,7 @@ test.describe('Coach Dashboard', () => {
           try {
             const download = await downloadPromise;
             expect(download.suggestedFilename()).toMatch(/\.(csv|xlsx|pdf)$/);
-          } catch (error) {
+          } catch () {
             console.log('Export download test skipped - download may not be implemented yet');
           }
         }

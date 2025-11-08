@@ -16,7 +16,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach} from 'test';
 
 import type { Database } from '@/types/supabase';
 
@@ -989,14 +989,14 @@ describe('Database Security Migration Tests', () => {
       expect(clientSessions!.length).toBeGreaterThan(0);
 
       // Verify both coach and client can access ratings for their sessions
-      const { data: coachRatings, error: coachRatingError } = await adminClient
+      const { data: _coachRatings, error: coachRatingError } = await adminClient
         .from('session_ratings')
         .select('*')
         .eq('coach_id', testCoachId);
 
       expect(coachRatingError).toBeNull();
 
-      const { data: clientRatings, error: clientRatingError } = await adminClient
+      const { data: _clientRatings, error: clientRatingError } = await adminClient
         .from('session_ratings')
         .select('*')
         .eq('client_id', testUserId);

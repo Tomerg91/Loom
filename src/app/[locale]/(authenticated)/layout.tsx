@@ -1,6 +1,6 @@
+import { getMessages } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { Toaster } from 'sonner';
-import { getMessages } from 'next-intl/server';
 
 import { PerformanceMonitorComponent } from '@/components/monitoring/performance-monitor';
 import { Providers } from '@/components/providers/providers';

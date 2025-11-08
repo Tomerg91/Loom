@@ -103,21 +103,21 @@ export function usePerformanceMonitoring() {
       
       try {
         longTaskObserver.observe({ entryTypes: ['longtask'] });
-      } catch (e) {
+      } catch () {
         // Long task API not supported
       }
       
       // Monitor layout shifts
       const layoutShiftObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          if ((entry as any).hadRecentInput) continue;
+          if ((entry as unknown).hadRecentInput) continue;
           
-          const layoutShiftScore = (entry as any).value;
+          const layoutShiftScore = (entry as unknown).value;
           if (layoutShiftScore > 0.1) {
             console.warn('[Performance] Significant layout shift:', {
               value: layoutShiftScore,
               startTime: entry.startTime,
-              sources: (entry as any).sources,
+              sources: (entry as unknown).sources,
             });
           }
         }
@@ -125,7 +125,7 @@ export function usePerformanceMonitoring() {
       
       try {
         layoutShiftObserver.observe({ entryTypes: ['layout-shift'] });
-      } catch (e) {
+      } catch () {
         // Layout shift API not supported
       }
       

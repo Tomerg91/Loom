@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Note, CreateNoteData, UpdateNoteData, useAutosaveNote } from '@/lib/queries/notes';
-import { cn } from '@/lib/utils';
 
 interface NoteEditorModalProps {
   isOpen: boolean;

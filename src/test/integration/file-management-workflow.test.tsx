@@ -47,7 +47,7 @@ vi.mock('@/lib/hooks/use-toast', () => ({
 const mockProgressCallback = vi.fn();
 
 // Mock file components
-const FileUploadDropzone = ({ onFileUpload, onProgress }: any) => {
+const FileUploadDropzone = ({ onFileUpload, onProgress }: unknown) => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     files.forEach(file => onFileUpload(file, mockProgressCallback));
@@ -66,10 +66,10 @@ const FileUploadDropzone = ({ onFileUpload, onProgress }: any) => {
   );
 };
 
-const FileManager = ({ userId, userRole }: { userId: string; userRole: string }) => {
-  const [files, setFiles] = React.useState<any[]>([]);
+const FileManager = ({ userId, userRole }: { userId: string; _userRole: string }) => {
+  const [files, setFiles] = React.useState<unknown[]>([]);
   const [selectedFiles, setSelectedFiles] = React.useState<string[]>([]);
-  const [uploadProgress, setUploadProgress] = React.useState<Record<string, number>>({});
+  const [_uploadProgress, _setUploadProgress] = React.useState<Record<string, number>>({});
 
   const handleFileUpload = async (file: File, onProgress: (progress: number) => void) => {
     try {
@@ -103,7 +103,7 @@ const FileManager = ({ userId, userRole }: { userId: string; userRole: string })
         description: 'File deleted successfully',
         variant: 'default',
       });
-    } catch (error) {
+    } catch () {
       mockToast({
         title: 'Delete Failed',
         description: 'Failed to delete file',
@@ -112,7 +112,7 @@ const FileManager = ({ userId, userRole }: { userId: string; userRole: string })
     }
   };
 
-  const handleFileShare = async (fileId: string, shareOptions: any) => {
+  const handleFileShare = async (fileId: string, shareOptions: unknown) => {
     try {
       const result = await mockFileService.shareFile(fileId, shareOptions);
       mockToast({
@@ -121,7 +121,7 @@ const FileManager = ({ userId, userRole }: { userId: string; userRole: string })
         variant: 'default',
       });
       return result;
-    } catch (error) {
+    } catch () {
       mockToast({
         title: 'Share Failed',
         description: 'Failed to create share link',
@@ -140,7 +140,7 @@ const FileManager = ({ userId, userRole }: { userId: string; userRole: string })
         description: `${selectedFiles.length} files deleted`,
         variant: 'default',
       });
-    } catch (error) {
+    } catch () {
       mockToast({
         title: 'Bulk Delete Failed',
         description: 'Failed to delete selected files',
@@ -198,7 +198,7 @@ describe.skip('File Management Workflow Integration', () => {
 
     // Mock React.useState
     let stateIndex = 0;
-    const mockStates: any[] = [
+    const mockStates: unknown[] = [
       [[], vi.fn()], // files
       [[], vi.fn()], // selectedFiles
       [{}, vi.fn()], // uploadProgress
@@ -207,7 +207,7 @@ describe.skip('File Management Workflow Integration', () => {
     React.useState.mockImplementation(() => mockStates[stateIndex++]);
 
     // Mock successful API responses
-    mockSupabaseClient.from.mockImplementation((table: string) => ({
+    mockSupabaseClient.from.mockImplementation((_table: string) => ({
       select: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
@@ -418,7 +418,7 @@ describe.skip('File Management Workflow Integration', () => {
         download: '',
         click: vi.fn(),
       };
-      vi.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
+      vi.spyOn(document, 'createElement').mockReturnValue(mockLink as unknown);
 
       const DownloadButton = ({ fileId }: { fileId: string }) => {
         const handleDownload = async () => {
@@ -432,7 +432,7 @@ describe.skip('File Management Workflow Integration', () => {
             link.click();
             
             URL.revokeObjectURL(url);
-          } catch (error) {
+          } catch () {
             mockToast({
               title: 'Download Failed',
               description: 'Failed to download file',
@@ -465,7 +465,7 @@ describe.skip('File Management Workflow Integration', () => {
         const handleDownload = async () => {
           try {
             await mockFileService.downloadFile(fileId);
-          } catch (error) {
+          } catch () {
             mockToast({
               title: 'Download Failed',
               description: 'Failed to download file',
@@ -568,7 +568,7 @@ describe.skip('File Management Workflow Integration', () => {
         shareLinks: ['share-abc-123'],
       };
 
-      mockFileService.deleteFile.mockImplementation(async (fileId) => {
+      mockFileService.deleteFile.mockImplementation(async (_fileId) => {
         // Should also revoke all share links
         return { deleted: true, sharesRevoked: 1 };
       });
@@ -790,7 +790,7 @@ describe.skip('File Management Workflow Integration', () => {
           
           try {
             await mockFileService.uploadFile(file, { userId: mockUser.id });
-          } catch (error) {
+          } catch () {
             mockToast({
               title: 'Upload Failed',
               description: 'Storage quota exceeded. Please delete some files.',

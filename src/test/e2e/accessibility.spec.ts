@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { createAuthHelper, testConstants, testUtils, getTestUserByEmail } from '../../../tests/helpers';
+import { createAuthHelper} from '../../../tests/helpers';
 
 test.describe('Accessibility Tests', () => {
   test.beforeEach(async ({ page }) => {
@@ -29,7 +29,7 @@ test.describe('Accessibility Tests', () => {
     
     if (await emailInput.isVisible()) {
       const emailType = await emailInput.getAttribute('type');
-      const emailRequired = await emailInput.getAttribute('required');
+      const _emailRequired = await emailInput.getAttribute('required');
       expect(emailType).toBe('email');
     }
     
@@ -60,7 +60,7 @@ test.describe('Accessibility Tests', () => {
     
     // Check for proper page structure
     const mainLandmark = page.locator('main, [role="main"]');
-    const navLandmark = page.locator('nav, [role="navigation"]');
+    const _navLandmark = page.locator('nav, [role="navigation"]');
     
     await expect(mainLandmark.or(page.locator('body'))).toBeVisible();
     
@@ -234,7 +234,7 @@ test.describe('Accessibility Tests', () => {
     }
   });
 
-  test('mobile accessibility', async ({ page, browserName }) => {
+  test('mobile accessibility', async ({ page, _browserName }) => {
     // Test mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
     

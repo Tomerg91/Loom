@@ -29,10 +29,10 @@ export function createMappingFunction<T extends string, R>(
  * Consolidates date, time, and number formatting patterns
  */
 export function createFormatterFactory<TInput, TOutput>(
-  baseFormatter: (input: TInput, options?: any) => TOutput,
-  defaultOptions: any = {}
+  baseFormatter: (input: TInput, options?: unknown) => TOutput,
+  defaultOptions: unknown = {}
 ) {
-  return (customOptions: any = {}) => {
+  return (customOptions: unknown = {}) => {
     const mergedOptions = { ...defaultOptions, ...customOptions };
     return (input: TInput) => baseFormatter(input, mergedOptions);
   };

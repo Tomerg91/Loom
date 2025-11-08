@@ -163,8 +163,8 @@ export class NotificationSystemVerifier {
     const startTime = Date.now();
     
     try {
-      let payloadProcessed = false;
-      let securityCheckPassed = false;
+      let _payloadProcessed = false;
+      let _securityCheckPassed = false;
 
       const channelName = realtimeClient.subscribeToNotifications(
         this.userId,
@@ -206,8 +206,8 @@ export class NotificationSystemVerifier {
     
     try {
       // Test connection listener functionality
-      let listenerCalled = false;
-      const unsubscribe = realtimeClient.addConnectionListener((status) => {
+      let _listenerCalled = false;
+      const unsubscribe = realtimeClient.addConnectionListener((_status) => {
         listenerCalled = true;
       });
 
@@ -374,6 +374,6 @@ export async function verifyNotificationSystem(userId?: string): Promise<TestRes
 
 // Browser console helper
 if (typeof window !== 'undefined') {
-  (window as any).verifyNotifications = verifyNotificationSystem;
+  (window as unknown).verifyNotifications = verifyNotificationSystem;
   console.log('🔧 Notification verification available: verifyNotifications(userId)');
 }

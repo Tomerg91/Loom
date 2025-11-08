@@ -93,7 +93,7 @@ export function ResourceFilters({
       search: debouncedSearch || undefined,
       category: category === 'all' ? undefined : category,
       tags: selectedTags.length > 0 ? selectedTags : undefined,
-      sortBy: sortBy as any,
+      sortBy: sortBy as unknown,
       sortOrder,
     };
 
@@ -150,7 +150,7 @@ export function ResourceFilters({
         </div>
 
         {/* Category */}
-        <Select value={category} onValueChange={(v) => setCategory(v as any)}>
+        <Select value={category} onValueChange={(v) => setCategory(v as unknown)}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Category" />

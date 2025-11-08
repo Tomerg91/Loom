@@ -3,10 +3,10 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { RouteGuard, AdminRoute, CoachRoute, ClientRoute, CoachOrAdminRoute, ClientOrAdminRoute } from '@/components/auth/route-guard';
 import { usePermission, useAnyPermission, useHasAnyRole } from '@/lib/permissions/hooks';
-import type { Permission } from '@/lib/permissions/permissions';
+import type {} from '@/lib/permissions/permissions';
 import { useUser, useAuthLoading } from '@/lib/store/auth-store';
 import { renderWithProviders, mockUser, mockCoachUser, mockAdminUser } from '@/test/utils';
-import type { UserRole } from '@/types';
+import type {} from '@/types';
 
 // Mock the auth store
 vi.mock('@/lib/store/auth-store', () => ({
@@ -48,11 +48,11 @@ describe('RouteGuard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default mock implementations
-    (useUser as any).mockReturnValue(mockUser);
-    (useAuthLoading as any).mockReturnValue(false);
-    (usePermission as any).mockReturnValue(true);
-    (useAnyPermission as any).mockReturnValue(true);
-    (useHasAnyRole as any).mockReturnValue(true);
+    (useUser as unknown).mockReturnValue(mockUser);
+    (useAuthLoading as unknown).mockReturnValue(false);
+    (usePermission as unknown).mockReturnValue(true);
+    (useAnyPermission as unknown).mockReturnValue(true);
+    (useHasAnyRole as unknown).mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -71,7 +71,7 @@ describe('RouteGuard', () => {
     });
 
     it('redirects to login when authentication required but user not logged in', async () => {
-      (useUser as any).mockReturnValue(null);
+      (useUser as unknown).mockReturnValue(null);
       
       renderWithProviders(
         <RouteGuard requireAuth={true}>
@@ -85,7 +85,7 @@ describe('RouteGuard', () => {
     });
 
     it('uses custom redirect path for unauthenticated users', async () => {
-      (useUser as any).mockReturnValue(null);
+      (useUser as unknown).mockReturnValue(null);
       
       renderWithProviders(
         <RouteGuard requireAuth={true} redirectTo="/custom-login">
@@ -99,7 +99,7 @@ describe('RouteGuard', () => {
     });
 
     it('renders children when no auth required and user not logged in', () => {
-      (useUser as any).mockReturnValue(null);
+      (useUser as unknown).mockReturnValue(null);
       
       renderWithProviders(
         <RouteGuard requireAuth={false}>
@@ -111,8 +111,8 @@ describe('RouteGuard', () => {
     });
 
     it('waits for auth loading before making decisions', () => {
-      (useUser as any).mockReturnValue(null);
-      (useAuthLoading as any).mockReturnValue(true);
+      (useUser as unknown).mockReturnValue(null);
+      (useAuthLoading as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard requireAuth={true}>
@@ -127,7 +127,7 @@ describe('RouteGuard', () => {
 
   describe('Loading States', () => {
     it('shows loading component when auth is loading', () => {
-      (useAuthLoading as any).mockReturnValue(true);
+      (useAuthLoading as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard>
@@ -141,7 +141,7 @@ describe('RouteGuard', () => {
     });
 
     it('hides loading component when showLoading is false', () => {
-      (useAuthLoading as any).mockReturnValue(true);
+      (useAuthLoading as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard showLoading={false}>
@@ -154,7 +154,7 @@ describe('RouteGuard', () => {
     });
 
     it('displays loading state with spinner icon', () => {
-      (useAuthLoading as any).mockReturnValue(true);
+      (useAuthLoading as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard>
@@ -170,8 +170,8 @@ describe('RouteGuard', () => {
 
   describe('Role-Based Access Control', () => {
     it('allows access when user has required role', () => {
-      (useUser as any).mockReturnValue(mockAdminUser);
-      (useHasAnyRole as any).mockReturnValue(true);
+      (useUser as unknown).mockReturnValue(mockAdminUser);
+      (useHasAnyRole as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard requireRole="admin">
@@ -183,8 +183,8 @@ describe('RouteGuard', () => {
     });
 
     it('denies access when user lacks required role', async () => {
-      (useUser as any).mockReturnValue(mockUser); // client user
-      (useHasAnyRole as any).mockReturnValue(false);
+      (useUser as unknown).mockReturnValue(mockUser); // client user
+      (useHasAnyRole as unknown).mockReturnValue(false);
       
       renderWithProviders(
         <RouteGuard requireRole="admin">
@@ -200,8 +200,8 @@ describe('RouteGuard', () => {
     });
 
     it('allows access when user has any of required roles', () => {
-      (useUser as any).mockReturnValue(mockCoachUser);
-      (useHasAnyRole as any).mockReturnValue(true);
+      (useUser as unknown).mockReturnValue(mockCoachUser);
+      (useHasAnyRole as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard requireAnyRole={['coach', 'admin']}>
@@ -213,8 +213,8 @@ describe('RouteGuard', () => {
     });
 
     it('redirects to dashboard when role check fails', async () => {
-      (useUser as any).mockReturnValue(mockUser);
-      (useHasAnyRole as any).mockReturnValue(false);
+      (useUser as unknown).mockReturnValue(mockUser);
+      (useHasAnyRole as unknown).mockReturnValue(false);
       
       renderWithProviders(
         <RouteGuard requireRole="admin">
@@ -228,8 +228,8 @@ describe('RouteGuard', () => {
     });
 
     it('uses custom redirect for role failures', async () => {
-      (useUser as any).mockReturnValue(mockUser);
-      (useHasAnyRole as any).mockReturnValue(false);
+      (useUser as unknown).mockReturnValue(mockUser);
+      (useHasAnyRole as unknown).mockReturnValue(false);
       
       renderWithProviders(
         <RouteGuard requireRole="admin" redirectTo="/unauthorized">
@@ -245,7 +245,7 @@ describe('RouteGuard', () => {
 
   describe('Permission-Based Access Control', () => {
     it('allows access when user has required permission', () => {
-      (usePermission as any).mockReturnValue(true);
+      (usePermission as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard requirePermission="user:view:all">
@@ -257,7 +257,7 @@ describe('RouteGuard', () => {
     });
 
     it('denies access when user lacks required permission', async () => {
-      (usePermission as any).mockReturnValue(false);
+      (usePermission as unknown).mockReturnValue(false);
       
       renderWithProviders(
         <RouteGuard requirePermission="user:create">
@@ -272,7 +272,7 @@ describe('RouteGuard', () => {
     });
 
     it('allows access when user has any of required permissions', () => {
-      (useAnyPermission as any).mockReturnValue(true);
+      (useAnyPermission as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard requireAnyPermission={['user:view:all', 'user:create']}>
@@ -284,7 +284,7 @@ describe('RouteGuard', () => {
     });
 
     it('denies access when user lacks any required permissions', async () => {
-      (useAnyPermission as any).mockReturnValue(false);
+      (useAnyPermission as unknown).mockReturnValue(false);
       
       renderWithProviders(
         <RouteGuard requireAnyPermission={['user:create', 'admin:view:dashboard']}>
@@ -298,7 +298,7 @@ describe('RouteGuard', () => {
     });
 
     it('redirects when permission check fails', async () => {
-      (usePermission as any).mockReturnValue(false);
+      (usePermission as unknown).mockReturnValue(false);
       
       renderWithProviders(
         <RouteGuard requirePermission="admin:view:dashboard">
@@ -314,9 +314,9 @@ describe('RouteGuard', () => {
 
   describe('Combined Requirements', () => {
     it('allows access when both role and permission requirements are met', () => {
-      (useUser as any).mockReturnValue(mockAdminUser);
-      (useHasAnyRole as any).mockReturnValue(true);
-      (usePermission as any).mockReturnValue(true);
+      (useUser as unknown).mockReturnValue(mockAdminUser);
+      (useHasAnyRole as unknown).mockReturnValue(true);
+      (usePermission as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard requireRole="admin" requirePermission="user:create">
@@ -328,9 +328,9 @@ describe('RouteGuard', () => {
     });
 
     it('denies access when role requirement is met but permission is not', async () => {
-      (useUser as any).mockReturnValue(mockAdminUser);
-      (useHasAnyRole as any).mockReturnValue(true);
-      (usePermission as any).mockReturnValue(false);
+      (useUser as unknown).mockReturnValue(mockAdminUser);
+      (useHasAnyRole as unknown).mockReturnValue(true);
+      (usePermission as unknown).mockReturnValue(false);
       
       renderWithProviders(
         <RouteGuard requireRole="admin" requirePermission="admin:manage:system">
@@ -344,9 +344,9 @@ describe('RouteGuard', () => {
     });
 
     it('denies access when permission requirement is met but role is not', async () => {
-      (useUser as any).mockReturnValue(mockUser);
-      (useHasAnyRole as any).mockReturnValue(false);
-      (usePermission as any).mockReturnValue(true);
+      (useUser as unknown).mockReturnValue(mockUser);
+      (useHasAnyRole as unknown).mockReturnValue(false);
+      (usePermission as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard requireRole="admin" requirePermission="user:view:all">
@@ -362,8 +362,8 @@ describe('RouteGuard', () => {
 
   describe('Custom Error Messages', () => {
     it('displays custom unauthorized message', async () => {
-      (useUser as any).mockReturnValue(mockUser);
-      (useHasAnyRole as any).mockReturnValue(false);
+      (useUser as unknown).mockReturnValue(mockUser);
+      (useHasAnyRole as unknown).mockReturnValue(false);
       
       const customMessage = 'You need admin privileges to access this area';
       
@@ -379,8 +379,8 @@ describe('RouteGuard', () => {
     });
 
     it('falls back to default message when custom message not provided', async () => {
-      (useUser as any).mockReturnValue(mockUser);
-      (useHasAnyRole as any).mockReturnValue(false);
+      (useUser as unknown).mockReturnValue(mockUser);
+      (useHasAnyRole as unknown).mockReturnValue(false);
       
       renderWithProviders(
         <RouteGuard requireRole="admin">
@@ -397,8 +397,8 @@ describe('RouteGuard', () => {
   describe('Convenience Wrapper Components', () => {
     describe('AdminRoute', () => {
       it('requires admin role', () => {
-        (useUser as any).mockReturnValue(mockAdminUser);
-        (useHasAnyRole as any).mockReturnValue(true);
+        (useUser as unknown).mockReturnValue(mockAdminUser);
+        (useHasAnyRole as unknown).mockReturnValue(true);
         
         renderWithProviders(
           <AdminRoute>
@@ -411,8 +411,8 @@ describe('RouteGuard', () => {
       });
 
       it('denies access to non-admin users', async () => {
-        (useUser as any).mockReturnValue(mockUser);
-        (useHasAnyRole as any).mockReturnValue(false);
+        (useUser as unknown).mockReturnValue(mockUser);
+        (useHasAnyRole as unknown).mockReturnValue(false);
         
         renderWithProviders(
           <AdminRoute>
@@ -428,8 +428,8 @@ describe('RouteGuard', () => {
 
     describe('CoachRoute', () => {
       it('requires coach role', () => {
-        (useUser as any).mockReturnValue(mockCoachUser);
-        (useHasAnyRole as any).mockReturnValue(true);
+        (useUser as unknown).mockReturnValue(mockCoachUser);
+        (useHasAnyRole as unknown).mockReturnValue(true);
         
         renderWithProviders(
           <CoachRoute>
@@ -444,8 +444,8 @@ describe('RouteGuard', () => {
 
     describe('ClientRoute', () => {
       it('requires client role', () => {
-        (useUser as any).mockReturnValue(mockUser);
-        (useHasAnyRole as any).mockReturnValue(true);
+        (useUser as unknown).mockReturnValue(mockUser);
+        (useHasAnyRole as unknown).mockReturnValue(true);
         
         renderWithProviders(
           <ClientRoute>
@@ -460,8 +460,8 @@ describe('RouteGuard', () => {
 
     describe('CoachOrAdminRoute', () => {
       it('allows coach users', () => {
-        (useUser as any).mockReturnValue(mockCoachUser);
-        (useHasAnyRole as any).mockReturnValue(true);
+        (useUser as unknown).mockReturnValue(mockCoachUser);
+        (useHasAnyRole as unknown).mockReturnValue(true);
         
         renderWithProviders(
           <CoachOrAdminRoute>
@@ -474,8 +474,8 @@ describe('RouteGuard', () => {
       });
 
       it('allows admin users', () => {
-        (useUser as any).mockReturnValue(mockAdminUser);
-        (useHasAnyRole as any).mockReturnValue(true);
+        (useUser as unknown).mockReturnValue(mockAdminUser);
+        (useHasAnyRole as unknown).mockReturnValue(true);
         
         renderWithProviders(
           <CoachOrAdminRoute>
@@ -487,8 +487,8 @@ describe('RouteGuard', () => {
       });
 
       it('denies client users', async () => {
-        (useUser as any).mockReturnValue(mockUser);
-        (useHasAnyRole as any).mockReturnValue(false);
+        (useUser as unknown).mockReturnValue(mockUser);
+        (useHasAnyRole as unknown).mockReturnValue(false);
         
         renderWithProviders(
           <CoachOrAdminRoute>
@@ -504,8 +504,8 @@ describe('RouteGuard', () => {
 
     describe('ClientOrAdminRoute', () => {
       it('allows client users', () => {
-        (useUser as any).mockReturnValue(mockUser);
-        (useHasAnyRole as any).mockReturnValue(true);
+        (useUser as unknown).mockReturnValue(mockUser);
+        (useHasAnyRole as unknown).mockReturnValue(true);
         
         renderWithProviders(
           <ClientOrAdminRoute>
@@ -518,8 +518,8 @@ describe('RouteGuard', () => {
       });
 
       it('allows admin users', () => {
-        (useUser as any).mockReturnValue(mockAdminUser);
-        (useHasAnyRole as any).mockReturnValue(true);
+        (useUser as unknown).mockReturnValue(mockAdminUser);
+        (useHasAnyRole as unknown).mockReturnValue(true);
         
         renderWithProviders(
           <ClientOrAdminRoute>
@@ -534,8 +534,8 @@ describe('RouteGuard', () => {
 
   describe('Edge Cases and Error Handling', () => {
     it('handles undefined user gracefully', () => {
-      (useUser as any).mockReturnValue(undefined);
-      (useAuthLoading as any).mockReturnValue(false);
+      (useUser as unknown).mockReturnValue(undefined);
+      (useAuthLoading as unknown).mockReturnValue(false);
       
       renderWithProviders(
         <RouteGuard requireAuth={false}>
@@ -547,7 +547,7 @@ describe('RouteGuard', () => {
     });
 
     it('handles empty permission arrays', () => {
-      (useAnyPermission as any).mockReturnValue(true);
+      (useAnyPermission as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard requireAnyPermission={[]}>
@@ -559,7 +559,7 @@ describe('RouteGuard', () => {
     });
 
     it('handles empty role arrays', () => {
-      (useHasAnyRole as any).mockReturnValue(true);
+      (useHasAnyRole as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard requireAnyRole={[]}>
@@ -571,8 +571,8 @@ describe('RouteGuard', () => {
     });
 
     it('prevents infinite redirects by not redirecting when already loading', () => {
-      (useUser as any).mockReturnValue(null);
-      (useAuthLoading as any).mockReturnValue(true);
+      (useUser as unknown).mockReturnValue(null);
+      (useAuthLoading as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard requireAuth={true}>
@@ -591,16 +591,16 @@ describe('RouteGuard', () => {
       );
       
       // Simulate rapid auth state changes
-      (useUser as any).mockReturnValue(null);
-      (useAuthLoading as any).mockReturnValue(true);
+      (useUser as unknown).mockReturnValue(null);
+      (useAuthLoading as unknown).mockReturnValue(true);
       rerender(
         <RouteGuard requireAuth={true}>
           <TestComponent />
         </RouteGuard>
       );
       
-      (useUser as any).mockReturnValue(mockUser);
-      (useAuthLoading as any).mockReturnValue(false);
+      (useUser as unknown).mockReturnValue(mockUser);
+      (useAuthLoading as unknown).mockReturnValue(false);
       rerender(
         <RouteGuard requireAuth={true}>
           <TestComponent />
@@ -640,8 +640,8 @@ describe('RouteGuard', () => {
 
   describe('Accessibility', () => {
     it('provides accessible error states', async () => {
-      (useUser as any).mockReturnValue(mockUser);
-      (useHasAnyRole as any).mockReturnValue(false);
+      (useUser as unknown).mockReturnValue(mockUser);
+      (useHasAnyRole as unknown).mockReturnValue(false);
       
       renderWithProviders(
         <RouteGuard requireRole="admin">
@@ -657,7 +657,7 @@ describe('RouteGuard', () => {
     });
 
     it('provides accessible loading states', () => {
-      (useAuthLoading as any).mockReturnValue(true);
+      (useAuthLoading as unknown).mockReturnValue(true);
       
       renderWithProviders(
         <RouteGuard>
@@ -671,8 +671,8 @@ describe('RouteGuard', () => {
     });
 
     it('uses semantic HTML elements', async () => {
-      (useUser as any).mockReturnValue(mockUser);
-      (useHasAnyRole as any).mockReturnValue(false);
+      (useUser as unknown).mockReturnValue(mockUser);
+      (useHasAnyRole as unknown).mockReturnValue(false);
       
       renderWithProviders(
         <RouteGuard requireRole="admin">

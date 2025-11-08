@@ -33,7 +33,7 @@ describe('Zustand auth store', () => {
       createdAt: 'now',
       updatedAt: 'now',
       mfaEnabled: false,
-    } as any);
+    } as unknown);
 
     expect(useAuthStore.getState().user?.id).toBe('u1');
 
@@ -71,7 +71,7 @@ describe('Zustand auth store', () => {
 
   it('persists only user in localStorage', () => {
     // set some state
-    useAuthStore.getState().setUser({ id: 'p1' } as any);
+    useAuthStore.getState().setUser({ id: 'p1' } as unknown);
     useAuthStore.getState().setMfaRequired(true);
     
     const raw = localStorage.getItem('auth-storage');

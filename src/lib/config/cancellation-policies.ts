@@ -159,9 +159,9 @@ export function calculateCancellationResult(
  * This could be extended to check coach preferences, session type, etc.
  */
 export function getCancellationPolicy(
-  sessionType?: string,
-  coachId?: string,
-  sessionCost?: number
+  _sessionType?: string,
+  _coachId?: string,
+  _sessionCost?: number
 ): CancellationPolicy {
   // For now, return the standard policy
   // In the future, this could query the database for coach-specific policies

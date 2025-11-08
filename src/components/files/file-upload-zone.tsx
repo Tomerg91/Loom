@@ -53,7 +53,7 @@ export interface UploadFile {
 
 export interface FileUploadZoneProps {
   onFilesSelected?: (files: UploadFile[]) => void;
-  onUploadComplete?: (results: any[]) => void;
+  onUploadComplete?: (results: unknown[]) => void;
   onUploadProgress?: (fileId: string, progress: number) => void;
   onFileRemove?: (fileId: string) => void;
   maxFiles?: number;
@@ -324,7 +324,7 @@ export function FileUploadZone({
     if (files.length === 0) return;
 
     setUploading(true);
-    const results: any[] = [];
+    const results: unknown[] = [];
 
     for (const uploadFile of files) {
       try {
@@ -350,13 +350,13 @@ export function FileUploadZone({
         };
 
         // Complete handler
-        const uploadPromise = new Promise<any>((resolve, reject) => {
+        const uploadPromise = new Promise<unknown>((resolve, reject) => {
           xhr.onload = () => {
             if (xhr.status === 200) {
               try {
                 const result = JSON.parse(xhr.responseText);
                 resolve(result);
-              } catch (error) {
+              } catch () {
                 reject(new Error('Invalid response format'));
               }
             } else {
@@ -738,7 +738,7 @@ export function FileUploadZone({
                 <Label>Category</Label>
                 <Select
                   value={editingFile.category}
-                  onValueChange={(value: any) => 
+                  onValueChange={(value: unknown) => 
                     updateFile(editingFile.id, { category: value })
                   }
                 >

@@ -10,11 +10,11 @@ import {
   parseISO, 
   addMonths,
   subMonths,
-  getDay,
+
   startOfWeek,
   endOfWeek
 } from 'date-fns';
-import { Calendar, ChevronLeft, ChevronRight, Clock, User, Video, Phone, MapPin } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock Video, Phone, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useMemo } from 'react';
 

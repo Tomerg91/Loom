@@ -23,7 +23,6 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast-provider';
 import { useTypingIndicators } from '@/lib/realtime/hooks';
-import { cn } from '@/lib/utils';
 
 interface MessageComposerProps {
   conversationId: string;
@@ -106,7 +105,7 @@ export function MessageComposer({
     mutationFn: async (messageData: {
       content: string;
       replyToId?: string;
-      attachments?: any[];
+      attachments?: unknown[];
     }) => {
       const response = await fetch('/api/messages', {
         method: 'POST',

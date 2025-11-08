@@ -7,7 +7,7 @@ import {
   Info
 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import { usePathname, useRouter } from '@/i18n/routing';
+
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { usePathname, useRouter } from '@/i18n/routing';
 import { buildLocalizedPath } from '@/i18n/routing';
 
 interface LanguageOption {

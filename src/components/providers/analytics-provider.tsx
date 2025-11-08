@@ -8,7 +8,7 @@ import { useUser } from '@/lib/auth/use-user';
 import { 
   GA_TRACKING_ID, 
   POSTHOG_KEY, 
-  POSTHOG_HOST,
+
   pageView,
   trackPageView,
   posthogIdentify,
@@ -18,7 +18,7 @@ import {
 declare global {
   interface Window {
     gtag?: (command: 'config' | 'event', targetId: string, config?: Record<string, unknown>) => void;
-    dataLayer: any[];
+    dataLayer: unknown[];
     posthog?: {
       init: (key: string, config: Record<string, unknown>) => void;
       capture: (event: string, properties?: Record<string, unknown>) => void;
@@ -79,7 +79,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         
         // Remove gtag function
         if (typeof window !== 'undefined' && 'gtag' in window) {
-          delete (window as any).gtag;
+          delete (window as unknown).gtag;
         }
       };
     }

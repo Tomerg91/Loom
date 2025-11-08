@@ -447,7 +447,7 @@ class FileOptimizationService {
   async getOptimizationRecommendations(
     fileSize: number,
     mimeType: string,
-    metadata?: any
+    metadata?: unknown
   ): Promise<{
     shouldOptimize: boolean;
     recommendations: string[];

@@ -77,7 +77,7 @@ export function NoteExport({ notes, selectedNotes, className }: NoteExportProps)
       content += `Total notes: ${notesToExport.length}\n\n`;
       content += '---\n\n';
       
-      notesToExport.forEach((note, index) => {
+      notesToExport.forEach((note, _index) => {
         content += `## ${note.title}\n\n`;
         
         // Metadata table

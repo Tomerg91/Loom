@@ -1,6 +1,6 @@
 import dynamic from 'next/dynamic';
-import { ComponentType, createElement, ReactNode } from 'react';
 import type { DynamicOptionsLoadingProps } from 'next/dynamic';
+import { ComponentType, createElement, ReactNode } from 'react';
 
 // Default loading component - matches Next.js dynamic loading component signature
 const DefaultLoadingComponent = () =>
@@ -199,7 +199,7 @@ export function createImageObserver(callback: (entries: IntersectionObserverEntr
 // Prefetch resources based on user interaction
 export function prefetchOnHover(href: string) {
   if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(() => {
+    (window as unknown).requestIdleCallback(() => {
       const link = document.createElement('link');
       link.rel = 'prefetch';
       link.href = href;
@@ -215,7 +215,7 @@ export function trackComponentLoad(componentName: string, startTime: number) {
     
     // Send to analytics if available
     if ('gtag' in window) {
-      (window as any).gtag('event', 'component_load_time', {
+      (window as unknown).gtag('event', 'component_load_time', {
         component_name: componentName,
         load_time: Math.round(loadTime),
       });

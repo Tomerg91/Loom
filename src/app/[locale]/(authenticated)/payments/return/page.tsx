@@ -10,7 +10,7 @@ export default async function PaymentReturnPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const { locale } = await params;
-  if (!routing.locales.includes(locale as any)) {
+  if (!routing.locales.includes(locale as unknown)) {
     notFound();
   }
   const resolvedSearchParams = await searchParams;

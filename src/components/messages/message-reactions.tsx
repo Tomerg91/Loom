@@ -53,7 +53,7 @@ export function MessageReactions({
   }, {} as Record<string, {
     emoji: string;
     count: number;
-    users: any[];
+    users: unknown[];
     hasUserReacted: boolean;
   }>);
 
@@ -63,7 +63,7 @@ export function MessageReactions({
     return null;
   }
 
-  const getTooltipText = (users: any[]) => {
+  const getTooltipText = (users: unknown[]) => {
     if (users.length === 1) {
       return `${users[0].firstName} ${users[0].lastName}`;
     } else if (users.length === 2) {

@@ -72,7 +72,7 @@ describe('FileService', () => {
 
   describe('getBucketName', () => {
     it('should map directories to correct buckets', async () => {
-      const fileServiceAny = fileService as any;
+      const fileServiceAny = fileService as unknown;
       
       expect(fileServiceAny.getBucketName('avatars')).toBe('avatars');
       expect(fileServiceAny.getBucketName('documents')).toBe('documents');
@@ -90,7 +90,7 @@ describe('FileService', () => {
         userId: 'user-123'
       };
 
-      const fileServiceAny = fileService as any;
+      const fileServiceAny = fileService as unknown;
       const fileName = await fileServiceAny.generateSecureFileName(file, options);
       
       expect(fileName).toMatch(/^uploads\/user-123\/\d+-[a-f0-9]{32}\.jpg$/);
@@ -103,7 +103,7 @@ describe('FileService', () => {
         userId: 'user-123'
       };
 
-      const fileServiceAny = fileService as any;
+      const fileServiceAny = fileService as unknown;
       const fileName = await fileServiceAny.generateSecureFileName(file, options);
       
       expect(fileName).toMatch(/\.jpg$/); // Should be sanitized to .jpg
@@ -112,7 +112,7 @@ describe('FileService', () => {
 
   describe('classifyStorageError', () => {
     it('should classify network errors as retryable', () => {
-      const fileServiceAny = fileService as any;
+      const fileServiceAny = fileService as unknown;
       const error = { message: 'Network timeout occurred' };
       
       const result = fileServiceAny.classifyStorageError(error);
@@ -121,7 +121,7 @@ describe('FileService', () => {
     });
 
     it('should classify quota errors as non-retryable', () => {
-      const fileServiceAny = fileService as any;
+      const fileServiceAny = fileService as unknown;
       const error = { message: 'Storage quota exceeded' };
       
       const result = fileServiceAny.classifyStorageError(error);
@@ -130,7 +130,7 @@ describe('FileService', () => {
     });
 
     it('should classify permission errors as non-retryable', () => {
-      const fileServiceAny = fileService as any;
+      const fileServiceAny = fileService as unknown;
       const error = { message: 'Permission denied' };
       
       const result = fileServiceAny.classifyStorageError(error);
@@ -141,7 +141,7 @@ describe('FileService', () => {
 
   describe('getUserFriendlyErrorMessage', () => {
     it('should return user-friendly error messages', () => {
-      const fileServiceAny = fileService as any;
+      const fileServiceAny = fileService as unknown;
       
       expect(fileServiceAny.getUserFriendlyErrorMessage('NETWORK_ERROR'))
         .toContain('Network connection error');
@@ -156,7 +156,7 @@ describe('FileService', () => {
 
   describe('validateImageSignature', () => {
     it('should validate JPEG signature correctly', () => {
-      const fileServiceAny = fileService as any;
+      const fileServiceAny = fileService as unknown;
       const jpegHeader = new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0]);
       
       const result = fileServiceAny.validateImageSignature(jpegHeader, 'image/jpeg');
@@ -164,7 +164,7 @@ describe('FileService', () => {
     });
 
     it('should validate PNG signature correctly', () => {
-      const fileServiceAny = fileService as any;
+      const fileServiceAny = fileService as unknown;
       const pngHeader = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
       
       const result = fileServiceAny.validateImageSignature(pngHeader, 'image/png');
@@ -172,7 +172,7 @@ describe('FileService', () => {
     });
 
     it('should reject invalid image signatures', () => {
-      const fileServiceAny = fileService as any;
+      const fileServiceAny = fileService as unknown;
       const invalidHeader = new Uint8Array([0x00, 0x00, 0x00, 0x00]);
       
       const result = fileServiceAny.validateImageSignature(invalidHeader, 'image/jpeg');
@@ -180,7 +180,7 @@ describe('FileService', () => {
     });
 
     it('should allow unknown image types', () => {
-      const fileServiceAny = fileService as any;
+      const fileServiceAny = fileService as unknown;
       const someHeader = new Uint8Array([0x00, 0x00, 0x00, 0x00]);
       
       const result = fileServiceAny.validateImageSignature(someHeader, 'image/unknown');

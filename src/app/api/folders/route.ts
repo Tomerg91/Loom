@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     const userId = user.id;
     const url = new URL(request.url);
-    const folderId = url.searchParams.get('folderId') || null;
+    const _folderId = url.searchParams.get('folderId') || null;
 
     // For now, return files without folder organization
     // TODO: Implement folder schema and getFolderContents method
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userId = user.id;
-    const { name, parentFolderId, description } = await request.json();
+    const _userId = user.id;
+    const { name, _parentFolderId, _description} = await request.json();
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json(
