@@ -47,10 +47,10 @@ function ChartSkeleton({ height = 300, className }: ChartSkeletonProps) {
 
 interface OptimizedChartProps {
   type: keyof typeof RechartsComponents;
-  data: any[];
+  data: unknown[];
   height?: number;
   className?: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   children?: React.ReactNode;
   sampleSize?: number; // Limit data points for better performance
   lazyThreshold?: number; // Delay before loading (ms)
@@ -108,11 +108,11 @@ export function OptimizedLazyChart({
 }
 
 interface LazyChartWithIntersectionProps {
-  ChartComponent: ComponentType<any>;
-  ResponsiveContainer: ComponentType<any>;
-  data: any[];
+  ChartComponent: ComponentType<unknown>;
+  ResponsiveContainer: ComponentType<unknown>;
+  data: unknown[];
   height: number;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   children?: React.ReactNode;
   lazyThreshold: number;
 }

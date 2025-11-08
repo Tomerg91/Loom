@@ -4,7 +4,6 @@ import { ChevronRight, Home, Folder } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { FolderMetadata } from '@/lib/services/file-management-service';
 
 interface FolderBreadcrumbProps {
   currentFolderId: string | null;

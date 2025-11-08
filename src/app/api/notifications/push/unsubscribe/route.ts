@@ -14,7 +14,7 @@ import { PushNotificationService } from '@/lib/services/push-notification-servic
 // POST /api/notifications/push/unsubscribe - Unsubscribe from push notifications
 export const POST = withErrorHandling(
   rateLimit(10, 60000)( // 10 unsubscriptions per minute
-    requireAuth(async (user, request: NextRequest, _context: { params: Promise<{}> }) => {
+    requireAuth(async (user, request: NextRequest, _context: { params: Promise<unknown> }) => {
       try {
         const body = await request.json();
         const endpoint = body.endpoint; // Optional - if provided, only unsubscribe specific endpoint

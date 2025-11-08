@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { fileDatabase } from '@/lib/database/files';
 import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { createClient } from '@/lib/supabase/server';

@@ -65,7 +65,7 @@ interface NotificationState {
     action: string;
     notificationId?: string;
     timestamp: number;
-    data?: any;
+    data?: unknown;
   }>;
   soundEnabled: boolean;
   doNotDisturb: boolean;
@@ -96,7 +96,7 @@ interface NotificationActions {
   updateLastSync: () => void;
   
   // Offline queue management
-  addToOfflineQueue: (action: string, notificationId?: string, data?: any) => void;
+  addToOfflineQueue: (action: string, notificationId?: string, data?: unknown) => void;
   processOfflineQueue: () => Promise<void>;
   clearOfflineQueue: () => void;
   

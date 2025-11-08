@@ -43,7 +43,7 @@ interface FileGridProps {
   compactMode?: boolean;
 }
 
-const getFileIcon = (fileType: string, mimeType: string) => {
+const getFileIcon = (fileType: string, _mimeType: string) => {
   switch (fileType) {
     case 'image':
       return <Image className="h-8 w-8 text-blue-500" />;

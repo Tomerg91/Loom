@@ -24,7 +24,7 @@ vi.mock('@/lib/api/utils', () => ({
       headers: { 'Content-Type': 'application/json' }
     })
   ),
-  withErrorHandling: vi.fn((handler: any) => handler),
+  withErrorHandling: vi.fn((handler: unknown) => handler),
   HTTP_STATUS: {
     OK: 200,
     CREATED: 201,
@@ -42,7 +42,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 vi.mock('@/lib/security/rate-limit', () => ({
-  rateLimit: vi.fn((limit, window, options) => (handler: any) => handler),
+  rateLimit: vi.fn((_limit, _window, _options) => (handler: unknown) => handler),
 }));
 
 vi.mock('@/lib/database/availability', () => ({
@@ -67,11 +67,11 @@ import { sessionNotificationService } from '@/lib/notifications/session-notifica
 import { createCorsResponse } from '@/lib/security/cors';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
-import { mockUser, mockCoachUser, mockSupabaseClient } from '@/test/utils';
+import { mockUser, mockSupabaseClient } from '@/test/utils';
 
-const mockCreateSuccessResponse = vi.mocked(createSuccessResponse);
+const _mockCreateSuccessResponse = vi.mocked(createSuccessResponse);
 const mockCreateErrorResponse = vi.mocked(createErrorResponse);
-const mockCreateServerClient = vi.mocked(createServerClient);
+const _mockCreateServerClient = vi.mocked(createServerClient);
 const mockRateLimit = vi.mocked(rateLimit);
 const mockIsCoachAvailable = vi.mocked(isCoachAvailable);
 const mockSessionNotificationService = vi.mocked(sessionNotificationService);
@@ -122,7 +122,7 @@ describe('/api/sessions/book', () => {
     });
 
     // Setup default rate limiting (no-op wrapper)
-    mockRateLimit.mockImplementation((limit, window, options) => (handler: any) => handler)
+    mockRateLimit.mockImplementation((_limit, _window, _options) => (handler: unknown) => handler)
   });
 
   afterEach(() => {
@@ -133,7 +133,7 @@ describe('/api/sessions/book', () => {
     describe('Authentication Testing', () => {
       it('should allow authenticated client to book session', async () => {
         // Setup successful booking flow
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -213,13 +213,13 @@ describe('/api/sessions/book', () => {
 
     describe('Role Authorization Testing', () => {
       it('should allow clients to book sessions', async () => {
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             return {
               select: vi.fn().mockReturnThis(),
               eq: vi.fn().mockReturnThis(),
               single: vi.fn().mockImplementation(() => {
-                const calls: any[] = [];
+                const calls: unknown[] = [];
                 const lastCall = calls[calls.length - 1];
                 if (lastCall && lastCall[1] === mockUser.id) {
                   return Promise.resolve({ data: { ...mockClientProfile, role: 'client' } });
@@ -469,7 +469,7 @@ describe('/api/sessions/book', () => {
 
     describe('Business Logic Testing', () => {
       beforeEach(() => {
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             return {
               select: vi.fn().mockReturnThis(),
@@ -491,7 +491,7 @@ describe('/api/sessions/book', () => {
       });
 
       it('should verify coach exists before booking', async () => {
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             const mockFrom = {
               select: vi.fn().mockReturnThis(),
@@ -523,7 +523,7 @@ describe('/api/sessions/book', () => {
       });
 
       it('should check coach availability before booking', async () => {
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             const mockFrom = {
               select: vi.fn().mockReturnThis(),
@@ -563,7 +563,7 @@ describe('/api/sessions/book', () => {
       });
 
       it('should create session when coach is available', async () => {
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             const mockFrom = {
               select: vi.fn().mockReturnThis(),
@@ -608,7 +608,7 @@ describe('/api/sessions/book', () => {
 
     describe('Database Operations Testing', () => {
       beforeEach(() => {
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             const mockFrom = {
               select: vi.fn().mockReturnThis(),
@@ -629,7 +629,7 @@ describe('/api/sessions/book', () => {
       });
 
       it('should handle database insertion successfully', async () => {
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'sessions') {
             const insertMock = vi.fn().mockReturnThis();
             const selectMock = vi.fn().mockReturnThis();
@@ -657,7 +657,7 @@ describe('/api/sessions/book', () => {
       });
 
       it('should handle database insertion failure', async () => {
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'sessions') {
             return {
               insert: vi.fn().mockReturnThis(),
@@ -687,7 +687,7 @@ describe('/api/sessions/book', () => {
       });
 
       it('should properly transform database response to frontend format', async () => {
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'sessions') {
             return {
               insert: vi.fn().mockReturnThis(),
@@ -738,7 +738,7 @@ describe('/api/sessions/book', () => {
 
     describe('Notification Testing', () => {
       beforeEach(() => {
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             const mockFrom = {
               select: vi.fn().mockReturnThis(),
@@ -852,7 +852,7 @@ describe('/api/sessions/book', () => {
           description: '<img src="x" onerror="alert(\'xss\')">',
         };
 
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             const mockFrom = {
               select: vi.fn().mockReturnThis(),
@@ -893,7 +893,7 @@ describe('/api/sessions/book', () => {
       it('should log booking attempts with IP and user agent', async () => {
         const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             const mockFrom = {
               select: vi.fn().mockReturnThis(),
@@ -967,7 +967,7 @@ describe('/api/sessions/book', () => {
       });
 
       it('should handle availability check errors', async () => {
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             const mockFrom = {
               select: vi.fn().mockReturnThis(),
@@ -1011,7 +1011,7 @@ describe('/api/sessions/book', () => {
           durationMinutes: validBookingRequest.durationMinutes,
         };
 
-        mockSupabaseClient.from.mockImplementation((table: any) => {
+        mockSupabaseClient.from.mockImplementation((table: unknown) => {
           if (table === 'users') {
             const mockFrom = {
               select: vi.fn().mockReturnThis(),
@@ -1058,7 +1058,7 @@ describe('/api/sessions/book', () => {
         ];
 
         for (const boundaryRequest of boundaryRequests) {
-          mockSupabaseClient.from.mockImplementation((table: any) => {
+          mockSupabaseClient.from.mockImplementation((table: unknown) => {
             if (table === 'users') {
               const mockFrom = {
                 select: vi.fn().mockReturnThis(),

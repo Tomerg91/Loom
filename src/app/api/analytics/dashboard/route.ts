@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     // Get user's files
     const userFilesResult = await fileDatabase.getFileUploads({ userId: user.id });
     const userFiles = userFilesResult.files || [];
-    const fileIds = userFiles.map((f: any) => f.id);
+    const fileIds = userFiles.map((f: unknown) => f.id);
 
     if (fileIds.length === 0) {
       return NextResponse.json({
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
 
     // Get detailed analytics for top files
     const topFileIds = userPopularFiles.slice(0, 5).map(f => f.file_id);
-    const detailedAnalytics: Record<string, any> = {};
+    const detailedAnalytics: Record<string, unknown> = {};
     
     for (const fileId of topFileIds) {
       try {
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
     // Calculate summary statistics
     const summary = {
       total_files: userFilesResult.count || userFiles.length,
-      total_downloads: Object.values(multipleFileStats).reduce((sum: number, stat: any) => sum + (stat.total_downloads || 0), 0),
+      total_downloads: Object.values(multipleFileStats).reduce((sum: number, stat: unknown) => sum + (stat.total_downloads || 0), 0),
       total_bandwidth: Object.values(detailedAnalytics)
         .filter(analytics => analytics !== null)
         .reduce((sum, analytics) => sum + (analytics?.file_stats?.total_bandwidth_used || 0), 0),
@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Countries
-      analytics.geographic_distribution?.forEach(({ country_code, download_count }: any) => {
+      analytics.geographic_distribution?.forEach(({ country_code, download_count }: unknown) => {
         trends.top_countries[country_code] = (trends.top_countries[country_code] || 0) + download_count;
       });
 

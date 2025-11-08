@@ -3,10 +3,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, X, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
+import { useState} from 'react';
 import { toast } from 'sonner';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -52,7 +51,7 @@ export function PracticeJournalForm({ entry, onClose }: PracticeJournalFormProps
 
   // Create/Update mutation
   const saveMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: unknown) => {
       const url = isEditing ? `/api/practice-journal/${entry.id}` : '/api/practice-journal';
       const method = isEditing ? 'PUT' : 'POST';
 

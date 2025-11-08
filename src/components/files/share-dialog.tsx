@@ -88,7 +88,7 @@ export function ShareDialog({ file, open, onClose }: ShareDialogProps) {
       const response = await fetch(`/api/files/${file.id}/share`);
       if (response.ok) {
         const data = await response.json();
-        setShares(data.map((share: any) => ({
+        setShares(data.map((share: unknown) => ({
           id: share.id,
           userId: share.shared_with_id,
           userName: `${share.users.first_name} ${share.users.last_name}`.trim() || share.users.email,
@@ -137,7 +137,7 @@ export function ShareDialog({ file, open, onClose }: ShareDialogProps) {
           variant: 'destructive'
         });
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to share file. Please try again.',
@@ -163,7 +163,7 @@ export function ShareDialog({ file, open, onClose }: ShareDialogProps) {
       } else {
         throw new Error('Failed to revoke access');
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to revoke access. Please try again.',
@@ -201,7 +201,7 @@ export function ShareDialog({ file, open, onClose }: ShareDialogProps) {
             : 'Anyone with the link can now access this file'
         });
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to update public access setting',
@@ -265,7 +265,7 @@ export function ShareDialog({ file, open, onClose }: ShareDialogProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Permission</Label>
-                  <Select value={selectedPermission} onValueChange={setSelectedPermission as any}>
+                  <Select value={selectedPermission} onValueChange={setSelectedPermission as unknown}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

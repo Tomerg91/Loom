@@ -3,7 +3,6 @@
 import { Eye, EyeOff } from 'lucide-react';
 import { useState, forwardRef } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -17,7 +16,7 @@ export interface PasswordInputProps extends Omit<React.InputHTMLAttributes<HTMLI
  * Consolidates password input logic from auth forms
  */
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
-  ({ className, showToggle = true, toggleClassName, ...props }, ref) => {
+  ({ className, showToggle = true, _toggleClassName, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
 
     const togglePasswordVisibility = () => {

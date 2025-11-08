@@ -22,7 +22,6 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser } from '@/lib/auth/use-user';
-import { cn } from '@/lib/utils';
 import type { User } from '@/types';
 
 interface ContactSearchProps {

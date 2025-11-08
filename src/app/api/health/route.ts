@@ -131,7 +131,7 @@ async function checkDatabaseHealth() {
     
     // Test write capability (non-destructive)
     const writeStart = Date.now();
-    const { error: writeError } = await supabase
+    const { error: _writeError } = await supabase
       .from('system_audit_logs')
       .select('id')
       .limit(1);
@@ -308,7 +308,7 @@ async function checkCacheHealth() {
   }
 }
 
-async function getDatabasePoolStats(supabase: any) {
+async function getDatabasePoolStats(_supabase: unknown) {
   try {
     // In a real implementation, you'd get pool stats from your database client
     return {
@@ -322,7 +322,7 @@ async function getDatabasePoolStats(supabase: any) {
   }
 }
 
-function determineOverallHealth(...checks: any[]): boolean {
+function determineOverallHealth(...checks: unknown[]): boolean {
   // System is healthy if all critical checks pass
   // Allow 'slow' status for database checks as they might be warming up
   return checks.every(check =>

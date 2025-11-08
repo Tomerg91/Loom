@@ -684,7 +684,7 @@ class AdminSystemService {
             success: true,
             message: `${service} service restarted successfully`
           });
-        } catch (error) {
+        } catch (_error) {
           results.push({
             service,
             success: false,
@@ -750,7 +750,7 @@ class AdminSystemService {
     logEntry: {
       action: string;
       status: 'started' | 'completed' | 'failed' | 'partial';
-      details?: any;
+      details?: unknown;
       error?: string;
     },
     userId?: string
@@ -833,7 +833,7 @@ class AdminSystemService {
     startedAt: string;
     completedAt?: string;
     durationMs?: number;
-    result?: any;
+    result?: unknown;
     errorMessage?: string;
   }>> {
     try {
@@ -857,7 +857,7 @@ class AdminSystemService {
     }
   }
   
-  async getSystemHealthStats(hours: number = 24): Promise<any> {
+  async getSystemHealthStats(hours: number = 24): Promise<unknown> {
     try {
       const supabase = createServerClient();
       
@@ -880,7 +880,7 @@ class AdminSystemService {
   async recordHealthCheck(
     checkType: string,
     status: 'healthy' | 'warning' | 'error' | 'unknown',
-    metrics?: any,
+    metrics?: unknown,
     responseTimeMs?: number,
     errorMessage?: string,
     performedBy?: string

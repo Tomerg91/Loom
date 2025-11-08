@@ -1,7 +1,7 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
+import type { ReactNode } from 'react';
 
 interface LocaleLayoutClientProps {
   children: ReactNode;

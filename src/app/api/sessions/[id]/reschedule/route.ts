@@ -3,15 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import {
+  createAuthenticatedSupabaseClient,
+  propagateCookies,
+} from '@/lib/api/auth-client';
+import {
   createSuccessResponse,
   createErrorResponse,
   withErrorHandling,
   HTTP_STATUS,
 } from '@/lib/api/utils';
-import {
-  createAuthenticatedSupabaseClient,
-  propagateCookies,
-} from '@/lib/api/auth-client';
 import { isCoachAvailable } from '@/lib/database/availability';
 import { getSessionById, updateSession } from '@/lib/database/sessions';
 import { sessionNotificationService } from '@/lib/notifications/session-notifications';

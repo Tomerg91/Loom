@@ -43,7 +43,7 @@ type ChallengeMode = 'totp' | 'backup';
 export function MfaChallengeForm({
   onVerify,
   onCancel,
-  onUseBackupCode,
+  _onUseBackupCode,
   isLoading = false,
   error,
   allowTrustDevice = true,
@@ -69,7 +69,7 @@ export function MfaChallengeForm({
   };
 
   const currentCode = mode === 'totp' ? verificationCode : backupCode;
-  const setCurrentCode = mode === 'totp' ? setVerificationCode : setBackupCode;
+  const _setCurrentCode = mode === 'totp' ? setVerificationCode : setBackupCode;
   const expectedLength = mode === 'totp' ? 6 : 8;
   const canSubmit = currentCode.length === expectedLength && !isLoading;
 

@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const allowedFields = ['filename', 'description', 'tags', 'file_category'];
     const filteredUpdates = Object.keys(updateData)
       .filter(key => allowedFields.includes(key))
-      .reduce((obj: any, key) => {
+      .reduce((obj: unknown, key) => {
         obj[key] = updateData[key];
         return obj;
       }, {});

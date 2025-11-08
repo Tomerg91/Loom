@@ -1,8 +1,8 @@
-import { screen, waitFor, fireEvent } from '@testing-library/react';
+import { screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-import { MfaChallengeForm, type MfaChallengeFormProps, type MfaChallengeData } from '@/components/auth/mfa/mfa-challenge-form';
+import { MfaChallengeFormProps} from '@/components/auth/mfa/mfa-challenge-form';
 import { renderWithProviders } from '@/test/utils';
 
 // Mock MFA verification input component
@@ -18,7 +18,7 @@ vi.mock('@/components/auth/mfa/mfa-verification-input', () => ({
     label, 
     placeholder,
     className 
-  }: any) => (
+  }: unknown) => (
     <div data-testid="mfa-verification-input" className={className}>
       {label && <label>{label}</label>}
       <input

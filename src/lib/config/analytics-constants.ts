@@ -42,7 +42,7 @@ export type PerformanceThreshold = keyof typeof ANALYTICS_CONFIG.PERFORMANCE_THR
 /**
  * Helper function to get session rate (could be extended to support different coach rates)
  */
-export function getSessionRate(coachId?: string): number {
+export function getSessionRate(_coachId?: string): number {
   // TODO: In future, could lookup coach-specific rates from database
   return ANALYTICS_CONFIG.DEFAULT_SESSION_RATE;
 }

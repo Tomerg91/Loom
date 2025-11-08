@@ -3,13 +3,13 @@ import type {
   Conversation,
   Message,
   MessageReaction,
-  MessageAttachment,
-  ConversationType,
+
+
   MessageType,
   MessageStatus,
   AttachmentType,
 } from '@/types';
-import type { Database } from '@/types/supabase';
+import type {} from '@/types/supabase';
 
 interface SendMessageParams {
   conversationId: string;
@@ -116,7 +116,7 @@ export class MessagingService {
 
     // Process conversations to include other participants and unread counts
     const processedConversations = await Promise.all(
-      data?.map(async (conversation: any) => {
+      data?.map(async (conversation: unknown) => {
         // Get other participants
         const { data: participants } = await this.supabase
           .from('conversation_participants')
@@ -157,7 +157,7 @@ export class MessagingService {
 
         return {
           ...conversation,
-          participants: participants?.map((p: any) => p.users) || [],
+          participants: participants?.map((p: unknown) => p.users) || [],
           unreadCount,
           lastMessage,
         };
@@ -194,7 +194,7 @@ export class MessagingService {
   }
 
   async getConversationMessages(params: GetConversationMessagesParams) {
-    const { conversationId, userId, limit, before, search } = params;
+    const { conversationId, _userId, limit, before, search } = params;
 
     let query = this.supabase
       .from('messages')
@@ -444,7 +444,7 @@ export class MessagingService {
     const { conversationId, userId, isArchived, isMuted } = params;
 
     try {
-      const updates: any = {};
+      const updates: unknown = {};
       if (isArchived !== undefined) updates.is_archived = isArchived;
       if (isMuted !== undefined) updates.is_muted = isMuted;
 
@@ -470,7 +470,7 @@ export class MessagingService {
     const { conversationId, userId, title } = params;
 
     try {
-      const updates: any = {};
+      const updates: unknown = {};
       if (title !== undefined) updates.title = title;
 
       const { error } = await this.supabase
@@ -646,7 +646,7 @@ export class MessagingService {
         throw error;
       }
 
-      return data?.map((indicator: any) => indicator.users) || [];
+      return data?.map((indicator: unknown) => indicator.users) || [];
     } catch (error) {
       console.error('Error getting typing indicators:', error);
       throw error;

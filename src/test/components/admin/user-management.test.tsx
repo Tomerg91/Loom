@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
@@ -25,26 +25,26 @@ vi.mock('@/components/ui/toast-provider', () => ({
 
 // Mock dashboard components
 vi.mock('@/components/dashboard', () => ({
-  DashboardHeader: ({ title, children }: any) => (
+  DashboardHeader: ({ title, children }: unknown) => (
     <div data-testid="dashboard-header">
       <h1>{title}</h1>
       {children}
     </div>
   ),
   LoadingState: () => <div data-testid="loading-state">Loading users...</div>,
-  ErrorState: ({ message, onRetry }: any) => (
+  ErrorState: ({ message, onRetry }: unknown) => (
     <div data-testid="error-state">
       <p>{message}</p>
       <button onClick={onRetry}>Retry</button>
     </div>
   ),
-  StatsCard: ({ title, value, icon }: any) => (
+  StatsCard: ({ title, value, _icon }: unknown) => (
     <div data-testid="stats-card">
       <span data-testid="stats-title">{title}</span>
       <span data-testid="stats-value">{value}</span>
     </div>
   ),
-  FilterControls: ({ searchTerm, onSearchChange, roleFilter, onRoleChange, statusFilter, onStatusChange }: any) => (
+  FilterControls: ({ searchTerm, onSearchChange, roleFilter, onRoleChange, statusFilter, onStatusChange }: unknown) => (
     <div data-testid="filter-controls">
       <input
         data-testid="search-input"
@@ -74,9 +74,9 @@ vi.mock('@/components/dashboard', () => ({
       </select>
     </div>
   ),
-  UserManagementTable: ({ users, onEdit, onDelete }: any) => (
+  UserManagementTable: ({ users, onEdit, onDelete }: unknown) => (
     <div data-testid="user-management-table">
-      {users.map((user: any) => (
+      {users.map((user: unknown) => (
         <div key={user.id} data-testid={`user-row-${user.id}`}>
           <span>{user.firstName} {user.lastName}</span>
           <span>{user.email}</span>
@@ -98,7 +98,7 @@ vi.mock('@/components/dashboard', () => ({
       ))}
     </div>
   ),
-  UserEditDialog: ({ open, user, onClose, onSave, isLoading }: any) =>
+  UserEditDialog: ({ open, user, onClose, onSave, isLoading }: unknown) =>
     open ? (
       <div data-testid="user-edit-dialog">
         <h2>Edit User</h2>
@@ -145,7 +145,7 @@ vi.mock('@/components/dashboard', () => ({
         </button>
       </div>
     ) : null,
-  UserDeleteDialog: ({ open, user, onClose, onConfirm, isLoading }: any) =>
+  UserDeleteDialog: ({ open, user, onClose, onConfirm, isLoading }: unknown) =>
     open ? (
       <div data-testid="user-delete-dialog">
         <h2>Delete User</h2>
@@ -162,7 +162,7 @@ vi.mock('@/components/dashboard', () => ({
         </button>
       </div>
     ) : null,
-  useFilteredData: vi.fn((data, searchTerm, filters) => data?.filter((item: any) => {
+  useFilteredData: vi.fn((data, searchTerm, filters) => data?.filter((item: unknown) => {
     if (searchTerm && !item.firstName.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
@@ -176,7 +176,7 @@ vi.mock('@/components/dashboard', () => ({
   }) || []),
   USER_ROLE_OPTIONS: ['admin', 'coach', 'client'],
   USER_STATUS_OPTIONS: ['active', 'inactive', 'suspended'],
-  User: {} as any, // Type mock
+  User: {} as unknown, // Type mock
 }));
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -218,13 +218,13 @@ describe('AdminUsersPage', () => {
     vi.clearAllMocks();
 
     // Mock toast
-    (useToast as any).mockReturnValue(mockToast);
+    (useToast as unknown).mockReturnValue(mockToast);
 
     // Mock query client
-    (useQueryClient as any).mockReturnValue(mockQueryClient);
+    (useQueryClient as unknown).mockReturnValue(mockQueryClient);
 
     // Mock queries
-    (useQuery as any).mockImplementation(({ queryKey }: any) => {
+    (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
       if (queryKey[0] === 'admin-users') {
         return mockUseQuery({ users: mockUsers, total: mockUsers.length });
       }
@@ -235,7 +235,7 @@ describe('AdminUsersPage', () => {
     });
 
     // Mock mutations
-    (useMutation as any).mockImplementation(({ mutationFn }: any) => {
+    (useMutation as unknown).mockImplementation(({ mutationFn }: unknown) => {
       if (mutationFn.name.includes('update') || mutationFn.toString().includes('PUT')) {
         return mockUpdateMutation;
       }
@@ -300,7 +300,7 @@ describe('AdminUsersPage', () => {
 
   describe('Data Loading States', () => {
     it('shows loading state while fetching users', () => {
-      (useQuery as any).mockImplementation(({ queryKey }: any) => {
+      (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'admin-users') {
           return { ...mockUseQuery(null), isLoading: true };
         }
@@ -317,7 +317,7 @@ describe('AdminUsersPage', () => {
     });
 
     it('shows error state when user fetch fails', () => {
-      (useQuery as any).mockImplementation(({ queryKey }: any) => {
+      (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'admin-users') {
           return {
             ...mockUseQuery(null),
@@ -336,7 +336,7 @@ describe('AdminUsersPage', () => {
 
     it('allows retry after error', async () => {
       const refetch = vi.fn();
-      (useQuery as any).mockImplementation(({ queryKey }: any) => {
+      (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'admin-users') {
           return {
             ...mockUseQuery(null),
@@ -556,7 +556,7 @@ describe('AdminUsersPage', () => {
 
     it('shows loading state during save', async () => {
       const loadingMutation = { ...mockUpdateMutation, isPending: true };
-      (useMutation as any).mockImplementation(() => loadingMutation);
+      (useMutation as unknown).mockImplementation(() => loadingMutation);
       
       renderWithProviders(<AdminUsersPage />);
       
@@ -658,7 +658,7 @@ describe('AdminUsersPage', () => {
 
     it('shows loading state during deletion', async () => {
       const loadingMutation = { ...mockDeleteMutation, isPending: true };
-      (useMutation as any).mockImplementation(() => loadingMutation);
+      (useMutation as unknown).mockImplementation(() => loadingMutation);
       
       renderWithProviders(<AdminUsersPage />);
       
@@ -700,7 +700,7 @@ describe('AdminUsersPage', () => {
     });
 
     it('handles missing analytics data gracefully', () => {
-      (useQuery as any).mockImplementation(({ queryKey }: any) => {
+      (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'admin-users') {
           return mockUseQuery({ users: mockUsers, total: mockUsers.length });
         }
@@ -738,8 +738,8 @@ describe('AdminUsersPage', () => {
       renderWithProviders(<AdminUsersPage />);
       
       // Trigger the query function
-      const queryCall = (useQuery as any).mock.calls.find(
-        (call: any) => call[0].queryKey[0] === 'admin-users'
+      const queryCall = (useQuery as unknown).mock.calls.find(
+        (call: unknown) => call[0].queryKey[0] === 'admin-users'
       );
       
       if (queryCall) {
@@ -752,7 +752,7 @@ describe('AdminUsersPage', () => {
     });
 
     it('handles API errors appropriately', () => {
-      (useQuery as any).mockImplementation(({ queryKey }: any) => {
+      (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'admin-users') {
           return {
             ...mockUseQuery(null),
@@ -802,7 +802,7 @@ describe('AdminUsersPage', () => {
         lastName: 'Admin',
       };
       
-      (useQuery as any).mockImplementation(({ queryKey }: any) => {
+      (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'admin-users') {
           return mockUseQuery({ users: [superAdminUser], total: 1 });
         }
@@ -837,7 +837,7 @@ describe('AdminUsersPage', () => {
         email: `user${i}@example.com`,
       }));
 
-      (useQuery as any).mockImplementation(({ queryKey }: any) => {
+      (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'admin-users') {
           return mockUseQuery({ users: manyUsers.slice(0, 20), total: 100 });
         }
@@ -920,7 +920,7 @@ describe('AdminUsersPage', () => {
 
   describe('Edge Cases', () => {
     it('handles empty user list', () => {
-      (useQuery as any).mockImplementation(({ queryKey }: any) => {
+      (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'admin-users') {
           return mockUseQuery({ users: [], total: 0 });
         }
@@ -956,7 +956,7 @@ describe('AdminUsersPage', () => {
         error: new Error('Network error'),
       };
       
-      (useMutation as any).mockImplementation(() => failingMutation);
+      (useMutation as unknown).mockImplementation(() => failingMutation);
       
       renderWithProviders(<AdminUsersPage />);
       

@@ -70,7 +70,7 @@ export function ResourceValidationReport({ onRefresh }: ResourceValidationReport
     }
   };
 
-  const getSeverityBadge = (severity: 'critical' | 'warning' | 'info') => {
+  const _getSeverityBadge = (severity: 'critical' | 'warning' | 'info') => {
     switch (severity) {
       case 'critical':
         return <Badge variant="destructive">Critical</Badge>;

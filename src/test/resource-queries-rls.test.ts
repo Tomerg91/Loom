@@ -119,7 +119,7 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
 
   afterEach(async () => {
     // Cleanup in reverse order of dependencies
-    await (adminClient as any)
+    await (adminClient as unknown)
       .from('resource_client_progress')
       .delete()
       .in('client_id', [client1Id]);
@@ -127,11 +127,11 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
       .from('file_shares')
       .delete()
       .in('file_id', [file1Id, file2Id]);
-    await (adminClient as any)
+    await (adminClient as unknown)
       .from('resource_collection_items')
       .delete()
       .in('file_id', [file1Id, file2Id]);
-    await (adminClient as any)
+    await (adminClient as unknown)
       .from('resource_collections')
       .delete()
       .in('coach_id', [coach1Id, coach2Id]);
@@ -148,7 +148,7 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
   describe('resource_collection_items queries', () => {
     it('should correctly reference file_id when adding items to collection', async () => {
       // Create collection
-      const { data: collection, error: collectionError } = await (adminClient as any)
+      const { data: collection, error: collectionError } = await (adminClient as unknown)
         .from('resource_collections')
         .insert({
           coach_id: coach1Id,
@@ -160,10 +160,10 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
 
       expect(collectionError).toBeNull();
       expect(collection).toBeTruthy();
-      collection1Id = (collection as any)!.id;
+      collection1Id = (collection as unknown)!.id;
 
       // Add item to collection (should use file_id, not resource_id)
-      const { data: item, error: itemError } = await (adminClient as any)
+      const { data: item, error: itemError } = await (adminClient as unknown)
         .from('resource_collection_items')
         .insert({
           collection_id: collection1Id,
@@ -175,13 +175,13 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
 
       expect(itemError).toBeNull();
       expect(item).toBeTruthy();
-      expect((item as any)!.file_id).toBe(file1Id);
-      expect((item as any)!.collection_id).toBe(collection1Id);
+      expect((item as unknown)!.file_id).toBe(file1Id);
+      expect((item as unknown)!.collection_id).toBe(collection1Id);
     });
 
     it('should correctly join file_uploads using file_id foreign key', async () => {
       // Create collection and item
-      const { data: collection } = await (adminClient as any)
+      const { data: collection } = await (adminClient as unknown)
         .from('resource_collections')
         .insert({
           coach_id: coach1Id,
@@ -190,16 +190,16 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
         .select('id')
         .single();
 
-      collection1Id = (collection as any)!.id;
+      collection1Id = (collection as unknown)!.id;
 
-      await (adminClient as any).from('resource_collection_items').insert({
+      await (adminClient as unknown).from('resource_collection_items').insert({
         collection_id: collection1Id,
         file_id: file1Id,
         sort_order: 1,
       });
 
       // Query with join (this tests the foreign key relationship)
-      const { data: items, error } = await (adminClient as any)
+      const { data: items, error } = await (adminClient as unknown)
         .from('resource_collection_items')
         .select(
           `
@@ -211,16 +211,16 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
 
       expect(error).toBeNull();
       expect(items).toHaveLength(1);
-      expect((items as any)![0].file_id).toBe(file1Id);
-      expect((items as any)![0].file_uploads).toBeTruthy();
-      expect((items as any)![0].file_uploads.id).toBe(file1Id);
+      expect((items as unknown)![0].file_id).toBe(file1Id);
+      expect((items as unknown)![0].file_uploads).toBeTruthy();
+      expect((items as unknown)![0].file_uploads.id).toBe(file1Id);
     });
   });
 
   describe('resource_client_progress queries', () => {
     it('should correctly reference file_id when tracking progress', async () => {
       // Track progress (should use file_id, not resource_id)
-      const { data: progress, error } = await (adminClient as any)
+      const { data: progress, error } = await (adminClient as unknown)
         .from('resource_client_progress')
         .insert({
           file_id: file1Id,
@@ -233,13 +233,13 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
 
       expect(error).toBeNull();
       expect(progress).toBeTruthy();
-      expect((progress as any)!.file_id).toBe(file1Id);
-      expect((progress as any)!.client_id).toBe(client1Id);
+      expect((progress as unknown)!.file_id).toBe(file1Id);
+      expect((progress as unknown)!.client_id).toBe(client1Id);
     });
 
     it('should correctly query progress by file_id', async () => {
       // Create progress record
-      await (adminClient as any).from('resource_client_progress').insert({
+      await (adminClient as unknown).from('resource_client_progress').insert({
         file_id: file1Id,
         client_id: client1Id,
         viewed_at: new Date().toISOString(),
@@ -247,26 +247,26 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
       });
 
       // Query by file_id
-      const { data: progressRecords, error } = await (adminClient as any)
+      const { data: progressRecords, error } = await (adminClient as unknown)
         .from('resource_client_progress')
         .select('*')
         .eq('file_id', file1Id);
 
       expect(error).toBeNull();
       expect(progressRecords).toHaveLength(1);
-      expect((progressRecords as any)![0].file_id).toBe(file1Id);
+      expect((progressRecords as unknown)![0].file_id).toBe(file1Id);
     });
 
     it('should correctly join file_uploads using file_id foreign key', async () => {
       // Create progress record
-      await (adminClient as any).from('resource_client_progress').insert({
+      await (adminClient as unknown).from('resource_client_progress').insert({
         file_id: file1Id,
         client_id: client1Id,
         viewed_at: new Date().toISOString(),
       });
 
       // Query with join
-      const { data: progressRecords, error } = await (adminClient as any)
+      const { data: progressRecords, error } = await (adminClient as unknown)
         .from('resource_client_progress')
         .select(
           `
@@ -278,9 +278,9 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
 
       expect(error).toBeNull();
       expect(progressRecords).toHaveLength(1);
-      expect((progressRecords as any)![0].file_id).toBe(file1Id);
-      expect((progressRecords as any)![0].file_uploads).toBeTruthy();
-      expect((progressRecords as any)![0].file_uploads.id).toBe(file1Id);
+      expect((progressRecords as unknown)![0].file_id).toBe(file1Id);
+      expect((progressRecords as unknown)![0].file_uploads).toBeTruthy();
+      expect((progressRecords as unknown)![0].file_uploads.id).toBe(file1Id);
     });
   });
 
@@ -314,7 +314,7 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
   describe('Error handling for RLS violations', () => {
     it('should detect when trying to add unauthorized file to collection', async () => {
       // Create collection for coach1
-      const { data: collection } = await (adminClient as any)
+      const { data: collection } = await (adminClient as unknown)
         .from('resource_collections')
         .insert({
           coach_id: coach1Id,
@@ -323,7 +323,7 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
         .select('id')
         .single();
 
-      collection1Id = (collection as any)!.id;
+      collection1Id = (collection as unknown)!.id;
 
       // Create client for coach1 to test as
       const coach1Client = createClient<Database>(
@@ -343,7 +343,7 @@ describe.skipIf(skipReason)('Resource Library Query RLS Compliance', () => {
       );
 
       // Try to add coach2's file to coach1's collection (should fail RLS)
-      const { error } = await (coach1Client as any)
+      const { error } = await (coach1Client as unknown)
         .from('resource_collection_items')
         .insert({
           collection_id: collection1Id,

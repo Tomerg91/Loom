@@ -17,9 +17,8 @@ import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
 
-import { UserGrowthChart, SessionMetricsChart } from '@/components/charts/chart-components';
 import { EnhancedUserGrowthChart, EnhancedSessionMetricsChart } from '@/components/charts/enhanced-chart-components';
-import { AnalyticsErrorBoundary, AnalyticsCardWrapper, ChartErrorFallback } from '@/components/error/analytics-error-boundary';
+import { AnalyticsErrorBoundary, ChartErrorFallback } from '@/components/error/analytics-error-boundary';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -236,9 +235,9 @@ export function AdminAnalyticsPage() {
       const totalUsers = overview.totalUsers;
       const previousTotals = overview.previousMonth?.totalUsers ?? 0;
       const totalCoaches = analytics.coachPerformance.length;
-      const totalClients = Math.max(totalUsers - totalCoaches, 0);
-      const newUsersThisMonth = Math.max(totalUsers - previousTotals, 0);
-      const completionRate = totalUsers
+      const _totalClients = Math.max(totalUsers - totalCoaches, 0);
+      const _newUsersThisMonth = Math.max(totalUsers - previousTotals, 0);
+      const _completionRate = totalUsers
         ? Math.round((overview.completedSessions / Math.max(overview.totalSessions, 1)) * 100)
         : 0;
 
@@ -306,7 +305,7 @@ export function AdminAnalyticsPage() {
     }
   };
 
-  const handleSystemHealth = () => {
+  const _handleSystemHealth = () => {
     setSystemHealthOpen(true);
   };
 

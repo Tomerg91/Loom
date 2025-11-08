@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Assistant, Inter } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
-
 import type { ReactNode } from 'react';
 
 import { EnvironmentCheck } from '@/components/environment-check';
@@ -12,6 +11,7 @@ import { SkipLink } from '@/components/ui/skip-link';
 import { getLocaleDirection, isAppLocale } from '@/modules/i18n/config';
 import { LocaleDirectionProvider } from '@/modules/i18n/direction-context';
 import { routing } from '@/modules/i18n/routing';
+
 import '../globals.css';
 import { LocaleLayoutClient } from './locale-layout-client';
 

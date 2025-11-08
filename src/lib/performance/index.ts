@@ -143,11 +143,11 @@ export const PerformanceUtils = {
     if (typeof navigator === 'undefined') return false;
     
     // Check memory (if available)
-    const memory = (navigator as any).deviceMemory;
+    const memory = (navigator as unknown).deviceMemory;
     if (memory && memory <= 4) return true;
     
     // Check connection (if available)
-    const connection = (navigator as any).connection;
+    const connection = (navigator as unknown).connection;
     if (connection && (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g')) {
       return true;
     }
@@ -198,15 +198,15 @@ export const usePerformanceMonitoring = () => {
   }
   
   return {
-    trackEvent: (name: string, properties?: Record<string, any>) => {
+    trackEvent: (name: string, properties?: Record<string, unknown>) => {
       if ('gtag' in window) {
-        (window as any).gtag('event', name, properties);
+        (window as unknown).gtag('event', name, properties);
       }
     },
     
     trackTiming: (name: string, duration: number) => {
       if ('gtag' in window) {
-        (window as any).gtag('event', 'timing_complete', {
+        (window as unknown).gtag('event', 'timing_complete', {
           name,
           value: Math.round(duration),
         });
@@ -214,7 +214,7 @@ export const usePerformanceMonitoring = () => {
     },
     
     getMetrics: () => {
-      const memory = (performance as any).memory;
+      const memory = (performance as unknown).memory;
       return {
         memory: memory ? {
           used: memory.usedJSHeapSize,

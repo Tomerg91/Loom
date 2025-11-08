@@ -97,8 +97,8 @@ function addPerformanceHeaders(response: NextResponse, startTime: number, fromCa
 
 // Streaming response helper for large datasets
 export async function createStreamingResponse<T>(
-  data: T[], 
-  transform: (item: T) => any = (item) => item,
+  data: T[],
+  transform: (item: T) => unknown = (item) => item,
   chunkSize = 100
 ): Promise<Response> {
   const encoder = new TextEncoder();
@@ -144,7 +144,7 @@ export async function createStreamingResponse<T>(
 // Batch API requests helper
 export class BatchRequestOptimizer {
   private batches = new Map<string, {
-    requests: Array<{ resolve: (data: any) => void; reject: (error: any) => void; id: string }>;
+    requests: Array<{ resolve: (data: unknown) => void; reject: (error: unknown) => void; id: string }>;
     timeout: NodeJS.Timeout;
   }>();
   

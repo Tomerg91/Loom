@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Generate performance recommendations based on metrics
-function generatePerformanceRecommendations(metrics: any[]): string[] {
+function generatePerformanceRecommendations(metrics: unknown[]): string[] {
   const recommendations: string[] = [];
   
   for (const metric of metrics) {
@@ -245,7 +245,7 @@ function getPerformanceRecommendations(): string[] {
 }
 
 // Helper functions (not exported as route handlers)
-function checkPerformanceThresholds(metrics: any[]): Array<{
+function _checkPerformanceThresholds(metrics: unknown[]): Array<{
   metric: string;
   value: number;
   threshold: number;

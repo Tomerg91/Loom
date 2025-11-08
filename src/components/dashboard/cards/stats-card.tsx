@@ -3,7 +3,6 @@ import React from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-import { DashboardStats } from '../shared/types';
 
 interface StatsCardProps {
   title: string;

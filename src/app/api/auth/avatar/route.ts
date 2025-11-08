@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 
-import { ApiError } from '@/lib/api/errors';
 import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
+import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { config } from '@/lib/config';
 import { authService } from '@/lib/services/auth-service';

@@ -1,7 +1,7 @@
 'use client';
 
 import { 
-  FileIcon, 
+ 
   FolderIcon, 
   SearchIcon, 
   FilterIcon,
@@ -9,16 +9,16 @@ import {
   ListIcon,
   SortAscIcon,
   SortDescIcon,
-  MoreVerticalIcon,
+
   DownloadIcon,
   ShareIcon,
-  TrashIcon,
+
   EyeIcon,
-  EditIcon,
-  CopyIcon,
-  InfoIcon,
+
+
+
   CalendarIcon,
-  UserIcon,
+
   TagIcon,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -35,11 +35,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+ 
+ 
+ 
+ 
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { OptimizedThumbnailImage, OptimizedPreviewImage } from '@/components/ui/optimized-image';
@@ -304,7 +303,7 @@ function FileBrowserComponent({
   loading,
   viewMode: initialViewMode = 'list',
   allowMultiSelect = true,
-  allowContextMenu = true,
+  _allowContextMenu = true,
   selectedFiles = [],
   onSelectionChange,
   onFileAction,
@@ -324,7 +323,7 @@ function FileBrowserComponent({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [internalSelectedFiles, setInternalSelectedFiles] = useState<string[]>(selectedFiles);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
-  const [contextMenuFile, setContextMenuFile] = useState<FileItem | null>(null);
+  const [_contextMenuFile, _setContextMenuFile] = useState<FileItem | null>(null);
 
   // Sync external selection changes
   useEffect(() => {
@@ -352,7 +351,7 @@ function FileBrowserComponent({
 
     // Sort files
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: unknown, bValue: unknown;
       
       switch (sortBy) {
         case 'filename':
@@ -514,8 +513,8 @@ function FileBrowserComponent({
           {/* Sort */}
           <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
             const [field, order] = value.split('-');
-            setSortBy(field as any);
-            setSortOrder(order as any);
+            setSortBy(field as unknown);
+            setSortOrder(order as unknown);
           }}>
             <SelectTrigger className="w-48">
               {sortOrder === 'asc' ? (

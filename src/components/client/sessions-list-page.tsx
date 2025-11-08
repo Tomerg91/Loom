@@ -58,7 +58,7 @@ const statusColors = {
 };
 
 export function SessionsListPage() {
-  const t = useTranslations('client.sessions');
+  const _t = useTranslations('client.sessions');
   const router = useRouter();
   const locale = useLocale();
   const withLocale = (path: string) => `/${locale}${path}`;

@@ -146,7 +146,7 @@ export async function GET(
     // Create a fake request with the query params in the body
     const fakeRequest = {
       json: async () => ({ version_a: versionA, version_b: versionB })
-    } as any;
+    } as unknown;
 
     // Reuse the POST logic
     return await POST(fakeRequest, { params });

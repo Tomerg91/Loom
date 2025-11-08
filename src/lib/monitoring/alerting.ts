@@ -347,7 +347,7 @@ export class AlertManager {
         ...alert.metadata,
       });
     } else {
-      captureMessage(alert.message, alert.severity as any);
+      captureMessage(alert.message, alert.severity as unknown);
     }
   }
   

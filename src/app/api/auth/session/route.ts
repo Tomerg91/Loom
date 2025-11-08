@@ -18,12 +18,12 @@ export async function POST(request: NextRequest) {
     // Create a response and a server client wired to set cookies on it
     // Create a JSON response upfront so Supabase can attach cookies to it
     const res = NextResponse.json({ ok: true, message: 'Session established' });
-    const supabase = createServerClientWithRequest(request as any, res as any);
+    const supabase = createServerClientWithRequest(request as unknown, res as unknown);
 
     const { error } = await supabase.auth.setSession({
       access_token,
       refresh_token,
-    } as any);
+    } as unknown);
 
     if (error) {
       return createErrorResponse(error.message, HTTP_STATUS.UNAUTHORIZED);

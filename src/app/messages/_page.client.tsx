@@ -24,7 +24,6 @@ import { MessageComposer } from '@/components/messages/message-composer';
 import { MessageThread } from '@/components/messages/message-thread';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -95,7 +94,7 @@ export default function MessagesClientPage() {
     setSelectedConversationId(null);
   };
 
-  const handleNewConversation = (recipientId: string) => {
+  const handleNewConversation = (_recipientId: string) => {
     setShowContactSearch(false);
   };
 

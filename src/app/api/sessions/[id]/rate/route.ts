@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import {
+  createAuthenticatedSupabaseClient,
+  propagateCookies,
+} from '@/lib/api/auth-client';
+import {
   createSuccessResponse,
   createErrorResponse,
   withErrorHandling,
   HTTP_STATUS,
 } from '@/lib/api/utils';
-import {
-  createAuthenticatedSupabaseClient,
-  propagateCookies,
-} from '@/lib/api/auth-client';
 import { getSessionById } from '@/lib/database/sessions';
 import { createCorsResponse } from '@/lib/security/cors';
 

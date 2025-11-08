@@ -4,7 +4,7 @@ import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/
 
 import { createClient } from '@/lib/supabase/client';
 
-type SubscriptionCallback<T extends { [key: string]: any } = { [key: string]: any }> = (payload: RealtimePostgresChangesPayload<T>) => void;
+type SubscriptionCallback<T extends { [key: string]: unknown } = { [key: string]: unknown }> = (payload: RealtimePostgresChangesPayload<T>) => void;
 
 interface ConnectionStatus {
   isConnected: boolean;
@@ -134,7 +134,7 @@ export class RealtimeClient {
       this.unsubscribe(channelName);
     }
 
-    const wrappedCallback = (payload: RealtimePostgresChangesPayload<any>) => {
+    const wrappedCallback = (payload: RealtimePostgresChangesPayload<unknown>) => {
       try {
         // Additional security check: ensure the payload is for the correct user
         if (payload.new && payload.new.user_id !== userId) {

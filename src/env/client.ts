@@ -5,8 +5,8 @@
  */
 import {
   clientEnv as runtimeClientEnv,
-  PLACEHOLDER_SUPABASE_ANON_KEY,
-  PLACEHOLDER_SUPABASE_URL,
+
+
 } from './runtime';
 
 export const clientEnv = runtimeClientEnv;

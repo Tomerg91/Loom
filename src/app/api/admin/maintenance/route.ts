@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
-
 import { rateLimit } from '@/lib/security/rate-limit';
 import { authService } from '@/lib/services/auth-service';
 
@@ -99,7 +98,7 @@ export const POST = maintenanceRateLimit(async function(request: NextRequest): P
     
     const operationPromise = adminSystemService.performMaintenanceAction(action, params, session.user.id);
     
-    const result = await Promise.race([operationPromise, timeoutPromise]) as any;
+    const result = await Promise.race([operationPromise, timeoutPromise]) as unknown;
 
     if (!result.success) {
       console.error(`[MAINTENANCE] Failed: ${action}`, {
@@ -154,7 +153,7 @@ export const POST = maintenanceRateLimit(async function(request: NextRequest): P
 });
 
 // GET endpoint to check maintenance operation status
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(_request: NextRequest): Promise<NextResponse> {
   try {
     // Verify admin access
     const session = await authService.getSession();

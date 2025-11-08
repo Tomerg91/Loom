@@ -42,7 +42,7 @@ class FileService {
   private readonly MAX_RETRY_ATTEMPTS = 3;
   private readonly RETRY_DELAY_MS = 1000;
 
-  private classifyStorageError(error: any): {
+  private classifyStorageError(error: unknown): {
     type: StorageErrorType;
     retryable: boolean;
   } {
@@ -289,7 +289,7 @@ class FileService {
       }
 
       return { isValid: true };
-    } catch (error) {
+    } catch (_error) {
       return { isValid: false, error: 'File content validation failed' };
     }
   }
@@ -332,7 +332,7 @@ class FileService {
     fileName: string,
     options: FileUploadOptions
   ): Promise<FileUploadResult> {
-    let lastError: any = null;
+    let lastError: unknown = null;
 
     for (let attempt = 1; attempt <= this.MAX_RETRY_ATTEMPTS; attempt++) {
       try {

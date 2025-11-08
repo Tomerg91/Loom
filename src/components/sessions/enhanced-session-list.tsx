@@ -1,10 +1,10 @@
 'use client';
 
-import { format, parseISO, subMonths, addMonths } from 'date-fns';
+import { format} from 'date-fns';
 import { 
   Calendar, 
-  Clock, 
-  User, 
+ 
+ 
   Video, 
   Phone,
   MapPin,
@@ -13,7 +13,7 @@ import {
   SortAsc,
   SortDesc,
   Download,
-  Grid3X3,
+
   List,
   BarChart3,
   ChevronDown,
@@ -25,11 +25,11 @@ import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/lib/auth/use-user';
 import { useFilteredSessions } from '@/lib/queries/sessions';
 import type { 

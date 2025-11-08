@@ -8,13 +8,12 @@ import {
   isThisWeek, 
   startOfWeek, 
   endOfWeek,
-  differenceInDays,
-  isSameMonth
+
 } from 'date-fns';
 import { 
   Calendar, 
   Clock, 
-  User, 
+ 
   Video, 
   Phone, 
   MapPin, 
@@ -26,14 +25,12 @@ import {
   MessageSquare,
   Paperclip,
   TrendingUp,
-  Award
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Session, SessionStatus, SessionType } from '@/types';
 

@@ -270,7 +270,7 @@ export const deleteSession = (sessionId: string) => sessionService.deleteSession
 // Export workflow methods
 export const startSession = (sessionId: string) => sessionService.startSession(sessionId);
 export const completeSession = (sessionId: string, notes?: string) => sessionService.completeSession(sessionId, notes);
-export const cancelSession = (sessionId: string, reason?: string) => sessionService.cancelSession(sessionId);
+export const cancelSession = (sessionId: string, _reason?: string) => sessionService.cancelSession(sessionId);
 export const markNoShow = (sessionId: string, reason?: string) => sessionService.markNoShow(sessionId, reason);
 export const updateSessionStatus = (sessionId: string, status: SessionStatus) => sessionService.updateSessionStatus(sessionId, status);
 

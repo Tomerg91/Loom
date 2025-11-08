@@ -23,12 +23,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuthStore } from '@/lib/store/auth-store';
 import type { AuthUser } from '@/lib/auth/auth';
+import { useAuthStore } from '@/lib/store/auth-store';
 import { completeMfa } from '@/modules/auth/api/mfa';
 import { mfaQueryKeys, useMfaVerification } from '@/modules/auth/hooks/useMfa';
-import { supabase } from '@/modules/platform/supabase/client';
 import type { MfaMethod } from '@/modules/auth/types';
+import { supabase } from '@/modules/platform/supabase/client';
 
 const mfaVerificationSchema = z.object({
   code: z

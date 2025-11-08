@@ -76,12 +76,12 @@ export const GET = compose(async function(request: NextRequest) {
   }
 }, withAuth, withRole(['admin']), withRateLimit());
 
-async function checkDatabaseHealth(supabase: any) {
+async function checkDatabaseHealth(supabase: unknown) {
   const startTime = Date.now();
   
   try {
     // Test database connectivity and performance
-    const { data, error } = await supabase
+    const { _data, error } = await supabase
       .from('users')
       .select('count', { count: 'exact', head: true });
     
@@ -196,7 +196,7 @@ async function simulateCacheCheck() {
   };
 }
 
-async function checkServicesHealth(supabase: any) {
+async function checkServicesHealth(supabase: unknown) {
   const services = {
     analytics: await checkAnalyticsService(supabase),
     notifications: await checkNotificationsService(supabase),
@@ -206,10 +206,10 @@ async function checkServicesHealth(supabase: any) {
   return services;
 }
 
-async function checkAnalyticsService(supabase: any): Promise<'healthy' | 'warning' | 'error'> {
+async function checkAnalyticsService(supabase: unknown): Promise<'healthy' | 'warning' | 'error'> {
   try {
     // Test analytics by checking recent session data
-    const { data, error } = await supabase
+    const { _data, error } = await supabase
       .from('sessions')
       .select('id')
       .limit(1);
@@ -220,10 +220,10 @@ async function checkAnalyticsService(supabase: any): Promise<'healthy' | 'warnin
   }
 }
 
-async function checkNotificationsService(supabase: any): Promise<'healthy' | 'warning' | 'error'> {
+async function checkNotificationsService(supabase: unknown): Promise<'healthy' | 'warning' | 'error'> {
   try {
     // Test notifications by checking notifications table
-    const { data, error } = await supabase
+    const { _data, error } = await supabase
       .from('notifications')
       .select('id')
       .limit(1);
@@ -234,10 +234,10 @@ async function checkNotificationsService(supabase: any): Promise<'healthy' | 'wa
   }
 }
 
-async function checkFileStorageService(supabase: any): Promise<'healthy' | 'warning' | 'error'> {
+async function checkFileStorageService(supabase: unknown): Promise<'healthy' | 'warning' | 'error'> {
   try {
     // Test file storage by checking Supabase storage
-    const { data, error } = await supabase.storage
+    const { _data, error } = await supabase.storage
       .from('files')
       .list('', { limit: 1 });
     
@@ -248,21 +248,21 @@ async function checkFileStorageService(supabase: any): Promise<'healthy' | 'warn
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   return NextResponse.json(
     { error: 'Method not allowed' },
     { status: 405 }
   );
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(_request: NextRequest) {
   return NextResponse.json(
     { error: 'Method not allowed' },
     { status: 405 }
   );
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
   return NextResponse.json(
     { error: 'Method not allowed' },
     { status: 405 }

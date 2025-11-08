@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+
 import { FileMetadata } from '@/lib/services/file-management-service';
 
 interface UseFilesParams {

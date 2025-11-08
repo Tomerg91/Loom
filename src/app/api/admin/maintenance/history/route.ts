@@ -17,7 +17,7 @@ const historyQuerySchema = z.object({
 export const GET = withAdminSecurity(
   async function(
     request: NextRequest,
-    _context: { user: any; headers: Record<string, string> }
+    _context: { user: unknown; headers: Record<string, string> }
   ): Promise<NextResponse> {
     try {
       const { searchParams } = new URL(request.url);

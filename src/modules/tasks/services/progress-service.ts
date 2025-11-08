@@ -6,7 +6,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/server';
-import type { Database } from '@/types/supabase';
+import type {} from '@/types/supabase';
 
 import type { TaskActor } from './task-service';
 import type {

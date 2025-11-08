@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     // Ensure Supabase session cookies are set on the final response
     const finalClient = createServerClientWithRequest(request, res);
     const { access_token, refresh_token } = data.session;
-    await finalClient.auth.setSession({ access_token, refresh_token } as any);
+    await finalClient.auth.setSession({ access_token, refresh_token } as unknown);
 
     // For MFA flow A (session-before-MFA), set a non-HTTP-only mfa_pending cookie
     if (requiresMFA) {

@@ -10,7 +10,7 @@ import {
   Monitor, 
   RefreshCw, 
   Server, 
-  TrendingUp,
+
   Users,
   FileText,
   Shield,
@@ -25,7 +25,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { alertManager } from '@/lib/monitoring/alerting';
 
@@ -43,7 +42,7 @@ interface SystemHealth {
   performance: {
     responseTime: string;
     uptime: string;
-    cpuUsage: any;
+    cpuUsage: unknown;
     nodeVersion: string;
   };
 }
@@ -109,7 +108,7 @@ export default function MonitoringDashboard() {
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [businessMetrics, setBusinessMetrics] = useState<BusinessMetrics | null>(null);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
-  const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
+  const [activeAlerts, setActiveAlerts] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [autoRefresh, setAutoRefresh] = useState(true);

@@ -29,7 +29,7 @@ export function useRealtimeBookings() {
           table: 'sessions',
           filter: `client_id=eq.${user.id},coach_id=eq.${user.id}`,
         },
-        (payload: RealtimePostgresChangesPayload<any>) => {
+        (payload: RealtimePostgresChangesPayload<unknown>) => {
           console.log('Session change detected:', payload);
           
           // Invalidate relevant queries
@@ -76,7 +76,7 @@ export function useRealtimeBookings() {
           schema: 'public',
           table: 'coach_availability',
         },
-        (payload: RealtimePostgresChangesPayload<any>) => {
+        (payload: RealtimePostgresChangesPayload<unknown>) => {
           console.log('Availability change detected:', payload);
           
           // Invalidate time slots queries for affected coach
@@ -101,7 +101,7 @@ export function useRealtimeBookings() {
           table: 'notifications',
           filter: `user_id=eq.${user.id}`,
         },
-        (payload: RealtimePostgresChangesPayload<any>) => {
+        (payload: RealtimePostgresChangesPayload<unknown>) => {
           console.log('New notification:', payload);
           
           // Invalidate notifications query

@@ -8,14 +8,13 @@ import {
   Info, 
   X, 
   Bell,
-  ExternalLink,
+
   Clock,
   Loader2
 } from 'lucide-react';
 import React, { createContext, useContext, useCallback, useState, useEffect, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 export type EnhancedToastType = 'success' | 'error' | 'warning' | 'info' | 'loading' | 'notification';
@@ -537,10 +536,10 @@ export function useAsyncToast() {
 
   return useCallback(
     async (
-      promise: Promise<any>,
+      promise: Promise<unknown>,
       options: {
         loading?: string;
-        success?: string | ((data: any) => string);
+        success?: string | ((data: unknown) => string);
         error?: string | ((error: Error) => string);
       }
     ) => {

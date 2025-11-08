@@ -19,7 +19,7 @@ interface AvailabilitySlot {
 }
 
 export class AvailabilityService {
-  private supabase: any;
+  private supabase: unknown;
 
   constructor(isServer = true) {
     this.supabase = isServer ? createServerClient() : createClient();
@@ -313,9 +313,9 @@ export class AvailabilityService {
   private getConflictInfo(
     startMinutes: number,
     endMinutes: number,
-    existingSessions: Array<any>,
+    existingSessions: Array<unknown>,
     detailed: boolean
-  ): { hasConflict: boolean; session?: any } {
+  ): { hasConflict: boolean; session?: unknown } {
     const conflictingSession = existingSessions.find(session => {
       const sessionTime = new Date(session.scheduled_at);
       const sessionStartMinutes = sessionTime.getHours() * 60 + sessionTime.getMinutes();

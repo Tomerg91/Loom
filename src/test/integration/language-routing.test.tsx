@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { routing } from '@/i18n/routing';
 
 // Mock Next.js modules for routing integration test
-const mockRequest = (pathname: string, headers: Record<string, string> = {}) => ({
+const _mockRequest = (pathname: string, headers: Record<string, string> = {}) => ({
   nextUrl: { pathname, clone: () => ({ pathname }) },
   headers: new Map(Object.entries({
     'accept-language': 'he,en;q=0.9',
@@ -16,7 +16,7 @@ const mockRequest = (pathname: string, headers: Record<string, string> = {}) => 
   url: `http://localhost:3000${pathname}`,
 });
 
-const mockResponse = {
+const _mockResponse = {
   redirect: vi.fn(),
   rewrite: vi.fn(),
   next: vi.fn(() => ({ headers: new Map() })),

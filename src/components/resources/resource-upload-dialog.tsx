@@ -122,7 +122,7 @@ export function ResourceUploadDialog({
   });
 
   // Dropzone for file upload
-  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: unknown[]) => {
     setError(null);
 
     if (rejectedFiles.length > 0) {

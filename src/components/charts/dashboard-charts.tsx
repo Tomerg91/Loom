@@ -19,7 +19,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-import { CHART_COLORS, MULTI_COLORS, CustomTooltip } from './chart-components';
+import { CHART_COLORS} from './chart-components';
 
 // Coach Performance Horizontal Bar Chart
 interface CoachPerformanceChartProps {

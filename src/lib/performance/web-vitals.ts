@@ -85,7 +85,7 @@ export class PerformanceMonitor {
   static resetInstance(): void {
     if (PerformanceMonitor.instance) {
       PerformanceMonitor.instance.disconnect();
-      PerformanceMonitor.instance = null as any;
+      PerformanceMonitor.instance = null as unknown;
     }
   }
 

@@ -171,7 +171,7 @@ export function rateLimit(
     skipSuccessfulRequests?: boolean;
   }
 ) {
-  return function<T extends any[]>(
+  return function<T extends unknown[]>(
     handler: (request: NextRequest, ...args: T) => Promise<NextResponse>
   ) {
     return async function(request: NextRequest, ...args: T): Promise<NextResponse> {

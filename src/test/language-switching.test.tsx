@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent} from '@testing-library/react';
 import { useLocale } from 'next-intl';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -40,7 +40,7 @@ describe('Language Switching Functionality', () => {
       back: vi.fn(),
       forward: vi.fn(),
       refresh: vi.fn(),
-    } as any);
+    } as unknown);
   });
 
   describe('Configuration Tests', () => {
@@ -358,7 +358,7 @@ describe('Language Switching Functionality', () => {
   describe('Default Locale Behavior Tests', () => {
     it('should identify Hebrew as default when getCurrentLanguage is called with no locale', () => {
       // Simulate a case where locale might be undefined
-      mockUseLocale.mockReturnValue(undefined as any);
+      mockUseLocale.mockReturnValue(undefined as unknown);
       
       const TestComponent = () => {
         const { currentLanguage } = useLanguageSwitcher();

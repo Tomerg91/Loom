@@ -50,7 +50,7 @@ interface FileListProps {
   compactMode?: boolean;
 }
 
-const getFileIcon = (fileType: string, mimeType: string) => {
+const getFileIcon = (fileType: string, _mimeType: string) => {
   const iconClass = 'h-4 w-4';
   switch (fileType) {
     case 'image':
@@ -101,7 +101,7 @@ export function FileList({
   compactMode = false
 }: FileListProps) {
   const allItemsSelected = files.length > 0 && files.every(f => selectedFiles.has(f.id));
-  const someItemsSelected = files.some(f => selectedFiles.has(f.id));
+  const _someItemsSelected = files.some(f => selectedFiles.has(f.id));
 
   const allItems = [
     ...folders.map(folder => ({ ...folder, type: 'folder' as const })),

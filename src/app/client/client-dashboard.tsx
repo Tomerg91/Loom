@@ -1,11 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { format, parseISO} from 'date-fns';
 import { 
   Calendar, 
-  Clock, 
-  TrendingUp, 
+ 
+ 
   CheckCircle,
   BookOpen,
   Heart,
@@ -19,22 +19,22 @@ import {
   FileText,
   Plus,
   Star,
-  Activity,
+
   Zap,
   AlertCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { useState, useMemo, useCallback, Suspense, memo, useEffect } from 'react';
+import { useState, useMemo, Suspense, memo} from 'react';
 
-import { LazyProgressChart, LazyGoalChart, LazySessionChart } from '@/components/charts/lazy-chart';
+import { LazyProgressChart} from '@/components/charts/lazy-chart';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/lib/auth/use-user';
 import { ClientTaskBoard } from '@/modules/tasks/components';
-import type { Session, User as UserType } from '@/types';
+import type { Session, User} from '@/types';
 
 // Types for API responses
 interface ClientStats {
@@ -77,7 +77,7 @@ interface CoachRecommendation {
 }
 
 // Chart colors
-const CHART_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+const _CHART_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
 
 // Helper functions
 const getMoodColor = (rating: number) => {

@@ -1,4 +1,4 @@
-import { screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { screen, fireEvent, waitFor} from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { MfaChallengeForm } from '@/components/auth/mfa-challenge-form';
@@ -226,7 +226,7 @@ describe('MFA Complete Workflow Integration', () => {
 
   describe('MFA Challenge Flow', () => {
     it('completes MFA challenge with authenticator code', async () => {
-      const userWithMFA = { ...mockUser, mfaEnabled: true };
+      const _userWithMFA = { ...mockUser, mfaEnabled: true };
 
       // Mock successful verification
       global.fetch = vi.fn().mockResolvedValue({
@@ -524,7 +524,7 @@ describe('MFA Complete Workflow Integration', () => {
 
   describe('MFA Backup Code Management', () => {
     it('allows regenerating backup codes', async () => {
-      const userWithMFA = { ...mockUser, mfaEnabled: true };
+      const _userWithMFA = { ...mockUser, mfaEnabled: true };
       
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,

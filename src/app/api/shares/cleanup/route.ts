@@ -56,7 +56,7 @@ export async function POST(_request: NextRequest) {
 
     // Optionally, get statistics about remaining shares
     const supabase = await createClient();
-    const { data: stats, error: statsError } = await supabase
+    const { data: stats, error: _statsError } = await supabase
       .from('temporary_file_shares')
       .select('is_active')
       .eq('is_active', true);

@@ -6,8 +6,8 @@ import {
   createErrorResponse,
   createSuccessResponse,
 } from '@/lib/api/utils';
-import { createServerClient } from '@/lib/supabase/server';
 import * as taskDb from '@/lib/database/tasks';
+import { createServerClient } from '@/lib/supabase/server';
 import { createLogger } from '@/modules/platform/logging/logger';
 
 const log = createLogger({ context: 'api:tasks:assigned:instance' });

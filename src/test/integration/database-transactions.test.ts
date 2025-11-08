@@ -69,7 +69,7 @@ describe('Database Transaction Workflows', () => {
     vi.clearAllMocks();
     
     // Default successful query mocks
-    mockSupabaseServerClient.from.mockImplementation((table: string) => ({
+    mockSupabaseServerClient.from.mockImplementation((_table: string) => ({
       select: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
@@ -98,7 +98,7 @@ describe('Database Transaction Workflows', () => {
 
       // Mock the transaction flow for concurrent booking attempts
       const mockTransaction = {
-        from: vi.fn().mockImplementation((table: string) => ({
+        from: vi.fn().mockImplementation((_table: string) => ({
           select: vi.fn().mockReturnThis(),
           insert: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
@@ -134,7 +134,7 @@ describe('Database Transaction Workflows', () => {
 
       const bookingService = {
         async bookSession(coachId: string, clientId: string, scheduledAt: string) {
-          const supabase = await createClient();
+          const _supabase = await createClient();
           
           // Begin transaction (simulated)
           const tx = mockTransaction;
@@ -206,7 +206,7 @@ describe('Database Transaction Workflows', () => {
       });
 
       const optimisticUpdateService = {
-        async updateSession(sessionId: string, updates: any, expectedVersion: number) {
+        async updateSession(sessionId: string, updates: unknown, expectedVersion: number) {
           const supabase = await createClient();
           
           // Verify current version
@@ -249,7 +249,7 @@ describe('Database Transaction Workflows', () => {
 
       // Mock successful cancellation chain
       const mockCancellationTransaction = {
-        from: vi.fn().mockImplementation((table: string) => {
+        from: vi.fn().mockImplementation((_table: string) => {
           const mockChain = {
             update: vi.fn().mockReturnThis(),
             insert: vi.fn().mockReturnThis(),
@@ -326,7 +326,7 @@ describe('Database Transaction Workflows', () => {
       const newRole = 'coach';
 
       const mockRoleTransaction = {
-        from: vi.fn().mockImplementation((table: string) => ({
+        from: vi.fn().mockImplementation((_table: string) => ({
           select: vi.fn().mockReturnThis(),
           update: vi.fn().mockReturnThis(),
           insert: vi.fn().mockReturnThis(),
@@ -362,7 +362,7 @@ describe('Database Transaction Workflows', () => {
               .eq('role', newRole);
 
             if (rolePermissions.data?.length) {
-              const permissionInserts = rolePermissions.data.map((p: any) => ({
+              const permissionInserts = rolePermissions.data.map((p: unknown) => ({
                 user_id: userId,
                 permission_id: p.permission_id,
                 granted_at: new Date().toISOString(),
@@ -541,7 +541,7 @@ describe('Database Transaction Workflows', () => {
                   status: 'cancelled',
                   cancellation_reason: 'User account deleted',
                 })
-                .in('id', sessions.data.map((s: any) => s.id));
+                .in('id', sessions.data.map((s: unknown) => s.id));
             }
 
             // 2. Handle user files
@@ -616,7 +616,7 @@ describe('Database Transaction Workflows', () => {
       });
 
       const sessionBookingService = {
-        async createSession(sessionData: any) {
+        async createSession(sessionData: unknown) {
           const supabase = await createClient();
           
           try {
@@ -669,7 +669,7 @@ describe('Database Transaction Workflows', () => {
       };
 
       const backupRestoreService = {
-        async restoreFromBackup(backupData: any) {
+        async restoreFromBackup(backupData: unknown) {
           const tx = mockRestoreTransaction;
           const results = {
             usersRestored: 0,
@@ -686,8 +686,8 @@ describe('Database Transaction Workflows', () => {
 
             // Validate foreign key relationships before restoring sessions
             if (backupData.sessions?.length) {
-              const validUserIds = backupData.users.map((u: any) => u.id);
-              const validSessions = backupData.sessions.filter((session: any) =>
+              const validUserIds = backupData.users.map((u: unknown) => u.id);
+              const validSessions = backupData.sessions.filter((session: unknown) =>
                 validUserIds.includes(session.coachId) &&
                 validUserIds.includes(session.clientId)
               );
@@ -737,7 +737,7 @@ describe('Database Transaction Workflows', () => {
       };
 
       const backupRestoreService = {
-        async restoreFromBackup(backupData: any) {
+        async restoreFromBackup(backupData: unknown) {
           const tx = mockCorruptTransaction;
           
           try {
@@ -776,7 +776,7 @@ describe('Database Transaction Workflows', () => {
       };
 
       const sessionCompletionService = {
-        async completeSession(sessionId: string, completionData: any) {
+        async completeSession(sessionId: string, completionData: unknown) {
           const tx = mockCompleteSessionTransaction;
           
           try {
@@ -838,7 +838,7 @@ describe('Database Transaction Workflows', () => {
             // 6. Update session statistics
             await tx.from('coach_stats')
               .update({
-                total_sessions: (tx as any).raw('total_sessions + 1'),
+                total_sessions: (tx as unknown).raw('total_sessions + 1'),
                 updated_at: new Date().toISOString(),
               })
               .eq('coach_id', coachId);

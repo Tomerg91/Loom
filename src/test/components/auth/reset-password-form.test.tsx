@@ -1,4 +1,4 @@
-import { screen, waitFor, fireEvent } from '@testing-library/react';
+import { screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
@@ -17,7 +17,7 @@ vi.mock('react-hook-form', async () => {
         onBlur: vi.fn(),
         ref: vi.fn(),
       })),
-      handleSubmit: vi.fn((fn) => (e: any) => {
+      handleSubmit: vi.fn((fn) => (e: unknown) => {
         e?.preventDefault();
         return fn({
           email: 'test@example.com',
@@ -40,7 +40,7 @@ vi.mock('react-hook-form', async () => {
 
 // Mock password input component
 vi.mock('@/components/ui/password-input', () => ({
-  PasswordInput: (props: any) => (
+  PasswordInput: (props: unknown) => (
     <input
       {...props}
       type="password"
@@ -139,7 +139,7 @@ describe('ResetPasswordForm', () => {
     });
 
     it('shows loading state during email submission', async () => {
-      let resolvePromise: (value: any) => void;
+      let resolvePromise: (value: unknown) => void;
       const promise = new Promise((resolve) => {
         resolvePromise = resolve;
       });
@@ -378,7 +378,7 @@ describe('ResetPasswordForm', () => {
     });
 
     it('shows loading state during password update', async () => {
-      let resolvePromise: (value: any) => void;
+      let resolvePromise: (value: unknown) => void;
       const promise = new Promise((resolve) => {
         resolvePromise = resolve;
       });
@@ -659,7 +659,7 @@ describe('ResetPasswordForm', () => {
     });
 
     it('handles component unmounting during API calls', async () => {
-      let resolvePromise: (value: any) => void;
+      let resolvePromise: (value: unknown) => void;
       const promise = new Promise((resolve) => {
         resolvePromise = resolve;
       });

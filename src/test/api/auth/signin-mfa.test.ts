@@ -11,9 +11,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST, OPTIONS, GET, PUT, DELETE } from '@/app/api/auth/signin-mfa/route';
 import { validateRequestBody, createSuccessResponse, createErrorResponse } from '@/lib/api/utils';
 import { createAuthService } from '@/lib/auth/auth';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createCorsResponse} from '@/lib/security/cors';
 import { createMfaService, getClientIP, getUserAgent } from '@/lib/services/mfa-service';
-import { mockSupabaseClient, mockUser, mockAdminUser, mockCoachUser } from '@/test/utils';
+import { mockUser} from '@/test/utils';
 
 // Mock all dependencies
 vi.mock('@/lib/auth/auth', () => ({
@@ -51,9 +51,9 @@ vi.mock('@/lib/api/utils', () => ({
       headers: { 'Content-Type': 'application/json' }
     })
   ),
-  withErrorHandling: vi.fn((handler: any) => handler),
+  withErrorHandling: vi.fn((handler: unknown) => handler),
   validateRequestBody: vi.fn(),
-  rateLimit: vi.fn((limit, window, options) => (handler: any) => handler),
+  rateLimit: vi.fn((_limit, _window, _options) => (handler: unknown) => handler),
   HTTP_STATUS: {
     OK: 200,
     CREATED: 201,
@@ -76,7 +76,7 @@ const mockGetClientIP = vi.mocked(getClientIP);
 const mockGetUserAgent = vi.mocked(getUserAgent);
 const mockValidateRequestBody = vi.mocked(validateRequestBody);
 const mockCreateSuccessResponse = vi.mocked(createSuccessResponse);
-const mockCreateErrorResponse = vi.mocked(createErrorResponse);
+const _mockCreateErrorResponse = vi.mocked(createErrorResponse);
 const mockCreateCorsResponse = vi.mocked(createCorsResponse);
 
 describe('/api/auth/signin-mfa', () => {
@@ -94,8 +94,8 @@ describe('/api/auth/signin-mfa', () => {
     rememberMe: true,
   };
 
-  let mockAuthServiceInstance: any;
-  let mockMfaServiceInstance: any;
+  let mockAuthServiceInstance: unknown;
+  let mockMfaServiceInstance: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();

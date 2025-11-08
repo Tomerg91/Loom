@@ -48,7 +48,7 @@ async function handler(req: NextRequest): Promise<NextResponse> {
     await paymentSvc.upsertByProviderTxn({
       provider: 'tranzila',
       providerTransactionId: txId,
-      status: status as any,
+      status: status as unknown,
       amount: data.sum ? Number(data.sum) : undefined,
       currency: 'ILS',
       rawPayload: data,
