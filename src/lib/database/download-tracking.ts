@@ -2,8 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { Database } from '@/types/supabase';
 
 type FileDownloadLog = Database['public']['Tables']['file_download_logs']['Row'];
-type= Database['public']['Tables']['file_analytics_summary']['Row'];
-type= Database['public']['Tables']['user_download_statistics']['Row'];
+type FileAnalyticsSummaryRow = Database['public']['Tables']['file_analytics_summary']['Row'];
+type UserDownloadStatisticsRow = Database['public']['Tables']['user_download_statistics']['Row'];
 
 export interface DownloadLogData {
   file_id: string;

@@ -33,7 +33,7 @@ interface WebVital {
 }
 
 // Web Vitals metric type from the library
-type= Metric;
+type WebVitalsMetric = Metric;
 
 // Web Vitals collection
 export const collectWebVitals = (callback?: (metric: WebVital) => void) => {
