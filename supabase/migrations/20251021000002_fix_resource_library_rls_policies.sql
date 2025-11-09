@@ -181,24 +181,24 @@ DECLARE
 BEGIN
   -- Check resource_collection_items policies
   FOR v_policy IN
-    SELECT policyname, pg_get_expr(polqual, polrelid) AS qual
+    SELECT polname, pg_get_expr(polqual, polrelid) AS qual
     FROM pg_policy
     WHERE polrelid = 'resource_collection_items'::regclass
   LOOP
     IF v_policy.qual LIKE '%resource_id%' THEN
-      RAISE WARNING 'Policy % still references resource_id!', v_policy.policyname;
+      RAISE WARNING 'Policy % still references resource_id!', v_policy.polname;
       v_error_found := TRUE;
     END IF;
   END LOOP;
 
   -- Check resource_client_progress policies
   FOR v_policy IN
-    SELECT policyname, pg_get_expr(polqual, polrelid) AS qual
+    SELECT polname, pg_get_expr(polqual, polrelid) AS qual
     FROM pg_policy
     WHERE polrelid = 'resource_client_progress'::regclass
   LOOP
     IF v_policy.qual LIKE '%resource_id%' THEN
-      RAISE WARNING 'Policy % still references resource_id!', v_policy.policyname;
+      RAISE WARNING 'Policy % still references resource_id!', v_policy.polname;
       v_error_found := TRUE;
     END IF;
   END LOOP;
@@ -229,6 +229,6 @@ INSERT INTO security_audit_log (
     'indexes_fixed', 2,
     'phase', 'Phase 2'
   ),
-  'high',
+  'critical',
   NOW()
 );

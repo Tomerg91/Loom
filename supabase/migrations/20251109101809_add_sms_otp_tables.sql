@@ -255,7 +255,7 @@ INSERT INTO public.security_audit_log (
     ),
     'phase', 'SMS MFA Implementation - Task 2'
   ),
-  'high',
+  'critical',
   NOW()
 );
 

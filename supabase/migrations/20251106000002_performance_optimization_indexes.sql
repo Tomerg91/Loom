@@ -64,10 +64,11 @@ CREATE INDEX IF NOT EXISTS idx_notifications_scheduled_pending
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_created
   ON messages(conversation_id, created_at DESC);
 
--- Unread messages count by conversation
-CREATE INDEX IF NOT EXISTS idx_messages_conversation_unread
-  ON messages(conversation_id, read_at)
-  WHERE read_at IS NULL;
+-- Unread messages count by conversation (messages don't have read_at, skip this index)
+-- Messages use status column instead, not tracking individual read status
+-- CREATE INDEX IF NOT EXISTS idx_messages_conversation_unread
+--   ON messages(conversation_id, status)
+--   WHERE status != 'read';
 
 -- User's conversations ordered by latest message
 CREATE INDEX IF NOT EXISTS idx_messages_user_recent
@@ -78,25 +79,23 @@ CREATE INDEX IF NOT EXISTS idx_messages_user_recent
 -- ============================================================================
 -- Optimize file and resource queries with category and sharing filters
 
--- Coach's library resources with category filter
-CREATE INDEX IF NOT EXISTS idx_file_uploads_coach_library_category
-  ON file_uploads(user_id, category, created_at DESC)
-  WHERE is_library_resource = TRUE;
+-- Coach's library files by category
+CREATE INDEX IF NOT EXISTS idx_file_uploads_coach_category
+  ON file_uploads(user_id, file_category, created_at DESC);
 
 -- Shared resources for clients
-CREATE INDEX IF NOT EXISTS idx_file_uploads_shared_with_all
-  ON file_uploads(shared_with_all_clients, is_library_resource, created_at DESC)
-  WHERE is_library_resource = TRUE;
+CREATE INDEX IF NOT EXISTS idx_file_uploads_shared
+  ON file_uploads(is_shared, created_at DESC)
+  WHERE is_shared = TRUE;
 
 -- Session files by session and user
 CREATE INDEX IF NOT EXISTS idx_file_uploads_session_user
   ON file_uploads(session_id, user_id, created_at DESC)
   WHERE session_id IS NOT NULL;
 
--- Most viewed/completed resources
-CREATE INDEX IF NOT EXISTS idx_file_uploads_engagement
-  ON file_uploads(view_count DESC, completion_count DESC)
-  WHERE is_library_resource = TRUE;
+-- Most downloaded resources
+CREATE INDEX IF NOT EXISTS idx_file_uploads_downloads
+  ON file_uploads(download_count DESC, created_at DESC);
 
 -- ============================================================================
 -- 5. COACH-CLIENT RELATIONSHIP INDEXES
@@ -175,9 +174,10 @@ BEGIN
     CREATE INDEX IF NOT EXISTS idx_practice_journal_client_date
       ON practice_journal_entries(client_id, created_at DESC);
 
-    -- Shared journal entries
-    CREATE INDEX IF NOT EXISTS idx_practice_journal_client_shared
-      ON practice_journal_entries(client_id, is_shared, created_at DESC);
+    -- Entries shared with coach
+    CREATE INDEX IF NOT EXISTS idx_practice_journal_shared_coach
+      ON practice_journal_entries(client_id, shared_with_coach, created_at DESC)
+      WHERE shared_with_coach = TRUE;
   END IF;
 END
 $$;
@@ -210,13 +210,13 @@ DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tasks') THEN
     -- Client tasks ordered by due date
-    CREATE INDEX IF NOT EXISTS idx_tasks_assignee_due
-      ON tasks(assignee_id, due_at, status)
-      WHERE status != 'completed';
+    CREATE INDEX IF NOT EXISTS idx_tasks_client_due
+      ON tasks(client_id, due_date, status)
+      WHERE status != 'COMPLETED';
 
-    -- Coach's assigned tasks
-    CREATE INDEX IF NOT EXISTS idx_tasks_assigner_status
-      ON tasks(assigner_id, status, created_at DESC);
+    -- Coach's tasks ordered by status and creation
+    CREATE INDEX IF NOT EXISTS idx_tasks_coach_status
+      ON tasks(coach_id, status, created_at DESC);
   END IF;
 END
 $$;
@@ -237,7 +237,10 @@ CREATE INDEX IF NOT EXISTS idx_coach_availability_day_time
 -- These queries can be used to verify the indexes are being used
 
 -- Check index usage statistics
-CREATE OR REPLACE FUNCTION get_index_usage_stats()
+-- Drop existing function to change return type
+DROP FUNCTION IF EXISTS public.get_index_usage_stats() CASCADE;
+
+CREATE OR REPLACE FUNCTION public.get_index_usage_stats()
 RETURNS TABLE (
     schemaname TEXT,
     tablename TEXT,
