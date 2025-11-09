@@ -87,6 +87,7 @@ const createServerEnv = () => {
     (process.env.NODE_ENV !== 'production' &&
      baseEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY === PLACEHOLDER_SUPABASE_ANON_KEY);
 
+  // Return early without validation if we should skip
   if (shouldSkipValidation) {
     return baseEnv;
   }
@@ -103,7 +104,6 @@ const createServerEnv = () => {
       client: clientEnvSchema.shape,
       runtimeEnv: baseEnv,
       emptyStringAsUndefined: true,
-      skipValidation: shouldSkipValidation,
     });
   } catch (_error) {
     // Fallback for Edge Runtime (Vercel) or when createEnv fails
