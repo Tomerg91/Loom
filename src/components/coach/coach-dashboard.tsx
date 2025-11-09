@@ -27,6 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { apiGet } from '@/lib/api/client-api-request';
 import { useUser } from '@/lib/auth/use-user';
 import type { Session } from '@/types';
 
@@ -94,11 +95,7 @@ export function CoachDashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['coach-stats', user?.id],
     queryFn: async (): Promise<DashboardStats> => {
-      const response = await fetch('/api/coach/stats');
-      if (!response.ok) {
-        throw new Error('Failed to fetch coach statistics');
-      }
-      const result = await response.json();
+      const result = await apiGet<{ data: DashboardStats }>('/api/coach/stats');
       return result.data;
     },
     enabled: !!user?.id,
@@ -111,9 +108,7 @@ export function CoachDashboard() {
   const { data: upcomingSessions } = useQuery({
     queryKey: ['upcoming-sessions', user?.id],
     queryFn: async (): Promise<Session[]> => {
-      const response = await fetch(`/api/sessions?coachId=${user?.id}&status=scheduled&limit=5&sortOrder=asc`);
-      if (!response.ok) throw new Error('Failed to fetch sessions');
-      const data = await response.json();
+      const data = await apiGet<{ data: Session[] }>(`/api/sessions?coachId=${user?.id}&status=scheduled&limit=5&sortOrder=asc`);
       return data.data;
     },
     enabled: !!user?.id,
@@ -125,11 +120,7 @@ export function CoachDashboard() {
   const { data: recentClients } = useQuery({
     queryKey: ['recent-clients', user?.id],
     queryFn: async (): Promise<Client[]> => {
-      const response = await fetch('/api/coach/clients?limit=5');
-      if (!response.ok) {
-        throw new Error('Failed to fetch recent clients');
-      }
-      const result = await response.json();
+      const result = await apiGet<{ data: Client[] }>('/api/coach/clients?limit=5');
       return result.data;
     },
     enabled: !!user?.id,
@@ -141,11 +132,7 @@ export function CoachDashboard() {
   const { data: recentActivity } = useQuery({
     queryKey: ['recent-activity', user?.id],
     queryFn: async (): Promise<RecentActivity[]> => {
-      const response = await fetch('/api/coach/activity?limit=10');
-      if (!response.ok) {
-        throw new Error('Failed to fetch recent activity');
-      }
-      const result = await response.json();
+      const result = await apiGet<{ data: RecentActivity[] }>('/api/coach/activity?limit=10');
       return result.data;
     },
     enabled: !!user?.id,

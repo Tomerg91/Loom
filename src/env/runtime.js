@@ -24,17 +24,21 @@ const clientEnvSchema = z.object({
     .optional(),
 });
 
-const resolveSupabaseUrl = () =>
-  process.env.SUPABASE_URL ||
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  PLACEHOLDER_SUPABASE_URL;
+const resolveSupabaseUrl = () => {
+  const url = process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    PLACEHOLDER_SUPABASE_URL;
+  return url?.trim() || url;
+};
 
-const resolveSupabaseAnonKey = () =>
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  process.env.SUPABASE_ANON_KEY ||
-  process.env.SUPABASE_PUBLIC_ANON_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  PLACEHOLDER_SUPABASE_ANON_KEY;
+const resolveSupabaseAnonKey = () => {
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLIC_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    PLACEHOLDER_SUPABASE_ANON_KEY;
+  return key?.trim() || key;
+};
 
 const rawClientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: resolveSupabaseUrl(),
