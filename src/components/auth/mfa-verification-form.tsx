@@ -50,6 +50,7 @@ interface MfaVerificationFormProps {
   redirectTo?: string;
   onSuccess?: () => void;
   onCancel?: () => void;
+  availableMethods?: MfaMethod[];
 }
 
 export function MfaVerificationForm({
@@ -58,6 +59,7 @@ export function MfaVerificationForm({
   redirectTo = '/dashboard',
   onSuccess,
   onCancel,
+  availableMethods = ['totp', 'backup_code'],
 }: MfaVerificationFormProps) {
   const t = useTranslations('auth.mfa');
   const router = useRouter();
@@ -79,7 +81,12 @@ export function MfaVerificationForm({
     setMfaSession: state.setMfaSession,
   }));
   const [error, setError] = useState<string | null>(null);
-  const [activeMethod, setActiveMethod] = useState<MfaMethod>('totp');
+  const [activeMethod, setActiveMethod] = useState<MfaMethod>(() => {
+    // Set initial method to first available method
+    if (availableMethods.includes('totp')) return 'totp';
+    if (availableMethods.includes('sms')) return 'sms';
+    return 'backup_code';
+  });
   const [attempts, setAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
 
@@ -236,18 +243,28 @@ export function MfaVerificationForm({
             value={activeMethod}
             onValueChange={value => handleMethodChange(value as MfaMethod)}
           >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="totp" className="flex items-center gap-2">
-                <Smartphone className="w-4 h-4" />
-                {t('methods.authenticator')}
-              </TabsTrigger>
-              <TabsTrigger
-                value="backup_code"
-                className="flex items-center gap-2"
-              >
-                <Key className="w-4 h-4" />
-                {t('methods.backupCode')}
-              </TabsTrigger>
+            <TabsList className={`grid w-full ${availableMethods.includes('sms') ? 'grid-cols-3' : 'grid-cols-2'}`}>
+              {availableMethods.includes('totp') && (
+                <TabsTrigger value="totp" className="flex items-center gap-2">
+                  <Smartphone className="w-4 h-4" />
+                  {t('methods.authenticator')}
+                </TabsTrigger>
+              )}
+              {availableMethods.includes('sms') && (
+                <TabsTrigger value="sms" className="flex items-center gap-2">
+                  <Smartphone className="w-4 h-4" />
+                  {t('methods.sms', { defaultValue: 'SMS Code' })}
+                </TabsTrigger>
+              )}
+              {availableMethods.includes('backup_code') && (
+                <TabsTrigger
+                  value="backup_code"
+                  className="flex items-center gap-2"
+                >
+                  <Key className="w-4 h-4" />
+                  {t('methods.backupCode')}
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="totp" className="space-y-4">
@@ -290,6 +307,29 @@ export function MfaVerificationForm({
                 </p>
               </div>
             </TabsContent>
+
+            {availableMethods.includes('sms') && (
+              <TabsContent value="sms" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sms-code">{t('smsCode', { defaultValue: 'SMS Code' })}</Label>
+                  <Input
+                    id="sms-code"
+                    placeholder={t('smsCodePlaceholder', { defaultValue: 'Enter 6-digit code' })}
+                    {...register('code')}
+                    error={errors.code?.message}
+                    disabled={isLoading || isLocked}
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                    maxLength={6}
+                    className="text-center text-lg tracking-widest"
+                    data-testid="sms-code-input"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    {t('smsInstructions', { defaultValue: 'Enter the 6-digit code sent to your phone' })}
+                  </p>
+                </div>
+              </TabsContent>
+            )}
           </Tabs>
 
           <div className="flex items-center space-x-2">

@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl';
 import { useMemo } from 'react';
 
 import { MfaForm } from '@/modules/auth/components/MfaForm';
+import type { MfaMethod } from '@/types';
 
 export default function MfaVerifyPage() {
   const router = useRouter();
@@ -13,6 +14,14 @@ export default function MfaVerifyPage() {
 
   const userId = searchParams.get('userId');
   const rawRedirectTo = searchParams.get('redirectTo') || '/dashboard';
+  const availableMethodsParam = searchParams.get('availableMethods');
+
+  // Parse available methods from query param (comma-separated)
+  const availableMethods = useMemo(() => {
+    if (!availableMethodsParam) return undefined;
+    return availableMethodsParam.split(',') as MfaMethod[];
+  }, [availableMethodsParam]);
+
   const safeRedirectTo =
     rawRedirectTo && rawRedirectTo.startsWith('/')
       ? rawRedirectTo
@@ -51,6 +60,7 @@ export default function MfaVerifyPage() {
         redirectTo={redirectTo}
         onSuccess={handleSuccess}
         onCancel={handleCancel}
+        availableMethods={availableMethods}
       />
     </div>
   );

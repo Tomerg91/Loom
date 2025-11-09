@@ -6,7 +6,7 @@ export type UserStatus = 'active' | 'inactive' | 'suspended';
 export type Language = 'en' | 'he';
 
 // MFA types
-export type MfaMethod = 'totp' | 'backup_code';
+export type MfaMethod = 'totp' | 'backup_code' | 'sms';
 export type MfaSessionStatus =
   | 'password_verified'
   | 'mfa_required'
