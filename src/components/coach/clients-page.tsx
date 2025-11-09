@@ -1,11 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { 
-  Users, 
-  Plus, 
-  Search, 
-  Calendar, 
+import {
+  Users,
+  Plus,
+  Search,
+  Calendar,
   MessageSquare,
   Clock,
   Star,
@@ -20,11 +20,12 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 
+import { apiGet } from '@/lib/api/client-api-request';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -33,7 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -84,15 +85,13 @@ export function CoachClientsPage() {
   const { data: clientsData, isLoading, error } = useQuery({
     queryKey: ['coach-clients', debouncedSearchTerm, statusFilter, sortBy],
     queryFn: async () => {
-      const params = new URLSearchParams({ 
+      const params = new URLSearchParams({
         limit: '50',
         search: debouncedSearchTerm,
         status: statusFilter,
         sortBy: sortBy
       });
-      const response = await fetch(`/api/coach/clients?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch clients');
-      const result = await response.json();
+      const result = await apiGet<{ data: any }>(`/api/coach/clients?${params}`);
       return result.data;
     },
   });

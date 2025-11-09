@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
 
+import { apiGet } from '@/lib/api/client-api-request';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -62,11 +63,7 @@ export function CoachClientDetailPage({ clientId }: ClientDetailProps) {
   const { data: client, isLoading, error } = useQuery<ClientDetail>({
     queryKey: ['client-detail', clientId],
     queryFn: async () => {
-      const response = await fetch(`/api/coach/clients/${clientId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch client details');
-      }
-      const result = await response.json();
+      const result = await apiGet<{ data: ClientDetail }>(`/api/coach/clients/${clientId}`);
       return result.data;
     },
   });

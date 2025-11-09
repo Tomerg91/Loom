@@ -23,6 +23,7 @@ import {
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
+import { apiGet } from '@/lib/api/client-api-request';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Avatar, 
@@ -338,14 +339,14 @@ export default function ClientCoachDetailPage() {
   } = useQuery({
     queryKey: ['coach-profile', id],
     queryFn: async (): Promise<CoachProfile> => {
-      const response = await fetch(`/api/coaches/${id}`);
-      if (!response.ok) {
-        if (response.status === 404) {
+      try {
+        return await apiGet<CoachProfile>(`/api/coaches/${id}`);
+      } catch (error: any) {
+        if (error?.message?.includes('404')) {
           throw new Error('Coach not found');
         }
         throw new Error('Failed to fetch coach profile');
       }
-      return response.json();
     },
     retry: (failureCount, error: any) => {
       // Don't retry on 404 errors
@@ -361,9 +362,7 @@ export default function ClientCoachDetailPage() {
   } = useQuery({
     queryKey: ['coach-reviews', id],
     queryFn: async (): Promise<CoachReview[]> => {
-      const response = await fetch(`/api/coaches/${id}/reviews?limit=10&sort=recent`);
-      if (!response.ok) throw new Error('Failed to fetch reviews');
-      const data = await response.json();
+      const data = await apiGet<{ data: CoachReview[] }>(`/api/coaches/${id}/reviews?limit=10&sort=recent`);
       return data.data || [];
     },
     enabled: !!id
@@ -376,21 +375,19 @@ export default function ClientCoachDetailPage() {
   } = useQuery({
     queryKey: ['coach-session-history', id],
     queryFn: async (): Promise<CoachSessionHistory> => {
-      const response = await fetch(`/api/sessions?coachId=${id}&include_history=true`);
-      if (!response.ok) throw new Error('Failed to fetch session history');
-      const data = await response.json();
-      
+      const data = await apiGet<{ data: Session[] }>(`/api/sessions?coachId=${id}&include_history=true`);
+
       const sessions = data.data || [];
       const now = new Date();
-      
+
       return {
         sessions,
-        upcomingSessions: sessions.filter((s: Session) => 
-          new Date(s.scheduledAt) > now && 
+        upcomingSessions: sessions.filter((s: Session) =>
+          new Date(s.scheduledAt) > now &&
           ['scheduled', 'in_progress'].includes(s.status)
         ),
-        pastSessions: sessions.filter((s: Session) => 
-          new Date(s.scheduledAt) <= now || 
+        pastSessions: sessions.filter((s: Session) =>
+          new Date(s.scheduledAt) <= now ||
           ['completed', 'cancelled', 'no_show'].includes(s.status)
         ),
         totalSessions: sessions.length
@@ -406,9 +403,7 @@ export default function ClientCoachDetailPage() {
   } = useQuery({
     queryKey: ['coach-availability-status', id],
     queryFn: async () => {
-      const response = await fetch(`/api/coaches/${id}/availability?status_only=true`);
-      if (!response.ok) throw new Error('Failed to fetch availability');
-      return response.json();
+      return await apiGet(`/api/coaches/${id}/availability?status_only=true`);
     },
     enabled: !!id,
     refetchInterval: 30000 // Refresh every 30 seconds

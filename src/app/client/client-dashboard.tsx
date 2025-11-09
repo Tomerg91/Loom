@@ -2,10 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
-import { 
-  Calendar, 
-  Clock, 
-  TrendingUp, 
+import {
+  Calendar,
+  Clock,
+  TrendingUp,
   CheckCircle,
   BookOpen,
   Heart,
@@ -28,6 +28,7 @@ import { useLocale } from 'next-intl';
 import { useState, useMemo, useCallback, Suspense, memo, useEffect } from 'react';
 
 import { LazyProgressChart, LazyGoalChart, LazySessionChart } from '@/components/charts/lazy-chart';
+import { apiGet } from '@/lib/api/client-api-request';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -171,11 +172,7 @@ export function ClientDashboard() {
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['client-stats', user?.id],
     queryFn: async (): Promise<ClientStats> => {
-      const response = await fetch('/api/client/stats');
-      if (!response.ok) {
-        throw new Error('Failed to fetch client statistics');
-      }
-      const result = await response.json();
+      const result = await apiGet<{ data: ClientStats }>('/api/client/stats');
       return result.data;
     },
     enabled: !!user?.id,
@@ -185,9 +182,7 @@ export function ClientDashboard() {
   const { data: upcomingSessions, isLoading: sessionsLoading } = useQuery({
     queryKey: ['upcoming-sessions', user?.id],
     queryFn: async (): Promise<Session[]> => {
-      const response = await fetch(`/api/sessions?clientId=${user?.id}&status=scheduled&limit=5&sortOrder=asc`);
-      if (!response.ok) throw new Error('Failed to fetch sessions');
-      const result = await response.json();
+      const result = await apiGet<{ data: Session[] }>(`/api/sessions?clientId=${user?.id}&status=scheduled&limit=5&sortOrder=asc`);
       return result.data;
     },
     enabled: !!user?.id,
@@ -197,9 +192,7 @@ export function ClientDashboard() {
   const { data: recentReflections } = useQuery({
     queryKey: ['recent-reflections', user?.id],
     queryFn: async (): Promise<RecentReflection[]> => {
-      const response = await fetch('/api/client/reflections?limit=3');
-      if (!response.ok) throw new Error('Failed to fetch reflections');
-      const result = await response.json();
+      const result = await apiGet<{ data: RecentReflection[] }>('/api/client/reflections?limit=3');
       return result.data || [];
     },
     enabled: !!user?.id,
@@ -209,9 +202,7 @@ export function ClientDashboard() {
   const { data: recentNotifications } = useQuery({
     queryKey: ['recent-notifications', user?.id],
     queryFn: async (): Promise<RecentNotification[]> => {
-      const response = await fetch('/api/notifications?limit=3&unreadOnly=false');
-      if (!response.ok) throw new Error('Failed to fetch notifications');
-      const result = await response.json();
+      const result = await apiGet<{ data: RecentNotification[] }>('/api/notifications?limit=3&unreadOnly=false');
       return result.data || [];
     },
     enabled: !!user?.id,
@@ -221,9 +212,7 @@ export function ClientDashboard() {
   const { data: coachRecommendations } = useQuery({
     queryKey: ['coach-recommendations', user?.id],
     queryFn: async (): Promise<CoachRecommendation[]> => {
-      const response = await fetch('/api/coaches?recommended=true&limit=3');
-      if (!response.ok) throw new Error('Failed to fetch recommendations');
-      const result = await response.json();
+      const result = await apiGet<{ data: CoachRecommendation[] }>('/api/coaches?recommended=true&limit=3');
       return result.data || [];
     },
     enabled: !!user?.id,

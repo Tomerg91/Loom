@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { apiGet, apiPost } from '@/lib/api/client-api-request';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -57,9 +58,7 @@ export function AddSessionModal({ open, onOpenChange, coachId, onSuccess }: AddS
   const { data: clients } = useQuery({
     queryKey: ['coach-clients-list', coachId],
     queryFn: async (): Promise<Client[]> => {
-      const response = await fetch('/api/coach/clients');
-      if (!response.ok) throw new Error('Failed to fetch clients');
-      const data = await response.json();
+      const data = await apiGet<{ data: Client[] }>('/api/coach/clients');
       return data.data;
     },
     enabled: open && !!coachId,
@@ -72,22 +71,13 @@ export function AddSessionModal({ open, onOpenChange, coachId, onSuccess }: AddS
     try {
       const scheduledAt = new Date(`${formData.scheduledDate}T${formData.scheduledTime}`).toISOString();
 
-      const response = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientId: formData.clientId,
-          title: formData.title,
-          scheduledAt,
-          durationMinutes: parseInt(formData.durationMinutes, 10),
-          meetingUrl: formData.meetingUrl || undefined,
-        }),
+      await apiPost('/api/sessions', {
+        clientId: formData.clientId,
+        title: formData.title,
+        scheduledAt,
+        durationMinutes: parseInt(formData.durationMinutes, 10),
+        meetingUrl: formData.meetingUrl || undefined,
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create session');
-      }
 
       // Refresh dashboard data in parent context
       onSuccess?.();
