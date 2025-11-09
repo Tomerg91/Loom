@@ -80,6 +80,17 @@ const createServerEnv = () => {
     NEXT_PUBLIC_SENTRY_DSN: clientEnv.NEXT_PUBLIC_SENTRY_DSN,
   };
 
+  // Skip validation if SKIP_ENV_VALIDATION is set or if we're using placeholder values in development
+  const shouldSkipValidation =
+    process.env.SKIP_ENV_VALIDATION === 'true' ||
+    process.env.SKIP_ENV_VALIDATION === '1' ||
+    (process.env.NODE_ENV !== 'production' &&
+     baseEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY === PLACEHOLDER_SUPABASE_ANON_KEY);
+
+  if (shouldSkipValidation) {
+    return baseEnv;
+  }
+
   try {
     // Try to use createEnv for validation (works in Node.js runtime)
     return createEnv({
@@ -92,9 +103,10 @@ const createServerEnv = () => {
       client: clientEnvSchema.shape,
       runtimeEnv: baseEnv,
       emptyStringAsUndefined: true,
+      skipValidation: shouldSkipValidation,
     });
   } catch (_error) {
-    // Fallback for Edge Runtime (Vercel) where createEnv fails
+    // Fallback for Edge Runtime (Vercel) or when createEnv fails
     // Return raw environment values without validation
     return baseEnv;
   }
