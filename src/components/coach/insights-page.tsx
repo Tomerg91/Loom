@@ -96,26 +96,26 @@ export function CoachInsightsPage() {
         throw new Error('Failed to fetch insights');
       }
       const result = await response.json();
-      
+
       // Transform API response to match component interface
       const apiData = result.data;
       return {
         overview: {
           totalClients: apiData.overview.uniqueClients,
-          activeClients: apiData.overview.uniqueClients, // All clients are considered active in this period
+          activeClients: apiData.overview.uniqueClients,
           totalSessions: apiData.overview.totalSessions,
           completedSessions: apiData.overview.completedSessions,
-          averageRating: apiData.overview.averageMoodRating || apiData.overview.averageProgressRating || 0,
+          averageRating: apiData.overview.averageFeedbackRating || apiData.overview.averageMoodRating || apiData.overview.averageProgressRating || 0,
           revenue: apiData.overview.estimatedRevenue,
-          clientRetentionRate: 85, // Placeholder - would need retention calculation
+          clientRetentionRate: apiData.overview.clientRetentionRate,
           sessionCompletionRate: apiData.overview.completionRate,
         },
         clientProgress: apiData.clientProgress.map((client: any) => ({
           clientId: client.id,
           clientName: client.name,
-          progressScore: Math.round((client.averageProgress || client.averageMood || 50) * 20), // Convert 1-5 to 0-100
+          progressScore: Math.round((client.averageProgress || client.averageMood || 0) * 20), // Convert 1-5 to 0-100
           sessionsCompleted: client.sessionsCompleted,
-          goalAchievement: Math.round((client.averageProgress || 2.5) * 20), // Placeholder calculation
+          goalAchievement: Math.round((client.averageProgress || 0) * 20),
           lastSession: client.lastSession,
           trend: client.averageProgress > 3 ? 'up' : client.averageProgress < 2.5 ? 'down' : 'stable',
         })),
@@ -123,19 +123,15 @@ export function CoachInsightsPage() {
           date: metric.date,
           sessionsCompleted: metric.completed,
           sessionsCancelled: metric.cancelled,
-          averageRating: 4.5, // Placeholder - would need actual ratings
-          revenue: metric.completed * 100, // $100 per session placeholder
+          averageRating: metric.averageRating,
+          revenue: metric.revenue,
         })),
         goalAnalysis: {
-          mostCommonGoals: [
-            { goal: 'Career Development', count: 8, successRate: 75 },
-            { goal: 'Leadership Skills', count: 6, successRate: 83 },
-            { goal: 'Work-Life Balance', count: 5, successRate: 60 },
-          ], // Placeholder - would need goals table
-          achievementRate: 73,
-          averageTimeToGoal: 8.5,
+          mostCommonGoals: apiData.goalAnalysis.mostCommonGoals,
+          achievementRate: apiData.goalAnalysis.achievementRate,
+          averageTimeToGoal: apiData.goalAnalysis.averageTimeToGoal,
         },
-        feedback: [], // Placeholder - would need feedback/ratings table
+        feedback: apiData.feedback,
       };
     },
   });
@@ -423,24 +419,31 @@ export function CoachInsightsPage() {
                 <CardDescription>Goals your clients are working towards</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {insights?.goalAnalysis.mostCommonGoals.map((goal, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
-                          <span className="text-sm font-medium text-primary">{goal.count}</span>
+                {insights?.goalAnalysis.mostCommonGoals && insights.goalAnalysis.mostCommonGoals.length > 0 ? (
+                  <div className="space-y-4">
+                    {insights.goalAnalysis.mostCommonGoals.map((goal, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                            <span className="text-sm font-medium text-primary">{goal.count}</span>
+                          </div>
+                          <span className="font-medium">{goal.goal}</span>
                         </div>
-                        <span className="font-medium">{goal.goal}</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-muted-foreground">{goal.successRate}% success</span>
+                          <Badge variant={goal.successRate >= 80 ? 'default' : goal.successRate >= 60 ? 'secondary' : 'outline'}>
+                            {goal.successRate >= 80 ? 'High' : goal.successRate >= 60 ? 'Medium' : 'Low'}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-muted-foreground">{goal.successRate}% success</span>
-                        <Badge variant={goal.successRate >= 80 ? 'default' : goal.successRate >= 60 ? 'secondary' : 'outline'}>
-                          {goal.successRate >= 80 ? 'High' : goal.successRate >= 60 ? 'Medium' : 'Low'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No client goals tracked yet.</p>
+                    <p className="text-sm mt-2">Start setting goals with your clients to see insights here.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -500,38 +503,45 @@ export function CoachInsightsPage() {
               <CardDescription>Latest reviews and comments from your clients</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {insights?.feedback.map((feedback, index) => (
-                  <div key={index} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <div>
-                          <p className="font-medium">{feedback.clientName}</p>
-                          <p className="text-sm text-muted-foreground">{feedback.sessionType}</p>
+              {insights?.feedback && insights.feedback.length > 0 ? (
+                <div className="space-y-4">
+                  {insights.feedback.map((feedback, index) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <div>
+                            <p className="font-medium">{feedback.clientName}</p>
+                            <p className="text-sm text-muted-foreground">{feedback.sessionType}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i < feedback.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(feedback.date).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < feedback.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(feedback.date).toLocaleDateString()}
-                        </span>
-                      </div>
+                      <blockquote className="text-sm italic border-l-4 border-primary/20 pl-4">
+                        &quot;{feedback.comment}&quot;
+                      </blockquote>
                     </div>
-                    <blockquote className="text-sm italic border-l-4 border-primary/20 pl-4">
-                      &quot;{feedback.comment}&quot;
-                    </blockquote>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No feedback with comments available for this time period.</p>
+                  <p className="text-sm mt-2">Encourage your clients to leave detailed feedback after sessions!</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

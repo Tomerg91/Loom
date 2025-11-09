@@ -132,16 +132,48 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    let feedbackResult: { data: { session_id: string; overall_rating: number | null }[] | null; error: unknown | null } = { data: [], error: null };
+    // Fetch detailed feedback with comments, ratings, and session type
+    let feedbackResult: {
+      data: {
+        session_id: string;
+        overall_rating: number | null;
+        feedback_text: string | null;
+        created_at: string;
+        sessions?: {
+          scheduled_at: string;
+          duration_minutes: number;
+          users?: {
+            first_name: string;
+            last_name: string;
+          };
+        };
+      }[] | null;
+      error: unknown | null
+    } = { data: [], error: null };
+
     let ratingsResult: { data: { session_id: string; rating: number | null }[] | null; error: unknown | null } = { data: [], error: null };
 
     if (sessionIds.length > 0) {
       [feedbackResult, ratingsResult] = await Promise.all([
         supabase
           .from('session_feedback')
-          .select('session_id, overall_rating')
+          .select(`
+            session_id,
+            overall_rating,
+            feedback_text,
+            created_at,
+            sessions!inner(
+              scheduled_at,
+              duration_minutes,
+              users!sessions_client_id_fkey(
+                first_name,
+                last_name
+              )
+            )
+          `)
           .eq('coach_id', user.id)
-          .in('session_id', sessionIds),
+          .in('session_id', sessionIds)
+          .order('created_at', { ascending: false }),
         supabase
           .from('session_ratings')
           .select('session_id, rating')
@@ -149,6 +181,53 @@ export async function GET(request: NextRequest) {
           .in('session_id', sessionIds),
       ]);
     }
+
+    // Get client goals for goal analysis
+    const { data: goals, error: goalsError } = await supabase
+      .from('client_goals')
+      .select('id, category, status, progress_percentage, created_at, completed_at, target_date')
+      .eq('coach_id', user.id)
+      .in('client_id', clientIds);
+
+    if (goalsError) {
+      console.warn('Error fetching client goals:', goalsError);
+    }
+
+    // Calculate retention rate (clients from previous period who had sessions in current period)
+    const currentPeriodStart = new Date(start);
+    const previousStart = new Date(start);
+    const previousEnd = new Date(start);
+
+    switch (timeRange) {
+      case '7d':
+        previousStart.setDate(previousStart.getDate() - 7);
+        break;
+      case '30d':
+        previousStart.setDate(previousStart.getDate() - 30);
+        break;
+      case '90d':
+        previousStart.setDate(previousStart.getDate() - 90);
+        break;
+      case '1y':
+        previousStart.setFullYear(previousStart.getFullYear() - 1);
+        break;
+      default:
+        previousStart.setDate(previousStart.getDate() - 30);
+    }
+
+    const { data: previousSessions } = await supabase
+      .from('sessions')
+      .select('client_id')
+      .eq('coach_id', user.id)
+      .gte('scheduled_at', previousStart.toISOString())
+      .lt('scheduled_at', currentPeriodStart.toISOString());
+
+    const previousClientIds = new Set(previousSessions?.map(s => s.client_id) || []);
+    const currentClientIds = new Set(sessions?.map(s => s.client_id) || []);
+    const retainedClients = [...previousClientIds].filter(id => currentClientIds.has(id)).length;
+    const clientRetentionRate = previousClientIds.size > 0
+      ? Math.round((retainedClients / previousClientIds.size) * 100)
+      : 0;
 
     const coachRate = await getCoachSessionRate(supabase, user.id);
 
@@ -215,8 +294,15 @@ export async function GET(request: NextRequest) {
       ? Math.round((progressRatings.reduce((sum, rating) => sum + rating, 0) / progressRatings.length) * 10) / 10 
       : 0;
 
-    // Generate session metrics for charts (daily aggregation)
-    const dailySessions = new Map<string, { date: string; completed: number; cancelled: number; total: number }>();
+    // Generate session metrics for charts (daily aggregation) with ratings and revenue
+    const dailySessions = new Map<string, {
+      date: string;
+      completed: number;
+      cancelled: number;
+      total: number;
+      ratings: number[];
+      revenue: number;
+    }>();
 
     sessions?.forEach(session => {
       const date = session.scheduled_at.split('T')[0];
@@ -225,32 +311,67 @@ export async function GET(request: NextRequest) {
           date,
           completed: 0,
           cancelled: 0,
-          total: 0
+          total: 0,
+          ratings: [],
+          revenue: 0
         });
       }
       const dayData = dailySessions.get(date)!;
       dayData.total++;
-      if (session.status === 'completed') dayData.completed++;
+      if (session.status === 'completed') {
+        dayData.completed++;
+        // Add revenue for completed sessions
+        dayData.revenue += coachRate.rate;
+
+        // Add rating if available
+        const sessionRating = ratingBySession.get(session.id);
+        if (sessionRating) {
+          dayData.ratings.push(sessionRating);
+        }
+      }
       if (session.status === 'cancelled') dayData.cancelled++;
     });
 
     // Convert to array and sort by date
     const sortedMetrics = Array.from(dailySessions.values()).sort((a, b) => a.date.localeCompare(b.date));
-    
+
     // Fill in missing dates with zero values
     const startDate = new Date(start);
     const endDate = new Date(end);
-    const filledMetrics: { date: string; completed: number; cancelled: number; total: number }[] = [];
-    
+    const filledMetrics: {
+      date: string;
+      completed: number;
+      cancelled: number;
+      total: number;
+      averageRating: number;
+      revenue: number;
+    }[] = [];
+
     for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
       const dateStr = date.toISOString().split('T')[0];
       const existing = sortedMetrics.find(m => m.date === dateStr);
-      filledMetrics.push(existing || {
-        date: dateStr,
-        completed: 0,
-        cancelled: 0,
-        total: 0
-      });
+      if (existing) {
+        const avgRating = existing.ratings.length > 0
+          ? Math.round((existing.ratings.reduce((sum, r) => sum + r, 0) / existing.ratings.length) * 10) / 10
+          : 0;
+        filledMetrics.push({
+          date: existing.date,
+          completed: existing.completed,
+          cancelled: existing.cancelled,
+          total: existing.total,
+          averageRating: avgRating,
+          revenue: Math.round(existing.revenue * 100) / 100
+        });
+      } else {
+        filledMetrics.push({
+          date: dateStr,
+          completed: 0,
+          cancelled: 0,
+          total: 0,
+          averageRating: 0,
+          revenue: 0
+        });
+      }
     }
 
     // Calculate client progress data
@@ -314,6 +435,73 @@ export async function GET(request: NextRequest) {
     // Calculate revenue using the coach profile configuration
     const estimatedRevenue = Number((completedSessions * coachRate.rate).toFixed(2));
 
+    // Goal Analysis
+    const goalsByCategory = new Map<string, { count: number; completedCount: number; totalProgress: number }>();
+    const completedGoals: { created_at: string; completed_at: string }[] = [];
+
+    goals?.forEach(goal => {
+      const category = goal.category || 'Other';
+
+      if (!goalsByCategory.has(category)) {
+        goalsByCategory.set(category, { count: 0, completedCount: 0, totalProgress: 0 });
+      }
+
+      const categoryData = goalsByCategory.get(category)!;
+      categoryData.count++;
+      categoryData.totalProgress += goal.progress_percentage || 0;
+
+      if (goal.status === 'completed' && goal.completed_at) {
+        categoryData.completedCount++;
+        completedGoals.push({
+          created_at: goal.created_at,
+          completed_at: goal.completed_at
+        });
+      }
+    });
+
+    const mostCommonGoals = Array.from(goalsByCategory.entries())
+      .map(([category, data]) => ({
+        goal: category,
+        count: data.count,
+        successRate: data.count > 0 ? Math.round((data.completedCount / data.count) * 100) : 0
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5); // Top 5 goal categories
+
+    const totalGoals = goals?.length || 0;
+    const completedGoalsCount = goals?.filter(g => g.status === 'completed').length || 0;
+    const achievementRate = totalGoals > 0 ? Math.round((completedGoalsCount / totalGoals) * 100) : 0;
+
+    // Calculate average time to complete goals (in weeks)
+    let averageTimeToGoal = 0;
+    if (completedGoals.length > 0) {
+      const totalWeeks = completedGoals.reduce((sum, goal) => {
+        const created = new Date(goal.created_at);
+        const completed = new Date(goal.completed_at);
+        const weeks = (completed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24 * 7);
+        return sum + weeks;
+      }, 0);
+      averageTimeToGoal = Math.round((totalWeeks / completedGoals.length) * 10) / 10;
+    }
+
+    // Process detailed feedback
+    const feedbackArray = feedbackResult.data?.map(feedback => {
+      const session = Array.isArray(feedback.sessions) ? feedback.sessions[0] : feedback.sessions;
+      const client = session?.users;
+      const clientName = client ? `${client.first_name} ${client.last_name}` : 'Anonymous';
+      const sessionType = session?.duration_minutes
+        ? `${session.duration_minutes} min session`
+        : 'Session';
+
+      return {
+        clientName,
+        rating: feedback.overall_rating || 0,
+        comment: feedback.feedback_text || '',
+        date: feedback.created_at,
+        sessionType
+      };
+    }).filter(f => f.comment && f.comment.trim() !== '') || []; // Only include feedback with comments
+
     const insights = {
       overview: {
         totalSessions,
@@ -327,10 +515,17 @@ export async function GET(request: NextRequest) {
         estimatedRevenue,
         revenueCurrency: coachRate.currency,
         averageFeedbackRating,
+        clientRetentionRate,
         notesCount: notes?.length || 0
       },
       sessionMetrics: filledMetrics,
       clientProgress: clientProgressArray,
+      goalAnalysis: {
+        mostCommonGoals,
+        achievementRate,
+        averageTimeToGoal
+      },
+      feedback: feedbackArray,
       timeRange,
       generatedAt: new Date().toISOString()
     };
