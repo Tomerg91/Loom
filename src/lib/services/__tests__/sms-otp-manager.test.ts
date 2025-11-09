@@ -20,11 +20,13 @@ describe('SMS OTP Manager', () => {
     const createChainableMock = (finalData: unknown) => {
       const chain = {
         eq: vi.fn(),
+        is: vi.fn(),
         order: vi.fn(),
         limit: vi.fn(),
       };
       // Make all methods return the chain and the final limit returns the data
       chain.eq.mockReturnValue(chain);
+      chain.is.mockReturnValue(chain);
       chain.order.mockReturnValue(chain);
       chain.limit.mockResolvedValue(finalData);
       return chain;
@@ -99,10 +101,12 @@ describe('SMS OTP Manager', () => {
     const createChainableMock = (finalData: unknown) => {
       const chain = {
         eq: vi.fn(),
+        is: vi.fn(),
         order: vi.fn(),
         limit: vi.fn(),
       };
       chain.eq.mockReturnValue(chain);
+      chain.is.mockReturnValue(chain);
       chain.order.mockReturnValue(chain);
       chain.limit.mockResolvedValue(finalData);
       return chain;
@@ -156,10 +160,12 @@ describe('SMS OTP Manager', () => {
     const createChainableMock = (finalData: unknown) => {
       const chain = {
         eq: vi.fn(),
+        is: vi.fn(),
         order: vi.fn(),
         limit: vi.fn(),
       };
       chain.eq.mockReturnValue(chain);
+      chain.is.mockReturnValue(chain);
       chain.order.mockReturnValue(chain);
       chain.limit.mockResolvedValue(finalData);
       return chain;

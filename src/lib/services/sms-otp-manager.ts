@@ -1,4 +1,5 @@
 // src/lib/services/sms-otp-manager.ts
+import { randomBytes } from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { TwilioSMSService } from './twilio-sms-service';
 import type { Database } from '@/types/supabase';
@@ -27,11 +28,29 @@ interface SMSOTPRecord {
   verified_at: string | null;
 }
 
-function generateOTP(length: number = 6): string {
-  const digits = '0123456789';
+// Configuration constants for OTP behavior
+const OTP_CONFIG = {
+  LENGTH: 6,
+  EXPIRY_MINUTES: 5,
+  MAX_ATTEMPTS: 5,
+} as const;
+
+/**
+ * Generates a cryptographically secure random 6-digit OTP code.
+ * Uses crypto.randomBytes() for security-critical operations.
+ * @param length - Number of digits to generate (default: 6)
+ * @returns A string of random digits
+ */
+function generateOTP(length: number = OTP_CONFIG.LENGTH): string {
+  // Use crypto.randomBytes for cryptographically secure random generation
+  // This is critical for security to prevent OTP prediction attacks
+  const randomBuffer = randomBytes(length);
+
   let otp = '';
   for (let i = 0; i < length; i++) {
-    otp += digits[Math.floor(Math.random() * 10)];
+    // Map each random byte (0-255) to a digit (0-9)
+    // Using modulo ensures uniform distribution across digits
+    otp += (randomBuffer[i] % 10).toString();
   }
   return otp;
 }
@@ -45,8 +64,23 @@ export function createSMSOTPManager(
     phoneNumber: string
   ): Promise<OTPResult> {
     try {
-      const otpCode = generateOTP(6);
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+      // Validate inputs
+      if (!userId || userId.trim().length === 0) {
+        return {
+          success: false,
+          error: 'User ID is required',
+        };
+      }
+
+      if (!phoneNumber || !phoneNumber.startsWith('+')) {
+        return {
+          success: false,
+          error: 'Invalid phone number format',
+        };
+      }
+
+      const otpCode = generateOTP();
+      const expiresAt = new Date(Date.now() + OTP_CONFIG.EXPIRY_MINUTES * 60 * 1000);
 
       // Store OTP in database
       // Table sms_otp_codes will be created in Task 2 migration
@@ -71,7 +105,7 @@ export function createSMSOTPManager(
       // Send SMS
       const smsResult = await twilioService.sendOTP(phoneNumber, otpCode);
 
-      // Log delivery
+      // Log delivery (do NOT log the actual OTP code for security)
       if (smsResult.success) {
         // Table sms_delivery_logs will be created in Task 2 migration
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -79,7 +113,7 @@ export function createSMSOTPManager(
         await supabase.from('sms_delivery_logs').insert({
           user_id: userId,
           phone_number: phoneNumber,
-          message: `OTP: ${otpCode}`,
+          message: 'OTP sent',
           twilio_message_sid: smsResult.messageSid,
           status: 'sent',
         });
@@ -93,7 +127,7 @@ export function createSMSOTPManager(
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
       };
     }
   }
@@ -104,7 +138,8 @@ export function createSMSOTPManager(
     options: { expiredOK?: boolean } = {}
   ): Promise<VerifyResult> {
     try {
-      // Get the latest OTP for this user
+      // Get the latest unverified OTP for this user
+      // Filter for verified_at IS NULL to prevent race condition when user requests multiple OTPs
       // Table sms_otp_codes will be created in Task 2 migration
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
@@ -112,6 +147,7 @@ export function createSMSOTPManager(
         .from('sms_otp_codes')
         .select('*')
         .eq('user_id', userId)
+        .is('verified_at', null)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -148,10 +184,14 @@ export function createSMSOTPManager(
         // Table sms_otp_codes will be created in Task 2 migration
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
-        await supabase
+        const { error: updateError } = await supabase
           .from('sms_otp_codes')
           .update({ attempts: record.attempts + 1 })
           .eq('id', record.id);
+
+        if (updateError) {
+          console.error('Failed to increment OTP attempts:', updateError);
+        }
 
         return {
           success: false,
@@ -163,10 +203,18 @@ export function createSMSOTPManager(
       // Table sms_otp_codes will be created in Task 2 migration
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
-      await supabase
+      const { error: verifyError } = await supabase
         .from('sms_otp_codes')
         .update({ verified_at: new Date().toISOString() })
         .eq('id', record.id);
+
+      if (verifyError) {
+        console.error('Failed to mark OTP as verified:', verifyError);
+        return {
+          success: false,
+          error: 'Failed to verify OTP',
+        };
+      }
 
       return {
         success: true,
@@ -175,7 +223,7 @@ export function createSMSOTPManager(
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
       };
     }
   }
