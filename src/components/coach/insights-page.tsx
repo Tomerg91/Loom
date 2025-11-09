@@ -19,6 +19,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { SessionMetricsChart, RevenueChart } from '@/components/charts/chart-components';
+import { apiGet } from '@/lib/api/client-api-request';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -91,11 +92,7 @@ export function CoachInsightsPage() {
   const { data: insights, isLoading, error, refetch } = useQuery<CoachInsights>({
     queryKey: ['coach-insights', timeRange],
     queryFn: async () => {
-      const response = await fetch(`/api/coach/insights?timeRange=${timeRange}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch insights');
-      }
-      const result = await response.json();
+      const result = await apiGet<{ data: any }>(`/api/coach/insights?timeRange=${timeRange}`);
 
       // Transform API response to match component interface
       const apiData = result.data;
