@@ -66,4 +66,44 @@ describe('Twilio SMS Service', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('invalid phone');
   });
+
+  it('should reject empty message', async () => {
+    const mockEnv = {
+      TWILIO_ACCOUNT_SID: 'test-sid',
+      TWILIO_AUTH_TOKEN: 'test-token',
+      TWILIO_PHONE_NUMBER: '+1234567890',
+    };
+
+    const service = createTwilioSMSService(mockEnv);
+    const result = await service.sendSMS('+1987654321', '');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('cannot be empty');
+  });
+
+  it('should send OTP with proper message format', async () => {
+    const mockEnv = {
+      TWILIO_ACCOUNT_SID: 'test-sid',
+      TWILIO_AUTH_TOKEN: 'test-token',
+      TWILIO_PHONE_NUMBER: '+1234567890',
+    };
+
+    const service = createTwilioSMSService(mockEnv);
+    const result = await service.sendOTP('+1987654321', '123456');
+
+    expect(result.success).toBe(true);
+    expect(result.messageSid).toBeDefined();
+  });
+
+  it('should validate sender phone number format on initialization', async () => {
+    const mockEnv = {
+      TWILIO_ACCOUNT_SID: 'test-sid',
+      TWILIO_AUTH_TOKEN: 'test-token',
+      TWILIO_PHONE_NUMBER: 'invalid-phone',
+    };
+
+    expect(() => {
+      createTwilioSMSService(mockEnv);
+    }).toThrow('TWILIO_PHONE_NUMBER must be in E.164 format');
+  });
 });

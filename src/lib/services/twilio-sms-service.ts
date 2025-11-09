@@ -20,6 +20,11 @@ function isValidPhoneNumber(phone: string): boolean {
 }
 
 export function createTwilioSMSService(config: TwilioConfig) {
+  // Validate sender phone number format
+  if (!isValidPhoneNumber(config.TWILIO_PHONE_NUMBER)) {
+    throw new Error('TWILIO_PHONE_NUMBER must be in E.164 format (e.g., +1234567890)');
+  }
+
   const client = twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
 
   async function sendSMS(toPhone: string, message: string): Promise<SMSResult> {
