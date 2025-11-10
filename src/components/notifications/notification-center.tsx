@@ -80,6 +80,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { apiGet, apiPost, apiDelete } from '@/lib/api/client-api-request';
 import { useUser } from '@/lib/auth/use-user';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { useOfflineNotificationQueue } from '@/lib/notifications/offline-queue';
@@ -377,9 +378,7 @@ function NotificationCenterComponent() {
   const { data: notificationsData, isLoading, error: fetchError } = useQuery({
     queryKey: ['notifications', user?.id] as const,
     queryFn: async (): Promise<NotificationsResponse> => {
-      const response = await fetch('/api/notifications?limit=20&sortOrder=desc');
-      if (!response.ok) throw new Error('Failed to fetch notifications');
-      return response.json();
+      return await apiGet<NotificationsResponse>('/api/notifications?limit=20&sortOrder=desc');
     },
     enabled: !!user?.id,
     refetchInterval: isConnected && !fallbackPollingActive ? false : 30000, // Poll when disconnected or using fallback
@@ -400,16 +399,7 @@ function NotificationCenterComponent() {
         throw new Error('offline');
       }
 
-      const response = await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to mark notification as read');
-      }
-
-      return response.json();
+      return await apiPost(`/api/notifications/${notificationId}/read`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -449,16 +439,7 @@ function NotificationCenterComponent() {
         throw new Error('offline');
       }
 
-      const response = await fetch('/api/notifications/mark-all-read', {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to mark all notifications as read');
-      }
-
-      return response.json();
+      return await apiPost('/api/notifications/mark-all-read');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -495,14 +476,7 @@ function NotificationCenterComponent() {
         throw new Error('offline');
       }
 
-      const response = await fetch(`/api/notifications/${notificationId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete notification');
-      }
+      return await apiDelete(`/api/notifications/${notificationId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -545,18 +519,7 @@ function NotificationCenterComponent() {
         throw new Error('offline');
       }
 
-      const response = await fetch('/api/notifications/bulk-actions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, notificationIds }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || `Failed to ${action} notifications`);
-      }
-
-      return response.json();
+      return await apiPost('/api/notifications/bulk-actions', { action, notificationIds });
     },
     onSuccess: (_, { action, notificationIds }) => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -631,12 +594,14 @@ function NotificationCenterComponent() {
   // Export notifications mutation
   const exportNotificationsMutation = useMutation({
     mutationFn: async (format: 'json' | 'csv') => {
-      const response = await fetch(`/api/notifications/export?format=${format}`);
+      // Note: apiGet doesn't support blob responses, so we use apiRequest directly
+      const { apiRequest } = await import('@/lib/api/client-api-request');
+      const response = await apiRequest(`/api/notifications/export?format=${format}`);
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to export notifications');
       }
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');

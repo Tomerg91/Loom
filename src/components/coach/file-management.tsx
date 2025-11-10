@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 import { useState, useEffect, useMemo } from 'react';
 
 import { FileSharingDialog } from '@/components/files/file-sharing-dialog';
+import { apiGet, apiPost, apiDelete } from '@/lib/api/client-api-request';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -104,12 +105,7 @@ export function CoachFileManagement({ userId, _userRole, onFileUpload }: CoachFi
   const loadFiles = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/files?userId=${userId}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data?.error || 'Failed to load files');
-      }
+      const data = await apiGet<{ data?: { files: any[] }; files?: any[] }>(`/api/files?userId=${userId}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
 
       const filesPayload = data?.data?.files ?? data.files ?? [];
       const normalizedFiles: FileItem[] = filesPayload.map((file: unknown) => ({
@@ -139,8 +135,7 @@ export function CoachFileManagement({ userId, _userRole, onFileUpload }: CoachFi
   const loadClients = async () => {
     try {
       // Load coach's clients based on session relationships
-      const response = await fetch('/api/coach/clients');
-      const data = await response.json().catch(() => ({}));
+      const data = await apiGet<{ data?: any[]; clients?: any[] }>('/api/coach/clients');
 
       if (response.ok) {
         const clientsPayload = data?.data ?? data.clients ?? [];
@@ -157,9 +152,6 @@ export function CoachFileManagement({ userId, _userRole, onFileUpload }: CoachFi
           };
         });
         setClients(normalizedClients);
-      } else {
-        throw new Error(data?.error || 'Failed to load clients');
-      }
     } catch (error) {
       console.error('Failed to load clients:', error);
       if (error instanceof Error) {
@@ -211,18 +203,7 @@ export function CoachFileManagement({ userId, _userRole, onFileUpload }: CoachFi
     message?: string;
   }) => {
     try {
-      const response = await fetch('/api/files/share', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to share file');
-      }
+      await apiPost('/api/files/share', data);
 
       // Refresh files to update share status
       await loadFiles();
@@ -233,18 +214,7 @@ export function CoachFileManagement({ userId, _userRole, onFileUpload }: CoachFi
 
   const handleRevokeShare = async (shareId: string) => {
     try {
-      const response = await fetch('/api/files/share', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ shareId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to revoke share');
-      }
+      await apiDelete('/api/files/share', { shareId });
 
       // Refresh files
       await loadFiles();
@@ -259,13 +229,7 @@ export function CoachFileManagement({ userId, _userRole, onFileUpload }: CoachFi
     }
 
     try {
-      const response = await fetch(`/api/files/${fileId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete file');
-      }
+      await apiDelete(`/api/files/${fileId}`);
 
       await loadFiles();
     } catch (error) {
@@ -275,13 +239,7 @@ export function CoachFileManagement({ userId, _userRole, onFileUpload }: CoachFi
 
   const handleFileDownload = async (fileId: string) => {
     try {
-      const response = await fetch(`/api/files/${fileId}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to download file');
-      }
-
-      const data = await response.json();
+      const data = await apiGet<{ downloadUrl: string }>(`/api/files/${fileId}`);
 
       // Open download URL in new tab
       window.open(data.downloadUrl, '_blank');
@@ -311,27 +269,14 @@ export function CoachFileManagement({ userId, _userRole, onFileUpload }: CoachFi
     setBulkShareError('');
 
     try {
-      const response = await fetch('/api/files/bulk-share', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileIds: selectedFiles,
-          sharedWith: bulkShareSelectedClients,
-          permissionType: bulkSharePermission,
-          expiresAt: bulkShareExpiresAt ? new Date(bulkShareExpiresAt).toISOString() : undefined,
-          message: bulkShareMessage || undefined,
-          notifyUsers: true,
-        }),
+      const result = await apiPost<{ success?: boolean; error?: string; summary?: { filesProcessed: number; usersSharedWith: number } }>('/api/files/bulk-share', {
+        fileIds: selectedFiles,
+        sharedWith: bulkShareSelectedClients,
+        permissionType: bulkSharePermission,
+        expiresAt: bulkShareExpiresAt ? new Date(bulkShareExpiresAt).toISOString() : undefined,
+        message: bulkShareMessage || undefined,
+        notifyUsers: true,
       });
-
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok || result?.success === false) {
-        const errorMessage = result?.error || 'Failed to share files';
-        throw new Error(errorMessage);
-      }
 
       showSuccess(
         'Files shared successfully',

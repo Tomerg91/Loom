@@ -24,17 +24,21 @@ const clientEnvSchema = z.object({
     .optional(),
 });
 
-const resolveSupabaseUrl = () =>
-  process.env.SUPABASE_URL ||
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  PLACEHOLDER_SUPABASE_URL;
+const resolveSupabaseUrl = () => {
+  const url = process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    PLACEHOLDER_SUPABASE_URL;
+  return url?.trim() || url;
+};
 
-const resolveSupabaseAnonKey = () =>
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  process.env.SUPABASE_ANON_KEY ||
-  process.env.SUPABASE_PUBLIC_ANON_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  PLACEHOLDER_SUPABASE_ANON_KEY;
+const resolveSupabaseAnonKey = () => {
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLIC_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    PLACEHOLDER_SUPABASE_ANON_KEY;
+  return key?.trim() || key;
+};
 
 const rawClientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: resolveSupabaseUrl(),
@@ -76,6 +80,18 @@ const createServerEnv = () => {
     NEXT_PUBLIC_SENTRY_DSN: clientEnv.NEXT_PUBLIC_SENTRY_DSN,
   };
 
+  // Skip validation if SKIP_ENV_VALIDATION is set or if we're using placeholder values in development
+  const shouldSkipValidation =
+    process.env.SKIP_ENV_VALIDATION === 'true' ||
+    process.env.SKIP_ENV_VALIDATION === '1' ||
+    (process.env.NODE_ENV !== 'production' &&
+     baseEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY === PLACEHOLDER_SUPABASE_ANON_KEY);
+
+  // Return early without validation if we should skip
+  if (shouldSkipValidation) {
+    return baseEnv;
+  }
+
   try {
     // Try to use createEnv for validation (works in Node.js runtime)
     return createEnv({
@@ -90,7 +106,7 @@ const createServerEnv = () => {
       emptyStringAsUndefined: true,
     });
   } catch (_error) {
-    // Fallback for Edge Runtime (Vercel) where createEnv fails
+    // Fallback for Edge Runtime (Vercel) or when createEnv fails
     // Return raw environment values without validation
     return baseEnv;
   }
