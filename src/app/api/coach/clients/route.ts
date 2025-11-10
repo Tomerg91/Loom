@@ -4,6 +4,7 @@ import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { createClient } from '@/lib/supabase/server';
+import { queryMonitor } from '@/lib/performance/query-monitoring';
 
 interface Client {
   id: string;
@@ -87,25 +88,38 @@ export async function GET(request: NextRequest): Promise<Response> {
     console.log('[/api/coach/clients] Fetching clients for coach:', coachId);
 
     // Get recent clients with session statistics
-    const { data: sessionsWithClients, error } = await supabase
-      .from('sessions')
-      .select(`
-        client_id,
-        scheduled_at,
-        status,
-        users!sessions_client_id_fkey (
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          avatar_url,
-          status,
-          created_at
-        )
-      `)
-      .eq('coach_id', coachId)
-      .order('scheduled_at', { ascending: false });
+    let sessionsWithClients: unknown;
+    let error: unknown;
+    try {
+      sessionsWithClients = await queryMonitor.trackQueryExecution(
+        'Coach Client Sessions',
+        async () => {
+          const result = await supabase
+            .from('sessions')
+            .select(`
+              client_id,
+              scheduled_at,
+              status,
+              users!sessions_client_id_fkey (
+                id,
+                first_name,
+                last_name,
+                email,
+                phone,
+                avatar_url,
+                status,
+                created_at
+              )
+            `)
+            .eq('coach_id', coachId)
+            .order('scheduled_at', { ascending: false });
+          if (result.error) throw result.error;
+          return result.data;
+        }
+      );
+    } catch (err) {
+      error = err;
+    }
 
     if (error) {
       console.error('[/api/coach/clients] Error fetching sessions:', error);

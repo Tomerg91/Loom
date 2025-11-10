@@ -6,6 +6,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { getCoachSessionRate } from '@/lib/coach-dashboard/coach-profile';
 import { getDefaultCoachRating } from '@/lib/config/analytics-constants';
 import { createClient } from '@/lib/supabase/server';
+import { queryMonitor } from '@/lib/performance/query-monitoring';
 
 interface DashboardStats {
   totalSessions: number;
@@ -51,15 +52,24 @@ export async function GET(request: NextRequest): Promise<Response> {
     endOfWeek.setHours(23, 59, 59, 999);
 
     // Fetch session statistics and coach rate concurrently
-    const sessionsPromise = supabase
-      .from('sessions')
-      .select('id, status, scheduled_at, client_id')
-      .eq('coach_id', coachId);
+    let sessionsResult: any;
+    try {
+      sessionsResult = await queryMonitor.trackQueryExecution(
+        'Coach Statistics Sessions',
+        async () => {
+          const result = await supabase
+            .from('sessions')
+            .select('id, status, scheduled_at, client_id')
+            .eq('coach_id', coachId);
+          return result;
+        }
+      );
+    } catch (error) {
+      console.error('[/api/coach/stats] Error fetching sessions:', error);
+      sessionsResult = { data: [], error };
+    }
 
-    const [sessionsResult, coachRate] = await Promise.all([
-      sessionsPromise,
-      getCoachSessionRate(supabase, coachId),
-    ]);
+    const coachRate = await getCoachSessionRate(supabase, coachId);
 
     if (sessionsResult.error) {
       console.error('[/api/coach/stats] Error fetching sessions:', sessionsResult.error);
