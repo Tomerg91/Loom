@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthLoading, useUser } from '@/lib/store/auth-store';
 
+import { AdminDashboard } from './admin/admin-dashboard';
 import { ClientDashboard } from './client/client-dashboard';
 import { CoachDashboard } from './coach/coach-dashboard';
 
@@ -84,6 +85,9 @@ export function DashboardContent({ locale }: DashboardContentProps) {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {role === 'admin' && (
+          <AdminDashboard userId={user.id} locale={locale} />
+        )}
         {role === 'coach' && (
           <CoachDashboard
             userId={user.id}
@@ -93,18 +97,6 @@ export function DashboardContent({ locale }: DashboardContentProps) {
         )}
         {role === 'client' && (
           <ClientDashboard userId={user.id} locale={locale} />
-        )}
-        {role !== 'coach' && role !== 'client' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('adminPlaceholder.title')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                {t('adminPlaceholder.body')}
-              </p>
-            </CardContent>
-          </Card>
         )}
       </div>
     </>
