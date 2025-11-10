@@ -231,14 +231,7 @@ describe('/api/sessions/book', () => {
             return {
               select: vi.fn().mockReturnThis(),
               eq: vi.fn().mockReturnThis(),
-              single: vi.fn().mockImplementation(() => {
-                const calls: unknown[] = [];
-                const lastCall = calls[calls.length - 1];
-                if (lastCall && lastCall[1] === mockUser.id) {
-                  return Promise.resolve({ data: { ...mockClientProfile, role: 'client' } });
-                }
-                return Promise.resolve({ data: mockCoachProfile });
-              }),
+              single: vi.fn().mockResolvedValue({ data: { ...mockClientProfile, role: 'client' }, error: null }),
             };
           }
           if (table === 'sessions') {
@@ -248,7 +241,22 @@ describe('/api/sessions/book', () => {
               single: vi.fn().mockResolvedValue({ data: mockSessionData, error: null }),
             };
           }
-          return { select: vi.fn(), eq: vi.fn(), single: vi.fn() };
+          // Return default chainable mock for other tables
+          return {
+            select: vi.fn().mockReturnThis(),
+            insert: vi.fn().mockReturnThis(),
+            update: vi.fn().mockReturnThis(),
+            delete: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            gte: vi.fn().mockReturnThis(),
+            lte: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockReturnThis(),
+            range: vi.fn().mockReturnThis(),
+            in: vi.fn().mockReturnThis(),
+            not: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: mockClientProfile, error: null }),
+          };
         });
 
         mockIsCoachAvailable.mockResolvedValue(true);
