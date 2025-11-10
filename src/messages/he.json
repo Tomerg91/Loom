@@ -26,7 +26,11 @@
     "selectLanguage": "בחר שפה",
     "show": "הצג",
     "hide": "הסתר",
-    "retry": "נסה שוב"
+    "retry": "נסה שוב",
+    "accessibility": {
+      "skipToMainContent": "עבור לתוכן הראשי",
+      "skipToNavigation": "עבור לניווט"
+    }
   },
   "navigation": {
     "home": "בית",
