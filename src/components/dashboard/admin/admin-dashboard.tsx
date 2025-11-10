@@ -81,9 +81,11 @@ export function AdminDashboard({ userId, locale }: AdminDashboardProps) {
   const [timeRange] = useState('30d');
 
   const { data: dashboardData, isLoading, error, refetch } = useQuery<DashboardData>({
-    queryKey: ['admin-dashboard', timeRange],
+    queryKey: ['admin-dashboard', userId, timeRange],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/dashboard?timeRange=${timeRange}`);
+      const response = await fetch(
+        `/api/admin/dashboard?timeRange=${encodeURIComponent(timeRange)}&userId=${encodeURIComponent(userId)}`
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data');
