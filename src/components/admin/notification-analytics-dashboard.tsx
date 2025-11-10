@@ -1,31 +1,31 @@
 'use client';
 
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { formatDistanceToNow, format, subDays, subWeeks, subMonths } from 'date-fns';
+import { formatDistanceToNow, format} from 'date-fns';
 import { 
   Mail, 
   Bell, 
   Smartphone, 
-  TrendingUp, 
-  TrendingDown,
-  Users,
+ 
+
+
   Send,
   CheckCircle,
-  XCircle,
-  Clock,
+
+
   Eye,
   MousePointer,
   RefreshCw,
   Download,
   Filter,
-  Calendar,
-  BarChart3,
-  PieChart as PieChartIcon,
-  Activity,
+
+
+  PieChart as
+
   AlertTriangle,
   Loader2
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState} from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -48,7 +48,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -129,7 +128,7 @@ interface NotificationAnalytics {
   }>;
 }
 
-interface DeliveryStats {
+interface _ChannelStats {
   channel: string;
   status: string;
   count: number;
@@ -214,7 +213,7 @@ export function NotificationAnalyticsDashboard() {
   });
 
   // Calculate percentage change
-  const calculateChange = (current: number, previous: number) => {
+  const _calculateChange = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? 100 : 0;
     return ((current - previous) / previous) * 100;
   };

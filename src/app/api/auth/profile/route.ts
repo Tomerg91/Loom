@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createAuthService } from '@/lib/auth/auth';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createCorsResponse } from '@/lib/security/cors';
 
 const updateProfileSchema = z.object({
   firstName: z.string().min(1, 'First name is required').optional(),

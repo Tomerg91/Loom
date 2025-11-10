@@ -80,7 +80,7 @@ export function MarketingHeader({ locale, content }: MarketingHeaderProps) {
           {content.links.map((link) => (
             <Link
               key={link.href + link.label}
-              href={link.href as any}
+              href={link.href as unknown}
               locale={resolveLocale(link.href)}
               className="transition-colors hover:text-purple-600"
             >
@@ -92,17 +92,17 @@ export function MarketingHeader({ locale, content }: MarketingHeaderProps) {
         <div className="hidden items-center gap-3 md:flex">
           <LanguageSwitcher variant="dropdown" size="sm" className="hidden lg:flex" />
           <Button variant="ghost" size="sm" asChild>
-            <Link href={content.contact.href as any} locale={resolveLocale(content.contact.href)}>
+            <Link href={content.contact.href as unknown} locale={resolveLocale(content.contact.href)}>
               {content.contact.label}
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link href={content.signIn.href as any} locale={resolveLocale(content.signIn.href)}>
+            <Link href={content.signIn.href as unknown} locale={resolveLocale(content.signIn.href)}>
               {content.signIn.label}
             </Link>
           </Button>
           <Button variant="default" size="sm" asChild>
-            <Link href={content.signUp.href as any} locale={resolveLocale(content.signUp.href)}>
+            <Link href={content.signUp.href as unknown} locale={resolveLocale(content.signUp.href)}>
               {content.signUp.label}
             </Link>
           </Button>
@@ -136,7 +136,7 @@ export function MarketingHeader({ locale, content }: MarketingHeaderProps) {
             {content.links.map((link) => (
               <Link
                 key={`mobile-${link.href}-${link.label}`}
-                href={link.href as any}
+                href={link.href as unknown}
                 locale={resolveLocale(link.href)}
                 className="rounded-lg px-3 py-2 transition-colors hover:bg-purple-50 hover:text-purple-700"
                 onClick={closeMenu}
@@ -148,7 +148,7 @@ export function MarketingHeader({ locale, content }: MarketingHeaderProps) {
           <div className="flex flex-col gap-2">
             <Button variant="ghost" className="justify-center" asChild>
               <Link
-                href={content.contact.href as any}
+                href={content.contact.href as unknown}
                 locale={resolveLocale(content.contact.href)}
                 onClick={closeMenu}
               >
@@ -157,7 +157,7 @@ export function MarketingHeader({ locale, content }: MarketingHeaderProps) {
             </Button>
             <Button variant="outline" className="justify-center" asChild>
               <Link
-                href={content.signIn.href as any}
+                href={content.signIn.href as unknown}
                 locale={resolveLocale(content.signIn.href)}
                 onClick={closeMenu}
               >
@@ -166,7 +166,7 @@ export function MarketingHeader({ locale, content }: MarketingHeaderProps) {
             </Button>
             <Button variant="default" className="justify-center" asChild>
               <Link
-                href={content.signUp.href as any}
+                href={content.signUp.href as unknown}
                 locale={resolveLocale(content.signUp.href)}
                 onClick={closeMenu}
               >

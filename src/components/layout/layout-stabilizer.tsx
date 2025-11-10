@@ -145,7 +145,7 @@ export const StableImage = React.memo(({
   width: number;
   height: number;
   className?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }) => {
   return (
     <div 

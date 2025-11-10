@@ -42,7 +42,7 @@ interface AuditLog {
   user_role: string;
   ip_address?: string;
   user_agent?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
   severity?: 'info' | 'warning' | 'error' | 'critical';
 }

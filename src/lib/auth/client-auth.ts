@@ -111,6 +111,7 @@ export class ClientAuthService {
     user: AuthUser | null;
     error: string | null;
     requiresMFA?: boolean;
+    availableMethods?: string[];
   }> {
     try {
       console.log('[ClientAuthService.signIn] Starting signin for:', data.email);
@@ -146,13 +147,17 @@ export class ClientAuthService {
 
       if (resultData.requiresMFA) {
         const mfaUser = resultData.user as AuthUser | undefined;
-        console.log('[ClientAuthService.signIn] MFA required');
+        const availableMethods = resultData.availableMethods as string[] | undefined;
+        console.log('[ClientAuthService.signIn] MFA required', {
+          availableMethods,
+        });
         if (mfaUser) {
           // Ensure MFA flag is set so the UI can route appropriately
           return {
             user: { ...mfaUser, mfaEnabled: true },
             error: null,
             requiresMFA: true,
+            availableMethods,
           };
         }
 
@@ -160,6 +165,7 @@ export class ClientAuthService {
           user: null,
           error: 'Multi-factor authentication required',
           requiresMFA: true,
+          availableMethods,
         };
       }
 

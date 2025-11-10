@@ -20,7 +20,7 @@ const TooltipTrigger = React.forwardRef<
   }
 >(({ className, asChild, children, ...props }, ref) => {
   if (asChild && React.isValidElement(children)) {
-    const child = children as React.ReactElement<any>;
+    const child = children as React.ReactElement<unknown>;
     return React.cloneElement(child, {
       ref,
       className: cn(className, child.props.className),
@@ -48,7 +48,7 @@ const TooltipContent = React.forwardRef<
     align?: 'start' | 'center' | 'end';
     sideOffset?: number;
   }
->(({ className, children, side = 'top', align = 'center', ...props }, ref) => {
+>(({ className, children, side = 'top', _align = 'center', ...props }, ref) => {
   const [isVisible, setIsVisible] = React.useState(false);
   
   React.useEffect(() => {

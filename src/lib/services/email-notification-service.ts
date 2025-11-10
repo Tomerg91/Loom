@@ -135,7 +135,7 @@ export class EmailNotificationService {
     userId: string,
     userEmail: string,
     notificationType: NotificationType,
-    templateVariables: Record<string, any> = {},
+    templateVariables: Record<string, unknown> = {},
     userLanguage: string = 'en'
   ): Promise<EmailDeliveryResult> {
     try {
@@ -193,10 +193,10 @@ export class EmailNotificationService {
       userId: string;
       email: string;
       name?: string;
-      templateVariables?: Record<string, any>;
+      templateVariables?: Record<string, unknown>;
     }>,
     notificationType: NotificationType,
-    globalTemplateVariables: Record<string, any> = {}
+    globalTemplateVariables: Record<string, unknown> = {}
   ): Promise<{ sent: number; failed: number; results: EmailDeliveryResult[] }> {
     let sent = 0;
     let failed = 0;
@@ -302,7 +302,7 @@ export class EmailNotificationService {
   /**
    * Process template variables in text
    */
-  private processTemplateVariables(template: string, variables: Record<string, any>): string {
+  private processTemplateVariables(template: string, variables: Record<string, unknown>): string {
     let processed = template;
     
     Object.entries(variables).forEach(([key, value]) => {
@@ -395,7 +395,7 @@ export class EmailNotificationService {
   /**
    * Send email using SendGrid (placeholder implementation)
    */
-  private async sendWithSendGrid(payload: EmailNotificationPayload): Promise<EmailDeliveryResult> {
+  private async sendWithSendGrid(_payload: EmailNotificationPayload): Promise<EmailDeliveryResult> {
     // Implement SendGrid API integration
     console.log('SendGrid integration not implemented yet');
     return {
@@ -408,7 +408,7 @@ export class EmailNotificationService {
   /**
    * Send email using AWS SES (placeholder implementation)
    */
-  private async sendWithSES(payload: EmailNotificationPayload): Promise<EmailDeliveryResult> {
+  private async sendWithSES(_payload: EmailNotificationPayload): Promise<EmailDeliveryResult> {
     // Implement AWS SES integration
     console.log('AWS SES integration not implemented yet');
     return {
@@ -421,7 +421,7 @@ export class EmailNotificationService {
   /**
    * Send email using Postmark (placeholder implementation)
    */
-  private async sendWithPostmark(payload: EmailNotificationPayload): Promise<EmailDeliveryResult> {
+  private async sendWithPostmark(_payload: EmailNotificationPayload): Promise<EmailDeliveryResult> {
     // Implement Postmark API integration
     console.log('Postmark integration not implemented yet');
     return {
@@ -442,7 +442,7 @@ export class EmailNotificationService {
     errorMessage?: string
   ): Promise<void> {
     try {
-      const logData: any = {
+      const logData: unknown = {
         notification_id: notificationId,
         channel: 'email',
         status,

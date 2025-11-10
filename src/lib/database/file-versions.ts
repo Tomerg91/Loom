@@ -18,7 +18,7 @@ export interface FileVersion {
   is_current_version: boolean;
   created_by: string;
   created_at: string;
-  diff_metadata?: any;
+  diff_metadata?: unknown;
 }
 
 export interface FileVersionWithDetails extends FileVersion {
@@ -267,7 +267,7 @@ class FileVersionsDatabase {
       description: string;
       change_summary: string;
       is_major_version: boolean;
-      diff_metadata: any;
+      diff_metadata: unknown;
     }>
   ): Promise<FileVersionWithDetails> {
     const supabase = await this.getSupabaseClient();

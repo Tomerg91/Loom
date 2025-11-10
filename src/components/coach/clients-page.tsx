@@ -97,7 +97,7 @@ export function CoachClientsPage() {
   });
 
   // Transform API data to match component interface
-  const clients: Client[] = clientsData?.map((client: any) => {
+  const clients: Client[] = clientsData?.map((client: unknown) => {
     const totalSessions = client.totalSessions ?? client.total_sessions ?? 0;
     const completedSessions = client.completedSessions ?? client.completed_sessions ?? 0;
     const rawProgress = client.progress ?? null;

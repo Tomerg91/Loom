@@ -10,7 +10,7 @@ export interface CreatePaymentInput {
   currency?: 'ILS' | 'USD';
   description?: string;
   idempotencyKey?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UpsertProviderPaymentInput {
@@ -19,7 +19,7 @@ export interface UpsertProviderPaymentInput {
   status: PaymentStatus;
   amount?: number;
   currency?: string;
-  rawPayload?: any;
+  rawPayload?: unknown;
 }
 
 export class PaymentService {
@@ -39,18 +39,18 @@ export class PaymentService {
         provider: 'tranzila',
         idempotency_key: input.idempotencyKey || null,
         metadata: input.metadata || {},
-      } as any)
+      } as unknown)
       .select()
       .single();
 
     if (error) throw error;
-    return data as any;
+    return data as unknown;
   }
 
   async upsertByProviderTxn(input: UpsertProviderPaymentInput) {
     // Use admin client because webhook context has no user
     const { data, error } = await this.admin
-      .from('payments' as any)
+      .from('payments' as unknown)
       .upsert({
         provider: input.provider,
         provider_transaction_id: input.providerTransactionId,
@@ -59,12 +59,12 @@ export class PaymentService {
         currency: input.currency,
         raw_payload: input.rawPayload || {},
         updated_at: new Date().toISOString(),
-      } as any, { onConflict: 'provider,provider_transaction_id' })
+      } as unknown, { onConflict: 'provider,provider_transaction_id' })
       .select()
       .single();
 
     if (error) throw error;
-    return data as any;
+    return data as unknown;
   }
 }
 

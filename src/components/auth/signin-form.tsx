@@ -92,6 +92,14 @@ export function SigninForm({ redirectTo = '/dashboard' }: SigninFormProps) {
           userId: result.user.id,
           redirectTo: targetPath,
         });
+
+        // Add available MFA methods if provided in response
+        // @ts-expect-error - availableMethods may be in result but not in type
+        if (result.availableMethods && Array.isArray(result.availableMethods)) {
+          // @ts-expect-error - availableMethods may be in result but not in type
+          query.set('availableMethods', result.availableMethods.join(','));
+        }
+
         const mfaPath = resolveAuthPath(locale, `/auth/mfa-verify?${query.toString()}`);
         logDebug('🔐 MFA required, navigating to:', mfaPath);
         console.log('[SigninForm] Navigating to MFA:', mfaPath);

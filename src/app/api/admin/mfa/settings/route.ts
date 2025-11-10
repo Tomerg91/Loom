@@ -22,7 +22,7 @@ const mfaSettingsSchema = z.object({
 
 // Apply rate limiting for MFA settings operations
 const getHandler = rateLimit(20, 60000)( // 20 requests per minute for getting settings
-  async (request: NextRequest): Promise<NextResponse> => {
+  async (_request: NextRequest): Promise<NextResponse> => {
     try {
       // Verify admin access
       const session = await authService.getSession();

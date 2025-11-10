@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 
 // GET /api/admin/system/db-checks
 export const GET = compose(
-  withErrorHandling(withRequestLogging(async (request: NextRequest) => {
+  withErrorHandling(withRequestLogging(async (_request: NextRequest) => {
     try {
       const admin = createAdminClient();
       const { data, error } = await admin.rpc('db_health_check');

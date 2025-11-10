@@ -31,7 +31,7 @@ export const GET = withErrorHandling(
 
       const notificationService = new NotificationService(true);
 
-      const filters: any = {
+      const filters: unknown = {
         userId: user.id,
         limit,
         sortBy: 'created_at',

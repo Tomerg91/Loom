@@ -147,7 +147,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         'aria-disabled': (disabled ?? childDisabled) || loading,
         'aria-busy': loading,
         'aria-label': loading ? loadingText : ariaLabel ?? childAriaLabel,
-        dir: (child.props as any)?.dir ?? direction,
+        dir: (child.props as unknown)?.dir ?? direction,
         'data-locale-direction': direction,
         ...props,
         children: (

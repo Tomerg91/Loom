@@ -699,7 +699,7 @@ class FileManagementService {
     }
   }
 
-  private hasFileAccess(file: any, userId: string): boolean {
+  private hasFileAccess(file: unknown, userId: string): boolean {
     // Owner always has access
     if (file.user_id === userId) return true;
 
@@ -814,7 +814,7 @@ class FileManagementService {
   };
 
   private mapFileUploadRowWithJoins = async (
-    row: any
+    row: unknown
   ): Promise<FileMetadata> => {
     const base = await this.mapFileUploadRow(row);
 

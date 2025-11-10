@@ -70,8 +70,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
       // Transform reflections into feedback format
       feedback = (reflections || []).map(reflection => {
-        const session = coachSessions?.find((s: any) => s.id === reflection.session_id);
-        const client = session?.client as any;
+        const session = coachSessions?.find((s: unknown) => s.id === reflection.session_id);
+        const client = session?.client as unknown;
         
         // Use mood rating as session rating (1-10 scale converted to 1-5)
         const rating = Math.min(5, Math.max(1, Math.round((reflection.mood_rating || 5) / 2)));
@@ -124,8 +124,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         .not('mood_rating', 'is', null);
 
       feedback = (reflections || []).map(reflection => {
-        const session = clientSessions?.find((s: any) => s.id === reflection.session_id);
-        const coach = session?.coach as any;
+        const session = clientSessions?.find((s: unknown) => s.id === reflection.session_id);
+        const _coach = session?.coach as unknown;
         
         const rating = Math.min(5, Math.max(1, Math.round((reflection.mood_rating || 5) / 2)));
         
@@ -175,9 +175,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         .not('mood_rating', 'is', null);
 
       feedback = (reflections || []).map(reflection => {
-        const session = allSessions?.find((s: any) => s.id === reflection.session_id);
-        const client = session?.client as any;
-        const coach = session?.coach as any;
+        const session = allSessions?.find((s: unknown) => s.id === reflection.session_id);
+        const client = session?.client as unknown;
+        const coach = session?.coach as unknown;
         
         const rating = Math.min(5, Math.max(1, Math.round((reflection.mood_rating || 5) / 2)));
         

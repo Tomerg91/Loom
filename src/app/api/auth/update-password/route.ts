@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createAuthService } from '@/lib/auth/auth';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createCorsResponse } from '@/lib/security/cors';
 
 const updatePasswordSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),

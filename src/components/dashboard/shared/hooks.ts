@@ -3,16 +3,16 @@ import { useMemo } from 'react';
 
 import { formatDate } from './utils';
 
-export const useFormattedDates = (data: any) => {
+export const useFormattedDates = (data: unknown) => {
   return useMemo(() => {
     if (!data) return {};
     
     const dates: Record<string, string> = {};
     
     // Format goal target dates
-    data.goals?.forEach((goal: any) => {
+    data.goals?.forEach((goal: unknown) => {
       dates[`goal-${goal.id}-target`] = formatDate(goal.targetDate);
-      goal.milestones?.forEach((milestone: any) => {
+      goal.milestones?.forEach((milestone: unknown) => {
         if (milestone.completedDate) {
           dates[`milestone-${milestone.id}`] = formatDate(milestone.completedDate);
         }
@@ -20,12 +20,12 @@ export const useFormattedDates = (data: any) => {
     });
     
     // Format session dates
-    data.sessions?.forEach((session: any) => {
+    data.sessions?.forEach((session: unknown) => {
       dates[`session-${session.id}`] = formatDate(session.date);
     });
     
     // Format achievement dates
-    data.achievements?.forEach((achievement: any) => {
+    data.achievements?.forEach((achievement: unknown) => {
       dates[`achievement-${achievement.id}`] = formatDate(achievement.earnedDate);
     });
     
@@ -53,7 +53,7 @@ export const useFilteredData = <T>(
       // Additional filters
       const matchesFilters = Object.entries(filters).every(([key, value]) => {
         if (value === 'all') return true;
-        return (item as any)[key] === value;
+        return (item as unknown)[key] === value;
       });
       
       return matchesSearch && matchesFilters;

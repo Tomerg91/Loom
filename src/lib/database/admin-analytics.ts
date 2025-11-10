@@ -1,4 +1,4 @@
-import { ANALYTICS_CONFIG, getSessionRate, getDefaultCoachRating } from '@/lib/config/analytics-constants';
+import { getSessionRate, getDefaultCoachRating } from '@/lib/config/analytics-constants';
 import { createServerClient } from '@/lib/supabase/server';
 
 export interface AdminAnalyticsOverview {
@@ -188,7 +188,7 @@ class AdminAnalyticsService {
       const activeCoaches = uniqueActiveCoaches.size;
 
       // Calculate real average rating from reflections table
-      const { data: ratingData, error: ratingError } = await supabase
+      const { data: ratingData, error: _ratingError } = await supabase
         .from('reflections')
         .select('mood_rating')
         .gte('created_at', startDate.toISOString())

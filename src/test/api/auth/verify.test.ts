@@ -42,7 +42,7 @@ describe('/api/auth/verify', () => {
     type: 'recovery',
   };
 
-  let mockAuthServiceInstance: any;
+  let mockAuthServiceInstance: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -173,7 +173,7 @@ describe('/api/auth/verify', () => {
         });
 
         const response = await POST(request);
-        const data = await response.json();
+        const _data = await response.json();
 
         expect(response.status).toBe(200);
         expect(mockAuthServiceInstance.verifyOtp).toHaveBeenCalledWith({
@@ -616,7 +616,7 @@ describe('/api/auth/verify', () => {
         const originalURL = URL;
         global.URL = vi.fn().mockImplementation(() => {
           throw new Error('URL parsing failed');
-        }) as any;
+        }) as unknown;
 
         const request = new NextRequest(
           'http://localhost:3000/api/auth/verify?token_hash=test_token'

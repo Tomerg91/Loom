@@ -25,14 +25,14 @@ export async function GET(request: NextRequest) {
     const searchParams = {
       query: url.searchParams.get('query') || undefined,
       fileTypes: url.searchParams.get('fileTypes')?.split(',') || undefined,
-      fileCategory: (url.searchParams.get('fileCategory') as any) || undefined,
+      fileCategory: (url.searchParams.get('fileCategory') as unknown) || undefined,
       sessionId: url.searchParams.get('sessionId') || undefined,
       tags: url.searchParams.get('tags')?.split(',') || undefined,
       ownerId: url.searchParams.get('ownerId') || undefined,
       sharedWithMe: url.searchParams.get('sharedWithMe') === 'true',
       limit: parseInt(url.searchParams.get('limit') || '50'),
       offset: parseInt(url.searchParams.get('offset') || '0'),
-      sortBy: (url.searchParams.get('sortBy') as any) || 'created_at',
+      sortBy: (url.searchParams.get('sortBy') as unknown) || 'created_at',
       sortOrder: (url.searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
     };
 
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       sessionId: formData.get('sessionId') as string || undefined,
       description: formData.get('description') as string || undefined,
       tags: formData.get('tags') ? (formData.get('tags') as string).split(',') : undefined,
-      fileCategory: (formData.get('fileCategory') as any) || 'document',
+      fileCategory: (formData.get('fileCategory') as unknown) || 'document',
     };
 
     const result = await fileManagementService.uploadFile(file, userId, options);

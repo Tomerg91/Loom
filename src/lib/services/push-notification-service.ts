@@ -18,7 +18,7 @@ export interface PushNotificationPayload {
   badge?: string;
   image?: string;
   tag?: string;
-  data?: any;
+  data?: unknown;
   actions?: Array<{
     action: string;
     title: string;
@@ -75,7 +75,7 @@ export class PushNotificationService {
    */
   async subscribeUser(
     userId: string,
-    subscription: any
+    subscription: unknown
   ): Promise<PushSubscription | null> {
     try {
       const subscriptionData = {
@@ -191,12 +191,12 @@ export class PushNotificationService {
   async sendPushNotification(
     userId: string,
     payload: PushNotificationPayload,
-    options?: {
+    _options?: {
       ttl?: number;
       urgency?: 'very-low' | 'low' | 'normal' | 'high';
       topic?: string;
     }
-  ): Promise<{ success: boolean; results: any[] }> {
+  ): Promise<{ success: boolean; results: unknown[] }> {
     try {
       // Get user's push subscriptions
       const subscriptions = await this.getUserSubscriptions(userId);
@@ -296,7 +296,7 @@ export class PushNotificationService {
       urgency?: 'very-low' | 'low' | 'normal' | 'high';
       topic?: string;
     }
-  ): Promise<{ totalSent: number; totalFailed: number; results: any[] }> {
+  ): Promise<{ totalSent: number; totalFailed: number; results: unknown[] }> {
     try {
       const results = await Promise.allSettled(
         userIds.map(userId =>
@@ -306,7 +306,7 @@ export class PushNotificationService {
 
       let totalSent = 0;
       let totalFailed = 0;
-      const allResults: any[] = [];
+      const allResults: unknown[] = [];
 
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
@@ -374,7 +374,7 @@ export class PushNotificationService {
     try {
       if (!notificationId) return;
 
-      const logData: any = {
+      const logData: unknown = {
         notification_id: notificationId,
         channel: 'push',
         status,
@@ -409,7 +409,7 @@ export class PushNotificationService {
   /**
    * Map database subscription to interface
    */
-  private mapDatabaseSubscription(data: any): PushSubscription {
+  private mapDatabaseSubscription(data: unknown): PushSubscription {
     return {
       id: data.id,
       userId: data.user_id,

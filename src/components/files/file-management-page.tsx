@@ -3,18 +3,18 @@
 import { 
   FolderIcon, 
   UploadIcon, 
-  SettingsIcon,
+
   ChevronRightIcon,
   HomeIcon,
   AlertTriangleIcon,
-  FileIcon,
-  UsersIcon,
+
+
   TagIcon,
   ShareIcon,
   BarChart3Icon,
   RefreshCwIcon,
   FilterIcon,
-  SortAscIcon,
+
   XIcon,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -30,13 +30,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// import {} from '@/components/ui/tabs';
 
 import { FileBrowser, FileItem } from './file-browser';
 import { FileOrganizationPanel, VirtualFolder, TagInfo } from './file-organization-panel';
 import { FileSharingDialog } from './file-sharing-dialog';
-import { FileUploadZone, UploadFile } from './file-upload-zone';
+import { FileUploadZone} from './file-upload-zone';
 
 
 interface FileManagementPageProps {
@@ -67,7 +66,7 @@ export function FileManagementPage({
   const [files, setFiles] = useState<FileItem[]>(initialFiles);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [activeTab, setActiveTab] = useState('browser');
+  const [_activeTab, _setActiveTab] = useState('browser');
   
   // Organization state
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -80,7 +79,7 @@ export function FileManagementPage({
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareTargetFile, setShareTargetFile] = useState<FileItem | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, _setSidebarCollapsed] = useState(false);
   
   // Breadcrumb state
   const [breadcrumb, setBreadcrumb] = useState<Array<{ label: string; value?: string }>>([
@@ -127,7 +126,7 @@ export function FileManagementPage({
       
       const data = await response.json();
       // Map the file data to match the FileItem interface
-      const mappedFiles = (data.files || []).map((file: any) => ({
+      const mappedFiles = (data.files || []).map((file: unknown) => ({
         id: file.id,
         filename: file.filename,
         originalFilename: file.originalFilename || file.filename,
@@ -325,7 +324,7 @@ export function FileManagementPage({
   }, [filteredFiles]);
 
   // Event handlers
-  const handleFileUpload = async (uploadResults: any[]) => {
+  const handleFileUpload = async (_uploadResults: unknown[]) => {
     // Refresh files after upload
     await loadFiles();
     await loadTags();

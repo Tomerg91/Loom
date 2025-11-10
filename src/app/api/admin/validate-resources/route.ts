@@ -269,7 +269,7 @@ export async function GET() {
     // ========================================================================
     const { data: stats } = await supabase.rpc('get_resource_library_statistics');
 
-    const statistics: TableStatistics[] = (stats || []).map((stat: any) => ({
+    const statistics: TableStatistics[] = (stats || []).map((stat: unknown) => ({
       tableName: stat.table_name,
       totalRecords: stat.total_records || 0,
       createdLast7Days: stat.created_last_7_days || 0,
@@ -281,7 +281,7 @@ export async function GET() {
     // ========================================================================
     const { data: coaches } = await supabase.rpc('get_affected_coaches');
 
-    const affectedCoaches: AffectedCoach[] = (coaches || []).map((coach: any) => ({
+    const affectedCoaches: AffectedCoach[] = (coaches || []).map((coach: unknown) => ({
       coachId: coach.coach_id,
       email: coach.email,
       firstName: coach.first_name,

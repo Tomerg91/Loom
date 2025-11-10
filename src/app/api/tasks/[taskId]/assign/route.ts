@@ -7,13 +7,13 @@ import {
   createSuccessResponse,
   validateRequestBody,
 } from '@/lib/api/utils';
+import { TaskService } from '@/lib/services/task-service';
 import { createServerClient } from '@/lib/supabase/server';
 import { createLogger } from '@/modules/platform/logging/logger';
 import {
   ForbiddenSupabaseHttpError,
   ensureNoSupabaseHttpUsage,
 } from '@/modules/platform/security';
-import { TaskService } from '@/lib/services/task-service';
 
 const log = createLogger({ context: 'api:tasks:assign' });
 

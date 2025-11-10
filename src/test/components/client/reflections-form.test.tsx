@@ -1,9 +1,9 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { ReflectionsManagement } from '@/components/client/reflections-management';
-import { renderWithProviders, mockUseQuery, mockUseMutation, mockUser, createMockReflection } from '@/test/utils';
+import { renderWithProviders, mockUseQuery, mockUseMutation, createMockReflection } from '@/test/utils';
 
 // Mock dependencies
 vi.mock('@tanstack/react-query', async () => {
@@ -25,7 +25,7 @@ vi.mock('react-hook-form', () => ({
       onBlur: vi.fn(),
       ref: vi.fn(),
     })),
-    handleSubmit: vi.fn((fn) => (e: any) => {
+    handleSubmit: vi.fn((fn) => (e: unknown) => {
       e?.preventDefault();
       return fn({
         sessionId: 'session-123',
@@ -116,10 +116,10 @@ describe('ReflectionsManagement', () => {
     vi.clearAllMocks();
 
     // Mock query client
-    (useQueryClient as any).mockReturnValue(mockQueryClient);
+    (useQueryClient as unknown).mockReturnValue(mockQueryClient);
 
     // Mock queries
-    (useQuery as any).mockImplementation(({ queryKey }: any) => {
+    (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
       if (queryKey[0] === 'client-sessions') {
         return mockUseQuery(mockSessions);
       }
@@ -130,7 +130,7 @@ describe('ReflectionsManagement', () => {
     });
 
     // Mock mutations
-    (useMutation as any).mockImplementation(({ mutationFn }: any) => {
+    (useMutation as unknown).mockImplementation(({ mutationFn }: unknown) => {
       if (mutationFn.toString().includes('DELETE')) {
         return mockDeleteMutation;
       }
@@ -633,7 +633,7 @@ describe('ReflectionsManagement', () => {
 
   describe('Loading and Error States', () => {
     it('shows loading state while fetching reflections', () => {
-      (useQuery as any).mockImplementation(({ queryKey }: any) => {
+      (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'reflections') {
           return { ...mockUseQuery(null), isLoading: true };
         }
@@ -650,7 +650,7 @@ describe('ReflectionsManagement', () => {
     });
 
     it('shows error state when fetch fails', () => {
-      (useQuery as any).mockImplementation(({ queryKey }: any) => {
+      (useQuery as unknown).mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'reflections') {
           return {
             ...mockUseQuery(null),
@@ -672,7 +672,7 @@ describe('ReflectionsManagement', () => {
 
     it('shows loading state during form submission', async () => {
       const loadingMutation = { ...mockSaveMutation, isPending: true };
-      (useMutation as any).mockReturnValue(loadingMutation);
+      (useMutation as unknown).mockReturnValue(loadingMutation);
       
       renderWithProviders(<ReflectionsManagement {...defaultProps} />);
       

@@ -11,16 +11,15 @@ import {
   SortDesc,
   Download,
   Share2,
-  MoreHorizontal,
-  Eye,
-  Edit3,
+
+
+
   Trash2,
   X
 } from 'lucide-react';
 import React, { useState, useCallback, useEffect } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -48,7 +47,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { useFiles } from '@/hooks/use-files';
 import { useFolders } from '@/hooks/use-folders';
-import { FileMetadata, FolderMetadata } from '@/lib/services/file-management-service';
+import { FileMetadata} from '@/lib/services/file-management-service';
 
 import { FileGrid } from './file-grid';
 import { FileList } from './file-list';
@@ -174,7 +173,7 @@ export function FileManager({
         description: `Successfully created folder \"${folderName}\"`,
       });
       refetchFolders();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to create folder. Please try again.',
@@ -238,7 +237,7 @@ export function FileManager({
       });
       
       refetchFiles();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Upload failed',
         description: 'Some files failed to upload. Please try again.',
@@ -260,7 +259,7 @@ export function FileManager({
         newSet.delete(fileId);
         return newSet;
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to delete file. Please try again.',
@@ -279,7 +278,7 @@ export function FileManager({
       });
       refetchFiles();
       setSelectedFiles(new Set());
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to delete some files. Please try again.',

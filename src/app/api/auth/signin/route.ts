@@ -219,10 +219,23 @@ export const POST = withErrorHandling(
         : null;
 
       if (requiresMFA) {
+        // Query available MFA methods for the user
+        const { data: mfaMethods } = await supabase
+          .from('user_mfa_methods')
+          .select('method_type, sms_phone')
+          .eq('user_id', user.id)
+          .eq('enabled', true);
+
+        // Extract available method types, default to TOTP if none found
+        const availableMethods = mfaMethods && mfaMethods.length > 0
+          ? mfaMethods.map(m => m.method_type)
+          : ['totp'];
+
         // Log MFA required for auditing
         console.info('User signin - MFA required:', {
           userId: user.id,
           email: user.email,
+          availableMethods,
           timestamp: new Date().toISOString(),
           ip: request.headers.get('x-forwarded-for') || 'unknown'
         });
@@ -232,6 +245,8 @@ export const POST = withErrorHandling(
           success: true,
           data: {
             requiresMFA: true,
+            availableMethods,
+            userId: user.id,
             user: { ...sanitizedUser, mfaEnabled: true },
             session: sessionPayload,
             message: 'MFA verification required to complete signin'

@@ -5,8 +5,8 @@ import {
   Filter, 
   Star, 
   Archive, 
-  Eye, 
-  Calendar, 
+ 
+ 
   Tag, 
   Folder,
   LayoutGrid,
@@ -21,12 +21,12 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
+
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
+
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

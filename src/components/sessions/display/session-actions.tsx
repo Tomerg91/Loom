@@ -1,4 +1,4 @@
-import { CheckCircle, X, Trash2, Play, Square, Edit } from 'lucide-react';
+import { X, Trash2, Play, Square, Edit } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +18,7 @@ interface SessionActionsProps {
 export function SessionActions({ 
   session, 
   currentUser, 
-  onComplete, 
+  _onComplete, 
   onCancel, 
   onDelete,
   onStart,

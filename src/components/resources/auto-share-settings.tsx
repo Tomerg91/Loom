@@ -27,7 +27,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { cn } from '@/lib/utils';
 
 export interface AutoShareSettingsProps {
   enabled: boolean;
@@ -97,7 +96,7 @@ export function AutoShareSettings({
             {/* Permission Level */}
             <div className="space-y-2">
               <Label>Default Permission</Label>
-              <Select value={permission} onValueChange={onPermissionChange as any}>
+              <Select value={permission} onValueChange={onPermissionChange as unknown}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

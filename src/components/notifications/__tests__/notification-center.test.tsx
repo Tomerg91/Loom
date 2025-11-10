@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -110,7 +110,7 @@ describe('NotificationCenter', () => {
       },
     });
 
-    (useRouter as any).mockReturnValue({
+    (useRouter as unknown).mockReturnValue({
       push: mockPush,
     });
 
@@ -138,7 +138,7 @@ describe('NotificationCenter', () => {
 
   describe('Basic Rendering', () => {
     it('should render notification bell button', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => mockNotifications,
       });
@@ -149,7 +149,7 @@ describe('NotificationCenter', () => {
     });
 
     it('should show unread count badge when there are unread notifications', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => mockNotifications,
       });
@@ -165,7 +165,7 @@ describe('NotificationCenter', () => {
 
   describe('Notification List', () => {
     it('should display notifications when dropdown is opened', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => mockNotifications,
       });
@@ -184,7 +184,7 @@ describe('NotificationCenter', () => {
     });
 
     it('should show empty state when no notifications exist', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: [],
@@ -205,7 +205,7 @@ describe('NotificationCenter', () => {
 
   describe('Notification Actions', () => {
     it('should mark notification as read when clicked', async () => {
-      (global.fetch as any)
+      (global.fetch as unknown)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => mockNotifications,
@@ -240,7 +240,7 @@ describe('NotificationCenter', () => {
     });
 
     it('should mark all notifications as read', async () => {
-      (global.fetch as any)
+      (global.fetch as unknown)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => mockNotifications,
@@ -271,7 +271,7 @@ describe('NotificationCenter', () => {
     });
 
     it('should delete notification', async () => {
-      (global.fetch as any)
+      (global.fetch as unknown)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => mockNotifications,
@@ -323,7 +323,7 @@ describe('NotificationCenter', () => {
 
   describe('Navigation', () => {
     it('should navigate to settings when settings button is clicked', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => mockNotifications,
       });
@@ -344,7 +344,7 @@ describe('NotificationCenter', () => {
     });
 
     it('should navigate correctly based on notification type and user role', async () => {
-      (global.fetch as any)
+      (global.fetch as unknown)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => mockNotifications,
@@ -374,7 +374,7 @@ describe('NotificationCenter', () => {
 
   describe('Offline Functionality', () => {
     it('should queue actions when offline', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => mockNotifications,
       });
@@ -408,7 +408,7 @@ describe('NotificationCenter', () => {
   describe('Error Handling', () => {
     it('should handle API errors gracefully', async () => {
       const user = userEvent.setup();
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as unknown).mockRejectedValueOnce(new Error('Network error'));
 
       renderWithProvider(<NotificationCenter />);
 
@@ -421,7 +421,7 @@ describe('NotificationCenter', () => {
     });
 
     it('should retry failed API calls', async () => {
-      (global.fetch as any)
+      (global.fetch as unknown)
         .mockRejectedValueOnce(new Error('Network error'))
         .mockResolvedValueOnce({
           ok: true,
@@ -447,7 +447,7 @@ describe('NotificationCenter', () => {
 
   describe('Real-time Updates', () => {
     it('should show connection status indicator', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => mockNotifications,
       });

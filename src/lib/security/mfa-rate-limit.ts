@@ -91,7 +91,7 @@ export class MFARateLimiter {
 
       // Count failed attempts in different time windows
       const failedAttempts15Min = userAttempts?.filter(
-        (attempt: any) => !attempt.success && new Date(attempt.createdAt || attempt.created_at) >= fifteenMinutesAgo
+        (attempt: unknown) => !attempt.success && new Date(attempt.createdAt || attempt.created_at) >= fifteenMinutesAgo
       ).length || 0;
 
       const failedAttempts1Hour = userAttempts?.filter(
@@ -175,7 +175,7 @@ export class MFARateLimiter {
       }
 
       const failedAttempts15Min = ipAttempts?.filter(
-        (attempt: any) => !attempt.success && new Date(attempt.createdAt || attempt.created_at) >= fifteenMinutesAgo
+        (attempt: unknown) => !attempt.success && new Date(attempt.createdAt || attempt.created_at) >= fifteenMinutesAgo
       ).length || 0;
 
       const failedAttempts1Hour = ipAttempts?.filter(
@@ -399,7 +399,7 @@ export class MFARateLimiter {
       }
 
       const failuresLast24h = recentFailures.filter(
-        (f: any) => new Date(f.createdAt || f.created_at) >= twentyFourHoursAgo
+        (f: unknown) => new Date(f.createdAt || f.created_at) >= twentyFourHoursAgo
       ).length;
 
       const totalFailures7d = recentFailures.length;

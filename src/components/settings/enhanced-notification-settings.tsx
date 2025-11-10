@@ -14,7 +14,7 @@ import {
   FlaskConical,
   CheckCircle,
   AlertCircle,
-  Info,
+
   Loader2,
   Globe,
   Shield
@@ -79,7 +79,7 @@ interface NotificationFlaskConical {
 }
 
 export function EnhancedNotificationSettings() {
-  const t = useTranslations('settings.notifications');
+  const _t = useTranslations('settings.notifications');
   const user = useUser();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -414,7 +414,7 @@ export function EnhancedNotificationSettings() {
                     <Label className="text-sm font-medium">Email Frequency</Label>
                     <Select
                       value={preferences.email.frequency}
-                      onValueChange={(frequency: any) =>
+                      onValueChange={(frequency: unknown) =>
                         updatePreferences({ email: { ...preferences.email, frequency } })
                       }
                     >

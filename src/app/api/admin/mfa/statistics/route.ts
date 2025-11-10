@@ -8,7 +8,7 @@ import { authService } from '@/lib/services/auth-service';
 
 // Apply rate limiting for MFA statistics queries
 const rateLimitedHandler = rateLimit(30, 60000)( // 30 requests per minute for statistics
-  async (request: NextRequest): Promise<NextResponse> => {
+  async (_request: NextRequest): Promise<NextResponse> => {
     try {
       // Verify admin access
       const session = await authService.getSession();

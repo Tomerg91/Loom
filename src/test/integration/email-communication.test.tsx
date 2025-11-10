@@ -111,7 +111,7 @@ const EmailVerificationFlow = ({ email, userId }: { email: string; userId: strin
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (_error) {
       mockToast({
         title: 'Verification Failed',
         description: 'An error occurred during verification',
@@ -178,7 +178,7 @@ const PasswordResetFlow = ({ email }: { email: string }) => {
         description: 'Check your email for reset instructions',
         variant: 'default',
       });
-    } catch (error) {
+    } catch (_error) {
       mockToast({
         title: 'Failed to Send Reset Email',
         description: 'Please try again later',
@@ -200,7 +200,7 @@ const PasswordResetFlow = ({ email }: { email: string }) => {
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (_error) {
       mockToast({
         title: 'Verification Failed',
         description: 'An error occurred during verification',
@@ -230,7 +230,7 @@ const PasswordResetFlow = ({ email }: { email: string }) => {
       });
       
       mockPush('/auth/signin');
-    } catch (error) {
+    } catch (_error) {
       mockToast({
         title: 'Password Reset Failed',
         description: 'Please try again later',
@@ -343,7 +343,7 @@ const NotificationManager = ({ userId, preferences }: {
         description: `Sent via: ${channels.join(', ')}`,
         variant: 'default',
       });
-    } catch (error) {
+    } catch (_error) {
       mockToast({
         title: 'Notification Failed',
         description: 'Some channels may have failed',
@@ -437,7 +437,7 @@ const SessionReminderSystem = () => {
         description: 'Session reminders sent based on your preferences',
         variant: 'default',
       });
-    } catch (error) {
+    } catch (_error) {
       mockToast({
         title: 'Reminder Failed',
         description: 'Some reminders may not have been sent',
@@ -519,7 +519,7 @@ describe('Email and Communication Integration', () => {
 
     // Mock React hooks
     let stateIndex = 0;
-    const mockStates: any[] = [
+    const mockStates: unknown[] = [
       ['', vi.fn()], // verificationCode
       [false, vi.fn()], // isVerifying
       [0, vi.fn()], // resendCooldown
@@ -1008,7 +1008,7 @@ describe('Email and Communication Integration', () => {
               description: 'You will receive our weekly newsletter',
               variant: 'default',
             });
-          } catch (error) {
+          } catch (_error) {
             mockToast({
               title: 'Subscription Failed',
               description: 'Please try again later',
@@ -1027,7 +1027,7 @@ describe('Email and Communication Integration', () => {
               description: 'You have been removed from our newsletter',
               variant: 'default',
             });
-          } catch (error) {
+          } catch (_error) {
             mockToast({
               title: 'Unsubscribe Failed',
               description: 'Please try again later',
@@ -1126,14 +1126,14 @@ describe('Email and Communication Integration', () => {
             setDeliveryStatus({
               [result.messageId]: 'sent',
             });
-          } catch (error) {
+          } catch (_error) {
             // Handle error
           }
         };
 
         // Simulate webhook status updates
         React.useEffect(() => {
-          const handleWebhook = (event: any) => {
+          const handleWebhook = (event: unknown) => {
             setDeliveryStatus(prev => ({
               ...prev,
               [event.messageId]: event.status,

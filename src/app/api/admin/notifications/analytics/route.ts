@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 import { 
@@ -21,7 +21,7 @@ const AnalyticsQuerySchema = z.object({
 });
 
 // Helper function to generate time series data
-function generateTimeSeriesData(notifications: any[], startDate: Date, endDate: Date, range: string) {
+function generateTimeSeriesData(notifications: unknown[], startDate: Date, endDate: Date, range: string) {
   const intervalHours = range === '1d' ? 1 : 24;
   const data = [];
   
@@ -51,7 +51,7 @@ function generateTimeSeriesData(notifications: any[], startDate: Date, endDate: 
 // GET /api/admin/notifications/analytics - Get notification analytics
 export const GET = withErrorHandling(
   rateLimit(60, 60000)( // 60 requests per minute
-    requireAuth(async (user, request: NextRequest, context: { params: Promise<{}> }) => {
+    requireAuth(async (user, request: NextRequest, _context: { params: Promise<unknown> }) => {
       // Check admin permissions
       if (user.role !== 'admin') {
         return createErrorResponse(
@@ -92,9 +92,9 @@ export const GET = withErrorHandling(
         }
 
         // Build base query conditions
-        const dateCondition = `created_at >= '${startDate.toISOString()}' AND created_at <= '${endDate.toISOString()}'`;
-        const channelCondition = query.channel ? `AND channel = '${query.channel}'` : '';
-        const typeCondition = query.type ? `AND type = '${query.type}'` : '';
+        const _dateCondition = `created_at >= '${startDate.toISOString()}' AND created_at <= '${endDate.toISOString()}'`;
+        const _channelCondition = query.channel ? `AND channel = '${query.channel}'` : '';
+        const _typeCondition = query.type ? `AND type = '${query.type}'` : '';
 
         // Get overview statistics from existing notifications table
         const { data: allNotifications, error: notificationsError } = await supabase
@@ -145,7 +145,7 @@ export const GET = withErrorHandling(
         const timeSeriesData = generateTimeSeriesData(allNotifications || [], startDate, endDate, query.range);
 
         // Calculate top performing notifications based on read rate
-        const notificationPerformance: Record<string, any> = {};
+        const notificationPerformance: Record<string, unknown> = {};
         allNotifications?.forEach(notification => {
           const key = `${notification.type}-${notification.title}`;
           if (!notificationPerformance[key]) {
@@ -164,8 +164,8 @@ export const GET = withErrorHandling(
         });
         
         const topPerforming = Object.values(notificationPerformance)
-          .map((perf: any) => ({ ...perf, openRate: perf.sent > 0 ? (perf.opened / perf.sent) * 100 : 0 }))
-          .sort((a: any, b: any) => b.openRate - a.openRate)
+          .map((perf: unknown) => ({ ...perf, openRate: perf.sent > 0 ? (perf.opened / perf.sent) * 100 : 0 }))
+          .sort((a: unknown, b: unknown) => b.openRate - a.openRate)
           .slice(0, 10);
 
         // Calculate user engagement metrics
@@ -211,31 +211,31 @@ export const GET = withErrorHandling(
               channelStats[channel].sent = (channelStats[channel].sent || 0) + 1;
               break;
             case 'delivered':
-              (channelStats[channel] as any).delivered = ((channelStats[channel] as any).delivered || 0) + 1;
+              (channelStats[channel] as unknown).delivered = ((channelStats[channel] as unknown).delivered || 0) + 1;
               break;
             case 'opened':
               if (channel === 'inapp') {
-                (channelStats[channel] as any).viewed = ((channelStats[channel] as any).viewed || 0) + 1;
+                (channelStats[channel] as unknown).viewed = ((channelStats[channel] as unknown).viewed || 0) + 1;
               } else {
-                (channelStats[channel] as any).opened = ((channelStats[channel] as any).opened || 0) + 1;
+                (channelStats[channel] as unknown).opened = ((channelStats[channel] as unknown).opened || 0) + 1;
               }
               break;
             case 'clicked':
-              (channelStats[channel] as any).clicked = ((channelStats[channel] as any).clicked || 0) + 1;
+              (channelStats[channel] as unknown).clicked = ((channelStats[channel] as unknown).clicked || 0) + 1;
               break;
             case 'bounced':
               if (channel === 'email') {
-                (channelStats[channel] as any).bounced = ((channelStats[channel] as any).bounced || 0) + 1;
+                (channelStats[channel] as unknown).bounced = ((channelStats[channel] as unknown).bounced || 0) + 1;
               }
               break;
             case 'failed':
-              (channelStats[channel] as any).failed = ((channelStats[channel] as any).failed || 0) + 1;
+              (channelStats[channel] as unknown).failed = ((channelStats[channel] as unknown).failed || 0) + 1;
               break;
           }
         });
 
         // Process type breakdown
-        const typeStats: Record<string, any> = {};
+        const typeStats: Record<string, unknown> = {};
         typeBreakdown?.forEach(notification => {
           const type = notification.type;
           if (!typeStats[type]) {
@@ -248,7 +248,7 @@ export const GET = withErrorHandling(
             };
           }
 
-          notification.notification_delivery_logs.forEach((log: any) => {
+          notification.notification_delivery_logs.forEach((log: unknown) => {
             typeStats[type].sent++;
             
             if (log.delivered_at) typeStats[type].delivered++;
@@ -264,7 +264,7 @@ export const GET = withErrorHandling(
         });
 
         // Group delivery issues by error type
-        const issueGroups: Record<string, any> = {};
+        const issueGroups: Record<string, unknown> = {};
         deliveryIssues?.forEach(issue => {
           const key = `${issue.channel}-${issue.error_message}`;
           if (!issueGroups[key]) {

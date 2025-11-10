@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, parseISO, isToday, isYesterday, formatDistanceToNow, startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
+import { format, parseISO, isToday, isYesterday, formatDistanceToNow, startOfWeek, endOfWeek } from 'date-fns';
 import { 
   Bell, 
   BellRing, 
@@ -17,19 +17,18 @@ import {
   Filter,
   Archive,
   Download,
-  Clock,
+
   Volume2,
   VolumeX,
-  Star,
+
   Loader2,
-  ExternalLink,
+
   RotateCcw,
-  Pause,
-  Play,
-  ChevronDown,
-  Group,
-  SortAsc,
-  SortDesc
+
+
+
+
+
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
@@ -44,7 +43,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,10 +54,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuLabel,
+
+
+
+
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
@@ -141,7 +140,7 @@ interface NotificationAnalytics {
 // Memoized notification item component
 const NotificationItem = memo(({ 
   notification, 
-  isSelected, 
+  _isSelected, 
   getNotificationIcon, 
   getNotificationTypeLabel, 
   formatNotificationTime, 
@@ -515,7 +514,7 @@ function NotificationCenterComponent() {
       if (!navigator.onLine) {
         // Add bulk actions to offline queue
         notificationIds.forEach(id => {
-          offlineQueue.addToQueue(action as any, id);
+          offlineQueue.addToQueue(action as unknown, id);
         });
         throw new Error('offline');
       }

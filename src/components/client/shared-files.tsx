@@ -2,7 +2,7 @@
 
 import { 
   FileIcon, 
-  FolderIcon, 
+ 
   SearchIcon, 
   DownloadIcon,
   EyeIcon,
@@ -21,7 +21,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -109,7 +109,7 @@ export function ClientSharedFiles({ userId }: ClientSharedFilesProps) {
 
     // Sort files
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: unknown, bValue: unknown;
       
       switch (sortBy) {
         case 'filename':
@@ -301,8 +301,8 @@ export function ClientSharedFiles({ userId }: ClientSharedFilesProps) {
             {/* Sort */}
             <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
               const [field, order] = value.split('-');
-              setSortBy(field as any);
-              setSortOrder(order as any);
+              setSortBy(field as unknown);
+              setSortOrder(order as unknown);
             }}>
               <SelectTrigger className="w-full md:w-48">
                 {sortOrder === 'asc' ? (

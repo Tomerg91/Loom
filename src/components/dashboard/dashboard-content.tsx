@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEffect} from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthLoading, useUser } from '@/lib/store/auth-store';
-import { createClient } from '@/lib/supabase/client';
 
 import { ClientDashboard } from './client/client-dashboard';
 import { CoachDashboard } from './coach/coach-dashboard';

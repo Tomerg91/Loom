@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { 
-  BarChart3,
+import {
+
   TrendingUp,
   TrendingDown,
   Users,
@@ -23,19 +23,21 @@ import { apiGet } from '@/lib/api/client-api-request';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
+import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import type { ClientProgressData, SessionMetricData } from '@/lib/coach-insights/types';
+import type { CoachInsightsApiResponse } from '@/lib/coach-insights/types';
 
 
 
@@ -56,7 +58,7 @@ interface CoachInsights {
     progressScore: number;
     sessionsCompleted: number;
     goalAchievement: number;
-    lastSession: string;
+    lastSession: string | null;
     trend: 'up' | 'down' | 'stable';
   }>;
   sessionMetrics: Array<{
@@ -91,8 +93,12 @@ export function CoachInsightsPage() {
 
   const { data: insights, isLoading, error, refetch } = useQuery<CoachInsights>({
     queryKey: ['coach-insights', timeRange],
-    queryFn: async () => {
-      const result = await apiGet<{ data: any }>(`/api/coach/insights?timeRange=${timeRange}`);
+    queryFn: async (): Promise<CoachInsights> => {
+      const response = await fetch(`/api/coach/insights?timeRange=${timeRange}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch insights');
+      }
+      const result: CoachInsightsApiResponse = await response.json();
 
       // Transform API response to match component interface
       const apiData = result.data;
@@ -107,7 +113,7 @@ export function CoachInsightsPage() {
           clientRetentionRate: apiData.overview.clientRetentionRate,
           sessionCompletionRate: apiData.overview.completionRate,
         },
-        clientProgress: apiData.clientProgress.map((client: any) => ({
+        clientProgress: apiData.clientProgress.map((client: ClientProgressData) => ({
           clientId: client.id,
           clientName: client.name,
           progressScore: Math.round((client.averageProgress || client.averageMood || 0) * 20), // Convert 1-5 to 0-100
@@ -116,7 +122,7 @@ export function CoachInsightsPage() {
           lastSession: client.lastSession,
           trend: client.averageProgress > 3 ? 'up' : client.averageProgress < 2.5 ? 'down' : 'stable',
         })),
-        sessionMetrics: apiData.sessionMetrics.map((metric: any) => ({
+        sessionMetrics: apiData.sessionMetrics.map((metric: SessionMetricData) => ({
           date: metric.date,
           sessionsCompleted: metric.completed,
           sessionsCancelled: metric.cancelled,
@@ -393,7 +399,7 @@ export function CoachInsightsPage() {
                         <p className="text-muted-foreground">Goals</p>
                       </div>
                       <div className="text-center">
-                        <p className="font-medium">{new Date(client.lastSession).toLocaleDateString()}</p>
+                        <p className="font-medium">{client.lastSession ? new Date(client.lastSession).toLocaleDateString() : 'N/A'}</p>
                         <p className="text-muted-foreground">Last Session</p>
                       </div>
                       <Badge variant={client.trend === 'up' ? 'default' : client.trend === 'down' ? 'destructive' : 'secondary'}>

@@ -262,7 +262,7 @@ export function AdminSessionsPage() {
           </SelectContent>
         </Select>
 
-        <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+        <Select value={sortBy} onValueChange={(value: unknown) => setSortBy(value)}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <ArrowUpDown className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Sort by" />

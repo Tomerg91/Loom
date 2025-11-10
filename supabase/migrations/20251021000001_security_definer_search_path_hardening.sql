@@ -14,6 +14,9 @@
 -- Authentication & Role Management Functions
 -- ============================================================================
 
+-- Drop get_user_role if it exists to change return type from text to user_role enum
+DROP FUNCTION IF EXISTS public.get_user_role(UUID) CASCADE;
+
 CREATE OR REPLACE FUNCTION public.get_user_role(user_id UUID)
 RETURNS user_role
 LANGUAGE plpgsql
@@ -184,6 +187,10 @@ $$;
 -- ============================================================================
 -- Resource Library Functions
 -- ============================================================================
+
+-- Drop functions if they exist to change parameter names
+DROP FUNCTION IF EXISTS public.get_coach_collection_count(UUID) CASCADE;
+DROP FUNCTION IF EXISTS public.get_collection_resource_count(UUID) CASCADE;
 
 CREATE OR REPLACE FUNCTION public.get_coach_collection_count(p_coach_id UUID)
 RETURNS INTEGER
@@ -397,7 +404,7 @@ INSERT INTO public.security_audit_log (
     'functions_updated', 15,
     'phase', 'Phase 1'
   ),
-  'high',
+  'critical',
   NOW()
 );
 
@@ -405,21 +412,21 @@ INSERT INTO public.security_audit_log (
 -- Comments
 -- ============================================================================
 
-COMMENT ON FUNCTION public.get_user_role IS
+COMMENT ON FUNCTION public.get_user_role(UUID) IS
   'SECURITY DEFINER with search_path protection. Returns user role.';
-COMMENT ON FUNCTION public.is_coach IS
+COMMENT ON FUNCTION public.is_coach(UUID) IS
   'SECURITY DEFINER with search_path protection. Checks if user is coach.';
-COMMENT ON FUNCTION public.is_client IS
+COMMENT ON FUNCTION public.is_client(UUID) IS
   'SECURITY DEFINER with search_path protection. Checks if user is client.';
-COMMENT ON FUNCTION public.is_admin IS
+COMMENT ON FUNCTION public.is_admin(UUID) IS
   'SECURITY DEFINER with search_path protection. Checks if user is admin.';
-COMMENT ON FUNCTION public.custom_access_token_hook IS
+COMMENT ON FUNCTION public.custom_access_token_hook(JSONB) IS
   'SECURITY DEFINER with search_path protection. Adds custom claims to JWT.';
-COMMENT ON FUNCTION public.get_coach_collection_count IS
+COMMENT ON FUNCTION public.get_coach_collection_count(UUID) IS
   'SECURITY DEFINER with search_path protection. Returns count of coach collections.';
-COMMENT ON FUNCTION public.get_collection_resource_count IS
+COMMENT ON FUNCTION public.get_collection_resource_count(UUID) IS
   'SECURITY DEFINER with search_path protection. Returns count of resources in collection.';
-COMMENT ON FUNCTION public.increment_resource_view_count IS
+COMMENT ON FUNCTION public.increment_resource_view_count(UUID, UUID) IS
   'SECURITY DEFINER with search_path protection. Increments view count for resource.';
-COMMENT ON FUNCTION public.mark_resource_completed IS
+COMMENT ON FUNCTION public.mark_resource_completed(UUID, UUID, BOOLEAN) IS
   'SECURITY DEFINER with search_path protection. Marks resource as completed for client.';

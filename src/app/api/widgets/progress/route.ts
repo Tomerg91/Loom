@@ -140,7 +140,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       });
 
       // Mood improvement goal (if user has mood ratings)
-      const moodRatings = reflections?.filter((r: any) => r.mood_rating !== null).map((r: any) => r.mood_rating as number) || [];
+      const moodRatings = reflections?.filter((r: unknown) => r.mood_rating !== null).map((r: unknown) => r.mood_rating as number) || [];
       if (moodRatings.length > 0) {
         const averageMood = moodRatings.length > 0 ? moodRatings.reduce((sum: number, rating: number) => sum + rating, 0) / moodRatings.length : 0;
         const highMoodCount = moodRatings.filter(rating => (rating || 0) >= 8).length;
@@ -161,19 +161,19 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
               id: 'first-high-mood',
               title: 'Record first high mood (8+)',
               completed: highMoodCount >= 1,
-              completedDate: highMoodCount >= 1 ? reflections.find((r: any) => (r.mood_rating || 0) >= 8)?.created_at : undefined
+              completedDate: highMoodCount >= 1 ? reflections.find((r: unknown) => (r.mood_rating || 0) >= 8)?.created_at : undefined
             },
             {
               id: 'three-high-moods',
               title: 'Record 3 high moods',
               completed: highMoodCount >= 3,
-              completedDate: highMoodCount >= 3 ? reflections.filter((r: any) => (r.mood_rating || 0) >= 8)[2]?.created_at : undefined
+              completedDate: highMoodCount >= 3 ? reflections.filter((r: unknown) => (r.mood_rating || 0) >= 8)[2]?.created_at : undefined
             },
             {
               id: 'five-high-moods',
               title: 'Record 5 high moods',
               completed: highMoodCount >= 5,
-              completedDate: highMoodCount >= 5 ? reflections.filter((r: any) => (r.mood_rating || 0) >= 8)[4]?.created_at : undefined
+              completedDate: highMoodCount >= 5 ? reflections.filter((r: unknown) => (r.mood_rating || 0) >= 8)[4]?.created_at : undefined
             }
           ]
         });

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 import { 
@@ -9,7 +9,7 @@ import {
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { createAuthService } from '@/lib/auth/auth';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createCorsResponse } from '@/lib/security/cors';
 import { rateLimit } from '@/lib/security/rate-limit';
 
 

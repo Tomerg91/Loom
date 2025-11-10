@@ -71,7 +71,7 @@ export default function ResourceAnalyticsPage() {
   });
 
   // Fetch resources
-  const { data: resources = [], isLoading: resourcesLoading } = useQuery({
+  const { data: _resources = [], isLoading: resourcesLoading } = useQuery({
     queryKey: ['resources'],
     queryFn: fetchResources,
   });

@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getCachedData, CacheKeys, CacheTTL } from './cache';
 
 // Connection pool configuration
-const CONNECTION_POOL_CONFIG = {
+const _CONNECTION_POOL_CONFIG = {
   maxConnections: 20,
   idleTimeout: 30000, // 30 seconds
   connectionTimeout: 10000, // 10 seconds
@@ -18,7 +18,7 @@ const CONNECTION_POOL_CONFIG = {
 // Query optimization patterns
 export class QueryOptimizer {
   private static instance: QueryOptimizer;
-  private connectionPool: Map<string, any> = new Map();
+  private connectionPool: Map<string, unknown> = new Map();
   
   private constructor() {}
   
@@ -30,7 +30,7 @@ export class QueryOptimizer {
   }
 
   // Optimized batch query execution
-  async executeBatchQuery<T = any>(
+  async executeBatchQuery<T = unknown>(
     queries: Array<{
       key: string;
       query: () => Promise<T>;
@@ -61,14 +61,14 @@ export class QueryOptimizer {
   }
 
   // Optimized pagination with cursor-based approach for better performance
-  async paginateQuery<T = any>({
+  async paginateQuery<T = unknown>({
     baseQuery,
     pageSize = 20,
     cursor,
     sortColumn = 'created_at',
     sortDirection = 'desc'
   }: {
-    baseQuery: any;
+    baseQuery: unknown;
     pageSize?: number;
     cursor?: string;
     sortColumn?: string;
@@ -106,7 +106,7 @@ export class QueryOptimizer {
   // Optimized count query with approximation for large datasets
   async getApproximateCount(
     tableName: string,
-    filters?: Record<string, any>
+    filters?: Record<string, unknown>
   ): Promise<number> {
     const supabase = await createClient();
     
@@ -144,7 +144,7 @@ export class QueryOptimizer {
   }
 
   // Batch insert optimization
-  async batchInsert<T = any>(
+  async batchInsert<T = unknown>(
     tableName: string,
     records: T[],
     batchSize = 1000
@@ -168,7 +168,7 @@ export class QueryOptimizer {
   }
 
   // Optimized upsert operation
-  async optimizedUpsert<T = any>(
+  async optimizedUpsert<T = unknown>(
     tableName: string,
     records: T[],
     conflictColumns: string[]
@@ -442,10 +442,10 @@ export class DatabasePerformanceMonitor {
 
 // Query performance decorator
 export function monitorQuery(queryName: string) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const timerId = DatabasePerformanceMonitor.startTimer(queryName);
       
       try {

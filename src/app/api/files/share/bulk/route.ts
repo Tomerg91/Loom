@@ -33,7 +33,7 @@ const bulkUpdateSchema = z.object({
 
 // Helper function to check coach-client relationship
 async function checkCoachClientRelationship(
-  supabase: any,
+  supabase: unknown,
   userId1: string,
   userId2: string
 ): Promise<boolean> {
@@ -374,7 +374,7 @@ export async function DELETE(request: NextRequest) {
         shareId: share.id,
       });
       return acc;
-    }, {} as any);
+    }, {} as unknown);
 
     return NextResponse.json({
       success: true,
@@ -466,7 +466,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Prepare update data
-    const updateData: any = {};
+    const updateData: unknown = {};
     if (validatedData.updates.permissionType) {
       updateData.permission_type = validatedData.updates.permissionType;
     }

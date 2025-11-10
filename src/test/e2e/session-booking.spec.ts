@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { createAuthHelper, testConstants, testUtils, getTestUserByEmail } from '../../../tests/helpers';
+import { createAuthHelper} from '../../../tests/helpers';
 
 test.describe('Session Booking Flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -199,7 +199,7 @@ test.describe('Session Booking Flow', () => {
             })
           });
         });
-      } catch (error) {
+      } catch (_error) {
         console.log('Could not mock API route - continuing with normal flow');
       }
       

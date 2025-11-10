@@ -1,7 +1,7 @@
 'use client';
 
 import { format, parseISO } from 'date-fns';
-import { Star, Calendar, Clock, User } from 'lucide-react';
+import { Star, Calendar, Clock} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -35,7 +35,7 @@ interface RatingCategory {
 }
 
 export function SessionRatingDialog({ session, onClose, onSuccess }: SessionRatingDialogProps) {
-  const t = useTranslations('session');
+  const _t = useTranslations('session');
   const commonT = useTranslations('common');
   
   const rateSession = useRateSession();

@@ -1,21 +1,21 @@
 'use client';
 
-import {
-  FileIcon,
-  FolderIcon,
-  SearchIcon,
-  UploadIcon,
-  ShareIcon,
+import { 
+ 
+  FolderIcon, 
+  SearchIcon, 
+  UploadIcon, 
+  ShareIcon, 
   DownloadIcon,
-  EditIcon,
+
   TrashIcon,
   FilterIcon,
   GridIcon,
   ListIcon,
   SortAscIcon,
   SortDescIcon,
-  UsersIcon,
-  CalendarIcon,
+
+
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useMemo } from 'react';
@@ -25,7 +25,7 @@ import { apiGet, apiPost, apiDelete } from '@/lib/api/client-api-request';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent} from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -62,7 +62,7 @@ interface CoachFileManagementProps {
   onFileUpload?: () => void;
 }
 
-export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFileManagementProps) {
+export function CoachFileManagement({ userId, _userRole, onFileUpload }: CoachFileManagementProps) {
   const t = useTranslations('files');
   const { success: showSuccess, error: showError } = useToast();
 
@@ -108,7 +108,7 @@ export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFil
       const data = await apiGet<{ data?: { files: any[] }; files?: any[] }>(`/api/files?userId=${userId}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
 
       const filesPayload = data?.data?.files ?? data.files ?? [];
-      const normalizedFiles: FileItem[] = filesPayload.map((file: any) => ({
+      const normalizedFiles: FileItem[] = filesPayload.map((file: unknown) => ({
         id: file.id,
         filename: file.filename,
         originalFilename: file.originalFilename || file.original_filename || file.filename,
@@ -137,8 +137,9 @@ export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFil
       // Load coach's clients based on session relationships
       const data = await apiGet<{ data?: any[]; clients?: any[] }>('/api/coach/clients');
 
-      const clientsPayload = data?.data ?? data.clients ?? [];
-      const normalizedClients: User[] = clientsPayload.map((client: any) => {
+      if (response.ok) {
+        const clientsPayload = data?.data ?? data.clients ?? [];
+        const normalizedClients: User[] = clientsPayload.map((client: unknown) => {
           const firstName = client.firstName ?? client.first_name ?? '';
           const lastName = client.lastName ?? client.last_name ?? '';
           const fullName = `${firstName} ${lastName}`.trim();
@@ -413,8 +414,8 @@ export function CoachFileManagement({ userId, userRole, onFileUpload }: CoachFil
             {/* Sort */}
             <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
               const [field, order] = value.split('-');
-              setSortBy(field as any);
-              setSortOrder(order as any);
+              setSortBy(field as unknown);
+              setSortOrder(order as unknown);
             }}>
               <SelectTrigger className="w-full lg:w-48">
                 {sortOrder === 'asc' ? (

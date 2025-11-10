@@ -12,11 +12,11 @@ import {
   Globe,
   Award,
   BookOpen,
-  Heart,
+
   MessageSquare,
   TrendingUp,
-  Video,
-  Phone,
+
+
   ExternalLink,
   AlertCircle
 } from 'lucide-react';
@@ -44,7 +44,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -100,7 +99,7 @@ interface CoachReview {
   };
 }
 
-interface CoachAvailabilitySlot {
+interface _AvailabilitySlot {
   date: string;
   startTime: string;
   endTime: string;
@@ -219,8 +218,8 @@ function BookSessionDialog({
   isOpen: boolean; 
   onOpenChange: (open: boolean) => void; 
 }) {
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
+  const [_selectedDate, _setSelectedDate] = useState('');
+  const [_selectedTime, _setSelectedTime] = useState('');
   
   // This would typically use the unified booking system
   const handleBookSession = () => {
@@ -348,7 +347,7 @@ export default function ClientCoachDetailPage() {
         throw new Error('Failed to fetch coach profile');
       }
     },
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: unknown) => {
       // Don't retry on 404 errors
       if (error?.message === 'Coach not found') return false;
       return failureCount < 3;
@@ -399,7 +398,7 @@ export default function ClientCoachDetailPage() {
   // Fetch availability status
   const {
     data: availability,
-    isLoading: loadingAvailability
+    isLoading: _loadingAvailability
   } = useQuery({
     queryKey: ['coach-availability-status', id],
     queryFn: async () => {
@@ -702,7 +701,7 @@ export default function ClientCoachDetailPage() {
                                     </p>
                                     <div className="flex items-center gap-2 mt-1">
                                       <Badge 
-                                        variant={session.status as any}
+                                        variant={session.status as unknown}
                                         className="text-xs"
                                       >
                                         {session.status.replace('_', ' ')}

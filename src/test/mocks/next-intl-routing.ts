@@ -1,4 +1,4 @@
-export const defineRouting = (config: any) => config;
+export const defineRouting = (config: unknown) => config;
 
 export default {
   defineRouting,

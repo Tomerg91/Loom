@@ -3,9 +3,9 @@
 import { Download, TrendingUp, TrendingDown } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  LineChart,
+
   Line,
-  AreaChart,
+
   Area,
   BarChart,
   Bar,
@@ -16,7 +16,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine,
+
   Brush,
 } from 'recharts';
 
@@ -58,7 +58,7 @@ interface EnhancedBaseChartProps {
   enableZoom?: boolean;
   showTrends?: boolean;
   ariaLabel?: string;
-  onDataPointClick?: (data: any, index: number) => void;
+  onDataPointClick?: (data: unknown, index: number) => void;
 }
 
 type ChartStateWithActiveTooltip = {
@@ -66,13 +66,13 @@ type ChartStateWithActiveTooltip = {
 };
 
 // Custom tooltip with enhanced styling and accessibility
-const EnhancedTooltip = ({ active, payload, label, formatter }: any) => {
+const EnhancedTooltip = ({ active, payload, label, formatter }: unknown) => {
   if (!active || !payload || !payload.length) return null;
 
   return (
     <div className="bg-background border border-border rounded-lg shadow-lg p-3" role="tooltip">
       <p className="font-medium text-sm mb-2">{label}</p>
-      {payload.map((entry: any, index: number) => (
+      {payload.map((entry: unknown, index: number) => (
         <div key={index} className="flex items-center gap-2 text-xs">
           <div 
             className="w-3 h-3 rounded-full" 
@@ -100,7 +100,7 @@ const useChartExport = () => {
 
     try {
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const _ctx = canvas.getContext('2d');
       const svg = chartRef.current.querySelector('svg');
       
       if (format === 'svg' && svg) {
@@ -145,7 +145,7 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
   loading = false,
   enableExport = true,
   enableBrush = true,
-  enableZoom = false,
+  _enableZoom = false,
   showTrends = true,
   ariaLabel = "User growth chart showing new and active users over time",
   onDataPointClick,
@@ -227,7 +227,7 @@ export const EnhancedUserGrowthChart: React.FC<EnhancedUserGrowthChartProps> = (
   };
 
   const newUsersTrend = showTrends ? calculateTrend(data.map(d => d.newUsers)) : 0;
-  const activeUsersTrend = showTrends ? calculateTrend(data.map(d => d.activeUsers)) : 0;
+  const _activeUsersTrend = showTrends ? calculateTrend(data.map(d => d.activeUsers)) : 0;
 
   const handleExport = (format: 'png' | 'svg' | 'pdf') => {
     exportChart(chartRef, 'user-growth-chart', format);
@@ -393,7 +393,7 @@ export const EnhancedSessionMetricsChart: React.FC<EnhancedSessionMetricsChartPr
   loading = false,
   enableExport = true,
   enableBrush = true,
-  enableZoom = false,
+  _enableZoom = false,
   showTrends = true,
   ariaLabel = "Session metrics chart showing completed, cancelled, and scheduled sessions over time",
   onDataPointClick,

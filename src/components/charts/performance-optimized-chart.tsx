@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 // Performance optimization wrapper for large datasets
 interface PerformanceOptimizedChartProps {
   children: React.ReactNode;
-  data: any[];
+  data: unknown[];
   maxDataPoints?: number;
   enableVirtualization?: boolean;
   showPerformanceWarning?: boolean;
@@ -74,7 +74,7 @@ export const PerformanceOptimizedChart: React.FC<PerformanceOptimizedChartProps>
 
       {/* Render optimized chart */}
       {React.isValidElement(children) &&
-        React.cloneElement(children as React.ReactElement<{ data?: any[] }>, {
+        React.cloneElement(children as React.ReactElement<{ data?: unknown[] }>, {
           data: optimizedData,
         })}
 
@@ -93,7 +93,7 @@ export const useChartPerformance = () => {
   const [renderTime, setRenderTime] = useState<number>(0);
   const [dataPoints, setDataPoints] = useState<number>(0);
 
-  const measurePerformance = (data: any[], operation: () => void) => {
+  const measurePerformance = (data: unknown[], operation: () => void) => {
     const startTime = performance.now();
     setDataPoints(data.length);
     
@@ -130,11 +130,11 @@ export const useChartPerformance = () => {
 // Memory-efficient data processing utilities
 export const chartUtils = {
   // Downsample data using Largest-Triangle-Three-Buckets algorithm (simplified)
-  downsampleData: (data: any[], targetPoints: number, xKey = 'date', yKey = 'value') => {
+  downsampleData: (data: unknown[], targetPoints: number, xKey = 'date', yKey = 'value') => {
     if (data.length <= targetPoints) return data;
 
     const bucketSize = Math.floor(data.length / targetPoints);
-    const downsampled: any[] = [];
+    const downsampled: unknown[] = [];
 
     // Always include first and last points
     downsampled.push(data[0]);
@@ -175,12 +175,12 @@ export const chartUtils = {
 
   // Aggregate data by time periods
   aggregateByPeriod: (
-    data: any[], 
+    data: unknown[], 
     period: 'hour' | 'day' | 'week' | 'month',
     dateKey = 'date',
     valueKeys: string[] = ['value']
   ) => {
-    const grouped = new Map<string, any[]>();
+    const grouped = new Map<string, unknown[]>();
 
     data.forEach(item => {
       const date = new Date(item[dateKey]);
@@ -209,8 +209,8 @@ export const chartUtils = {
     });
 
     // Aggregate values
-    return Array.from(grouped.entries()).map(([key, items]) => {
-      const aggregated: any = { [dateKey]: items[0][dateKey] };
+    return Array.from(grouped.entries()).map(([_key, items]) => {
+      const aggregated: unknown = { [dateKey]: items[0][dateKey] };
       
       valueKeys.forEach(valueKey => {
         aggregated[valueKey] = items.reduce((sum, item) => sum + (item[valueKey] || 0), 0);

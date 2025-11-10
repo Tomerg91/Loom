@@ -23,9 +23,9 @@ import { useState } from 'react';
 import {
   TopResourcesChart,
   CategoryPerformanceChart,
-  EngagementTrendsChart,
+
   CompletionRateChart,
-  ResourceROIChart,
+
 } from '@/components/resources/analytics-charts';
 import { AnalyticsOverview } from '@/components/resources/analytics-overview';
 import { TopResourcesList } from '@/components/resources/top-resources-list';

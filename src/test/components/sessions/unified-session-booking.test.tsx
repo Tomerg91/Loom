@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
@@ -6,7 +6,7 @@ import { UnifiedSessionBooking, type UnifiedSessionBookingProps } from '@/compon
 import { 
   renderWithProviders, 
   mockFetch, 
-  mockApiResponse, 
+ 
   createMockQueryResult, 
   createMockMutationResult,
   createMockSession,
@@ -36,7 +36,7 @@ vi.mock('@/hooks/use-realtime-booking', () => ({
 
 // Mock sub-components
 vi.mock('@/components/sessions/booking-confirmation-dialog', () => ({
-  BookingConfirmationDialog: ({ open, onClose, onConfirm, session }: any) =>
+  BookingConfirmationDialog: ({ open, onClose, onConfirm, session }: unknown) =>
     open ? (
       <div data-testid="booking-confirmation-dialog">
         <div data-testid="session-title">{session?.title}</div>
@@ -156,7 +156,7 @@ describe('UnifiedSessionBooking', () => {
     });
     
     // Mock useQuery for coaches
-    mockUseQuery.mockImplementation(({ queryKey }: any) => {
+    mockUseQuery.mockImplementation(({ queryKey }: unknown) => {
       if (queryKey[0] === 'coaches') {
         return createMockQueryResult(mockCoaches, { isSuccess: true });
       }
@@ -216,7 +216,7 @@ describe('UnifiedSessionBooking', () => {
     });
 
     it('shows loading state while fetching coaches', () => {
-      mockUseQuery.mockImplementation(({ queryKey }: any) => {
+      mockUseQuery.mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'coaches') {
           return createMockQueryResult(null, { isPending: true });
         }
@@ -330,7 +330,7 @@ describe('UnifiedSessionBooking', () => {
     });
 
     it('shows loading state while fetching time slots', () => {
-      mockUseQuery.mockImplementation(({ queryKey }: any) => {
+      mockUseQuery.mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'timeSlots') {
           return createMockQueryResult(null, { isPending: true });
         }
@@ -598,7 +598,7 @@ describe('UnifiedSessionBooking', () => {
 
   describe('Edge Cases', () => {
     it('handles empty coach list', () => {
-      mockUseQuery.mockImplementation(({ queryKey }: any) => {
+      mockUseQuery.mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'coaches') {
           return createMockQueryResult([], { isSuccess: true });
         }
@@ -611,7 +611,7 @@ describe('UnifiedSessionBooking', () => {
     });
 
     it('handles no available time slots', () => {
-      mockUseQuery.mockImplementation(({ queryKey }: any) => {
+      mockUseQuery.mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'coaches') {
           return createMockQueryResult(mockCoaches, { isSuccess: true });
         }
@@ -627,7 +627,7 @@ describe('UnifiedSessionBooking', () => {
     });
 
     it('handles API errors gracefully', () => {
-      mockUseQuery.mockImplementation(({ queryKey }: any) => {
+      mockUseQuery.mockImplementation(({ queryKey }: unknown) => {
         if (queryKey[0] === 'coaches') {
           return createMockQueryResult(null, { 
             isError: true, 

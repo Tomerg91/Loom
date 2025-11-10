@@ -4,7 +4,7 @@ import { format, parseISO, isFuture, isPast, isToday, differenceInMinutes, diffe
 import { 
   Calendar, 
   Clock, 
-  User, 
+ 
   Video, 
   Phone,
   MapPin,
@@ -18,7 +18,7 @@ import {
   CheckCircle2,
   XCircle,
   PlayCircle,
-  Edit3,
+
   Trash2,
   Calendar as CalendarIcon,
   ExternalLink
@@ -52,7 +52,7 @@ interface SessionCardProps {
 
 export function SessionCard({ session, onUpdate }: SessionCardProps) {
   const t = useTranslations('session');
-  const commonT = useTranslations('common');
+  const _commonT = useTranslations('common');
   const user = useUser();
 
   const [showRatingDialog, setShowRatingDialog] = useState(false);
@@ -61,8 +61,8 @@ export function SessionCard({ session, onUpdate }: SessionCardProps) {
   const sessionTime = parseISO(session.scheduledAt);
   const now = new Date();
   const isSessionInFuture = isFuture(sessionTime);
-  const isSessionInPast = isPast(sessionTime);
-  const isSessionToday = isToday(sessionTime);
+  const _isSessionInPast = isPast(sessionTime);
+  const _isSessionToday = isToday(sessionTime);
 
   // Calculate time until session or time since session
   const getTimeDescription = () => {

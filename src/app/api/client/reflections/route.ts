@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
-import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { createServerClient } from '@/lib/supabase/server';
 
 interface RecentReflection {

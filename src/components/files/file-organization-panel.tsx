@@ -6,20 +6,20 @@ import {
   TagIcon, 
   PlusIcon,
   SearchIcon,
-  FilterIcon,
+
   MoreVerticalIcon,
   EditIcon,
   TrashIcon,
   XIcon,
   HashIcon,
-  CalendarIcon,
+
   UserIcon,
   FileIcon,
   StarIcon,
   ClockIcon,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -117,7 +117,7 @@ export function FileOrganizationPanel({
   onTagSelect,
   onFolderSelect,
   onCreateFolder,
-  onUpdateFolder,
+  _onUpdateFolder,
   onDeleteFolder,
   onCreateTag,
   onDeleteTag,

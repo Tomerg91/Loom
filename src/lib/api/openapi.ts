@@ -9,7 +9,7 @@ function loadOpenApiSpec() {
     // Try to load the comprehensive openapi.yaml file
     const yamlPath = join(process.cwd(), 'openapi.yaml');
     const yamlContent = readFileSync(yamlPath, 'utf8');
-    const spec = yaml.load(yamlContent) as any;
+    const spec = yaml.load(yamlContent) as unknown;
     
     // Update server URLs based on environment
     if (spec && spec.servers) {

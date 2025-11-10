@@ -87,13 +87,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       const clientMap = new Map<string, {
         clientId: string;
         clientName: string;
-        sessions: any[];
+        sessions: unknown[];
         lastSession?: string;
       }>();
 
       // Group sessions by client
       coachSessions?.forEach(session => {
-        const client = session.client as any;
+        const client = session.client as unknown;
         if (!clientMap.has(session.client_id)) {
           clientMap.set(session.client_id, {
             clientId: session.client_id,

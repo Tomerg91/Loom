@@ -49,12 +49,12 @@ const CATEGORY_COLORS = [
 ];
 
 // Custom tooltip
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: unknown) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
         <p className="font-medium text-gray-900">{label}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry: unknown, index: number) => (
           <p key={index} style={{ color: entry.color }} className="text-sm">
             {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
           </p>

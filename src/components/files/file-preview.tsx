@@ -4,13 +4,13 @@ import {
   X, 
   Download, 
   Share2, 
-  Edit3, 
+ 
   Trash2, 
   ExternalLink,
   File,
-  Image as ImageIcon,
+  Image as
   FileText,
-  Video,
+
   Music
 } from 'lucide-react';
 import Image from 'next/image';

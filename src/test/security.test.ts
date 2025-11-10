@@ -392,7 +392,7 @@ describe('Security Tests', () => {
       // Check that security-critical packages are up to date
       const criticalPackages = ['next', '@supabase/supabase-js', 'zod'];
       criticalPackages.forEach(pkg => {
-        const version = (packageJson.dependencies as any)[pkg];
+        const version = (packageJson.dependencies as unknown)[pkg];
         if (version) {
           expect(version).not.toMatch(/\^0\.|~0\./); // Avoid very old versions
         }

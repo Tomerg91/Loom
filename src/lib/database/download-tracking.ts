@@ -2,8 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { Database } from '@/types/supabase';
 
 type FileDownloadLog = Database['public']['Tables']['file_download_logs']['Row'];
-type FileAnalyticsSummary = Database['public']['Tables']['file_analytics_summary']['Row'];
-type UserDownloadStatistics = Database['public']['Tables']['user_download_statistics']['Row'];
+type FileAnalyticsSummaryRow = Database['public']['Tables']['file_analytics_summary']['Row'];
+type UserDownloadStatisticsRow = Database['public']['Tables']['user_download_statistics']['Row'];
 
 export interface DownloadLogData {
   file_id: string;
@@ -19,7 +19,7 @@ export interface DownloadLogData {
   success?: boolean;
   failure_reason?: string;
   bandwidth_used?: number;
-  client_info?: Record<string, any>;
+  client_info?: Record<string, unknown>;
 }
 
 export interface FileDownloadStats {
@@ -169,7 +169,7 @@ class DownloadTrackingDatabase {
     date_from?: string,
     date_to?: string
   ): Promise<DownloadAnalytics> {
-    const supabase = await createClient();
+    const _supabase = await createClient();
     
     const [fileStats, recentDownloads, topDownloaders, geoDistribution] = await Promise.all([
       this.getFileDownloadStats(file_id, date_from, date_to),
@@ -400,7 +400,7 @@ class DownloadTrackingDatabase {
     }
 
     return files?.map(f => {
-      const fileData: any = f.file;
+      const fileData: unknown = f.file;
       const filename = Array.isArray(fileData)
         ? (fileData.length > 0 ? fileData[0]?.filename : 'Unknown')
         : (fileData?.filename || 'Unknown');
@@ -435,7 +435,7 @@ class DownloadTrackingDatabase {
       throw new Error(`Failed to get multiple file stats: ${error.message}`);
     }
 
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     
     // Initialize with zeros
     file_ids.forEach(id => {
@@ -469,10 +469,10 @@ class DownloadTrackingDatabase {
   /**
    * Extract client info from user agent and other headers
    */
-  parseClientInfo(userAgent?: string, acceptLanguage?: string): Record<string, any> {
+  parseClientInfo(userAgent?: string, acceptLanguage?: string): Record<string, unknown> {
     if (!userAgent) return {};
 
-    const clientInfo: Record<string, any> = {
+    const clientInfo: Record<string, unknown> = {
       user_agent: userAgent,
     };
 
@@ -520,7 +520,7 @@ class DownloadTrackingDatabase {
   /**
    * Get IP-based location info (you'd need to integrate with a geolocation service)
    */
-  async getLocationFromIP(ip: string): Promise<{ country_code?: string; city?: string }> {
+  async getLocationFromIP(_ip: string): Promise<{ country_code?: string; city?: string }> {
     // This is a placeholder - you would integrate with services like:
     // - MaxMind GeoLite2
     // - IP2Location
@@ -555,7 +555,7 @@ class DownloadTrackingDatabase {
       return this.logDownload({
         file_id: options.file_id,
         downloaded_by: options.user_id,
-        download_type: (options.download_type as any) || 'direct',
+        download_type: (options.download_type as unknown) || 'direct',
         share_id: options.share_id,
         ip_address,
         user_agent,
@@ -590,7 +590,7 @@ class DownloadTrackingDatabase {
     return this.logDownload({
       file_id: data.fileId,
       downloaded_by: data.userId || undefined,
-      download_type: data.downloadType as any,
+      download_type: data.downloadType as unknown,
       share_id: data.shareId || data.temporaryShareId,
       ip_address: data.ipAddress,
       user_agent: data.userAgent,

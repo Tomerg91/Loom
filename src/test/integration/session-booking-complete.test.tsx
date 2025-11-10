@@ -10,7 +10,7 @@
  */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { AuthProvider } from '@/components/auth/auth-provider';
@@ -54,7 +54,7 @@ const mockCoaches = [
 ];
 
 // Mock time slots
-const mockTimeSlots = [
+const _mockTimeSlots = [
   { startTime: '09:00', endTime: '10:00', isAvailable: true },
   { startTime: '10:00', endTime: '11:00', isAvailable: true },
   { startTime: '11:00', endTime: '12:00', isAvailable: false },
@@ -286,7 +286,7 @@ describe('Session Booking Complete Workflow', () => {
   });
 
   it('updates calendar with new booking in real-time', async () => {
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
 
     render(
       <TestWrapper>
@@ -342,14 +342,14 @@ describe('Session Booking Complete Workflow', () => {
 
 // Helper functions for reusable test steps
 export const bookingTestHelpers = {
-  async selectCoach(user: any, coachName: string) {
+  async selectCoach(user: unknown, coachName: string) {
     const coachSelect = screen.getByTestId('coach-select');
     await user.click(coachSelect);
     await waitFor(() => screen.getByText(coachName));
     await user.click(screen.getByText(coachName));
   },
 
-  async selectTomorrowDate(user: any) {
+  async selectTomorrowDate(user: unknown) {
     const dateSelect = screen.getByRole('combobox', { name: /select date/i });
     await user.click(dateSelect);
     
@@ -365,20 +365,20 @@ export const bookingTestHelpers = {
     await user.click(screen.getByText(tomorrowText));
   },
 
-  async selectDuration(user: any, minutes: string) {
+  async selectDuration(user: unknown, minutes: string) {
     const durationSelect = screen.getByTestId('session-type-select');
     await user.click(durationSelect);
     await user.click(screen.getByText(`${minutes} minutes`));
   },
 
-  async selectTimeSlot(user: any, timeSlot: string) {
+  async selectTimeSlot(user: unknown, timeSlot: string) {
     await waitFor(() => {
       expect(screen.getByText(timeSlot)).toBeInTheDocument();
     });
     await user.click(screen.getByText(timeSlot));
   },
 
-  async fillSessionDetails(user: any, title: string, description?: string) {
+  async fillSessionDetails(user: unknown, title: string, description?: string) {
     const titleInput = screen.getByTestId('session-title');
     await user.clear(titleInput);
     await user.type(titleInput, title);

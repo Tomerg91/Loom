@@ -35,7 +35,7 @@ function TableRowComponentInner<T extends { id: string }>({
   item: T;
   columns: Column<T>[];
   onRowClick?: (item: T) => void;
-  getValue: (item: T, key: keyof T | string) => any;
+  getValue: (item: T, key: keyof T | string) => unknown;
 }) {
   const handleClick = useCallback(() => {
     onRowClick?.(item);
@@ -70,7 +70,7 @@ function DataTableComponent<T extends { id: string }>({
   const getValue = useCallback((item: T, key: keyof T | string) => {
     if (typeof key === 'string' && key.includes('.')) {
       // Handle nested properties like 'user.name'
-      return key.split('.').reduce((obj: any, k) => obj?.[k], item);
+      return key.split('.').reduce((obj: unknown, k) => obj?.[k], item);
     }
     return item[key as keyof T];
   }, []);

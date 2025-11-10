@@ -62,7 +62,7 @@ export function MfaQrCode({
 
       // For demo purposes, we'll create a simple placeholder
       // In a real app, use a proper QR code library
-      const uri = generateTotpUri();
+      const _uri = generateTotpUri();
       
       // Clear canvas
       ctx.fillStyle = '#ffffff';

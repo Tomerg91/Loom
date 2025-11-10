@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 
 // POST /api/shares/cleanup - Cleanup expired temporary shares
 // This endpoint should be called by a cron job or scheduled task
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Verify the request is authorized (cron job or admin)
     const headersList = await headers();
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     // Optionally, get statistics about remaining shares
     const supabase = await createClient();
-    const { data: stats, error: statsError } = await supabase
+    const { data: stats, error: _statsError } = await supabase
       .from('temporary_file_shares')
       .select('is_active')
       .eq('is_active', true);
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/shares/cleanup - Get cleanup statistics (admin only)
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Authenticate user
     const supabase = await createClient();

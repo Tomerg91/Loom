@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 
+import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
-import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { getCoachSessionRate } from '@/lib/coach-dashboard/coach-profile';
 import { getDefaultCoachRating } from '@/lib/config/analytics-constants';
 import { createClient } from '@/lib/supabase/server';

@@ -3,10 +3,10 @@
 import { 
   FileIcon, 
   FolderIcon, 
-  UploadIcon, 
+ 
   DownloadIcon,
   PlusIcon,
-  TrashIcon,
+
   AlertTriangleIcon,
   CheckCircleIcon,
   UserIcon,
@@ -23,7 +23,7 @@ import { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -68,7 +68,7 @@ interface SessionFileManagerProps {
 
 export function SessionFileManager({ 
   sessionId, 
-  sessionTitle, 
+  _sessionTitle, 
   userRole, 
   userId 
 }: SessionFileManagerProps) {

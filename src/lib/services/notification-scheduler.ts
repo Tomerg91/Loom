@@ -13,7 +13,7 @@ export interface ScheduledNotification {
   content: string;
   scheduledFor: Date;
   templateId?: string;
-  templateVariables?: Record<string, any>;
+  templateVariables?: Record<string, unknown>;
   priority: 'low' | 'normal' | 'high' | 'urgent';
   status: 'pending' | 'sent' | 'failed' | 'cancelled';
   retryCount: number;
@@ -25,7 +25,7 @@ export interface ScheduledNotification {
 export interface NotificationJob {
   id: string;
   type: 'send_notification' | 'send_bulk_notifications' | 'send_reminder' | 'cleanup_notifications';
-  payload: any;
+  payload: unknown;
   scheduledFor: Date;
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   retryCount: number;
@@ -59,7 +59,7 @@ export class NotificationScheduler {
     content: string,
     scheduledFor: Date,
     options: {
-      templateVariables?: Record<string, any>;
+      templateVariables?: Record<string, unknown>;
       priority?: 'low' | 'normal' | 'high' | 'urgent';
       maxRetries?: number;
     } = {}
@@ -108,7 +108,7 @@ export class NotificationScheduler {
     content: string,
     scheduledFor: Date,
     options: {
-      templateVariables?: Record<string, any>;
+      templateVariables?: Record<string, unknown>;
       priority?: 'low' | 'normal' | 'high' | 'urgent';
       maxRetries?: number;
     } = {}
@@ -412,7 +412,7 @@ export class NotificationScheduler {
   /**
    * Send a notification via the appropriate channel
    */
-  private async sendNotification(notification: any): Promise<boolean> {
+  private async sendNotification(notification: unknown): Promise<boolean> {
     try {
       // Get user details
       const { data: user, error: userError } = await this.supabase

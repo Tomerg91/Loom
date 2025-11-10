@@ -9,7 +9,7 @@ import {
 } from '@/lib/api/utils';
 import { uuidSchema, updateUserSchema } from '@/lib/api/validation';
 import { UserService } from '@/lib/database/users';
-import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
+import { createCorsResponse } from '@/lib/security/cors';
 
 interface RouteParams {
   params: Promise<{ id: string }>;

@@ -65,7 +65,7 @@ export function ClientGoalProgress({ userId, locale }: GoalProgressProps) {
       setErrorMessage(null);
 
       try {
-        const supabase = createClient() as any;
+        const supabase = createClient() as unknown;
         const { data, error } = await supabase
           .from('client_goals')
           .select('id, title, description, progress_percentage, created_at, client_id')
@@ -79,7 +79,7 @@ export function ClientGoalProgress({ userId, locale }: GoalProgressProps) {
         }
 
         const goalRowsRaw = Array.isArray(data) ? data : [];
-        const goalRows: GoalRecord[] = goalRowsRaw.map((goal: any) => ({
+        const goalRows: GoalRecord[] = goalRowsRaw.map((goal: unknown) => ({
           id: String(goal.id ?? ''),
           title: typeof goal.title === 'string' ? goal.title : null,
           description: typeof goal.description === 'string' ? goal.description : null,

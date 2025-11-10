@@ -116,7 +116,7 @@ export function ClientBookPage() {
             const availabilityData = await response.json();
             const daySlots = availabilityData.data || [];
             
-            daySlots.forEach((slot: any) => {
+            daySlots.forEach((slot: unknown) => {
               slots.push({
                 id: `${selectedCoach.id}-${dateStr}-${slot.time}`,
                 coachId: selectedCoach.id,

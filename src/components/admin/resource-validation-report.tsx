@@ -59,7 +59,7 @@ export function ResourceValidationReport({ onRefresh }: ResourceValidationReport
     }
   };
 
-  const getSeverityIcon = (severity: 'critical' | 'warning' | 'info') => {
+  const _getSeverityIcon = (severity: 'critical' | 'warning' | 'info') => {
     switch (severity) {
       case 'critical':
         return <AlertCircle className="h-5 w-5 text-destructive" />;
@@ -70,7 +70,7 @@ export function ResourceValidationReport({ onRefresh }: ResourceValidationReport
     }
   };
 
-  const getSeverityBadge = (severity: 'critical' | 'warning' | 'info') => {
+  const _getSeverityBadge = (severity: 'critical' | 'warning' | 'info') => {
     switch (severity) {
       case 'critical':
         return <Badge variant="destructive">Critical</Badge>;

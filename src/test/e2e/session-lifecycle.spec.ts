@@ -33,7 +33,7 @@ test.describe('Session Lifecycle End-to-End', () => {
     // Select a date (tomorrow)
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowString = tomorrow.toISOString().split('T')[0];
+    const _tomorrowString = tomorrow.toISOString().split('T')[0];
     
     await page.getByRole('button', { name: 'Select Date' }).click();
     await page.getByText(tomorrow.toLocaleDateString()).click();

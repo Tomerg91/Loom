@@ -288,7 +288,7 @@ class TemporarySharesDatabase {
   ): Promise<TemporaryFileShare> {
     const supabase = await createClient();
     
-    const updateData: any = {
+    const updateData: unknown = {
       updated_at: new Date().toISOString(),
     };
 
@@ -361,7 +361,7 @@ class TemporarySharesDatabase {
   /**
    * Get share statistics
    */
-  async getShareStatistics(share_id: string): Promise<any> {
+  async getShareStatistics(share_id: string): Promise<unknown> {
     const supabase = await createClient();
     
     const { data: stats, error } = await supabase.rpc('get_share_statistics', {

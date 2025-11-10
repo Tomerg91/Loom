@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Collect comprehensive business metrics
-async function collectBusinessMetrics(supabase: any) {
+async function collectBusinessMetrics(supabase: unknown) {
   const now = new Date();
   const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -100,7 +100,7 @@ async function collectBusinessMetrics(supabase: any) {
 }
 
 // User engagement metrics
-async function getUserEngagementMetrics(supabase: any, last24h: Date, last7d: Date, last30d: Date) {
+async function getUserEngagementMetrics(supabase: unknown, last24h: Date, last7d: Date, last30d: Date) {
   try {
     // Active users
     const { data: activeUsers24h } = await supabase
@@ -136,7 +136,7 @@ async function getUserEngagementMetrics(supabase: any, last24h: Date, last7d: Da
       .gte('created_at', last7d.toISOString())
       .not('duration_minutes', 'is', null);
     
-    const avgSessionDuration = sessionDurations?.reduce((sum: number, session: any) => 
+    const avgSessionDuration = sessionDurations?.reduce((sum: number, session: unknown) => 
       sum + (session.duration_minutes || 0), 0
     ) / (sessionDurations?.length || 1);
     
@@ -164,7 +164,7 @@ async function getUserEngagementMetrics(supabase: any, last24h: Date, last7d: Da
 }
 
 // Session booking and completion metrics
-async function getSessionMetrics(supabase: any, last24h: Date, last7d: Date, last30d: Date) {
+async function getSessionMetrics(supabase: unknown, last24h: Date, last7d: Date, last30d: Date) {
   try {
     // Session bookings
     const { data: sessions24h } = await supabase
@@ -197,7 +197,7 @@ async function getSessionMetrics(supabase: any, last24h: Date, last7d: Date, las
       .select('rating')
       .gte('created_at', last7d.toISOString());
     
-    const avgRating = ratings7d?.reduce((sum: number, r: any) => sum + r.rating, 0) / (ratings7d?.length || 1);
+    const avgRating = ratings7d?.reduce((sum: number, r: unknown) => sum + r.rating, 0) / (ratings7d?.length || 1);
     
     return {
       sessions_booked_24h: sessions24h?.length || 0,
@@ -231,7 +231,7 @@ async function getSessionMetrics(supabase: any, last24h: Date, last7d: Date, las
 }
 
 // File upload and sharing metrics
-async function getFileMetrics(supabase: any, last24h: Date, last7d: Date, last30d: Date) {
+async function getFileMetrics(supabase: unknown, last24h: Date, last7d: Date, _last30d: Date) {
   try {
     // File uploads
     const { data: uploads24h } = await supabase
@@ -262,7 +262,7 @@ async function getFileMetrics(supabase: any, last24h: Date, last7d: Date, last30
       .gte('created_at', last7d.toISOString());
     
     // Storage usage
-    const totalStorageUsed = uploads7d?.reduce((sum: number, file: any) => 
+    const totalStorageUsed = uploads7d?.reduce((sum: number, file: unknown) => 
       sum + (file.size_bytes || 0), 0
     ) || 0;
     
@@ -290,7 +290,7 @@ async function getFileMetrics(supabase: any, last24h: Date, last7d: Date, last30
 }
 
 // Authentication and MFA metrics
-async function getAuthMetrics(supabase: any, last24h: Date, last7d: Date, last30d: Date) {
+async function getAuthMetrics(supabase: unknown, last24h: Date, last7d: Date, _last30d: Date) {
   try {
     // Get auth events from audit logs if available
     const { data: loginAttempts24h } = await supabase
@@ -338,7 +338,7 @@ async function getAuthMetrics(supabase: any, last24h: Date, last7d: Date, last30
 }
 
 // Performance metrics
-async function getPerformanceMetrics(supabase: any, last24h: Date, last7d: Date, last30d: Date) {
+async function getPerformanceMetrics(_supabase: unknown, _last24h: Date, _last7d: Date, _last30d: Date) {
   try {
     // This would typically come from your performance monitoring service
     // For now, we'll return placeholder values that would be populated by

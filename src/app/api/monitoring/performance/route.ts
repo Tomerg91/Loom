@@ -81,7 +81,7 @@ const rateLimitedPerformance = rateLimit(200, 60000)( // 200 requests per minute
 );
 
 // GET /api/monitoring/performance - Get performance metrics summary
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const start = Date.now();
     
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Generate performance recommendations based on metrics
-function generatePerformanceRecommendations(metrics: any[]): string[] {
+function generatePerformanceRecommendations(metrics: unknown[]): string[] {
   const recommendations: string[] = [];
   
   for (const metric of metrics) {
@@ -245,7 +245,7 @@ function getPerformanceRecommendations(): string[] {
 }
 
 // Helper functions (not exported as route handlers)
-function checkPerformanceThresholds(metrics: any[]): Array<{
+function _checkPerformanceThresholds(metrics: unknown[]): Array<{
   metric: string;
   value: number;
   threshold: number;

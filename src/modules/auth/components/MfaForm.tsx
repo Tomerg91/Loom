@@ -13,6 +13,8 @@
 import { MfaSetupForm } from '@/components/auth/mfa-setup-form';
 import { MfaVerificationForm } from '@/components/auth/mfa-verification-form';
 
+import type { MfaMethod } from '@/types';
+
 export type MfaFormProps =
   | {
       variant: 'setup';
@@ -30,6 +32,7 @@ export type MfaFormProps =
       redirectTo?: string;
       onSuccess?: () => void;
       onCancel?: () => void;
+      availableMethods?: MfaMethod[];
     };
 
 /**

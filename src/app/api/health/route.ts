@@ -4,7 +4,7 @@ import { compose, withRateLimit } from '@/lib/api';
 import { createPublicCorsResponse } from '@/lib/security/cors';
 import { createClient } from '@/lib/supabase/server';
 
-async function baseHealthHandler(request: NextRequest) {
+async function baseHealthHandler(_request: NextRequest) {
   const start = Date.now();
   
   try {
@@ -88,7 +88,7 @@ async function baseHealthHandler(request: NextRequest) {
 // GET /api/health - Health check endpoint
 export const GET = compose(baseHealthHandler, withRateLimit());
 
-async function baseHeadHandler(request: NextRequest) {
+async function baseHeadHandler(_request: NextRequest) {
   try {
     const supabase = await createClient();
     const { error } = await supabase
@@ -106,7 +106,7 @@ async function baseHeadHandler(request: NextRequest) {
 export const HEAD = compose(baseHeadHandler, withRateLimit());
 
 // OPTIONS /api/health - Handle CORS preflight
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return createPublicCorsResponse();
 }
 
@@ -131,7 +131,7 @@ async function checkDatabaseHealth() {
     
     // Test write capability (non-destructive)
     const writeStart = Date.now();
-    const { error: writeError } = await supabase
+    const { error: _writeError } = await supabase
       .from('system_audit_logs')
       .select('id')
       .limit(1);
@@ -308,7 +308,7 @@ async function checkCacheHealth() {
   }
 }
 
-async function getDatabasePoolStats(supabase: any) {
+async function getDatabasePoolStats(_supabase: unknown) {
   try {
     // In a real implementation, you'd get pool stats from your database client
     return {
@@ -322,7 +322,7 @@ async function getDatabasePoolStats(supabase: any) {
   }
 }
 
-function determineOverallHealth(...checks: any[]): boolean {
+function determineOverallHealth(...checks: unknown[]): boolean {
   // System is healthy if all critical checks pass
   // Allow 'slow' status for database checks as they might be warming up
   return checks.every(check =>

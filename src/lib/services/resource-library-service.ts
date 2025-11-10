@@ -12,10 +12,10 @@
  */
 
 import * as db from '@/lib/database/resources';
+import { DatabaseError } from '@/lib/errors/database-errors';
 import { getFileManagementService } from '@/lib/services/file-management-service';
 import { createClient } from '@/lib/supabase/server';
 import { Result } from '@/lib/types/result';
-import { DatabaseError } from '@/lib/errors/database-errors';
 import type {
   ResourceLibraryItem,
   ResourceCollection,
@@ -23,7 +23,7 @@ import type {
   ResourceAnalytics,
   LibraryAnalytics,
   ResourceListParams,
-  CreateResourceRequest,
+
   UpdateResourceRequest,
   ShareAllClientsRequest,
   CreateCollectionRequest,
@@ -70,7 +70,7 @@ class ResourceLibraryService {
       // Use existing file upload service
       const fileService = getFileManagementService();
       const uploadResult = await fileService.uploadFile(file, userId, {
-        fileCategory: metadata.category as any,
+        fileCategory: metadata.category as unknown,
         tags: metadata.tags,
         description: metadata.description,
       });
@@ -187,7 +187,7 @@ class ResourceLibraryService {
       }
 
       // Build update object
-      const updateData: any = {
+      const updateData: unknown = {
         updated_at: new Date().toISOString(),
       };
 
@@ -321,7 +321,7 @@ class ResourceLibraryService {
   async getResourceShares(
     resourceId: string,
     userId: string
-  ): Promise<Result<any[]>> {
+  ): Promise<Result<unknown[]>> {
     try {
       // Verify ownership
       const resource = await db.getResourceById(resourceId, userId);
@@ -449,7 +449,7 @@ class ResourceLibraryService {
       }
 
       // Build update object
-      const updateData: any = {};
+      const updateData: unknown = {};
 
       if (request.name) {
         updateData.name = request.name;
@@ -688,7 +688,7 @@ class ResourceLibraryService {
     return DatabaseError.wrapDatabaseOperation('updateSettings', async () => {
       const supabase = await createClient();
 
-      const updateData: any = {};
+      const updateData: unknown = {};
 
       if (updates.defaultPermission) {
         updateData.default_permission = updates.defaultPermission;

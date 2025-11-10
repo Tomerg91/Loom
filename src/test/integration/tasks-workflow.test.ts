@@ -7,9 +7,9 @@
  * 3. Client updates progress
  * 4. Task auto-completes at 100%
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
-import { TaskService } from '@/modules/sessions/server/task-service';
+// import {} from '@/modules/sessions/server/task-service';
 
 // Mock logger
 vi.mock('@/modules/platform/logging/logger', () => ({

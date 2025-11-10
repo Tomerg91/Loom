@@ -164,7 +164,7 @@ export function ResourceLibraryPage() {
   });
 
   // Handlers
-  const handleUpload = useCallback(async (file: File, metadata: any) => {
+  const handleUpload = useCallback(async (file: File, metadata: unknown) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('metadata', JSON.stringify(metadata));
@@ -185,7 +185,7 @@ export function ResourceLibraryPage() {
     });
   }, [queryClient, toast]);
 
-  const handleSaveCollection = useCallback(async (data: any) => {
+  const handleSaveCollection = useCallback(async (data: unknown) => {
     const url = selectedCollection
       ? `/api/coach/collections/${selectedCollection.id}`
       : '/api/coach/collections';
@@ -207,7 +207,7 @@ export function ResourceLibraryPage() {
     });
   }, [queryClient, toast, selectedCollection]);
 
-  const handleShare = useCallback(async (resourceId: string, data: any) => {
+  const handleShare = useCallback(async (resourceId: string, data: unknown) => {
     const response = await fetch(`/api/coach/resources/${resourceId}/share`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

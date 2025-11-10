@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
-import { temporarySharesDatabase } from '@/lib/database/temporary-shares';
 import { fileModificationRateLimit } from '@/lib/security/file-rate-limit';
 import { fileManagementService } from '@/lib/services/file-management-service';
 import { createClient } from '@/lib/supabase/server';
@@ -224,8 +223,8 @@ export async function GET(request: NextRequest) {
       expired_only: searchParams.get('expired_only') === 'true',
       limit: parseInt(searchParams.get('limit') || '50'),
       offset: parseInt(searchParams.get('offset') || '0'),
-      sort_by: searchParams.get('sort_by') as any || 'created_at',
-      sort_order: searchParams.get('sort_order') as any || 'desc',
+      sort_by: searchParams.get('sort_by') as unknown || 'created_at',
+      sort_order: searchParams.get('sort_order') as unknown || 'desc',
     };
 
     const validatedParams = listTemporarySharesSchema.parse(queryParams);
@@ -270,7 +269,7 @@ export async function GET(request: NextRequest) {
     // Apply pagination
     query = query.range(validatedParams.offset, validatedParams.offset + validatedParams.limit - 1);
 
-    const { data: shares, error: sharesError, count } = await query;
+    const { data: shares, error: sharesError, _count} = await query;
 
     if (sharesError) {
       console.error('Error fetching temporary shares:', sharesError);

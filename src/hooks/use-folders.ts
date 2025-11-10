@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+
 import { FolderMetadata } from '@/lib/services/file-management-service';
 
 interface UseFoldersParams {

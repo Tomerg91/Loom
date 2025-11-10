@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract client information for audit logging
-    const ipAddress = getClientIP(request);
-    const userAgent = getUserAgent(request);
+    const _ipAddress = getClientIP(request);
+    const _userAgent = getUserAgent(request);
 
     // Enable MFA with the provided secret, verification code, and backup codes
     const { success: enableSuccess, error: enableError } = await mfaService.enableMfa(

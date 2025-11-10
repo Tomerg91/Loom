@@ -18,6 +18,9 @@
 -- Step 1: Create Unified MFA Status Function
 -- ============================================================================
 
+-- Drop existing function to change parameter name from target_user_id to p_user_id
+DROP FUNCTION IF EXISTS public.get_user_mfa_status(UUID) CASCADE;
+
 CREATE OR REPLACE FUNCTION public.get_user_mfa_status(p_user_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -67,7 +70,7 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.get_user_mfa_status IS
+COMMENT ON FUNCTION public.get_user_mfa_status(UUID) IS
   'Unified MFA status function. Returns comprehensive MFA state from user_mfa_methods table. Use this instead of directly querying users.mfa_enabled.';
 
 -- ============================================================================
@@ -314,7 +317,7 @@ INSERT INTO public.security_audit_log (
     'breaking_changes', false,
     'backward_compatible', true
   ),
-  'high',
+  'critical',
   NOW()
 );
 

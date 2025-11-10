@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import {
   getCoachLibraryResources,
-  createCollection,
+
 } from '@/lib/database/resources';
 import { createClient } from '@/lib/supabase/server';
 import type { ResourceListParams } from '@/types/resources';
@@ -41,10 +41,10 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const { searchParams } = request.nextUrl;
     const filters: ResourceListParams = {
-      category: searchParams.get('category') as any,
+      category: searchParams.get('category') as unknown,
       tags: searchParams.get('tags')?.split(',').filter(Boolean),
       search: searchParams.get('search') || undefined,
-      sortBy: (searchParams.get('sortBy') as any) || 'created_at',
+      sortBy: (searchParams.get('sortBy') as unknown) || 'created_at',
       sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
     };
 

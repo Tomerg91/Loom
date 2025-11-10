@@ -340,8 +340,8 @@ export class FileSecurityMiddleware {
    * Check for suspicious IP behavior patterns
    */
   private static async checkSuspiciousIPBehavior(
-    clientIp: string, 
-    request: NextRequest
+    _clientIp: string, 
+    _request: NextRequest
   ): Promise<SecurityCheckResult> {
     // This would typically check against a database of recent requests
     // For now, implement basic rate limiting for suspicious IPs
@@ -358,7 +358,7 @@ export class FileSecurityMiddleware {
   /**
    * Geographic restrictions
    */
-  private static async checkGeographicRestrictions(clientIp: string): Promise<SecurityCheckResult> {
+  private static async checkGeographicRestrictions(_clientIp: string): Promise<SecurityCheckResult> {
     // In production, you might want to restrict access from certain countries
     // This would integrate with a GeoIP service
     
@@ -370,10 +370,10 @@ export class FileSecurityMiddleware {
    * Session security checks
    */
   private static async checkSessionSecurity(
-    user: any, 
-    request: NextRequest
+    _user: unknown, 
+    _request: NextRequest
   ): Promise<SecurityCheckResult> {
-    const headersList = await headers();
+    const _headersList = await headers();
 
     // In production, you might want to:
     // 1. Track user sessions and detect concurrent sessions from different IPs

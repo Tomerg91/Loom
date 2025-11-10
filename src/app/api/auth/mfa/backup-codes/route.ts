@@ -21,7 +21,7 @@ const regenerateRequestSchema = z.object({
 });
 
 // GET - Check backup codes status
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get authenticated user
     const authService = createAuthService(true);

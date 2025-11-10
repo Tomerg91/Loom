@@ -28,7 +28,7 @@ const ChartSkeleton = () => (
 // Lazy Progress Line Chart
 export function LazyProgressChart({ 
   data, 
-  height = 264 
+  _height = 264 
 }: { 
   data: Array<{ name: string; mood: number; sessions: number }>;
   height?: number;

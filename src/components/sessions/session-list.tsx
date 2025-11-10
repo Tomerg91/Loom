@@ -14,7 +14,7 @@ import {
   Search
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState} from 'react';
 
 
 
@@ -47,14 +47,14 @@ const SessionCard = React.memo(({
   t
 }: {
   session: Session;
-  user: any;
+  user: unknown;
   getStatusColor: (status: SessionStatus) => string;
   getStatusLabel: (status: SessionStatus) => string;
   canJoinSession: (session: Session) => boolean;
   canCancelSession: (session: Session) => boolean;
   handleStatusUpdate: (sessionId: string, status: SessionStatus) => void;
   handleCancelSession: (sessionId: string) => void;
-  t: any;
+  t: unknown;
 }) => {
   const formattedDate = React.useMemo(() => format(parseISO(session.scheduledAt), 'PPP'), [session.scheduledAt]);
   const formattedTime = React.useMemo(() => format(parseISO(session.scheduledAt), 'p'), [session.scheduledAt]);
