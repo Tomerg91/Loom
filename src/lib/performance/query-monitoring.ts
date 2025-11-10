@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 
 /**
  * Query Performance Monitoring
@@ -40,7 +40,7 @@ export interface ValidationResult {
 }
 
 export class QueryPerformanceMonitor {
-  private supabase = createServerClient();
+  private supabase = createAdminClient();
   private metricsBuffer: QueryMetric[] = [];
   private flushInterval = 30000; // 30 seconds
   private flushIntervalId: NodeJS.Timeout | null = null;
@@ -252,21 +252,23 @@ export class QueryPerformanceMonitor {
 
     const dashboardMetrics = report.filter(m => m.category === 'Dashboard');
     const coachMetrics = report.filter(m => m.category === 'Coach Clients');
-    const userStatsMetrics = report.filter(m => m.category === 'User Statistics');
+    const userStatsMetrics = report.filter(
+      m => m.category === 'User Statistics'
+    );
 
     // Calculate summary statistics
-    const allMetrics = [...dashboardMetrics, ...coachMetrics, ...userStatsMetrics];
+    const allMetrics = [
+      ...dashboardMetrics,
+      ...coachMetrics,
+      ...userStatsMetrics,
+    ];
     const optimalCount = allMetrics.filter(m => m.status === 'OPTIMAL').length;
     const withinTargetCount = allMetrics.filter(m => m.within_target).length;
-    const passPercentage = allMetrics.length > 0
-      ? (withinTargetCount / allMetrics.length) * 100
-      : 0;
+    const passPercentage =
+      allMetrics.length > 0 ? (withinTargetCount / allMetrics.length) * 100 : 0;
 
-    const status = passPercentage >= 80
-      ? 'PASS'
-      : passPercentage >= 50
-        ? 'WARN'
-        : 'FAIL';
+    const status =
+      passPercentage >= 80 ? 'PASS' : passPercentage >= 50 ? 'WARN' : 'FAIL';
 
     return {
       category: 'Comprehensive Performance Validation',
@@ -415,9 +417,5 @@ export async function withQueryMonitoring<T>(
   operation: () => Promise<T>,
   options?: { hash?: string }
 ): Promise<T> {
-  return queryMonitor.trackQueryExecution(
-    queryType,
-    operation,
-    options?.hash
-  );
+  return queryMonitor.trackQueryExecution(queryType, operation, options?.hash);
 }
