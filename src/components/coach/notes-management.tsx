@@ -3,13 +3,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  EyeOff, 
-  Tag, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  EyeOff,
+  Tag,
   Search,
   Filter,
   MoreHorizontal
@@ -19,6 +19,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api/client-api-request';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -125,9 +126,7 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
   const { data: clients } = useQuery({
     queryKey: ['coach-clients'],
     queryFn: async (): Promise<Client[]> => {
-      const response = await fetch('/api/users?role=client&limit=50');
-      if (!response.ok) throw new Error('Failed to fetch clients');
-      const data = await response.json();
+      const data = await apiGet<{ data: Client[] }>('/api/users?role=client&limit=50');
       return data.data;
     },
   });
@@ -137,9 +136,7 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
     queryKey: ['client-sessions', watchedClientId],
     queryFn: async (): Promise<Session[]> => {
       if (!watchedClientId) return [];
-      const response = await fetch(`/api/sessions?clientId=${watchedClientId}&limit=20`);
-      if (!response.ok) throw new Error('Failed to fetch sessions');
-      const data = await response.json();
+      const data = await apiGet<{ data: Session[] }>(`/api/sessions?clientId=${watchedClientId}&limit=20`);
       return data.data;
     },
     enabled: !!watchedClientId,
@@ -149,9 +146,7 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
   const { data: availableTags } = useQuery({
     queryKey: ['coach-notes-tags'],
     queryFn: async (): Promise<string[]> => {
-      const response = await fetch('/api/notes/tags');
-      if (!response.ok) throw new Error('Failed to fetch tags');
-      const data = await response.json();
+      const data = await apiGet<{ data: string[] }>('/api/notes/tags');
       return data.data || [];
     },
   });
@@ -179,33 +174,23 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
         params.append('tags', selectedTags.join(','));
       }
 
-      const response = await fetch(`/api/notes?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch notes');
-      return response.json();
+      return await apiGet<NotesResponse>(`/api/notes?${params}`);
     },
   });
 
   // Create/Update note mutation
   const saveNoteMutation = useMutation({
     mutationFn: async (formData: NoteFormData) => {
-      const url = editingNote ? `/api/notes/${editingNote.id}` : '/api/notes';
-      const method = editingNote ? 'PUT' : 'POST';
+      const payload = {
+        ...formData,
+        tags: formData.tags?.filter(tag => tag.trim()) || [],
+      };
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          tags: formData.tags?.filter(tag => tag.trim()) || [],
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to save note');
+      if (editingNote) {
+        return await apiPut(`/api/notes/${editingNote.id}`, payload);
+      } else {
+        return await apiPost('/api/notes', payload);
       }
-
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coach-notes'] });
@@ -218,14 +203,7 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
   // Delete note mutation
   const deleteNoteMutation = useMutation({
     mutationFn: async (noteId: string) => {
-      const response = await fetch(`/api/notes/${noteId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete note');
-      }
+      await apiDelete(`/api/notes/${noteId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coach-notes'] });

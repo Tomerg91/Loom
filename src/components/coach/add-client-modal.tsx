@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { apiPost } from '@/lib/api/client-api-request';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -40,16 +41,7 @@ export function AddClientModal({ open, onOpenChange, onSuccess }: AddClientModal
     setLoading(true);
 
     try {
-      const response = await fetch('/api/coach/clients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to add client');
-      }
+      await apiPost('/api/coach/clients', formData);
 
       // Refresh dashboard data in parent context
       onSuccess?.();

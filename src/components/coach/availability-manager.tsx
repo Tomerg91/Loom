@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { apiGet, apiPost } from '@/lib/api/client-api-request';
 import { useUser } from '@/lib/auth/use-user';
 
 
@@ -125,9 +126,7 @@ export function AvailabilityManager() {
     queryKey: ['coach-availability', user?.id],
     queryFn: async (): Promise<AvailabilitySlot[]> => {
       if (!user?.id) return [];
-      const response = await fetch(`/api/coaches/${user.id}/schedule`);
-      if (!response.ok) throw new Error('Failed to fetch availability');
-      const data = await response.json();
+      const data = await apiGet<{ data: AvailabilitySlot[] }>(`/api/coaches/${user.id}/schedule`);
       return data.data || [];
     },
     enabled: !!user?.id,
@@ -144,25 +143,14 @@ export function AvailabilityManager() {
   const saveAvailabilityMutation = useMutation({
     mutationFn: async (formData: AvailabilityFormData) => {
       if (!user?.id) throw new Error('User not found');
-      
-      const response = await fetch(`/api/coaches/${user.id}/availability`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slots: formData.slots.map(slot => ({
-            ...slot,
-            timezone: formData.timezone,
-          })),
+
+      return await apiPost(`/api/coaches/${user.id}/availability`, {
+        slots: formData.slots.map(slot => ({
+          ...slot,
           timezone: formData.timezone,
-        }),
+        })),
+        timezone: formData.timezone,
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to save availability');
-      }
-
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coach-availability'] });

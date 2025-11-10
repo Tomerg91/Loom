@@ -8,6 +8,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { apiGet } from '@/lib/api/client-api-request';
 import { dashboardQueryOptions } from '@/modules/dashboard/api/queryOptions';
 import type { CoachOverviewData } from '@/modules/dashboard/types';
 
@@ -20,23 +21,13 @@ interface CoachOverviewQueryConfig {
 }
 
 async function fetchCoachOverviewFromApi(): Promise<CoachOverviewData> {
-  const response = await fetch('/api/dashboard/coach-overview', {
-    method: 'GET',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-  });
+  const payload = await apiGet<{ data?: CoachOverviewData; success?: boolean; message?: string } | CoachOverviewData>('/api/dashboard/coach-overview');
 
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok || !payload) {
-    throw new Error('Unable to load coach overview data');
-  }
-
-  if (payload.success === false) {
+  if ('success' in payload && payload.success === false) {
     throw new Error(payload.message ?? 'Unable to load coach overview data');
   }
 
-  return (payload.data ?? payload) as CoachOverviewData;
+  return ('data' in payload ? payload.data : payload) as CoachOverviewData;
 }
 
 export const getCoachOverviewQueryOptions = (
