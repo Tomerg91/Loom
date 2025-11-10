@@ -6,6 +6,7 @@ import { ApiResponseHelper } from '@/lib/api/types';
 import { getCoachSessionRate } from '@/lib/coach-dashboard/coach-profile';
 import { getDefaultCoachRating } from '@/lib/config/analytics-constants';
 import { createClient } from '@/lib/supabase/server';
+import { queryMonitor } from '@/lib/performance/query-monitoring';
 
 interface DashboardStats {
   totalSessions: number;
@@ -51,26 +52,37 @@ export async function GET(request: NextRequest): Promise<Response> {
     endOfWeek.setHours(23, 59, 59, 999);
 
     // Fetch session statistics and coach rate concurrently
-    const sessionsPromise = supabase
-      .from('sessions')
-      .select('id, status, scheduled_at, client_id')
-      .eq('coach_id', coachId);
+    let sessionData: Array<{ id: string; status: string; scheduled_at: string; client_id: string }> = [];
+    let sessionsFetchError: Error | null = null;
 
-    const [sessionsResult, coachRate] = await Promise.all([
-      sessionsPromise,
-      getCoachSessionRate(supabase, coachId),
-    ]);
+    try {
+      sessionData = await queryMonitor.trackQueryExecution(
+        'Coach Statistics Sessions',
+        async () => {
+          const result = await supabase
+            .from('sessions')
+            .select('id, status, scheduled_at, client_id')
+            .eq('coach_id', coachId);
 
-    if (sessionsResult.error) {
-      console.error('[/api/coach/stats] Error fetching sessions:', sessionsResult.error);
+          if (result.error) {
+            throw result.error;
+          }
+          return result.data || [];
+        }
+      );
+    } catch (error) {
+      sessionsFetchError = error instanceof Error ? error : new Error('Unknown error');
+      console.error('[/api/coach/stats] Error fetching sessions:', sessionsFetchError);
     }
 
-    const sessionStats = sessionsResult.data ?? [];
+    const coachRate = await getCoachSessionRate(supabase, coachId);
+
+    const sessionStats = sessionData;
 
     console.log('[/api/coach/stats] Sessions query result:', {
       count: sessionStats.length,
-      hasError: !!sessionsResult.error,
-      error: sessionsResult.error?.message,
+      hasError: !!sessionsFetchError,
+      error: sessionsFetchError?.message,
     });
 
     const totalSessions = sessionStats.length;
