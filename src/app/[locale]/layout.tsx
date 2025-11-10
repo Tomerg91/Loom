@@ -96,10 +96,10 @@ export default async function LocaleLayout({
         >
           <PwaBootstrap />
           <SkipLink href="#main-content">
-            {direction === 'rtl' ? 'עבור לתוכן הראשי' : 'Skip to main content'}
+            {(messages.common?.accessibility?.skipToMainContent as string) || 'Skip to main content'}
           </SkipLink>
           <SkipLink href="#main-navigation" className="left-32">
-            {direction === 'rtl' ? 'עבור לניווט' : 'Skip to navigation'}
+            {(messages.common?.accessibility?.skipToNavigation as string) || 'Skip to navigation'}
           </SkipLink>
           <EnvironmentCheck />
           <LocaleLayoutClient locale={locale} messages={messages}>

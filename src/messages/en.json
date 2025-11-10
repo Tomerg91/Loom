@@ -26,7 +26,11 @@
     "selectLanguage": "Select language",
     "show": "Show",
     "hide": "Hide",
-    "retry": "Try again"
+    "retry": "Try again",
+    "accessibility": {
+      "skipToMainContent": "Skip to main content",
+      "skipToNavigation": "Skip to navigation"
+    }
   },
   "navigation": {
     "home": "Home",
