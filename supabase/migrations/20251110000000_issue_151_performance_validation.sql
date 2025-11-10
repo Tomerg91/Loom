@@ -93,8 +93,7 @@ BEGIN
         END::NUMERIC AS target_ms,
         CASE
             WHEN agg.avg_exec_time > 0 THEN
-                ROUND(((100::NUMERIC - (agg.avg_exec_time / 100::NUMERIC * 100))
-                    NULLIF(agg.avg_exec_time, 0)), 2)
+                ROUND(((100::NUMERIC - agg.avg_exec_time) / 100::NUMERIC * 100), 2)
             ELSE 0::NUMERIC
         END::NUMERIC AS optimization_percentage,
         CASE

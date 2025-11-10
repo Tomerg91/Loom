@@ -52,35 +52,37 @@ export async function GET(request: NextRequest): Promise<Response> {
     endOfWeek.setHours(23, 59, 59, 999);
 
     // Fetch session statistics and coach rate concurrently
-    let sessionsResult: any;
+    let sessionData: Array<{ id: string; status: string; scheduled_at: string; client_id: string }> = [];
+    let sessionsFetchError: Error | null = null;
+
     try {
-      sessionsResult = await queryMonitor.trackQueryExecution(
+      sessionData = await queryMonitor.trackQueryExecution(
         'Coach Statistics Sessions',
         async () => {
           const result = await supabase
             .from('sessions')
             .select('id, status, scheduled_at, client_id')
             .eq('coach_id', coachId);
-          return result;
+
+          if (result.error) {
+            throw result.error;
+          }
+          return result.data || [];
         }
       );
     } catch (error) {
-      console.error('[/api/coach/stats] Error fetching sessions:', error);
-      sessionsResult = { data: [], error };
+      sessionsFetchError = error instanceof Error ? error : new Error('Unknown error');
+      console.error('[/api/coach/stats] Error fetching sessions:', sessionsFetchError);
     }
 
     const coachRate = await getCoachSessionRate(supabase, coachId);
 
-    if (sessionsResult.error) {
-      console.error('[/api/coach/stats] Error fetching sessions:', sessionsResult.error);
-    }
-
-    const sessionStats = sessionsResult.data ?? [];
+    const sessionStats = sessionData;
 
     console.log('[/api/coach/stats] Sessions query result:', {
       count: sessionStats.length,
-      hasError: !!sessionsResult.error,
-      error: sessionsResult.error?.message,
+      hasError: !!sessionsFetchError,
+      error: sessionsFetchError?.message,
     });
 
     const totalSessions = sessionStats.length;

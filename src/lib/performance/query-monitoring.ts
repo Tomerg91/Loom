@@ -1,5 +1,4 @@
 import { createServerClient } from '@/lib/supabase/server';
-import { Database } from '@/types/database';
 
 /**
  * Query Performance Monitoring
@@ -44,6 +43,7 @@ export class QueryPerformanceMonitor {
   private supabase = createServerClient();
   private metricsBuffer: QueryMetric[] = [];
   private flushInterval = 30000; // 30 seconds
+  private flushIntervalId: NodeJS.Timeout | null = null;
 
   constructor() {
     this.startAutoFlush();
@@ -371,7 +371,7 @@ export class QueryPerformanceMonitor {
   // Private helper methods
 
   private startAutoFlush(): void {
-    setInterval(() => {
+    this.flushIntervalId = setInterval(() => {
       this.flushMetrics().catch(error => {
         console.error('Auto-flush error:', error);
       });
@@ -395,9 +395,13 @@ export class QueryPerformanceMonitor {
   }
 
   /**
-   * Cleanup method to flush remaining metrics
+   * Cleanup method to flush remaining metrics and stop auto-flush
    */
   async cleanup(): Promise<void> {
+    if (this.flushIntervalId) {
+      clearInterval(this.flushIntervalId);
+      this.flushIntervalId = null;
+    }
     await this.flushMetrics();
   }
 }
