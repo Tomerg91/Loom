@@ -18,7 +18,8 @@ export const AUTH_ENDPOINTS = {
   // Password management
   RESET_PASSWORD: '/api/auth/reset-password',
   UPDATE_PASSWORD: '/api/auth/update-password',
-  
+  VERIFY_RESET_CODE: '/api/auth/verify-reset-code',
+
   // Email verification
   VERIFY: '/api/auth/verify',
   
@@ -157,8 +158,8 @@ export const SYSTEM_ENDPOINTS = {
  */
 export const EXTERNAL_URLS = {
   // Production URLs
-  PRODUCTION_SITE: 'https://loom-bay.vercel.app',
-  
+  PRODUCTION_SITE: 'https://loom.vercel.app',
+
   // Development URLs
   LOCALHOST: 'http://localhost:3000',
   LOCALHOST_ALT: 'http://localhost:3001', // Alternative port for development

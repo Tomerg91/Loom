@@ -1057,23 +1057,45 @@ export class AuthService {
 
   /**
    * Update password with reset token
+   *
+   * SECURITY: This method now properly validates the reset token by exchanging it
+   * for a session before updating the password. This prevents unauthorized password
+   * changes without a valid reset token.
    */
   async updatePasswordWithToken(
     token: string,
     password: string
   ): Promise<{ error: string | null }> {
     try {
-      // Verify the reset token and update password
-      const { error } = await this.supabase.auth.updateUser({
+      // Step 1: Exchange the reset token for a session
+      // The token from Supabase recovery email is an access_token that can be used to establish a session
+      const { data: sessionData, error: sessionError } = await this.supabase.auth.setSession({
+        access_token: token,
+        refresh_token: '', // Recovery tokens don't have a refresh token, but one will be created upon password update
+      });
+
+      if (sessionError) {
+        console.error('Token validation failed:', sessionError);
+        return { error: 'Invalid or expired reset token. Please request a new password reset link.' };
+      }
+
+      if (!sessionData.session) {
+        return { error: 'Failed to establish session with reset token' };
+      }
+
+      // Step 2: Update the password with the established session
+      const { error: updateError } = await this.supabase.auth.updateUser({
         password,
       });
 
-      if (error) {
-        return { error: error.message };
+      if (updateError) {
+        console.error('Password update failed:', updateError);
+        return { error: updateError.message };
       }
 
       return { error: null };
     } catch (error) {
+      console.error('Password reset error:', error);
       return {
         error:
           error instanceof Error

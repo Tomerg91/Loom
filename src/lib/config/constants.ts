@@ -170,8 +170,8 @@ export const REALTIME_CONFIG = {
 export const SECURITY_URLS = {
   // Password reset redirect URLs
   RESET_PASSWORD_URLS: [
-    'https://loom-bay.vercel.app/reset-password',
-    'http://localhost:3001/reset-password', // Development
+    'https://loom.vercel.app/reset-password', // Production
+    'http://localhost:3000/reset-password', // Development
   ],
   
   // CSP allowed URLs

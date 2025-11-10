@@ -93,13 +93,31 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
     setError(null);
 
     try {
-      // In a real app, this would verify the code
-      // For now, we'll simulate verification and move to password step
-      if (verificationCode.length === 6) {
-        setVerificationStep('password');
-      } else {
+      // Validate code format on client side first
+      if (verificationCode.length !== 6) {
         throw new Error('Please enter a valid 6-digit verification code');
       }
+
+      if (!/^\d{6}$/.test(verificationCode)) {
+        throw new Error('Verification code must contain only digits');
+      }
+
+      // SECURITY: Verify the code on the server side
+      // This prevents users from bypassing client-side validation
+      const response = await fetch(AUTH_ENDPOINTS.VERIFY_RESET_CODE, {
+        method: HTTP_CONFIG.methods.POST,
+        headers: { 'Content-Type': HTTP_CONFIG.contentTypes.JSON },
+        body: JSON.stringify({ code: verificationCode }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to verify code');
+      }
+
+      // Code verified successfully, move to password update step
+      setVerificationStep('password');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid verification code');
     } finally {
