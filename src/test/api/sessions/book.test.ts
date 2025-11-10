@@ -5,21 +5,21 @@
  * Tests: Authentication, Validation, Business Logic, Database Operations, Notifications
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { POST, OPTIONS } from '@/app/api/sessions/book/route';
 
 // Mock all dependencies
 vi.mock('@/lib/api/utils', () => ({
-  createSuccessResponse: vi.fn((data, message = 'Success', status = 200) => 
-    new Response(JSON.stringify({ success: true, data, message }), { 
+  createSuccessResponse: vi.fn((data, message = 'Success', status = 200) =>
+    new Response(JSON.stringify({ success: true, data, message }), {
       status,
       headers: { 'Content-Type': 'application/json' }
     })
   ),
-  createErrorResponse: vi.fn((message, status = 400) => 
-    new Response(JSON.stringify({ success: false, error: message }), { 
+  createErrorResponse: vi.fn((message, status = 400) =>
+    new Response(JSON.stringify({ success: false, error: message }), {
       status,
       headers: { 'Content-Type': 'application/json' }
     })
@@ -37,8 +37,12 @@ vi.mock('@/lib/api/utils', () => ({
   },
 }));
 
-vi.mock('@/lib/supabase/server', () => ({
-  createServerClient: vi.fn(() => mockSupabaseClient),
+vi.mock('@/lib/api/auth-client', () => ({
+  createAuthenticatedSupabaseClient: vi.fn((_request, response) => ({
+    client: mockSupabaseClient,
+    response,
+  })),
+  propagateCookies: vi.fn((response) => response),
 }));
 
 vi.mock('@/lib/security/rate-limit', () => ({
@@ -62,16 +66,16 @@ vi.mock('@/lib/security/cors', () => ({
 
 // Import mocked functions
 import { createSuccessResponse, createErrorResponse } from '@/lib/api/utils';
+import { createAuthenticatedSupabaseClient } from '@/lib/api/auth-client';
 import { isCoachAvailable } from '@/lib/database/availability';
 import { sessionNotificationService } from '@/lib/notifications/session-notifications';
 import { createCorsResponse } from '@/lib/security/cors';
 import { rateLimit } from '@/lib/security/rate-limit';
-import { createServerClient } from '@/lib/supabase/server';
 import { mockUser, mockSupabaseClient } from '@/test/utils';
 
 const _mockCreateSuccessResponse = vi.mocked(createSuccessResponse);
 const mockCreateErrorResponse = vi.mocked(createErrorResponse);
-const _mockCreateServerClient = vi.mocked(createServerClient);
+const _mockCreateAuthenticatedSupabaseClient = vi.mocked(createAuthenticatedSupabaseClient);
 const mockRateLimit = vi.mocked(rateLimit);
 const mockIsCoachAvailable = vi.mocked(isCoachAvailable);
 const mockSessionNotificationService = vi.mocked(sessionNotificationService);
