@@ -42,7 +42,7 @@ vi.mock('@/lib/api/auth-client', () => ({
     client: mockSupabaseClient,
     response,
   })),
-  propagateCookies: vi.fn((response) => response),
+  propagateCookies: vi.fn((_authResponse, apiResponse) => apiResponse),
 }));
 
 vi.mock('@/lib/security/rate-limit', () => ({
