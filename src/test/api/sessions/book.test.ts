@@ -638,15 +638,29 @@ describe('/api/sessions/book', () => {
             const insertMock = vi.fn().mockReturnThis();
             const selectMock = vi.fn().mockReturnThis();
             const singleMock = vi.fn().mockResolvedValue({ data: mockSessionData, error: null });
-            
+
             return {
               insert: insertMock,
               select: selectMock,
               single: singleMock,
             };
           }
-          // Return users table mock for other calls
-          return mockSupabaseClient.from(table);
+          // Return default chainable mock for users table
+          return {
+            select: vi.fn().mockReturnThis(),
+            insert: vi.fn().mockReturnThis(),
+            update: vi.fn().mockReturnThis(),
+            delete: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            gte: vi.fn().mockReturnThis(),
+            lte: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockReturnThis(),
+            range: vi.fn().mockReturnThis(),
+            in: vi.fn().mockReturnThis(),
+            not: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: mockClientProfile, error: null }),
+          };
         });
 
         const request = new NextRequest('http://localhost:3000/api/sessions/book', {
@@ -666,13 +680,28 @@ describe('/api/sessions/book', () => {
             return {
               insert: vi.fn().mockReturnThis(),
               select: vi.fn().mockReturnThis(),
-              single: vi.fn().mockResolvedValue({ 
-                data: null, 
-                error: new Error('Database constraint violation') 
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: new Error('Database constraint violation')
               }),
             };
           }
-          return mockSupabaseClient.from(table);
+          // Return default chainable mock for users table
+          return {
+            select: vi.fn().mockReturnThis(),
+            insert: vi.fn().mockReturnThis(),
+            update: vi.fn().mockReturnThis(),
+            delete: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            gte: vi.fn().mockReturnThis(),
+            lte: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockReturnThis(),
+            range: vi.fn().mockReturnThis(),
+            in: vi.fn().mockReturnThis(),
+            not: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: mockClientProfile, error: null }),
+          };
         });
 
         const request = new NextRequest('http://localhost:3000/api/sessions/book', {
@@ -699,7 +728,22 @@ describe('/api/sessions/book', () => {
               single: vi.fn().mockResolvedValue({ data: mockSessionData, error: null }),
             };
           }
-          return mockSupabaseClient.from(table);
+          // Return default chainable mock for other tables
+          return {
+            select: vi.fn().mockReturnThis(),
+            insert: vi.fn().mockReturnThis(),
+            update: vi.fn().mockReturnThis(),
+            delete: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            gte: vi.fn().mockReturnThis(),
+            lte: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockReturnThis(),
+            range: vi.fn().mockReturnThis(),
+            in: vi.fn().mockReturnThis(),
+            not: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: mockClientProfile, error: null }),
+          };
         });
 
         const request = new NextRequest('http://localhost:3000/api/sessions/book', {
