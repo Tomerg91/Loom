@@ -1,13 +1,13 @@
-import { Suspense } from 'react';
+'use client';
+
+import { Suspense, useSearchParams } from 'react';
 
 import { ResetPasswordForm } from '@/components/auth/reset-password-form';
 
-interface ResetPasswordPageProps {
-  searchParams: Promise<{ token?: string; redirectTo?: string }>;
-}
-
-export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
-  const { token, redirectTo } = await searchParams;
+export default function ResetPasswordPage() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') || undefined;
+  const redirectTo = searchParams.get('redirectTo') || undefined;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 relative">
