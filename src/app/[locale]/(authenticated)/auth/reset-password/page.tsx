@@ -1,24 +1,13 @@
-import { Suspense } from 'react';
+'use client';
+
+import { Suspense, useSearchParams } from 'react';
 
 import { ResetPasswordForm } from '@/components/auth/reset-password-form';
 
-interface ResetPasswordPageProps {
-  searchParams: Promise<{ token?: string; redirectTo?: string }>;
-}
-
-export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
-  // Safely extract search parameters with error handling
-  let token: string | undefined;
-  let redirectTo: string | undefined;
-
-  try {
-    const params = await searchParams;
-    token = params?.token;
-    redirectTo = params?.redirectTo;
-  } catch (error) {
-    console.error('Error parsing reset password page parameters:', error);
-    // Continue with undefined values - the form will handle this gracefully
-  }
+export default function ResetPasswordPage() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') || undefined;
+  const redirectTo = searchParams.get('redirectTo') || undefined;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 relative">
@@ -26,11 +15,11 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(0,0,0)_1px,transparent_0)] bg-[length:20px_20px]" />
       </div>
-      
+
       {/* Decorative elements */}
       <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-200 rounded-full opacity-20 blur-3xl" />
       <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-200 rounded-full opacity-20 blur-3xl" />
-      
+
       <div className="relative flex items-center justify-center min-h-screen px-4 py-12">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center space-y-3">
@@ -38,19 +27,19 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
               {token ? 'Set New Password' : 'Reset Password'}
             </h1>
             <p className="text-lg font-light text-neutral-600">
-              {token 
+              {token
                 ? 'Enter your new password below'
                 : 'Enter your email address and we\'ll send you a reset link'
               }
             </p>
           </div>
-          
+
           <Suspense fallback={
             <div className="bg-white border border-neutral-300 shadow-lg rounded-xl p-8">
               <div className="animate-pulse bg-neutral-200 h-64 rounded-lg"></div>
             </div>
           }>
-            <ResetPasswordForm 
+            <ResetPasswordForm
               token={token}
               onBack={() => window.history.back()}
               onSuccess={() => {
