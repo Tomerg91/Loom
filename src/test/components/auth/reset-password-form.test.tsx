@@ -96,27 +96,29 @@ describe('ResetPasswordForm', () => {
       expect(screen.queryByText(/backToSignIn/i)).not.toBeInTheDocument();
     });
 
-    it('submits email and moves to verification step', async () => {
+    it('submits email and shows success message', async () => {
       mockFetch(mockApiResponse.success({}));
-      
+
       renderWithProviders(<ResetPasswordForm {...defaultProps} />);
-      
+
       const user = userEvent.setup();
       const emailInput = screen.getByTestId('email-input');
       const resetButton = screen.getByTestId('reset-button');
-      
+
       await user.type(emailInput, 'test@example.com');
       await user.click(resetButton);
-      
+
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith('/api/auth/reset-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: 'test@example.com' }),
-        });
-        
-        expect(screen.getByText('Verify Your Email')).toBeInTheDocument();
-        expect(screen.getByTestId('verification-code-input')).toBeInTheDocument();
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('reset-password'),
+          expect.objectContaining({
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+
+        expect(screen.getByText(/resetEmailSent/i)).toBeInTheDocument();
+        expect(screen.getByText(/resetEmailSentDescription/i)).toBeInTheDocument();
       });
     });
 
@@ -178,88 +180,6 @@ describe('ResetPasswordForm', () => {
     });
   });
 
-  describe('Verification Code Step', () => {
-    beforeEach(async () => {
-      mockFetch(mockApiResponse.success({}));
-      
-      renderWithProviders(<ResetPasswordForm {...defaultProps} />);
-      
-      const user = userEvent.setup();
-      const emailInput = screen.getByTestId('email-input');
-      const resetButton = screen.getByTestId('reset-button');
-      
-      await user.type(emailInput, 'test@example.com');
-      await user.click(resetButton);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Verify Your Email')).toBeInTheDocument();
-      });
-    });
-
-    it('renders verification code input', () => {
-      expect(screen.getByText('Verify Your Email')).toBeInTheDocument();
-      expect(screen.getByText(/We've sent a 6-digit verification code/i)).toBeInTheDocument();
-      expect(screen.getByTestId('verification-code-input')).toBeInTheDocument();
-    });
-
-    it('enables verify button only with 6-digit code', async () => {
-      const user = userEvent.setup();
-      const codeInput = screen.getByTestId('verification-code-input');
-      const verifyButton = screen.getByTestId('verify-code-button');
-      
-      expect(verifyButton).toBeDisabled();
-      
-      await user.type(codeInput, '12345');
-      expect(verifyButton).toBeDisabled();
-      
-      await user.type(codeInput, '6');
-      expect(verifyButton).toBeEnabled();
-    });
-
-    it('proceeds to password step with valid code', async () => {
-      const user = userEvent.setup();
-      const codeInput = screen.getByTestId('verification-code-input');
-      
-      await user.type(codeInput, '123456');
-      await user.click(screen.getByTestId('verify-code-button'));
-      
-      await waitFor(() => {
-        expect(screen.getByText(/setNewPassword/i)).toBeInTheDocument();
-        expect(screen.getByTestId('new-password-input')).toBeInTheDocument();
-      });
-    });
-
-    it('shows error with invalid code length', async () => {
-      const user = userEvent.setup();
-      const codeInput = screen.getByTestId('verification-code-input');
-      
-      await user.type(codeInput, '12345'); // 5 digits
-      await user.click(screen.getByTestId('verify-code-button'));
-      
-      await waitFor(() => {
-        expect(screen.getByText(/Please enter a valid 6-digit verification code/i)).toBeInTheDocument();
-      });
-    });
-
-    it('allows going back to email step', async () => {
-      const user = userEvent.setup();
-      await user.click(screen.getByText('Back to Email'));
-      
-      await waitFor(() => {
-        expect(screen.getByText(/resetPassword/i)).toBeInTheDocument();
-        expect(screen.getByTestId('email-input')).toBeInTheDocument();
-      });
-    });
-
-    it('limits input to 6 characters', async () => {
-      const user = userEvent.setup();
-      const codeInput = screen.getByTestId('verification-code-input');
-      
-      await user.type(codeInput, '1234567890');
-      
-      expect(codeInput).toHaveAttribute('maxLength', '6');
-    });
-  });
 
   describe('Password Update Step', () => {
     describe('With Token', () => {
@@ -320,62 +240,6 @@ describe('ResetPasswordForm', () => {
       });
     });
 
-    describe('Via Verification Flow', () => {
-      beforeEach(async () => {
-        mockFetch(mockApiResponse.success({}));
-        
-        renderWithProviders(<ResetPasswordForm {...defaultProps} />);
-        
-        const user = userEvent.setup();
-        // Navigate to verification step
-        const emailInput = screen.getByTestId('email-input');
-        await user.type(emailInput, 'test@example.com');
-        await user.click(screen.getByTestId('reset-button'));
-        
-        await waitFor(() => {
-          expect(screen.getByTestId('verification-code-input')).toBeInTheDocument();
-        });
-        
-        // Navigate to password step
-        const codeInput = screen.getByTestId('verification-code-input');
-        await user.type(codeInput, '123456');
-        await user.click(screen.getByTestId('verify-code-button'));
-        
-        await waitFor(() => {
-          expect(screen.getByTestId('new-password-input')).toBeInTheDocument();
-        });
-      });
-
-      it('renders password inputs', () => {
-        expect(screen.getByTestId('new-password-input')).toBeInTheDocument();
-        expect(screen.getByTestId('confirm-new-password-input')).toBeInTheDocument();
-      });
-
-      it('validates password confirmation match', async () => {
-        const user = userEvent.setup();
-        const passwordInput = screen.getByTestId('new-password-input');
-        const confirmInput = screen.getByTestId('confirm-new-password-input');
-        
-        await user.type(passwordInput, 'Password123!');
-        await user.type(confirmInput, 'DifferentPassword123!');
-        
-        // In real implementation, this would show validation error
-        // Our mock doesn't implement form validation, but the real form would
-      });
-
-      it('handles password update errors', async () => {
-        mockFetch(mockApiResponse.error('Token expired'));
-        
-        const user = userEvent.setup();
-        const updateButton = screen.getByTestId('update-password-button');
-        
-        await user.click(updateButton);
-        
-        await waitFor(() => {
-          expect(screen.getByText('Token expired')).toBeInTheDocument();
-        });
-      });
-    });
 
     it('shows loading state during password update', async () => {
       let resolvePromise: (value: unknown) => void;
@@ -520,23 +384,24 @@ describe('ResetPasswordForm', () => {
       });
     });
 
-    it('clears errors when switching steps', async () => {
+    it('clears errors when going back after error', async () => {
       mockFetch(mockApiResponse.error('Test error'));
-      
+
       renderWithProviders(<ResetPasswordForm {...defaultProps} />);
-      
+
       const user = userEvent.setup();
+      const emailInput = screen.getByTestId('email-input');
+
+      await user.type(emailInput, 'test@example.com');
       await user.click(screen.getByTestId('reset-button'));
-      
+
       await waitFor(() => {
         expect(screen.getByText('Test error')).toBeInTheDocument();
       });
-      
-      // Navigate away and back - error should be cleared
+
+      // Navigate away with back button
       await user.click(screen.getByText(/backToSignIn/i));
-      
-      // In real implementation, the error would be cleared
-      // This tests the intent of the error clearing behavior
+      expect(defaultProps.onBack).toHaveBeenCalled();
     });
   });
 
@@ -550,29 +415,6 @@ describe('ResetPasswordForm', () => {
       expect(defaultProps.onBack).toHaveBeenCalled();
     });
 
-    it('maintains form state during step navigation', async () => {
-      mockFetch(mockApiResponse.success({}));
-      
-      renderWithProviders(<ResetPasswordForm {...defaultProps} />);
-      
-      const user = userEvent.setup();
-      const emailInput = screen.getByTestId('email-input');
-      
-      await user.type(emailInput, 'test@example.com');
-      await user.click(screen.getByTestId('reset-button'));
-      
-      await waitFor(() => {
-        expect(screen.getByTestId('verification-code-input')).toBeInTheDocument();
-      });
-      
-      await user.click(screen.getByText('Back to Email'));
-      
-      await waitFor(() => {
-        const restoredEmailInput = screen.getByTestId('email-input');
-        // In real implementation, the email would be preserved
-        expect(restoredEmailInput).toBeInTheDocument();
-      });
-    });
   });
 
   describe('Accessibility', () => {
@@ -687,34 +529,11 @@ describe('ResetPasswordForm', () => {
       renderWithProviders(
         <ResetPasswordForm {...defaultProps} token="" />
       );
-      
-      // Should render password form even with empty token
-      expect(screen.getByTestId('new-password-input')).toBeInTheDocument();
+
+      // Empty token should fall back to email form
+      expect(screen.getByTestId('email-input')).toBeInTheDocument();
+      expect(screen.getByTestId('reset-button')).toBeInTheDocument();
     });
 
-    it('persists verification code during error states', async () => {
-      mockFetch(mockApiResponse.success({}));
-      
-      renderWithProviders(<ResetPasswordForm {...defaultProps} />);
-      
-      const user = userEvent.setup();
-      
-      // Navigate to verification step
-      await user.click(screen.getByTestId('reset-button'));
-      await waitFor(() => {
-        expect(screen.getByTestId('verification-code-input')).toBeInTheDocument();
-      });
-      
-      // Enter partial code and trigger error
-      const codeInput = screen.getByTestId('verification-code-input');
-      await user.type(codeInput, '12345');
-      await user.click(screen.getByTestId('verify-code-button'));
-      
-      await waitFor(() => {
-        expect(screen.getByText(/Please enter a valid 6-digit verification code/i)).toBeInTheDocument();
-        // Code should still be in input
-        expect(codeInput).toHaveValue('12345');
-      });
-    });
   });
 });

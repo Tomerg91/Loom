@@ -47,9 +47,9 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [verificationStep, setVerificationStep] = useState<'email' | 'code' | 'password'>(token ? 'password' : 'email');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [verificationToken, setVerificationToken] = useState<string | null>(null);
+  const [verificationStep] = useState<'email' | 'password'>(
+    token ? 'password' : 'email'
+  );
 
   // Form for requesting password reset
   const resetRequestForm = useForm<ResetRequestData>({
@@ -80,53 +80,10 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
         throw new Error(result.error || 'Failed to send reset email');
       }
 
-      // Move to verification step instead of showing success immediately
-      setVerificationStep('code');
+      // Show success message - email with reset link has been sent
+      setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerificationCode = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Validate code format on client side first
-      if (verificationCode.length !== 6) {
-        throw new Error('Please enter a valid 6-digit verification code');
-      }
-
-      if (!/^\d{6}$/.test(verificationCode)) {
-        throw new Error('Verification code must contain only digits');
-      }
-
-      // SECURITY: Verify the code on the server side
-      // This prevents users from bypassing client-side validation
-      const response = await fetch(AUTH_ENDPOINTS.VERIFY_RESET_CODE, {
-        method: HTTP_CONFIG.methods.POST,
-        headers: { 'Content-Type': HTTP_CONFIG.contentTypes.JSON },
-        body: JSON.stringify({ code: verificationCode }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to verify code');
-      }
-
-      // Code verified successfully - store the verification token
-      // This token authorizes the subsequent password update
-      if (result.token) {
-        setVerificationToken(result.token);
-      }
-
-      // Move to password update step
-      setVerificationStep('password');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid verification code');
     } finally {
       setIsLoading(false);
     }
@@ -137,15 +94,13 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
     setError(null);
 
     try {
-      // Use the token from URL (Supabase recovery flow) or the verification token from code flow
-      const updateToken = token || verificationToken;
 
       const response = await fetch(AUTH_ENDPOINTS.UPDATE_PASSWORD, {
         method: HTTP_CONFIG.methods.POST,
         headers: { 'Content-Type': HTTP_CONFIG.contentTypes.JSON },
         body: JSON.stringify({
           password: data.password,
-          token: updateToken || undefined,
+          token,
         }),
       });
 
@@ -212,65 +167,6 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
     );
   }
 
-  // Verification code step
-  if (verificationStep === 'code') {
-    return (
-      <Card className="w-full max-w-md mx-auto bg-white border border-neutral-300 shadow-lg rounded-xl">
-        <CardHeader>
-          <CardTitle>Verify Your Email</CardTitle>
-          <CardDescription>
-            We&apos;ve sent a 6-digit verification code to your email. Please enter it below.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="verificationCode">Verification Code</Label>
-              <Input
-                id="verificationCode"
-                type="text"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-                placeholder="Enter 6-digit code"
-                maxLength={6}
-                disabled={isLoading}
-                data-testid="verification-code-input"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Button
-                onClick={handleVerificationCode}
-                className="w-full"
-                disabled={isLoading || verificationCode.length !== 6}
-                data-testid="verify-code-button"
-              >
-                {isLoading ? 'Verifying...' : 'Verify Code'}
-              </Button>
-
-              <Button
-                type="button"
-                onClick={() => setVerificationStep('email')}
-                variant="outline"
-                className="w-full"
-                disabled={isLoading}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Email
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
