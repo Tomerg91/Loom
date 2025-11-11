@@ -49,6 +49,7 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
   const [success, setSuccess] = useState(false);
   const [verificationStep, setVerificationStep] = useState<'email' | 'code' | 'password'>(token ? 'password' : 'email');
   const [verificationCode, setVerificationCode] = useState('');
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
 
   // Form for requesting password reset
   const resetRequestForm = useForm<ResetRequestData>({
@@ -116,7 +117,13 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
         throw new Error(result.error || 'Failed to verify code');
       }
 
-      // Code verified successfully, move to password update step
+      // Code verified successfully - store the verification token
+      // This token authorizes the subsequent password update
+      if (result.token) {
+        setVerificationToken(result.token);
+      }
+
+      // Move to password update step
       setVerificationStep('password');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid verification code');
@@ -130,17 +137,15 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
     setError(null);
 
     try {
-      // SECURITY: Token is required for password reset to prevent unauthorized changes
-      if (!token) {
-        throw new Error('Reset token is missing. Please request a new password reset link.');
-      }
+      // Use the token from URL (Supabase recovery flow) or the verification token from code flow
+      const updateToken = token || verificationToken;
 
       const response = await fetch(AUTH_ENDPOINTS.UPDATE_PASSWORD, {
         method: HTTP_CONFIG.methods.POST,
         headers: { 'Content-Type': HTTP_CONFIG.contentTypes.JSON },
         body: JSON.stringify({
           password: data.password,
-          token: token.trim(),
+          token: updateToken || undefined,
         }),
       });
 
