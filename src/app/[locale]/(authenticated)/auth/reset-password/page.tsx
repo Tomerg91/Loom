@@ -7,7 +7,18 @@ interface ResetPasswordPageProps {
 }
 
 export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
-  const { token, redirectTo } = await searchParams;
+  // Safely extract search parameters with error handling
+  let token: string | undefined;
+  let redirectTo: string | undefined;
+
+  try {
+    const params = await searchParams;
+    token = params?.token;
+    redirectTo = params?.redirectTo;
+  } catch (error) {
+    console.error('Error parsing reset password page parameters:', error);
+    // Continue with undefined values - the form will handle this gracefully
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 relative">

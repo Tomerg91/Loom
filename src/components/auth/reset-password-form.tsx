@@ -130,12 +130,17 @@ export function ResetPasswordForm({ token, onBack, onSuccess }: ResetPasswordFor
     setError(null);
 
     try {
+      // SECURITY: Token is required for password reset to prevent unauthorized changes
+      if (!token) {
+        throw new Error('Reset token is missing. Please request a new password reset link.');
+      }
+
       const response = await fetch(AUTH_ENDPOINTS.UPDATE_PASSWORD, {
         method: HTTP_CONFIG.methods.POST,
         headers: { 'Content-Type': HTTP_CONFIG.contentTypes.JSON },
         body: JSON.stringify({
           password: data.password,
-          token,
+          token: token.trim(),
         }),
       });
 
