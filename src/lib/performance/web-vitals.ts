@@ -12,10 +12,13 @@ const VITALS_THRESHOLDS = {
 };
 
 // Rating function
-const getRating = (name: string, value: number): 'good' | 'needs-improvement' | 'poor' => {
+const getRating = (
+  name: string,
+  value: number
+): 'good' | 'needs-improvement' | 'poor' => {
   const thresholds = VITALS_THRESHOLDS[name as keyof typeof VITALS_THRESHOLDS];
   if (!thresholds) return 'good';
-  
+
   if (value <= thresholds.good) return 'good';
   if (value <= thresholds.poor) return 'needs-improvement';
   return 'poor';
@@ -32,9 +35,6 @@ interface WebVital {
   navigationType: string;
 }
 
-// Web Vitals metric type from the library
-type WebVitalsMetric = Metric;
-
 // Web Vitals collection
 export const collectWebVitals = (callback?: (metric: WebVital) => void) => {
   const reportMetric = (metric: Metric) => {
@@ -42,15 +42,15 @@ export const collectWebVitals = (callback?: (metric: WebVital) => void) => {
       ...metric,
       rating: getRating(metric.name, metric.value),
     };
-    
+
     // Track with analytics
     trackWebVitals(enhancedMetric);
-    
+
     // Custom callback
     if (callback) {
       callback(enhancedMetric);
     }
-    
+
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
       console.log(`[Web Vitals] ${metric.name}:`, {
@@ -71,7 +71,7 @@ export const collectWebVitals = (callback?: (metric: WebVital) => void) => {
 
 // Performance observer for custom metrics
 export class PerformanceMonitor {
-  private static instance: PerformanceMonitor;
+  private static instance: PerformanceMonitor | null = null;
   private observers: PerformanceObserver[] = [];
   private isDisconnected: boolean = false;
 
@@ -81,25 +81,25 @@ export class PerformanceMonitor {
     }
     return PerformanceMonitor.instance;
   }
-  
+
   static resetInstance(): void {
     if (PerformanceMonitor.instance) {
       PerformanceMonitor.instance.disconnect();
-      PerformanceMonitor.instance = null as unknown;
     }
+    PerformanceMonitor.instance = null;
   }
 
   // Monitor long tasks
   observeLongTasks(callback: (entries: PerformanceEntry[]) => void) {
     if (this.isDisconnected) return;
-    
+
     if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         if (!this.isDisconnected) {
           callback(list.getEntries());
         }
       });
-      
+
       try {
         observer.observe({ entryTypes: ['longtask'] });
         this.observers.push(observer);
@@ -112,14 +112,14 @@ export class PerformanceMonitor {
   // Monitor layout shifts
   observeLayoutShifts(callback: (entries: PerformanceEntry[]) => void) {
     if (this.isDisconnected) return;
-    
+
     if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         if (!this.isDisconnected) {
           callback(list.getEntries());
         }
       });
-      
+
       try {
         observer.observe({ entryTypes: ['layout-shift'] });
         this.observers.push(observer);
@@ -132,14 +132,14 @@ export class PerformanceMonitor {
   // Monitor paint timing
   observePaintTiming(callback: (entries: PerformanceEntry[]) => void) {
     if (this.isDisconnected) return;
-    
+
     if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         if (!this.isDisconnected) {
           callback(list.getEntries());
         }
       });
-      
+
       try {
         observer.observe({ entryTypes: ['paint'] });
         this.observers.push(observer);
@@ -152,14 +152,14 @@ export class PerformanceMonitor {
   // Monitor resource loading
   observeResourceTiming(callback: (entries: PerformanceEntry[]) => void) {
     if (this.isDisconnected) return;
-    
+
     if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         if (!this.isDisconnected) {
           callback(list.getEntries());
         }
       });
-      
+
       try {
         observer.observe({ entryTypes: ['resource'] });
         this.observers.push(observer);
@@ -187,25 +187,29 @@ export class PerformanceMonitor {
 export const measureCustomMetric = (name: string, startTime: number) => {
   const endTime = performance.now();
   const duration = endTime - startTime;
-  
+
   // Track the metric
   trackWebVitals({
     name: `custom_${name}`,
     value: duration,
-    rating: duration < 1000 ? 'good' : duration < 3000 ? 'needs-improvement' : 'poor',
+    rating:
+      duration < 1000 ? 'good' : duration < 3000 ? 'needs-improvement' : 'poor',
     delta: duration,
     id: `custom_${name}_${Date.now()}`,
     navigationType: 'navigate',
   } as { name: string; value: number; rating: string; delta: number });
-  
+
   return duration;
 };
 
 // React hook for performance monitoring
 export const usePerformanceMonitor = () => {
   const monitor = PerformanceMonitor.getInstance();
-  
-  const measureAsync = async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
+
+  const measureAsync = async <T>(
+    name: string,
+    fn: () => Promise<T>
+  ): Promise<T> => {
     const startTime = performance.now();
     try {
       const result = await fn();
