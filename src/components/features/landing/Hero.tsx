@@ -4,6 +4,7 @@
  */
 import type { JSX } from 'react';
 
+import { TrackedCta } from '@/components/landing/tracked-cta';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
@@ -83,22 +84,42 @@ export function LandingHero({
             {hero.description}
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button size="lg" variant="default" asChild>
-              <Link
-                href={hero.primary.href}
-                locale={resolveLocale(hero.primary.href)}
-              >
-                {hero.primary.label}
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link
-                href={hero.secondary.href}
-                locale={resolveLocale(hero.secondary.href)}
-              >
-                {hero.secondary.label}
-              </Link>
-            </Button>
+            <TrackedCta
+              label={hero.primary.label}
+              href={hero.primary.href}
+              location="hero-primary"
+              locale={locale}
+              experiment={hero.primary.experiment}
+            >
+              {(label) => (
+                <Button size="lg" variant="default" asChild>
+                  <Link
+                    href={hero.primary.href}
+                    locale={resolveLocale(hero.primary.href)}
+                  >
+                    {label}
+                  </Link>
+                </Button>
+              )}
+            </TrackedCta>
+            <TrackedCta
+              label={hero.secondary.label}
+              href={hero.secondary.href}
+              location="hero-secondary"
+              locale={locale}
+              experiment={hero.secondary.experiment}
+            >
+              {(label) => (
+                <Button size="lg" variant="outline" asChild>
+                  <Link
+                    href={hero.secondary.href}
+                    locale={resolveLocale(hero.secondary.href)}
+                  >
+                    {label}
+                  </Link>
+                </Button>
+              )}
+            </TrackedCta>
           </div>
           <p className="text-sm text-slate-500">
             {hero.signInPrompt}{' '}

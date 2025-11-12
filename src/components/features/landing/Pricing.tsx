@@ -4,6 +4,7 @@
  */
 import type { JSX } from 'react';
 
+import { TrackedCta } from '@/components/landing/tracked-cta';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
 import type { LandingPricing } from '@/modules/platform/cms/types';
@@ -41,7 +42,7 @@ export function LandingPricing({
           </p>
         </div>
         <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {pricing.tiers.map(tier => (
+          {pricing.tiers.map((tier, index) => (
             <div
               key={tier.name}
               className="flex h-full flex-col justify-between rounded-3xl border border-slate-100 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
@@ -78,14 +79,24 @@ export function LandingPricing({
                   ))}
                 </ul>
               </div>
-              <Button size="lg" className="mt-8" asChild>
-                <Link
-                  href={tier.cta.href}
-                  locale={resolveLocale(tier.cta.href)}
-                >
-                  {tier.cta.label}
-                </Link>
-              </Button>
+              <TrackedCta
+                label={tier.cta.label}
+                href={tier.cta.href}
+                location={`pricing-tier-${index + 1}`}
+                locale={locale}
+                experiment={tier.cta.experiment}
+              >
+                {(label) => (
+                  <Button size="lg" className="mt-8" asChild>
+                    <Link
+                      href={tier.cta.href}
+                      locale={resolveLocale(tier.cta.href)}
+                    >
+                      {label}
+                    </Link>
+                  </Button>
+                )}
+              </TrackedCta>
             </div>
           ))}
         </div>

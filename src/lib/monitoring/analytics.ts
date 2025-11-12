@@ -140,5 +140,54 @@ export const trackWebVitals = (metric: { name: string; value: number; rating: st
   });
 };
 
+// CTA tracking
+export const trackCtaClick = (
+  ctaLocation: string,
+  ctaLabel: string,
+  ctaHref: string,
+  locale: string,
+  experimentId?: string,
+  variantId?: string,
+  userId?: string
+) => {
+  trackEvent({
+    action: 'cta_click',
+    category: 'marketing',
+    label: `${ctaLocation}:${ctaLabel}`,
+    userId,
+    properties: {
+      ctaLocation,
+      ctaLabel,
+      ctaHref,
+      locale,
+      experimentId,
+      variantId,
+      timestamp: new Date().toISOString(),
+    },
+  });
+};
+
+export const trackExperimentView = (
+  experimentId: string,
+  variantId: string,
+  ctaLocation: string,
+  locale: string,
+  userId?: string
+) => {
+  trackEvent({
+    action: 'experiment_view',
+    category: 'experiments',
+    label: `${experimentId}:${variantId}`,
+    userId,
+    properties: {
+      experimentId,
+      variantId,
+      ctaLocation,
+      locale,
+      timestamp: new Date().toISOString(),
+    },
+  });
+};
+
 // Export collectWebVitals function
 export { collectWebVitals } from '@/lib/performance/web-vitals';

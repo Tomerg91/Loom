@@ -3,26 +3,18 @@
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
+import { TrackedCta } from '@/components/landing/tracked-cta';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
-
-interface NavigationLink {
-  label: string;
-  href: string;
-}
-
-interface PrimaryAction {
-  label: string;
-  href: string;
-}
+import type { LandingAction, LandingNavigationLink } from '@/modules/platform/cms/types';
 
 export interface MarketingHeaderContent {
-  links: NavigationLink[];
-  contact: PrimaryAction;
-  signIn: PrimaryAction;
-  signUp: PrimaryAction;
+  links: LandingNavigationLink[];
+  contact: LandingAction;
+  signIn: LandingAction;
+  signUp: LandingAction;
   logoLabel: string;
   navigationAriaLabel: string;
   openMenuLabel: string;
@@ -91,21 +83,51 @@ export function MarketingHeader({ locale, content }: MarketingHeaderProps) {
 
         <div className="hidden items-center gap-3 md:flex">
           <LanguageSwitcher variant="dropdown" size="sm" className="hidden lg:flex" />
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={content.contact.href as unknown} locale={resolveLocale(content.contact.href)}>
-              {content.contact.label}
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link href={content.signIn.href as unknown} locale={resolveLocale(content.signIn.href)}>
-              {content.signIn.label}
-            </Link>
-          </Button>
-          <Button variant="default" size="sm" asChild>
-            <Link href={content.signUp.href as unknown} locale={resolveLocale(content.signUp.href)}>
-              {content.signUp.label}
-            </Link>
-          </Button>
+          <TrackedCta
+            label={content.contact.label}
+            href={content.contact.href}
+            location="nav-contact"
+            locale={locale}
+            experiment={content.contact.experiment}
+          >
+            {(label) => (
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={content.contact.href as unknown} locale={resolveLocale(content.contact.href)}>
+                  {label}
+                </Link>
+              </Button>
+            )}
+          </TrackedCta>
+          <TrackedCta
+            label={content.signIn.label}
+            href={content.signIn.href}
+            location="nav-signin"
+            locale={locale}
+            experiment={content.signIn.experiment}
+          >
+            {(label) => (
+              <Button variant="outline" size="sm" asChild>
+                <Link href={content.signIn.href as unknown} locale={resolveLocale(content.signIn.href)}>
+                  {label}
+                </Link>
+              </Button>
+            )}
+          </TrackedCta>
+          <TrackedCta
+            label={content.signUp.label}
+            href={content.signUp.href}
+            location="nav-signup"
+            locale={locale}
+            experiment={content.signUp.experiment}
+          >
+            {(label) => (
+              <Button variant="default" size="sm" asChild>
+                <Link href={content.signUp.href as unknown} locale={resolveLocale(content.signUp.href)}>
+                  {label}
+                </Link>
+              </Button>
+            )}
+          </TrackedCta>
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
@@ -146,33 +168,63 @@ export function MarketingHeader({ locale, content }: MarketingHeaderProps) {
             ))}
           </div>
           <div className="flex flex-col gap-2">
-            <Button variant="ghost" className="justify-center" asChild>
-              <Link
-                href={content.contact.href as unknown}
-                locale={resolveLocale(content.contact.href)}
-                onClick={closeMenu}
-              >
-                {content.contact.label}
-              </Link>
-            </Button>
-            <Button variant="outline" className="justify-center" asChild>
-              <Link
-                href={content.signIn.href as unknown}
-                locale={resolveLocale(content.signIn.href)}
-                onClick={closeMenu}
-              >
-                {content.signIn.label}
-              </Link>
-            </Button>
-            <Button variant="default" className="justify-center" asChild>
-              <Link
-                href={content.signUp.href as unknown}
-                locale={resolveLocale(content.signUp.href)}
-                onClick={closeMenu}
-              >
-                {content.signUp.label}
-              </Link>
-            </Button>
+            <TrackedCta
+              label={content.contact.label}
+              href={content.contact.href}
+              location="nav-mobile-contact"
+              locale={locale}
+              experiment={content.contact.experiment}
+            >
+              {(label) => (
+                <Button variant="ghost" className="justify-center" asChild>
+                  <Link
+                    href={content.contact.href as unknown}
+                    locale={resolveLocale(content.contact.href)}
+                    onClick={closeMenu}
+                  >
+                    {label}
+                  </Link>
+                </Button>
+              )}
+            </TrackedCta>
+            <TrackedCta
+              label={content.signIn.label}
+              href={content.signIn.href}
+              location="nav-mobile-signin"
+              locale={locale}
+              experiment={content.signIn.experiment}
+            >
+              {(label) => (
+                <Button variant="outline" className="justify-center" asChild>
+                  <Link
+                    href={content.signIn.href as unknown}
+                    locale={resolveLocale(content.signIn.href)}
+                    onClick={closeMenu}
+                  >
+                    {label}
+                  </Link>
+                </Button>
+              )}
+            </TrackedCta>
+            <TrackedCta
+              label={content.signUp.label}
+              href={content.signUp.href}
+              location="nav-mobile-signup"
+              locale={locale}
+              experiment={content.signUp.experiment}
+            >
+              {(label) => (
+                <Button variant="default" className="justify-center" asChild>
+                  <Link
+                    href={content.signUp.href as unknown}
+                    locale={resolveLocale(content.signUp.href)}
+                    onClick={closeMenu}
+                  >
+                    {label}
+                  </Link>
+                </Button>
+              )}
+            </TrackedCta>
           </div>
         </div>
       </div>

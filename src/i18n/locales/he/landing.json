@@ -9,7 +9,26 @@
     ],
     "contact": { "label": "צור קשר", "href": "mailto:hello@loom-app.io" },
     "signIn": { "label": "התחברות", "href": "/auth/signin" },
-    "signUp": { "label": "התחילו ניסיון", "href": "/auth/signup" },
+    "signUp": {
+      "label": "התחילו ניסיון",
+      "href": "/auth/signup",
+      "experiment": {
+        "experimentId": "nav-signup-experiment-001",
+        "enabled": true,
+        "variants": [
+          {
+            "id": "control",
+            "label": "התחילו ניסיון",
+            "weight": 50
+          },
+          {
+            "id": "variant-get-started",
+            "label": "התחילו בחינם",
+            "weight": 50
+          }
+        ]
+      }
+    },
     "logoLabel": "חזרה לדף הבית של Loom-app",
     "navigationAriaLabel": "ניווט שיווקי ראשי",
     "openMenuLabel": "פתחו תפריט ניווט",
@@ -21,7 +40,23 @@
     "description": "Loom-app מאחד את ניהול המטופלים, התיאומים, התשלומים והמעקב אחר התקדמות – כדי שתוכלו להתמקד בחוויה האנושית.",
     "primary": {
       "label": "תיאום שיחת היכרות",
-      "href": "mailto:hello@loom-app.io"
+      "href": "mailto:hello@loom-app.io",
+      "experiment": {
+        "experimentId": "hero-cta-experiment-001",
+        "enabled": true,
+        "variants": [
+          {
+            "id": "control",
+            "label": "תיאום שיחת היכרות",
+            "weight": 50
+          },
+          {
+            "id": "variant-schedule",
+            "label": "קבעו הדגמה",
+            "weight": 50
+          }
+        ]
+      }
     },
     "secondary": { "label": "הכירו את הפלטפורמה", "href": "#platform" },
     "signInPrompt": "כבר עובדים עם Loom-app?",

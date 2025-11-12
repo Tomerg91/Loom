@@ -8,8 +8,8 @@ import type { Metadata } from 'next';
 import { LandingHero } from '@/components/features/landing/Hero';
 import { LandingPricing } from '@/components/features/landing/Pricing';
 import { LandingTestimonials } from '@/components/features/landing/Testimonials';
+import { FinalCtaSection } from '@/components/landing/final-cta-section';
 import { MarketingHeader } from '@/components/landing/marketing-header';
-import { Link } from '@/i18n/routing';
 import { getLandingContent } from '@/modules/platform/cms/client';
 import type { LandingFeatures } from '@/modules/platform/cms/types';
 
@@ -115,35 +115,7 @@ export default async function HomePage({ params }: HomePageProps) {
 
       <LandingPricing pricing={content.pricing} locale={locale} />
 
-      <section id="cta" className="relative isolate overflow-hidden py-20">
-        <div
-          className="absolute inset-0 -z-10 bg-gradient-to-r from-purple-600 via-purple-500 to-violet-600 opacity-90"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.25),_transparent_60%)]"
-          aria-hidden="true"
-        />
-        <div className="mx-auto max-w-4xl px-4 text-center text-white sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            {content.cta.title}
-          </h2>
-          <p className="mt-4 text-lg leading-relaxed text-purple-100">
-            {content.cta.description}
-          </p>
-          <div className="mt-8 flex justify-center">
-            <Link
-              href={content.cta.primary.href}
-              locale={
-                content.cta.primary.href.startsWith('/') ? locale : undefined
-              }
-              className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-lg font-semibold text-purple-700 shadow-lg transition hover:bg-purple-50"
-            >
-              {content.cta.primary.label}
-            </Link>
-          </div>
-        </div>
-      </section>
+      <FinalCtaSection cta={content.cta} locale={locale} />
     </div>
   );
 }
