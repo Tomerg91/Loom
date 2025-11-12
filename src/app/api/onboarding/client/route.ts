@@ -11,6 +11,7 @@ import {
 } from '@/lib/api/utils';
 import { createAuthService } from '@/lib/auth/auth';
 import { createAdminClient } from '@/lib/supabase/server';
+import { trackOnboardingCompleted, trackOnboardingProgress } from '@/lib/monitoring/event-tracking';
 
 const clientOnboardingSchema = z.object({
   step: z.number().int().min(1).max(3),
@@ -127,6 +128,19 @@ export const PUT = withErrorHandling(
     if (userUpdateError) {
       return createErrorResponse('Failed to save onboarding preferences', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
+
+    // Track onboarding progress and completion
+    await trackOnboardingProgress(user.id, 'preferences_completed', {
+      goals: data.goals.length,
+      focusAreas: data.focusAreas.length,
+      preferredCommunication: data.preferredCommunication,
+      sessionFrequency: data.sessionFrequency,
+    });
+
+    await trackOnboardingCompleted(user.id, 'client', {
+      totalSteps: nextStep,
+      completionTime: completedAt,
+    });
 
     const refreshedUser = await authService.getCurrentUser({ forceRefresh: true });
 

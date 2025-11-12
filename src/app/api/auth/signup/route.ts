@@ -14,6 +14,7 @@ import {
 import { createAuthService } from '@/lib/auth/auth';
 import { createCorsResponse, applyCorsHeaders } from '@/lib/security/cors';
 import { strongPasswordSchema } from '@/lib/security/password';
+import { trackSignupCompleted } from '@/lib/monitoring/event-tracking';
 import type { Language } from '@/types';
 
 const SUPPORTED_LANGUAGES = ['en', 'he'] as const satisfies readonly Language[];
@@ -207,6 +208,12 @@ export const POST = withErrorHandling(
           role: user.role,
           timestamp: new Date().toISOString(),
           ip: request.headers.get('x-forwarded-for') || 'unknown',
+        });
+
+        // Track signup completion in analytics
+        await trackSignupCompleted(user.id, user.role, {
+          language: user.language,
+          hasPhone: !!signupData.phone,
         });
 
         // Return sanitized user data

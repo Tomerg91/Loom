@@ -1,5 +1,8 @@
 export type { Database } from './supabase';
 
+// Analytics types
+export * from './analytics';
+
 // User types
 export type UserRole = 'client' | 'coach' | 'admin';
 export type UserStatus = 'active' | 'inactive' | 'suspended';

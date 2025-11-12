@@ -14,6 +14,7 @@ import {
   type AuthenticatedUser,
 } from '@/lib/api/utils';
 import { createClient } from '@/lib/supabase/server';
+import { trackOnboardingCompleted, trackOnboardingProgress } from '@/lib/monitoring/event-tracking';
 
 // Validation Schemas
 const availabilitySlotSchema = z.object({
@@ -302,6 +303,22 @@ const updateCoachProfileHandler = requireCoach(
       console.error('Failed to update user onboarding status:', userUpdateError);
       return createErrorResponse('Failed to update onboarding status', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
+
+    // Track onboarding progress and completion
+    await trackOnboardingProgress(user.id, 'profile_completed', {
+      experienceYears: sanitized.experienceYears,
+      specialtiesCount: sanitized.specialties.length,
+      credentialsCount: sanitized.credentials.length,
+      languagesCount: sanitized.languages.length,
+      availabilitySlotsCount: sanitized.availability.length,
+    });
+
+    await trackOnboardingCompleted(user.id, 'coach', {
+      totalSteps: onboardingStep,
+      completionTime: now,
+      hourlyRate: sanitized.hourlyRate,
+      currency: sanitized.currency,
+    });
 
     const { data: refreshedUser, error: refreshedUserError } = await supabase
       .from('users')
