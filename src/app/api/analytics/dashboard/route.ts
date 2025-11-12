@@ -1,248 +1,372 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+/**
+ * Analytics Dashboard API
+ * Comprehensive endpoint for fetching analytics data for goals G1-G4
+ */
 
-import { downloadTrackingDatabase } from '@/lib/database/download-tracking';
-import { fileDatabase } from '@/lib/database/files';
+import { NextRequest } from 'next/server';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  withErrorHandling,
+  HTTP_STATUS,
+  rateLimit,
+  withRequestLogging,
+  requireAuth,
+} from '@/lib/api/utils';
 import { createClient } from '@/lib/supabase/server';
+import type {
+  AnalyticsSummary,
+  FunnelMetrics,
+  CoachProductivitySummary,
+  ClientEngagementSummary,
+  ServiceUptimeMetrics,
+} from '@/types/analytics';
+import {
+  CRITICAL_SERVICES,
+  getServiceUptimeMetrics,
+} from '@/lib/monitoring/uptime-monitoring';
 
+// Rate limit: 60 requests per minute for analytics
+const rateLimitedHandler = rateLimit(60, 60_000);
 
-// Validation schema
-const dashboardQuerySchema = z.object({
-  date_from: z.string().datetime().optional(),
-  date_to: z.string().datetime().optional(),
-  limit: z.string().regex(/^\d+$/).transform(val => parseInt(val, 10)).optional(),
-});
+/**
+ * GET /api/analytics/dashboard
+ * Get comprehensive analytics dashboard data
+ */
+export const GET = withErrorHandling(
+  withRequestLogging(
+    rateLimitedHandler(
+      requireAuth(async (user, request: NextRequest) => {
+        // Only admins can access analytics dashboard
+        if (user.role !== 'admin') {
+          return createErrorResponse(
+            'Admin access required',
+            HTTP_STATUS.FORBIDDEN
+          );
+        }
 
-// GET /api/analytics/dashboard - Get user's download analytics dashboard
-export async function GET(request: NextRequest) {
-  try {
-    // Get authenticated user
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const searchParams = request.nextUrl.searchParams;
+        const startDate = searchParams.get('startDate') || getDefaultStartDate();
+        const endDate = searchParams.get('endDate') || getDefaultEndDate();
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+        const supabase = await createClient();
 
-    // Parse and validate query parameters
-    const { searchParams } = new URL(request.url);
-    const queryParams = Object.fromEntries(searchParams.entries());
-    const validatedQuery = dashboardQuerySchema.parse(queryParams);
+        // Fetch all analytics data in parallel
+        const [
+          funnelMetrics,
+          coachProductivity,
+          clientEngagement,
+          goalMetrics,
+          uptimeMetrics,
+        ] = await Promise.all([
+          getFunnelMetrics(supabase, startDate, endDate),
+          getCoachProductivityMetrics(supabase, startDate, endDate),
+          getClientEngagementMetrics(supabase, startDate, endDate),
+          getGoalCompletionMetrics(supabase, startDate, endDate),
+          getUptimeMetricsForAllServices(startDate, endDate),
+        ]);
 
-    const {
-      date_from,
-      date_to,
-      limit = 10,
-    } = validatedQuery;
+        // Build comprehensive summary
+        const summary: AnalyticsSummary = {
+          startDate,
+          endDate,
 
-    // Set default date range (last 30 days)
-    const now = new Date();
-    const fromDate = date_from ? new Date(date_from) : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const toDate = date_to ? new Date(date_to) : now;
-    
-    const fromDateStr = fromDate.toISOString().split('T')[0];
-    const toDateStr = toDate.toISOString().split('T')[0];
+          // User metrics
+          totalUsers: funnelMetrics.totalSignups,
+          activeUsers: clientEngagement.totalActive,
+          newUsers: funnelMetrics.newSignups,
+          weeklyActiveClients: clientEngagement.weeklyActive,
 
-    // Get user's files
-    const userFilesResult = await fileDatabase.getFileUploads({ userId: user.id });
-    const userFiles = userFilesResult.files || [];
-    const fileIds = userFiles.map((f: unknown) => f.id);
+          // Session metrics
+          totalSessions: coachProductivity.totalSessions,
+          completedSessions: coachProductivity.completedSessions,
+          sessionCompletionRate: coachProductivity.avgCompletionRate,
+          avgSessionDuration: coachProductivity.avgSessionDuration,
 
-    if (fileIds.length === 0) {
-      return NextResponse.json({
-        summary: {
-          total_files: 0,
-          total_downloads: 0,
-          total_bandwidth: 0,
-          unique_downloaders: 0,
-          conversion_rate: 0,
-        },
-        popular_files: [],
-        recent_downloads: [],
-        analytics_by_file: {},
-        trends: {
-          daily_downloads: [],
-          top_countries: [],
-          download_methods: {},
-        },
-        date_range: {
-          from: fromDateStr,
-          to: toDateStr,
-          days: Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)),
-        },
-        generated_at: new Date().toISOString(),
-      });
-    }
+          // Goal metrics
+          totalGoals: goalMetrics.totalGoals,
+          activeGoals: goalMetrics.activeGoals,
+          completedGoals: goalMetrics.completedGoals,
+          goalCompletionRate: goalMetrics.completionRate,
 
-    // Get analytics for all user files
-    const [popularFiles, multipleFileStats] = await Promise.all([
-      downloadTrackingDatabase.getPopularFiles(limit, fromDateStr, toDateStr),
-      downloadTrackingDatabase.getMultipleFileStats(fileIds),
-    ]);
+          // Engagement metrics
+          avgEngagementScore: clientEngagement.avgEngagementScore,
+          avgTaskCompletionRate: clientEngagement.avgTaskCompletionRate,
+          resourceViewCount: clientEngagement.totalResourceViews,
 
-    // Filter popular files to only include user's files
-    const userPopularFiles = popularFiles.filter(file => 
-      fileIds.includes(file.file_id)
-    );
+          // Coach metrics
+          activeCoaches: coachProductivity.activeCoaches,
+          avgCoachProductivityScore: coachProductivity.avgProductivityScore,
+          avgSessionsPerCoach: coachProductivity.avgSessionsPerCoach,
+        };
 
-    // Get detailed analytics for top files
-    const topFileIds = userPopularFiles.slice(0, 5).map(f => f.file_id);
-    const detailedAnalytics: Record<string, unknown> = {};
-    
-    for (const fileId of topFileIds) {
-      try {
-        detailedAnalytics[fileId] = await downloadTrackingDatabase.getFileDownloadAnalytics(
-          fileId,
-          fromDateStr,
-          toDateStr
-        );
-      } catch (error) {
-        console.error(`Failed to get analytics for file ${fileId}:`, error);
-        detailedAnalytics[fileId] = null;
-      }
-    }
-
-    // Get recent downloads across all files
-    const recentDownloadsPromises = topFileIds.map(fileId => 
-      downloadTrackingDatabase.getRecentDownloads(fileId, 5, 0)
-    );
-    const recentDownloadsResults = await Promise.all(recentDownloadsPromises);
-    const allRecentDownloads = recentDownloadsResults
-      .flat()
-      .sort((a, b) => new Date(b.downloaded_at || '').getTime() - new Date(a.downloaded_at || '').getTime())
-      .slice(0, 20);
-
-    // Calculate summary statistics
-    const summary = {
-      total_files: userFilesResult.count || userFiles.length,
-      total_downloads: Object.values(multipleFileStats).reduce((sum: number, stat: unknown) => sum + (stat.total_downloads || 0), 0),
-      total_bandwidth: Object.values(detailedAnalytics)
-        .filter(analytics => analytics !== null)
-        .reduce((sum, analytics) => sum + (analytics?.file_stats?.total_bandwidth_used || 0), 0),
-      unique_downloaders: Math.max(...Object.values(detailedAnalytics)
-        .filter(analytics => analytics !== null)
-        .map(analytics => analytics?.file_stats?.unique_downloaders || 0), 0),
-      conversion_rate: 0, // Will calculate below
-    };
-
-    // Calculate conversion rate
-    const totalAttempts = Object.values(detailedAnalytics)
-      .filter(analytics => analytics !== null)
-      .reduce((sum, analytics) => sum + (analytics?.file_stats?.total_downloads || 0), 0);
-    
-    summary.conversion_rate = totalAttempts > 0 
-      ? (summary.total_downloads / totalAttempts) * 100
-      : 0;
-
-    // Aggregate trends data
-    const trends = {
-      daily_downloads: {} as Record<string, number>,
-      top_countries: {} as Record<string, number>,
-      download_methods: {} as Record<string, number>,
-    };
-
-    // Aggregate data from detailed analytics
-    Object.values(detailedAnalytics).forEach(analytics => {
-      if (!analytics) return;
-
-      // Daily downloads
-      if (analytics.file_stats.downloads_by_date) {
-        Object.entries(analytics.file_stats.downloads_by_date).forEach(([date, count]) => {
-          trends.daily_downloads[date] = (trends.daily_downloads[date] || 0) + (typeof count === 'number' ? count : 0);
+        return createSuccessResponse({
+          summary,
+          funnelMetrics,
+          coachProductivity: coachProductivity.coaches,
+          clientEngagement: clientEngagement.clients,
+          goalMetrics,
+          uptimeMetrics,
         });
-      }
+      })
+    ),
+    { name: 'GET /api/analytics/dashboard' }
+  )
+);
 
-      // Countries
-      analytics.geographic_distribution?.forEach(({ country_code, download_count }: unknown) => {
-        trends.top_countries[country_code] = (trends.top_countries[country_code] || 0) + download_count;
-      });
+// =====================================================================
+// HELPER FUNCTIONS
+// =====================================================================
 
-      // Download methods
-      if (analytics.file_stats.download_methods) {
-        Object.entries(analytics.file_stats.download_methods).forEach(([method, count]) => {
-          trends.download_methods[method] = (trends.download_methods[method] || 0) + (typeof count === 'number' ? count : 0);
-        });
-      }
-    });
+function getDefaultStartDate(): string {
+  const date = new Date();
+  date.setDate(date.getDate() - 30); // Last 30 days
+  return date.toISOString();
+}
 
-    // Convert trends to arrays and sort
-    const formattedTrends = {
-      daily_downloads: Object.entries(trends.daily_downloads)
-        .map(([date, downloads]) => ({ date, downloads }))
-        .sort((a, b) => a.date.localeCompare(b.date)),
-      top_countries: Object.entries(trends.top_countries)
-        .map(([country_code, downloads]) => ({ country_code, downloads }))
-        .sort((a, b) => b.downloads - a.downloads)
-        .slice(0, 10),
-      download_methods: trends.download_methods,
+function getDefaultEndDate(): string {
+  return new Date().toISOString();
+}
+
+async function getFunnelMetrics(
+  supabase: any,
+  startDate: string,
+  endDate: string
+): Promise<FunnelMetrics> {
+  // Call database function for funnel metrics
+  const { data, error } = await supabase.rpc('get_onboarding_funnel_metrics', {
+    start_date: startDate,
+    end_date: endDate,
+  });
+
+  if (error) {
+    console.error('Error fetching funnel metrics:', error);
+    return {
+      startDate,
+      endDate,
+      totalSignups: 0,
+      onboardingCompletionRate: 0,
+      steps: [],
+      avgOnboardingTime: 0,
     };
-
-    // Format bandwidth
-    const formatBandwidth = (bytes: number) => {
-      if (bytes === 0) return { value: 0, unit: 'B', bytes };
-      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-      const index = Math.floor(Math.log(bytes) / Math.log(1024));
-      const value = bytes / Math.pow(1024, index);
-      return {
-        value: parseFloat(value.toFixed(2)),
-        unit: units[index] || 'B',
-        bytes,
-      };
-    };
-
-    return NextResponse.json({
-      summary: {
-        ...summary,
-        total_bandwidth_formatted: formatBandwidth(summary.total_bandwidth),
-      },
-      popular_files: userPopularFiles.map(file => ({
-        ...file,
-        analytics: detailedAnalytics[file.file_id] ? {
-          unique_downloaders: detailedAnalytics[file.file_id].file_stats.unique_downloaders,
-          total_bandwidth: formatBandwidth(detailedAnalytics[file.file_id].file_stats.total_bandwidth_used),
-          conversion_rate: detailedAnalytics[file.file_id].file_stats.total_downloads > 0 
-            ? (detailedAnalytics[file.file_id].file_stats.successful_downloads / detailedAnalytics[file.file_id].file_stats.total_downloads) * 100
-            : 0,
-        } : null,
-      })),
-      recent_downloads: allRecentDownloads.map(download => ({
-        id: download.id,
-        file_id: download.file_id,
-        download_type: download.download_type,
-        downloaded_at: download.downloaded_at,
-        ip_address: download.ip_address,
-        country_code: download.country_code,
-        success: download.success,
-      })),
-      analytics_by_file: detailedAnalytics,
-      trends: formattedTrends,
-      date_range: {
-        from: fromDateStr,
-        to: toDateStr,
-        days: Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)),
-      },
-      generated_at: new Date().toISOString(),
-    });
-
-  } catch (error) {
-    console.error('Get analytics dashboard error:', error);
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { 
-          error: 'Invalid query parameters',
-          details: error.errors 
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
   }
+
+  const totalSignups =
+    data.find((d: any) => d.step === 'signup_completed')?.users_reached || 0;
+  const totalCompleted =
+    data.find((d: any) => d.step === 'onboarding_completed')?.users_reached || 0;
+  const onboardingCompletionRate =
+    totalSignups > 0 ? (totalCompleted / totalSignups) * 100 : 0;
+
+  return {
+    startDate,
+    endDate,
+    totalSignups,
+    onboardingCompletionRate,
+    steps: data.map((d: any) => ({
+      step: d.step,
+      usersReached: d.users_reached,
+      completionPercentage: d.completion_percentage,
+    })),
+    avgOnboardingTime: 24, // TODO: Calculate from actual data
+  };
+}
+
+async function getCoachProductivityMetrics(
+  supabase: any,
+  startDate: string,
+  endDate: string
+): Promise<{
+  activeCoaches: number;
+  avgProductivityScore: number;
+  avgSessionsPerCoach: number;
+  totalSessions: number;
+  completedSessions: number;
+  avgCompletionRate: number;
+  avgSessionDuration: number;
+  coaches: CoachProductivitySummary[];
+}> {
+  const { data, error } = await supabase.rpc(
+    'get_coach_productivity_summary',
+    {
+      p_coach_id: null,
+      start_date: startDate.split('T')[0],
+      end_date: endDate.split('T')[0],
+    }
+  );
+
+  if (error) {
+    console.error('Error fetching coach productivity:', error);
+    return {
+      activeCoaches: 0,
+      avgProductivityScore: 0,
+      avgSessionsPerCoach: 0,
+      totalSessions: 0,
+      completedSessions: 0,
+      avgCompletionRate: 0,
+      avgSessionDuration: 0,
+      coaches: [],
+    };
+  }
+
+  const coaches: CoachProductivitySummary[] = data.map((d: any, index: number) => ({
+    coachId: d.coach_id,
+    coachName: d.coach_name,
+    totalSessions: d.total_sessions,
+    sessionsCompleted: d.sessions_completed,
+    completionRate: d.completion_rate,
+    tasksCreated: d.tasks_created,
+    resourcesShared: d.resources_shared,
+    activeClients: d.active_clients,
+    avgProductivityScore: d.avg_productivity_score,
+    performanceRank: index + 1,
+  }));
+
+  const totalSessions = coaches.reduce(
+    (sum, c) => sum + c.totalSessions,
+    0
+  );
+  const completedSessions = coaches.reduce(
+    (sum, c) => sum + c.sessionsCompleted,
+    0
+  );
+
+  return {
+    activeCoaches: coaches.length,
+    avgProductivityScore:
+      coaches.reduce((sum, c) => sum + c.avgProductivityScore, 0) /
+        coaches.length || 0,
+    avgSessionsPerCoach: totalSessions / coaches.length || 0,
+    totalSessions,
+    completedSessions,
+    avgCompletionRate:
+      coaches.reduce((sum, c) => sum + c.completionRate, 0) / coaches.length || 0,
+    avgSessionDuration: 60, // TODO: Calculate from actual session data
+    coaches,
+  };
+}
+
+async function getClientEngagementMetrics(
+  supabase: any,
+  startDate: string,
+  endDate: string
+): Promise<{
+  totalActive: number;
+  weeklyActive: number;
+  avgEngagementScore: number;
+  avgTaskCompletionRate: number;
+  totalResourceViews: number;
+  clients: ClientEngagementSummary[];
+}> {
+  const { data, error } = await supabase.rpc('get_client_engagement_summary', {
+    p_client_id: null,
+    start_date: startDate.split('T')[0],
+    end_date: endDate.split('T')[0],
+  });
+
+  if (error) {
+    console.error('Error fetching client engagement:', error);
+    return {
+      totalActive: 0,
+      weeklyActive: 0,
+      avgEngagementScore: 0,
+      avgTaskCompletionRate: 0,
+      totalResourceViews: 0,
+      clients: [],
+    };
+  }
+
+  const clients: ClientEngagementSummary[] = data.map((d: any) => ({
+    clientId: d.client_id,
+    clientName: d.client_name,
+    totalSessions: d.total_sessions,
+    tasksCompleted: d.tasks_completed,
+    goalsUpdated: d.goals_updated,
+    resourcesViewed: d.resources_viewed,
+    avgEngagementScore: d.avg_engagement_score,
+    daysActive: d.days_active,
+    isWeeklyActive: d.is_weekly_active,
+  }));
+
+  const weeklyActiveCount = clients.filter((c) => c.isWeeklyActive).length;
+  const totalResourceViews = clients.reduce(
+    (sum, c) => sum + c.resourcesViewed,
+    0
+  );
+
+  // Calculate average task completion rate
+  const avgTaskCompletionRate = 75; // TODO: Calculate from actual task data
+
+  return {
+    totalActive: clients.length,
+    weeklyActive: weeklyActiveCount,
+    avgEngagementScore:
+      clients.reduce((sum, c) => sum + c.avgEngagementScore, 0) /
+        clients.length || 0,
+    avgTaskCompletionRate,
+    totalResourceViews,
+    clients,
+  };
+}
+
+async function getGoalCompletionMetrics(
+  supabase: any,
+  startDate: string,
+  endDate: string
+) {
+  const { data, error } = await supabase.rpc('get_goal_completion_metrics', {
+    start_date: startDate,
+    end_date: endDate,
+  });
+
+  if (error) {
+    console.error('Error fetching goal metrics:', error);
+    return {
+      totalGoals: 0,
+      activeGoals: 0,
+      completedGoals: 0,
+      completionRate: 0,
+      avgCompletionDays: 0,
+      clientsWithGoals: 0,
+    };
+  }
+
+  return {
+    totalGoals: data[0]?.total_goals || 0,
+    activeGoals: data[0]?.active_goals || 0,
+    completedGoals: data[0]?.completed_goals || 0,
+    completionRate: data[0]?.completion_rate || 0,
+    avgCompletionDays: data[0]?.avg_completion_days || 0,
+    clientsWithGoals: data[0]?.clients_with_goals || 0,
+  };
+}
+
+async function getUptimeMetricsForAllServices(
+  startDate: string,
+  endDate: string
+): Promise<Record<string, ServiceUptimeMetrics>> {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  const metrics: Record<string, ServiceUptimeMetrics> = {};
+
+  for (const service of CRITICAL_SERVICES) {
+    if (service.enabled) {
+      try {
+        const serviceMetrics = await getServiceUptimeMetrics(
+          service.serviceName,
+          start,
+          end
+        );
+        metrics[service.serviceName] = serviceMetrics;
+      } catch (error) {
+        console.error(
+          `Error fetching uptime for ${service.serviceName}:`,
+          error
+        );
+      }
+    }
+  }
+
+  return metrics;
 }
