@@ -9,7 +9,26 @@
     ],
     "contact": { "label": "Contact sales", "href": "mailto:hello@loom-app.io" },
     "signIn": { "label": "Sign in", "href": "/auth/signin" },
-    "signUp": { "label": "Start free trial", "href": "/auth/signup" },
+    "signUp": {
+      "label": "Start free trial",
+      "href": "/auth/signup",
+      "experiment": {
+        "experimentId": "nav-signup-experiment-001",
+        "enabled": true,
+        "variants": [
+          {
+            "id": "control",
+            "label": "Start free trial",
+            "weight": 50
+          },
+          {
+            "id": "variant-get-started",
+            "label": "Get started free",
+            "weight": 50
+          }
+        ]
+      }
+    },
     "logoLabel": "Back to the Loom-app homepage",
     "navigationAriaLabel": "Primary marketing navigation",
     "openMenuLabel": "Open navigation menu",
@@ -21,7 +40,23 @@
     "description": "Loom-app unifies client records, scheduling, payments, and progress tracking so Satya practitioners can focus on transformation instead of admin work.",
     "primary": {
       "label": "Book a walkthrough",
-      "href": "mailto:hello@loom-app.io"
+      "href": "mailto:hello@loom-app.io",
+      "experiment": {
+        "experimentId": "hero-cta-experiment-001",
+        "enabled": true,
+        "variants": [
+          {
+            "id": "control",
+            "label": "Book a walkthrough",
+            "weight": 50
+          },
+          {
+            "id": "variant-schedule",
+            "label": "Schedule your demo",
+            "weight": 50
+          }
+        ]
+      }
     },
     "secondary": { "label": "Explore the platform", "href": "#platform" },
     "signInPrompt": "Already using Loom-app?",

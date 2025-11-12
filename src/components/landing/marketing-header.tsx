@@ -3,26 +3,18 @@
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
+import { useTrackedCta } from '@/components/landing/use-tracked-cta';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
-
-interface NavigationLink {
-  label: string;
-  href: string;
-}
-
-interface PrimaryAction {
-  label: string;
-  href: string;
-}
+import type { LandingAction, LandingNavigationLink } from '@/modules/platform/cms/types';
 
 export interface MarketingHeaderContent {
-  links: NavigationLink[];
-  contact: PrimaryAction;
-  signIn: PrimaryAction;
-  signUp: PrimaryAction;
+  links: LandingNavigationLink[];
+  contact: LandingAction;
+  signIn: LandingAction;
+  signUp: LandingAction;
   logoLabel: string;
   navigationAriaLabel: string;
   openMenuLabel: string;
@@ -40,6 +32,56 @@ export function MarketingHeader({ locale, content }: MarketingHeaderProps) {
   const toggleMenu = () => setOpen((prev) => !prev);
   const closeMenu = () => setOpen(false);
   const resolveLocale = (href: string) => (href.startsWith('/') ? locale : undefined);
+
+  // Track nav CTAs
+  const contactCta = useTrackedCta({
+    label: content.contact.label,
+    href: content.contact.href,
+    location: 'nav-contact',
+    locale,
+    experiment: content.contact.experiment,
+  });
+
+  const signInCta = useTrackedCta({
+    label: content.signIn.label,
+    href: content.signIn.href,
+    location: 'nav-signin',
+    locale,
+    experiment: content.signIn.experiment,
+  });
+
+  const signUpCta = useTrackedCta({
+    label: content.signUp.label,
+    href: content.signUp.href,
+    location: 'nav-signup',
+    locale,
+    experiment: content.signUp.experiment,
+  });
+
+  // Track mobile nav CTAs
+  const mobileContactCta = useTrackedCta({
+    label: content.contact.label,
+    href: content.contact.href,
+    location: 'nav-mobile-contact',
+    locale,
+    experiment: content.contact.experiment,
+  });
+
+  const mobileSignInCta = useTrackedCta({
+    label: content.signIn.label,
+    href: content.signIn.href,
+    location: 'nav-mobile-signin',
+    locale,
+    experiment: content.signIn.experiment,
+  });
+
+  const mobileSignUpCta = useTrackedCta({
+    label: content.signUp.label,
+    href: content.signUp.href,
+    location: 'nav-mobile-signup',
+    locale,
+    experiment: content.signUp.experiment,
+  });
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl supports-[backdrop-filter]:backdrop-blur">
@@ -91,19 +133,19 @@ export function MarketingHeader({ locale, content }: MarketingHeaderProps) {
 
         <div className="hidden items-center gap-3 md:flex">
           <LanguageSwitcher variant="dropdown" size="sm" className="hidden lg:flex" />
-          <Button variant="ghost" size="sm" asChild>
+          <Button variant="ghost" size="sm" asChild onClick={contactCta.handleClick}>
             <Link href={content.contact.href as unknown} locale={resolveLocale(content.contact.href)}>
-              {content.contact.label}
+              {contactCta.label}
             </Link>
           </Button>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" asChild onClick={signInCta.handleClick}>
             <Link href={content.signIn.href as unknown} locale={resolveLocale(content.signIn.href)}>
-              {content.signIn.label}
+              {signInCta.label}
             </Link>
           </Button>
-          <Button variant="default" size="sm" asChild>
+          <Button variant="default" size="sm" asChild onClick={signUpCta.handleClick}>
             <Link href={content.signUp.href as unknown} locale={resolveLocale(content.signUp.href)}>
-              {content.signUp.label}
+              {signUpCta.label}
             </Link>
           </Button>
         </div>
@@ -146,31 +188,31 @@ export function MarketingHeader({ locale, content }: MarketingHeaderProps) {
             ))}
           </div>
           <div className="flex flex-col gap-2">
-            <Button variant="ghost" className="justify-center" asChild>
+            <Button variant="ghost" className="justify-center" asChild onClick={mobileContactCta.handleClick}>
               <Link
                 href={content.contact.href as unknown}
                 locale={resolveLocale(content.contact.href)}
                 onClick={closeMenu}
               >
-                {content.contact.label}
+                {mobileContactCta.label}
               </Link>
             </Button>
-            <Button variant="outline" className="justify-center" asChild>
+            <Button variant="outline" className="justify-center" asChild onClick={mobileSignInCta.handleClick}>
               <Link
                 href={content.signIn.href as unknown}
                 locale={resolveLocale(content.signIn.href)}
                 onClick={closeMenu}
               >
-                {content.signIn.label}
+                {mobileSignInCta.label}
               </Link>
             </Button>
-            <Button variant="default" className="justify-center" asChild>
+            <Button variant="default" className="justify-center" asChild onClick={mobileSignUpCta.handleClick}>
               <Link
                 href={content.signUp.href as unknown}
                 locale={resolveLocale(content.signUp.href)}
                 onClick={closeMenu}
               >
-                {content.signUp.label}
+                {mobileSignUpCta.label}
               </Link>
             </Button>
           </div>

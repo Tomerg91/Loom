@@ -2,8 +2,11 @@
  * @file Marketing hero section that surfaces the core value proposition and
  *       optional social proof immediately beneath the fold.
  */
+'use client';
+
 import type { JSX } from 'react';
 
+import { useTrackedCta } from '@/components/landing/use-tracked-cta';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
@@ -39,6 +42,7 @@ export function LandingHero({
    */
   const resolveLocale = (href: string) =>
     href.startsWith('/') ? locale : undefined;
+
   const previewCards = hero.previewCards ?? [
     {
       label: 'Weekly progress',
@@ -53,6 +57,24 @@ export function LandingHero({
       value: 'Share a reflection before the next meeting',
     },
   ];
+
+  // Track primary CTA
+  const primaryCta = useTrackedCta({
+    label: hero.primary.label,
+    href: hero.primary.href,
+    location: 'hero-primary',
+    locale,
+    experiment: hero.primary.experiment,
+  });
+
+  // Track secondary CTA
+  const secondaryCta = useTrackedCta({
+    label: hero.secondary.label,
+    href: hero.secondary.href,
+    location: 'hero-secondary',
+    locale,
+    experiment: hero.secondary.experiment,
+  });
 
   return (
     <section
@@ -83,20 +105,20 @@ export function LandingHero({
             {hero.description}
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button size="lg" variant="default" asChild>
+            <Button size="lg" variant="default" asChild onClick={primaryCta.handleClick}>
               <Link
                 href={hero.primary.href}
                 locale={resolveLocale(hero.primary.href)}
               >
-                {hero.primary.label}
+                {primaryCta.label}
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
+            <Button size="lg" variant="outline" asChild onClick={secondaryCta.handleClick}>
               <Link
                 href={hero.secondary.href}
                 locale={resolveLocale(hero.secondary.href)}
               >
-                {hero.secondary.label}
+                {secondaryCta.label}
               </Link>
             </Button>
           </div>

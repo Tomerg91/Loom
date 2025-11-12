@@ -14,11 +14,30 @@ export const LandingNavigationLinkSchema = z.object({
 });
 
 /**
+ * Schema for CTA experiment variants.
+ */
+export const CtaExperimentVariantSchema = z.object({
+  id: z.string().min(1, 'Variant ID is required'),
+  label: z.string().min(1, 'Variant label is required'),
+  weight: z.number().min(0).max(100).optional().default(50),
+});
+
+/**
+ * Schema for CTA experiment configuration.
+ */
+export const CtaExperimentSchema = z.object({
+  experimentId: z.string().min(1, 'Experiment ID is required'),
+  enabled: z.boolean().default(false),
+  variants: z.array(CtaExperimentVariantSchema).min(1).optional(),
+});
+
+/**
  * Schema describing a primary or secondary call to action link.
  */
 export const LandingActionSchema = z.object({
   label: z.string().min(1, 'Action label is required'),
   href: z.string().min(1, 'Action href is required'),
+  experiment: CtaExperimentSchema.optional(),
 });
 
 /**
@@ -148,6 +167,8 @@ export const LandingContentSchema = z.object({
   cta: LandingCtaSchema,
 });
 
+export type CtaExperimentVariant = z.infer<typeof CtaExperimentVariantSchema>;
+export type CtaExperiment = z.infer<typeof CtaExperimentSchema>;
 export type LandingNavigationLink = z.infer<typeof LandingNavigationLinkSchema>;
 export type LandingAction = z.infer<typeof LandingActionSchema>;
 export type LandingNavigation = z.infer<typeof LandingNavigationSchema>;

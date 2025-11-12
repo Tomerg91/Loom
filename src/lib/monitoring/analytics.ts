@@ -38,13 +38,19 @@ export const event = ({ action, category, label, value }: AnalyticsEvent) => {
 };
 
 // PostHog functions
-export const posthogEvent = (name: string, properties?: Record<string, unknown>) => {
+export const posthogEvent = (
+  name: string,
+  properties?: Record<string, unknown>
+) => {
   if (typeof window !== 'undefined' && window.posthog) {
     window.posthog.capture(name, properties);
   }
 };
 
-export const posthogIdentify = (userId: string, properties?: Record<string, unknown>) => {
+export const posthogIdentify = (
+  userId: string,
+  properties?: Record<string, unknown>
+) => {
   if (typeof window !== 'undefined' && window.posthog) {
     window.posthog.identify(userId, properties);
   }
@@ -114,7 +120,11 @@ export const trackError = (error: string, page: string, userId?: string) => {
 };
 
 // Performance tracking
-export const trackPerformance = (metric: string, value: number, page: string) => {
+export const trackPerformance = (
+  metric: string,
+  value: number,
+  page: string
+) => {
   trackEvent({
     action: 'performance',
     category: 'metrics',
@@ -125,7 +135,12 @@ export const trackPerformance = (metric: string, value: number, page: string) =>
 };
 
 // Web Vitals tracking
-export const trackWebVitals = (metric: { name: string; value: number; rating: string; delta: number }) => {
+export const trackWebVitals = (metric: {
+  name: string;
+  value: number;
+  rating: string;
+  delta: number;
+}) => {
   trackEvent({
     action: 'web_vitals',
     category: 'performance',
@@ -140,5 +155,51 @@ export const trackWebVitals = (metric: { name: string; value: number; rating: st
   });
 };
 
-// Export collectWebVitals function
-export { collectWebVitals } from '@/lib/performance/web-vitals';
+// CTA tracking
+export const trackCtaClick = (
+  ctaLocation: string,
+  ctaLabel: string,
+  ctaHref: string,
+  locale: string,
+  experimentId?: string,
+  variantId?: string,
+  userId?: string
+) => {
+  trackEvent({
+    action: 'cta_click',
+    category: 'marketing',
+    label: `${ctaLocation}:${ctaLabel}`,
+    userId,
+    properties: {
+      ctaLocation,
+      ctaLabel,
+      ctaHref,
+      locale,
+      experimentId,
+      variantId,
+      timestamp: new Date().toISOString(),
+    },
+  });
+};
+
+export const trackExperimentView = (
+  experimentId: string,
+  variantId: string,
+  ctaLocation: string,
+  locale: string,
+  userId?: string
+) => {
+  trackEvent({
+    action: 'experiment_view',
+    category: 'experiments',
+    label: `${experimentId}:${variantId}`,
+    userId,
+    properties: {
+      experimentId,
+      variantId,
+      ctaLocation,
+      locale,
+      timestamp: new Date().toISOString(),
+    },
+  });
+};
