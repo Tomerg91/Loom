@@ -15,6 +15,11 @@ import {
   PLACEHOLDER_SUPABASE_URL,
   serverEnv,
 } from '@/env/server';
+import {
+  ensureValidAuthEnvironment,
+  retryWithBackoff,
+  trackForceSignOut,
+} from './server-auth-utils';
 
 /**
  * Broad Supabase client type. We intentionally keep it loose until the
@@ -47,36 +52,11 @@ type NextCookieStore = {
 
 /**
  * Validates the required server-side environment variables.
- * Uses process.env directly to work in Edge Runtime (Vercel)
+ * Uses comprehensive validation from server-auth-utils.
+ * @deprecated Use ensureValidAuthEnvironment() directly for better error messages
  */
 function validateSupabaseEnv(): void {
-  // Use process.env directly instead of serverEnv wrapper to avoid
-  // ENVIRONMENT_FALLBACK errors in Vercel's Edge Runtime
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (
-    !url ||
-    url === PLACEHOLDER_SUPABASE_URL ||
-    url.startsWith('MISSING_') ||
-    url.startsWith('INVALID_')
-  ) {
-    throw new Error(
-      'Missing or invalid NEXT_PUBLIC_SUPABASE_URL. Set the project URL before starting the server.'
-    );
-  }
-
-  try {
-    new URL(url);
-  } catch (_error) {
-    throw new Error(`Invalid Supabase URL format: ${url}`);
-  }
-
-  if (!anonKey || anonKey === PLACEHOLDER_SUPABASE_ANON_KEY) {
-    throw new Error(
-      'Missing or invalid NEXT_PUBLIC_SUPABASE_ANON_KEY. Set the publishable key before starting the server.'
-    );
-  }
+  ensureValidAuthEnvironment();
 }
 
 /**
@@ -261,3 +241,119 @@ export const createAdminClient = (): AdminSupabaseClient => {
 
   return adminClientInstance;
 };
+
+// ============================================================================
+// SERVER-SIDE AUTH OPERATIONS WITH RETRY
+// ============================================================================
+
+/**
+ * Refreshes the user session with retry logic and telemetry.
+ * Use this in API routes that need to ensure valid session tokens.
+ */
+export async function refreshSessionWithRetry(
+  client: ServerSupabaseClient
+): Promise<{
+  session: any | null;
+  error: Error | null;
+}> {
+  try {
+    const result = await retryWithBackoff(
+      async () => {
+        const { data, error } = await client.auth.refreshSession();
+        if (error) throw error;
+        return data;
+      },
+      {
+        operation: 'session_refresh',
+        maxRetries: 3,
+        useCircuitBreaker: true,
+        shouldRetry: (error: unknown) => {
+          // Retry on network errors, not on auth errors
+          if (error instanceof Error) {
+            const message = error.message.toLowerCase();
+            if (message.includes('unauthorized') || message.includes('invalid')) {
+              return false;
+            }
+          }
+          return true;
+        }
+      }
+    );
+
+    return { session: result.session, error: null };
+  } catch (error) {
+    return { session: null, error: error as Error };
+  }
+}
+
+/**
+ * Gets the current user with retry logic and telemetry.
+ */
+export async function getUserWithRetry(
+  client: ServerSupabaseClient
+): Promise<{
+  user: any | null;
+  error: Error | null;
+}> {
+  try {
+    const result = await retryWithBackoff(
+      async () => {
+        const { data, error } = await client.auth.getUser();
+        if (error) throw error;
+        return data;
+      },
+      {
+        operation: 'get_user',
+        maxRetries: 2,
+        useCircuitBreaker: true
+      }
+    );
+
+    return { user: result.user, error: null };
+  } catch (error) {
+    return { user: null, error: error as Error };
+  }
+}
+
+/**
+ * Signs out the user with retry logic and telemetry.
+ * Tracks forced sign-out events when called programmatically.
+ */
+export async function signOutWithRetry(
+  client: ServerSupabaseClient,
+  options?: {
+    reason?: 'token_expired' | 'invalid_session' | 'security_violation' | 'mfa_required' | 'manual';
+    userId?: string;
+    metadata?: Record<string, unknown>;
+  }
+): Promise<{ error: Error | null }> {
+  try {
+    // Track the sign-out event
+    if (options?.reason) {
+      trackForceSignOut({
+        reason: options.reason,
+        userId: options.userId,
+        metadata: options.metadata
+      });
+    }
+
+    await retryWithBackoff(
+      async () => {
+        const { error } = await client.auth.signOut();
+        if (error) throw error;
+      },
+      {
+        operation: 'sign_out',
+        maxRetries: 2,
+        useCircuitBreaker: false // Don't use circuit breaker for sign-out
+      }
+    );
+
+    return { error: null };
+  } catch (error) {
+    return { error: error as Error };
+  }
+}
+
+// Export the utilities for use in other modules
+export { ensureValidAuthEnvironment, retryWithBackoff, trackForceSignOut };

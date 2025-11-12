@@ -16,6 +16,7 @@ import {
   PLACEHOLDER_SUPABASE_URL,
 } from '@/env/client';
 import { Database } from '@/types/supabase';
+import { captureError, captureMetric } from '@/lib/monitoring/sentry';
 
 /**
  * Shape of the browser Supabase client so downstream modules can reference a
@@ -137,6 +138,15 @@ async function handleInvalidToken(
   if (isHandlingSignOut) return;
   isHandlingSignOut = true;
 
+  // Track forced sign-out event
+  captureMetric('auth.force_signout', 1, {
+    tags: {
+      reason: 'token_expired',
+      location: 'browser_client',
+      retry_count: tokenRefreshRetries.toString()
+    }
+  });
+
   try {
     await client.auth.signOut({ scope: 'local' });
 
@@ -150,6 +160,14 @@ async function handleInvalidToken(
           'Failed to clear auth storage during forced sign-out:',
           storageError
         );
+
+        captureError(storageError as Error, {
+          level: 'warning',
+          tags: {
+            component: 'auth_signout',
+            operation: 'clear_storage'
+          }
+        });
       }
 
       if (!window.location.pathname.includes('/signin')) {
@@ -158,6 +176,18 @@ async function handleInvalidToken(
     }
   } catch (error) {
     console.error('Error during automatic sign-out:', error);
+
+    captureError(error as Error, {
+      level: 'error',
+      tags: {
+        component: 'auth_signout',
+        operation: 'forced_signout'
+      },
+      extra: {
+        retryCount: tokenRefreshRetries,
+        pathname: typeof window !== 'undefined' ? window.location.pathname : 'unknown'
+      }
+    });
   } finally {
     isHandlingSignOut = false;
   }
@@ -170,23 +200,78 @@ async function handleInvalidToken(
 async function retryTokenRefresh(
   client: BrowserSupabaseClient
 ): Promise<boolean> {
+  const startTime = Date.now();
+
   for (let attempt = 0; attempt < MAX_REFRESH_RETRIES; attempt++) {
     try {
       const { data, error } = await client.auth.refreshSession();
       if (error) throw error;
       if (data.session) {
         tokenRefreshRetries = 0;
+
+        // Track successful refresh
+        const duration = Date.now() - startTime;
+        captureMetric('auth.token_refresh.success', 1, {
+          tags: {
+            attempts: (attempt + 1).toString(),
+            duration_ms: duration.toString()
+          }
+        });
+
+        if (attempt > 0) {
+          captureMetric('auth.retry.success', 1, {
+            tags: {
+              operation: 'token_refresh',
+              attempts: (attempt + 1).toString()
+            }
+          });
+        }
+
         return true;
       }
     } catch (error) {
+      const delay = REFRESH_RETRY_DELAY_MS * 2 ** attempt;
+
+      // Track retry attempt
+      captureMetric('auth.retry.attempt', 1, {
+        tags: {
+          operation: 'token_refresh',
+          attempt: (attempt + 1).toString(),
+          delay_ms: delay.toString()
+        }
+      });
+
       if (process.env.NODE_ENV === 'development') {
         console.warn(`Token refresh attempt ${attempt + 1} failed:`, error);
       }
 
       if (attempt < MAX_REFRESH_RETRIES - 1) {
         await new Promise(resolve =>
-          setTimeout(resolve, REFRESH_RETRY_DELAY_MS * 2 ** attempt)
+          setTimeout(resolve, delay)
         );
+      } else {
+        // Final failure - track comprehensive telemetry
+        const duration = Date.now() - startTime;
+        captureMetric('auth.token_refresh.failure', 1, {
+          tags: {
+            attempts: MAX_REFRESH_RETRIES.toString(),
+            duration_ms: duration.toString()
+          }
+        });
+
+        captureError(error as Error, {
+          level: 'error',
+          tags: {
+            component: 'auth_client',
+            operation: 'token_refresh',
+            retry_exhausted: 'true'
+          },
+          extra: {
+            attemptCount: MAX_REFRESH_RETRIES,
+            duration,
+            error_message: error instanceof Error ? error.message : 'Unknown error'
+          }
+        });
       }
     }
   }
