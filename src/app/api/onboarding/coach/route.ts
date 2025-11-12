@@ -75,6 +75,23 @@ const coachOnboardingFormSchema = z.object({
     .max(50, 'Maximum 50 availability slots allowed'),
 });
 
+// Partial schema for incremental progress updates (all fields optional)
+const coachOnboardingProgressSchema = z.object({
+  step: z.number().int().min(1).max(10).optional(),
+  title: z.string().min(2).max(120).optional(),
+  bio: z.string().max(2000).optional(),
+  experienceYears: z.number().int().min(0).max(100).optional(),
+  specialties: z.array(z.string().min(1).max(100)).max(10).optional(),
+  credentials: z.array(z.string().min(1).max(120)).max(15).optional(),
+  languages: z.array(z.string().min(1).max(50)).max(10).optional(),
+  timezone: z.string().min(2).max(64).optional(),
+  hourlyRate: z.number().positive().max(10000).optional(),
+  currency: z.string().length(3).transform((value) => value.toUpperCase()).optional(),
+  approach: z.string().max(2000).optional(),
+  location: z.string().max(160).optional(),
+  availability: z.array(availabilitySlotSchema).max(50).optional(),
+});
+
 type CoachOnboardingFormInput = z.input<typeof coachOnboardingFormSchema>;
 type CoachOnboardingFormData = z.infer<typeof coachOnboardingFormSchema> & { step: number };
 
@@ -573,5 +590,154 @@ export const POST = withErrorHandling(
       requireAuth(coachOnboardingHandler)
     ),
     { name: 'POST /api/onboarding/coach' }
+  )
+);
+
+/**
+ * PATCH /api/onboarding/coach
+ * Save partial progress (auto-save functionality)
+ */
+const updateCoachProgressHandler = requireCoach(
+  async (user: AuthenticatedUser, request: NextRequest): Promise<NextResponse> => {
+    const payload = await request.json();
+    const validation = validateRequestBody(coachOnboardingProgressSchema, payload, {
+      sanitize: true,
+      maxSize: 24 * 1024,
+    });
+
+    if (!validation.success) {
+      return createErrorResponse(validation.error, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const data = validation.data;
+    const supabase = await createClient();
+    const now = new Date().toISOString();
+
+    // Build partial update object for coach_profiles
+    const profileUpdates: Record<string, unknown> = { updated_at: now };
+
+    if (data.title !== undefined) profileUpdates.title = data.title.trim();
+    if (data.bio !== undefined) profileUpdates.bio = data.bio.trim();
+    if (data.experienceYears !== undefined) profileUpdates.experience_years = data.experienceYears;
+    if (data.specialties !== undefined) profileUpdates.specializations = data.specialties.map((s) => s.trim()).filter(Boolean);
+    if (data.credentials !== undefined) profileUpdates.credentials = data.credentials.map((c) => c.trim()).filter(Boolean);
+    if (data.languages !== undefined) profileUpdates.languages = data.languages.map((l) => l.trim()).filter(Boolean);
+    if (data.timezone !== undefined) profileUpdates.timezone = data.timezone;
+    if (data.hourlyRate !== undefined) {
+      profileUpdates.session_rate = data.hourlyRate;
+      profileUpdates.hourly_rate = data.hourlyRate;
+    }
+    if (data.currency !== undefined) profileUpdates.currency = data.currency.toUpperCase();
+    if (data.location !== undefined) profileUpdates.location = data.location.trim();
+    if (data.approach !== undefined) profileUpdates.approach = data.approach.trim();
+
+    // Only update profile if there are changes
+    if (Object.keys(profileUpdates).length > 1) { // More than just updated_at
+      const { data: existingProfile } = await supabase
+        .from('coach_profiles')
+        .select('coach_id')
+        .eq('coach_id', user.id)
+        .maybeSingle();
+
+      if (existingProfile) {
+        // Update existing profile
+        const { error: profileError } = await supabase
+          .from('coach_profiles')
+          .update({ ...profileUpdates, coach_id: user.id })
+          .eq('coach_id', user.id);
+
+        if (profileError) {
+          console.error('Failed to update coach profile progress:', profileError);
+          return createErrorResponse('Failed to save progress', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+        }
+      } else {
+        // Create new profile with partial data
+        const { error: profileError } = await supabase
+          .from('coach_profiles')
+          .insert({
+            coach_id: user.id,
+            ...profileUpdates,
+            bio: typeof profileUpdates.bio === 'string' ? profileUpdates.bio : '',
+            experience_years: typeof profileUpdates.experience_years === 'number' ? profileUpdates.experience_years : 0,
+          });
+
+        if (profileError) {
+          console.error('Failed to create coach profile:', profileError);
+          return createErrorResponse('Failed to save progress', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+        }
+      }
+    }
+
+    // Update availability if provided
+    if (data.availability && data.availability.length > 0) {
+      // Delete existing and insert new
+      await supabase.from('coach_availability').delete().eq('coach_id', user.id);
+
+      const availabilityRecords = data.availability.map((slot) => ({
+        coach_id: user.id,
+        day_of_week: slot.dayOfWeek,
+        start_time: normalizeTime(slot.startTime),
+        end_time: normalizeTime(slot.endTime),
+        timezone: data.timezone ?? user.timezone ?? 'UTC',
+        is_available: true,
+        created_at: now,
+        updated_at: now,
+      }));
+
+      const { error: availabilityError } = await supabase
+        .from('coach_availability')
+        .insert(availabilityRecords);
+
+      if (availabilityError) {
+        console.error('Failed to save coach availability progress:', availabilityError);
+      }
+    }
+
+    // Update user record with step progress
+    const userUpdates: Record<string, unknown> = { updated_at: now };
+
+    if (data.step !== undefined) {
+      userUpdates.onboarding_step = data.step;
+      userUpdates.onboarding_status = 'in_progress';
+    }
+    if (data.timezone !== undefined) {
+      userUpdates.timezone = data.timezone;
+    }
+
+    if (Object.keys(userUpdates).length > 1) { // More than just updated_at
+      const { error: userError } = await supabase
+        .from('users')
+        .update(userUpdates)
+        .eq('id', user.id);
+
+      if (userError) {
+        console.error('Failed to update user progress:', userError);
+      }
+    }
+
+    // Track progress
+    if (data.step !== undefined) {
+      await trackOnboardingProgress(user.id, 'progress_saved', {
+        step: data.step,
+        fieldsUpdated: Object.keys(profileUpdates).length - 1,
+      });
+    }
+
+    return createSuccessResponse(
+      {
+        progress: 'saved',
+        step: data.step,
+      },
+      'Progress saved successfully'
+    );
+  }
+);
+
+export const PATCH = withErrorHandling(
+  withRequestLogging(
+    rateLimit(20, 60000)( // 20 requests per minute for auto-save
+      requireAuth(updateCoachProgressHandler)
+    ),
+    { name: 'PATCH /api/onboarding/coach' }
   )
 );
