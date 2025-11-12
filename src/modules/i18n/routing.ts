@@ -10,6 +10,7 @@ import {
   SUPPORTED_LOCALES,
   type AppLocale,
   getLocaleDirection,
+  isAppLocale,
   normalizeLocale,
 } from './config';
 
@@ -22,7 +23,8 @@ export const routing = defineRouting({
 });
 
 /** next-intl navigation bindings wired to the routing definition above. */
-export const { Link, redirect, usePathname, useRouter } = createNavigation(routing);
+export const { Link, redirect, usePathname, useRouter } =
+  createNavigation(routing);
 
 /**
  * Parses an `Accept-Language` header and returns preferred locales ordered by
@@ -53,7 +55,9 @@ function parseAcceptLanguage(headerValue: string | null | undefined): string[] {
  * Negotiates the best matching locale using the provided `Accept-Language`
  * header value.
  */
-export function negotiateRequestLocale(headerValue: string | null | undefined): AppLocale {
+export function negotiateRequestLocale(
+  headerValue: string | null | undefined
+): AppLocale {
   const candidates = parseAcceptLanguage(headerValue);
 
   for (const candidate of candidates) {
@@ -72,12 +76,39 @@ export function negotiateRequestLocale(headerValue: string | null | undefined): 
  */
 export function buildLocalizedPath(
   pathname: string,
-  locale?: string | null,
+  locale?: string | null
 ): `/${string}` {
   const normalizedLocale = normalizeLocale(locale ?? undefined);
-  const sanitizedPath = pathname.startsWith('/') ? pathname : `/${pathname}`;
-  const trimmed = sanitizedPath === '/' ? '' : sanitizedPath;
-  return `/${normalizedLocale}${trimmed}`;
+  if (!pathname) {
+    return `/${normalizedLocale}`;
+  }
+
+  // Separate search/hash fragments before manipulating the pathname
+  let remaining = pathname.trim();
+  let hash = '';
+  let search = '';
+
+  const hashIndex = remaining.indexOf('#');
+  if (hashIndex >= 0) {
+    hash = remaining.slice(hashIndex);
+    remaining = remaining.slice(0, hashIndex);
+  }
+
+  const searchIndex = remaining.indexOf('?');
+  if (searchIndex >= 0) {
+    search = remaining.slice(searchIndex);
+    remaining = remaining.slice(0, searchIndex);
+  }
+
+  let sanitizedPath = remaining.startsWith('/') ? remaining : `/${remaining}`;
+  sanitizedPath = sanitizedPath.replace(/\/{2,}/g, '/');
+
+  const segments = sanitizedPath.split('/').filter(Boolean);
+  const hasLocalePrefix = segments.length > 0 && isAppLocale(segments[0]);
+  const pathSegments = hasLocalePrefix ? segments.slice(1) : segments;
+  const rebuiltPath = pathSegments.length ? `/${pathSegments.join('/')}` : '';
+
+  return `/${normalizedLocale}${rebuiltPath}${search}${hash}`;
 }
 
 export interface LocalePathDetails {
@@ -93,7 +124,9 @@ export function stripLocaleFromPath(pathname: string): LocalePathDetails {
   const sanitized = pathname.startsWith('/') ? pathname : `/${pathname}`;
   const [, possibleLocale, ...rest] = sanitized.split('/');
   const normalizedLocale = normalizeLocale(possibleLocale);
-  const resolvedPath = rest.length ? (`/${rest.join('/')}` as `/${string}`) : '/';
+  const resolvedPath = rest.length
+    ? (`/${rest.join('/')}` as `/${string}`)
+    : '/';
 
   return {
     locale: normalizedLocale,

@@ -13,7 +13,13 @@ interface LanguageOption {
 }
 
 const languageOptions: LanguageOption[] = [
-  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸', rtl: false },
+  {
+    code: 'en',
+    name: 'English',
+    nativeName: 'English',
+    flag: '🇺🇸',
+    rtl: false,
+  },
   { code: 'he', name: 'Hebrew', nativeName: 'עברית', flag: '🇮🇱', rtl: true },
 ];
 
@@ -23,14 +29,21 @@ export function useLanguageSwitcher() {
   const router = useRouter();
 
   const switchLanguage = (newLocale: string) => {
+    const target = languageOptions.find(lang => lang.code === newLocale);
+    if (!target) {
+      console.warn(`Locale ${newLocale} is not supported`);
+      return;
+    }
     // usePathname() from next-intl returns path without locale prefix
     // buildLocalizedPath adds the correct locale prefix
-    const newPathname = buildLocalizedPath(pathname, newLocale);
+    const newPathname = buildLocalizedPath(pathname, target.code);
     router.push(newPathname);
   };
 
   const getCurrentLanguage = () => {
-    return languageOptions.find(lang => lang.code === locale) || languageOptions[0];
+    return (
+      languageOptions.find(lang => lang.code === locale) || languageOptions[0]
+    );
   };
 
   const getAvailableLanguages = () => {
