@@ -4,7 +4,7 @@
  */
 
 import { captureError, captureMetric } from '@/lib/monitoring/sentry';
-import { createClient } from '@/modules/platform/supabase/server';
+import { createAdminClient } from '@/modules/platform/supabase/server';
 
 // ============================================================================
 // TYPES
@@ -489,11 +489,13 @@ export async function trackMfaDisabled(
 // ============================================================================
 
 /**
- * Stores MFA audit log entry in the database
+ * Stores MFA audit log entry in the database using admin client.
+ * Uses service_role privileges to bypass RLS policies.
  */
 async function storeMfaAuditLog(log: MfaAuditLog): Promise<void> {
   try {
-    const supabase = createClient();
+    // Use admin client with service_role to bypass RLS
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from('mfa_audit_logs')
@@ -533,7 +535,8 @@ async function storeMfaAuditLog(log: MfaAuditLog): Promise<void> {
 }
 
 /**
- * Retrieves MFA audit logs for a user
+ * Retrieves MFA audit logs for a user using admin client.
+ * Uses service_role to ensure access regardless of caller context.
  */
 export async function getMfaAuditLogs(
   userId: string,
@@ -546,7 +549,8 @@ export async function getMfaAuditLogs(
   } = {}
 ): Promise<MfaAuditLog[]> {
   try {
-    const supabase = createClient();
+    // Use admin client to bypass RLS and ensure consistent access
+    const supabase = createAdminClient();
     const { limit = 50, offset = 0, eventTypes, startDate, endDate } = options;
 
     let query = supabase

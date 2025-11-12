@@ -232,6 +232,30 @@ CREATE TABLE mfa_audit_logs (
 - `mfa_disabled`
 - `mfa_rate_limit_hit`
 
+### Security Architecture
+
+**IMPORTANT**: MFA audit logging uses `createAdminClient()` with service_role privileges:
+
+- **Why**: The RLS policies on `mfa_audit_logs` only allow service_role to INSERT
+- **Security**: Prevents unauthorized tampering with audit logs
+- **Consistency**: Ensures audit logs are always written regardless of caller context
+- **Read Access**: Users can read their own logs via RLS policies, but only service_role can write
+
+```typescript
+// Internal implementation (do not modify)
+async function storeMfaAuditLog(log: MfaAuditLog): Promise<void> {
+  // Uses admin client with service_role to bypass RLS
+  const supabase = createAdminClient();
+
+  await supabase.from('mfa_audit_logs').insert({...});
+}
+```
+
+**RLS Policy Summary**:
+- INSERT: Service role only (enforced)
+- SELECT: Users can view their own logs OR admins can view all
+- UPDATE/DELETE: Not allowed (audit trail integrity)
+
 ### Usage
 
 ```typescript
