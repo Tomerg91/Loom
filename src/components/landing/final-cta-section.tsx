@@ -4,7 +4,7 @@
  * @file Final CTA section for the landing page with analytics tracking.
  */
 
-import { TrackedCta } from '@/components/landing/tracked-cta';
+import { useTrackedCta } from '@/components/landing/use-tracked-cta';
 import { Link } from '@/i18n/routing';
 import type { LandingCta } from '@/modules/platform/cms/types';
 
@@ -14,6 +14,14 @@ export interface FinalCtaSectionProps {
 }
 
 export function FinalCtaSection({ cta, locale }: FinalCtaSectionProps) {
+  const finalCta = useTrackedCta({
+    label: cta.primary.label,
+    href: cta.primary.href,
+    location: 'cta-final',
+    locale,
+    experiment: cta.primary.experiment,
+  });
+
   return (
     <section id="cta" className="relative isolate overflow-hidden py-20">
       <div
@@ -32,25 +40,16 @@ export function FinalCtaSection({ cta, locale }: FinalCtaSectionProps) {
           {cta.description}
         </p>
         <div className="mt-8 flex justify-center">
-          <TrackedCta
-            label={cta.primary.label}
+          <Link
             href={cta.primary.href}
-            location="cta-final"
-            locale={locale}
-            experiment={cta.primary.experiment}
+            locale={
+              cta.primary.href.startsWith('/') ? locale : undefined
+            }
+            className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-lg font-semibold text-purple-700 shadow-lg transition hover:bg-purple-50"
+            onClick={finalCta.handleClick}
           >
-            {(label) => (
-              <Link
-                href={cta.primary.href}
-                locale={
-                  cta.primary.href.startsWith('/') ? locale : undefined
-                }
-                className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-lg font-semibold text-purple-700 shadow-lg transition hover:bg-purple-50"
-              >
-                {label}
-              </Link>
-            )}
-          </TrackedCta>
+            {finalCta.label}
+          </Link>
         </div>
       </div>
     </section>

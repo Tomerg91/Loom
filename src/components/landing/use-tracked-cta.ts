@@ -1,8 +1,7 @@
 'use client';
 
 /**
- * @file Tracked CTA component that supports A/B testing and analytics.
- * Automatically tracks clicks and experiment views to Google Analytics and PostHog.
+ * @file Custom hook for tracking CTA clicks and managing A/B test experiments.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -12,43 +11,6 @@ import type {
   CtaExperiment,
   CtaExperimentVariant,
 } from '@/modules/platform/cms/types';
-
-export interface TrackedCtaProps {
-  /**
-   * Base label for the CTA (used if no experiment is active).
-   */
-  label: string;
-
-  /**
-   * CTA href destination.
-   */
-  href: string;
-
-  /**
-   * Location identifier for analytics (e.g., "hero-primary", "pricing-tier-1").
-   */
-  location: string;
-
-  /**
-   * Current locale for tracking.
-   */
-  locale: string;
-
-  /**
-   * Optional experiment configuration.
-   */
-  experiment?: CtaExperiment;
-
-  /**
-   * Optional className for styling.
-   */
-  className?: string;
-
-  /**
-   * Children render function that receives the resolved label.
-   */
-  children: (label: string) => React.ReactNode;
-}
 
 /**
  * Selects a variant based on weights using a deterministic hash-based approach.
@@ -92,7 +54,6 @@ function selectVariant(
 
 /**
  * Generates a simple session ID based on timestamp and random value.
- * In production, you might want to use a more sophisticated session tracking system.
  */
 function getSessionId(): string {
   if (typeof window === 'undefined') {
@@ -110,24 +71,48 @@ function getSessionId(): string {
   return sessionId;
 }
 
+export interface UseTrackedCtaParams {
+  label: string;
+  href: string;
+  location: string;
+  locale: string;
+  experiment?: CtaExperiment;
+}
+
+export interface UseTrackedCtaResult {
+  /** The effective label to display (either base label or experiment variant label) */
+  label: string;
+  /** Click handler that tracks the CTA click */
+  handleClick: () => void;
+}
+
 /**
- * TrackedCta component that supports A/B testing and analytics tracking.
+ * Hook for tracking CTA clicks and managing A/B test experiments.
  *
- * Features:
- * - Deterministic variant selection based on session ID
- * - Automatic experiment view tracking
- * - Click tracking with experiment metadata
- * - Locale-aware analytics
+ * @example
+ * ```tsx
+ * const { label, handleClick } = useTrackedCta({
+ *   label: action.label,
+ *   href: action.href,
+ *   location: 'hero-primary',
+ *   locale: 'en',
+ *   experiment: action.experiment,
+ * });
+ *
+ * return (
+ *   <Button onClick={handleClick}>
+ *     {label}
+ *   </Button>
+ * );
+ * ```
  */
-export function TrackedCta({
-  label,
+export function useTrackedCta({
+  label: baseLabel,
   href,
   location,
   locale,
   experiment,
-  className,
-  children,
-}: TrackedCtaProps) {
+}: UseTrackedCtaParams): UseTrackedCtaResult {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -137,18 +122,18 @@ export function TrackedCta({
   // Determine the effective label and variant
   const { effectiveLabel, selectedVariant } = useMemo(() => {
     if (!experiment?.enabled || !experiment.variants || experiment.variants.length === 0) {
-      return { effectiveLabel: label, selectedVariant: null };
+      return { effectiveLabel: baseLabel, selectedVariant: null };
     }
 
     if (!mounted) {
       // During SSR, use the base label
-      return { effectiveLabel: label, selectedVariant: null };
+      return { effectiveLabel: baseLabel, selectedVariant: null };
     }
 
     const sessionId = getSessionId();
     const variant = selectVariant(experiment.variants, sessionId);
     return { effectiveLabel: variant.label, selectedVariant: variant };
-  }, [experiment, label, mounted]);
+  }, [experiment, baseLabel, mounted]);
 
   // Track experiment view on mount (client-side only)
   useEffect(() => {
@@ -167,7 +152,7 @@ export function TrackedCta({
     }
   }, [mounted, experiment, selectedVariant, location, locale]);
 
-  // Handle click tracking
+  // Create click handler
   const handleClick = () => {
     trackCtaClick(
       location,
@@ -179,9 +164,8 @@ export function TrackedCta({
     );
   };
 
-  return (
-    <div onClick={handleClick} className={className}>
-      {children(effectiveLabel)}
-    </div>
-  );
+  return {
+    label: effectiveLabel,
+    handleClick,
+  };
 }
