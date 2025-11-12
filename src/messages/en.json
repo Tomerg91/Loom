@@ -101,6 +101,36 @@
       "helper": "You're already set up. Head back to your dashboard to continue."
     },
     "goToDashboard": "Go to dashboard",
+    "progress": {
+      "title": "Your progress",
+      "subtitle": "Step {current} of {total}",
+      "complete": "complete",
+      "completedMessage": "You've completed your onboarding! Your profile is now visible to others.",
+      "autoSaving": "Auto-saving...",
+      "lastSaved": "Last saved {time}",
+      "steps": {
+        "coach": {
+          "profile": "Profile basics",
+          "profileDesc": "Share your headline and location",
+          "experience": "Background",
+          "experienceDesc": "Add your experience and credentials",
+          "pricing": "Pricing & languages",
+          "pricingDesc": "Set your rate and coaching languages",
+          "availability": "Availability",
+          "availabilityDesc": "Define when you're available",
+          "review": "Review & submit",
+          "reviewDesc": "Finalize your coach profile"
+        },
+        "client": {
+          "goals": "Your goals",
+          "goalsDesc": "What do you want to achieve?",
+          "preferences": "Communication",
+          "preferencesDesc": "How you like to connect",
+          "review": "Review & complete",
+          "reviewDesc": "Confirm your preferences"
+        }
+      }
+    },
     "client": {
       "title": "Client onboarding",
       "description": "Share your goals and preferences so your coach can tailor every session.",
@@ -120,33 +150,40 @@
         "goals": {
           "label": "Coaching goals",
           "placeholder": "Add a goal and press Enter",
-          "helper": "List one to three focus areas you want to work on."
+          "helper": "List one to three focus areas you want to work on.",
+          "tooltip": "Your goals help your coach understand what matters most to you and create a personalized program."
         },
         "focusAreas": {
           "label": "Focus areas",
           "placeholder": "Add a focus area and press Enter",
-          "helper": "Describe themes, skills, or topics you care about."
+          "helper": "Describe themes, skills, or topics you care about.",
+          "tooltip": "Focus areas give your coach context on specific skills, behaviors, or challenges you'd like to address."
         },
         "supportPreferences": {
           "label": "Support preferences",
           "placeholder": "Add a preference and press Enter",
-          "helper": "Examples: weekly check-ins, summaries, accountability notes."
+          "helper": "Examples: weekly check-ins, summaries, accountability notes.",
+          "tooltip": "Let your coach know how you like to be supported between sessions—such as reminders, check-ins, or resource sharing."
         },
         "preferredCommunication": {
           "label": "Preferred communication",
-          "placeholder": "Select a communication style"
+          "placeholder": "Select a communication style",
+          "tooltip": "Choose how you'd like to meet with your coach. You can always adjust this later."
         },
         "sessionFrequency": {
           "label": "Ideal session cadence",
-          "placeholder": "Select how often you'd like to meet"
+          "placeholder": "Select how often you'd like to meet",
+          "tooltip": "This helps set expectations with your coach. The frequency can be adjusted based on your progress."
         },
         "timezone": {
           "label": "Timezone",
-          "placeholder": "e.g. America/New_York"
+          "placeholder": "e.g. America/New_York",
+          "tooltip": "We'll use this to schedule sessions at times that work for you."
         },
         "notes": {
           "label": "Anything else we should know?",
-          "placeholder": "Share learning preferences, scheduling details, or other context for your coach."
+          "placeholder": "Share learning preferences, scheduling details, or other context for your coach.",
+          "tooltip": "Share any additional context that helps your coach tailor their approach to your needs."
         }
       },
       "footer": {
@@ -159,47 +196,58 @@
       "fields": {
         "title": {
           "label": "Professional headline",
-          "placeholder": "Executive coach and leadership strategist"
+          "placeholder": "Executive coach and leadership strategist",
+          "tooltip": "A brief, compelling headline that summarizes your coaching expertise."
         },
         "location": {
           "label": "Primary location",
-          "placeholder": "City, Country"
+          "placeholder": "City, Country",
+          "tooltip": "Your primary location helps clients find coaches in their area or timezone."
         },
         "bio": {
           "label": "About you",
-          "placeholder": "Describe your background, coaching philosophy, and the outcomes you help clients achieve."
+          "placeholder": "Describe your background, coaching philosophy, and the outcomes you help clients achieve.",
+          "tooltip": "Share your story, approach, and the impact you create for clients. This is your opportunity to connect."
         },
         "experienceYears": {
-          "label": "Years of experience"
+          "label": "Years of experience",
+          "tooltip": "How many years have you been coaching professionally?"
         },
         "timezone": {
           "label": "Timezone",
-          "placeholder": "e.g. Europe/London"
+          "placeholder": "e.g. Europe/London",
+          "tooltip": "We'll use this to display availability and schedule sessions in your local time."
         },
         "hourlyRate": {
-          "label": "Standard hourly rate"
+          "label": "Standard hourly rate",
+          "tooltip": "Your typical rate per hour. This can vary by session type or client."
         },
         "currency": {
-          "label": "Currency (ISO code)"
+          "label": "Currency (ISO code)",
+          "tooltip": "Enter the 3-letter currency code (e.g., USD, EUR, GBP)."
         },
         "specialties": {
           "label": "Specialties",
           "placeholder": "Add a specialty and press Enter",
-          "helper": "Examples: leadership development, product strategy, resilience."
+          "helper": "Examples: leadership development, product strategy, resilience.",
+          "tooltip": "Your areas of expertise help clients find the right coach for their needs."
         },
         "credentials": {
           "label": "Credentials",
           "placeholder": "Add a credential and press Enter",
-          "helper": "Include certifications, degrees, or notable training."
+          "helper": "Include certifications, degrees, or notable training.",
+          "tooltip": "Professional credentials build trust and demonstrate your qualifications."
         },
         "languages": {
           "label": "Languages you coach in",
           "placeholder": "Add a language and press Enter",
-          "helper": "Clients will see these on your profile."
+          "helper": "Clients will see these on your profile.",
+          "tooltip": "List all languages you're comfortable coaching in to reach more clients."
         },
         "approach": {
           "label": "Coaching approach",
-          "placeholder": "Share how you run sessions, the frameworks you use, and what clients can expect."
+          "placeholder": "Share how you run sessions, the frameworks you use, and what clients can expect.",
+          "tooltip": "Describe your methodology, frameworks, and what makes your coaching style unique."
         }
       },
       "availability": {

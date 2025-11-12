@@ -24,6 +24,18 @@ const clientOnboardingSchema = z.object({
   notes: z.string().max(1200).optional(),
 });
 
+// Partial schema for incremental progress updates (all fields optional)
+const clientOnboardingProgressSchema = z.object({
+  step: z.number().int().min(1).max(3).optional(),
+  goals: z.array(z.string().min(2).max(120)).max(10).optional(),
+  focusAreas: z.array(z.string().min(2).max(120)).max(10).optional(),
+  supportPreferences: z.array(z.string().min(2).max(120)).max(10).optional(),
+  preferredCommunication: z.enum(['video', 'phone', 'in_person', 'hybrid']).optional(),
+  sessionFrequency: z.enum(['weekly', 'biweekly', 'monthly', 'flexible']).optional(),
+  timezone: z.string().min(2).max(64).optional(),
+  notes: z.string().max(1200).optional(),
+});
+
 const rateLimitedHandler = rateLimit(10, 60_000);
 
 export const GET = withErrorHandling(async () => {
@@ -160,4 +172,96 @@ export const PUT = withErrorHandling(
       'Client onboarding completed successfully'
     );
   })
+);
+
+/**
+ * PATCH /api/onboarding/client
+ * Save partial progress (auto-save functionality)
+ */
+export const PATCH = withErrorHandling(
+  rateLimit(20, 60_000)( // 20 requests per minute for auto-save
+    async (request: NextRequest) => {
+      const authService = createAuthService(true);
+      const user = await authService.getCurrentUser();
+
+      if (!user) {
+        return createErrorResponse('Not authenticated', HTTP_STATUS.UNAUTHORIZED);
+      }
+
+      if (user.role !== 'client') {
+        return createErrorResponse('Client access required', HTTP_STATUS.FORBIDDEN);
+      }
+
+      const payload = await request.json();
+      const validation = validateRequestBody(clientOnboardingProgressSchema, payload, {
+        sanitize: true,
+        maxSize: 12 * 1024,
+      });
+
+      if (!validation.success) {
+        return createErrorResponse(validation.error, HTTP_STATUS.BAD_REQUEST);
+      }
+
+      const data = validation.data;
+      const admin = createAdminClient();
+
+      const existingData = (user.onboardingData as Record<string, unknown> | undefined) ?? {};
+      const existingClient = (existingData.client as Record<string, unknown> | undefined) ?? {};
+
+      // Merge with existing data - only update fields that are provided
+      const updatedClientData: Record<string, unknown> = { ...existingClient };
+
+      if (data.goals !== undefined) updatedClientData.goals = data.goals;
+      if (data.focusAreas !== undefined) updatedClientData.focusAreas = data.focusAreas;
+      if (data.supportPreferences !== undefined) updatedClientData.supportPreferences = data.supportPreferences;
+      if (data.preferredCommunication !== undefined) updatedClientData.preferredCommunication = data.preferredCommunication;
+      if (data.sessionFrequency !== undefined) updatedClientData.sessionFrequency = data.sessionFrequency;
+      if (data.timezone !== undefined) updatedClientData.timezone = data.timezone;
+      if (data.notes !== undefined) updatedClientData.notes = data.notes;
+
+      const updatedOnboardingData = {
+        ...existingData,
+        client: updatedClientData,
+      };
+
+      const userUpdates: Record<string, unknown> = {
+        onboarding_data: updatedOnboardingData,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (data.step !== undefined) {
+        userUpdates.onboarding_step = data.step;
+        userUpdates.onboarding_status = 'in_progress';
+      }
+
+      if (data.timezone !== undefined) {
+        userUpdates.timezone = data.timezone;
+      }
+
+      const { error: userUpdateError } = await admin
+        .from('users')
+        .update(userUpdates)
+        .eq('id', user.id);
+
+      if (userUpdateError) {
+        return createErrorResponse('Failed to save progress', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      }
+
+      // Track progress
+      if (data.step !== undefined) {
+        await trackOnboardingProgress(user.id, 'progress_saved', {
+          step: data.step,
+          fieldsUpdated: Object.keys(data).length,
+        });
+      }
+
+      return createSuccessResponse(
+        {
+          progress: 'saved',
+          step: data.step,
+        },
+        'Progress saved successfully'
+      );
+    }
+  )
 );
