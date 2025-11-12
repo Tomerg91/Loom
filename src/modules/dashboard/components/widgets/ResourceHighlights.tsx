@@ -76,6 +76,8 @@ export function ResourceHighlights({
     );
   }
 
+  const resourcesBasePath = `/${locale}/coach/resources`;
+
   if (!sortedResources || sortedResources.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -83,7 +85,7 @@ export function ResourceHighlights({
         <p className="text-sm text-muted-foreground">{emptyMessage}</p>
         <Button
           variant="link"
-          onClick={() => router.push('/coach/resources')}
+          onClick={() => router.push(resourcesBasePath)}
           className="mt-2"
         >
           {viewAllLabel}
@@ -101,7 +103,7 @@ export function ResourceHighlights({
           <div
             key={resource.id}
             className="group cursor-pointer space-y-2"
-            onClick={() => router.push(`/coach/resources/${resource.id}`)}
+            onClick={() => router.push(`${resourcesBasePath}/${resource.id}`)}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0 space-y-1">
@@ -148,7 +150,7 @@ export function ResourceHighlights({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => router.push('/coach/resources/analytics')}
+        onClick={() => router.push(`${resourcesBasePath}/analytics`)}
         className="w-full mt-4 gap-2"
       >
         <ExternalLink className="h-4 w-4" aria-hidden="true" />

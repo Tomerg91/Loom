@@ -137,8 +137,8 @@ export function CoachOverview({ locale, coachId, userId }: CoachOverviewProps) {
       label: 'coach_dashboard',
       userId,
     });
-    router.push('/coach/tasks');
-  }, [router, userId]);
+    router.push(`/${locale}/coach/tasks`);
+  }, [locale, router, userId]);
 
   const handleViewAllSessions = useCallback(() => {
     trackEvent({
@@ -147,8 +147,8 @@ export function CoachOverview({ locale, coachId, userId }: CoachOverviewProps) {
       label: 'coach_dashboard',
       userId,
     });
-    router.push('/coach/sessions');
-  }, [router, userId]);
+    router.push(`/${locale}/coach/sessions`);
+  }, [locale, router, userId]);
 
   const summaryCards: SummaryCardConfig[] = useMemo(() => {
     const summary = data?.summary;
