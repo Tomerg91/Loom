@@ -5,19 +5,22 @@ import { useEffect } from 'react';
 
 // Use the app's active AuthProvider hook to avoid context mismatch
 import { useUser } from '@/lib/auth/use-user';
-import { 
-  GA_TRACKING_ID, 
-  POSTHOG_KEY, 
-
+import {
+  GA_TRACKING_ID,
+  POSTHOG_KEY,
   pageView,
   trackPageView,
   posthogIdentify,
-  collectWebVitals 
 } from '@/lib/monitoring/analytics';
+import { collectWebVitals } from '@/lib/performance/web-vitals';
 
 declare global {
   interface Window {
-    gtag?: (command: 'config' | 'event', targetId: string, config?: Record<string, unknown>) => void;
+    gtag?: (
+      command: 'config' | 'event',
+      targetId: string,
+      config?: Record<string, unknown>
+    ) => void;
     dataLayer: unknown[];
     posthog?: {
       init: (key: string, config: Record<string, unknown>) => void;
@@ -40,7 +43,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
       // Check if GA is already initialized to prevent duplicates
       const existingGA = document.querySelector('script[data-analytics="ga"]');
       if (existingGA) return;
-      
+
       const script = document.createElement('script');
       script.async = true;
       script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`;
@@ -71,15 +74,15 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
             script.parentNode.removeChild(script);
           }
         });
-        
+
         // Clear dataLayer to prevent memory accumulation
         if (typeof window !== 'undefined' && window.dataLayer) {
           window.dataLayer.length = 0;
         }
-        
+
         // Remove gtag function
         if (typeof window !== 'undefined' && 'gtag' in window) {
-          delete (window as unknown).gtag;
+          delete window.gtag;
         }
       };
     }
@@ -91,7 +94,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   //     // Check if PostHog is already initialized to prevent duplicates
   //     const existingPostHog = document.querySelector('script[data-analytics="posthog"]');
   //     if (existingPostHog) return;
-      
+
   //     const script = document.createElement('script');
   //     script.setAttribute('data-analytics', 'posthog');
   //     script.innerHTML = `
@@ -116,7 +119,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   //           console.warn('PostHog reset failed:', error);
   //         }
   //       }
-        
+
   //       // Remove PostHog scripts
   //       const posthogScripts = document.querySelectorAll('script[data-analytics="posthog"]');
   //       posthogScripts.forEach(script => {
@@ -124,7 +127,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   //           script.parentNode.removeChild(script);
   //         }
   //       });
-        
+
   //       // Remove additional PostHog scripts that might be loaded dynamically
   //       const dynamicPostHogScripts = document.querySelectorAll('script[src*="posthog"]');
   //       dynamicPostHogScripts.forEach(script => {
@@ -132,7 +135,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   //           script.parentNode.removeChild(script);
   //         }
   //       });
-        
+
   //       // Clean up PostHog instance and related properties
   //       if (typeof window !== 'undefined') {
   //         delete window.posthog;
@@ -148,7 +151,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   // Track page views
   useEffect(() => {
     const url = pathname + searchParams.toString();
-    
+
     // Track with Google Analytics
     if (GA_TRACKING_ID) {
       pageView(url);

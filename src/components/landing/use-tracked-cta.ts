@@ -17,6 +17,7 @@ import type {
  * This ensures the same user sees the same variant across sessions.
  */
 function selectVariant(
+  experimentId: string | undefined,
   variants: CtaExperimentVariant[],
   sessionId: string
 ): CtaExperimentVariant {
@@ -28,10 +29,12 @@ function selectVariant(
     return variants[0];
   }
 
+  const hashInput = experimentId ? `${experimentId}:${sessionId}` : sessionId;
+
   // Simple hash function for deterministic variant selection
   let hash = 0;
-  for (let i = 0; i < sessionId.length; i++) {
-    const char = sessionId.charCodeAt(i);
+  for (let i = 0; i < hashInput.length; i++) {
+    const char = hashInput.charCodeAt(i);
     hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
@@ -121,7 +124,11 @@ export function useTrackedCta({
 
   // Determine the effective label and variant
   const { effectiveLabel, selectedVariant } = useMemo(() => {
-    if (!experiment?.enabled || !experiment.variants || experiment.variants.length === 0) {
+    if (
+      !experiment?.enabled ||
+      !experiment.variants ||
+      experiment.variants.length === 0
+    ) {
       return { effectiveLabel: baseLabel, selectedVariant: null };
     }
 
@@ -131,7 +138,11 @@ export function useTrackedCta({
     }
 
     const sessionId = getSessionId();
-    const variant = selectVariant(experiment.variants, sessionId);
+    const variant = selectVariant(
+      experiment.experimentId,
+      experiment.variants,
+      sessionId
+    );
     return { effectiveLabel: variant.label, selectedVariant: variant };
   }, [experiment, baseLabel, mounted]);
 

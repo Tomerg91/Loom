@@ -38,13 +38,19 @@ export const event = ({ action, category, label, value }: AnalyticsEvent) => {
 };
 
 // PostHog functions
-export const posthogEvent = (name: string, properties?: Record<string, unknown>) => {
+export const posthogEvent = (
+  name: string,
+  properties?: Record<string, unknown>
+) => {
   if (typeof window !== 'undefined' && window.posthog) {
     window.posthog.capture(name, properties);
   }
 };
 
-export const posthogIdentify = (userId: string, properties?: Record<string, unknown>) => {
+export const posthogIdentify = (
+  userId: string,
+  properties?: Record<string, unknown>
+) => {
   if (typeof window !== 'undefined' && window.posthog) {
     window.posthog.identify(userId, properties);
   }
@@ -114,7 +120,11 @@ export const trackError = (error: string, page: string, userId?: string) => {
 };
 
 // Performance tracking
-export const trackPerformance = (metric: string, value: number, page: string) => {
+export const trackPerformance = (
+  metric: string,
+  value: number,
+  page: string
+) => {
   trackEvent({
     action: 'performance',
     category: 'metrics',
@@ -125,7 +135,12 @@ export const trackPerformance = (metric: string, value: number, page: string) =>
 };
 
 // Web Vitals tracking
-export const trackWebVitals = (metric: { name: string; value: number; rating: string; delta: number }) => {
+export const trackWebVitals = (metric: {
+  name: string;
+  value: number;
+  rating: string;
+  delta: number;
+}) => {
   trackEvent({
     action: 'web_vitals',
     category: 'performance',
@@ -188,6 +203,3 @@ export const trackExperimentView = (
     },
   });
 };
-
-// Export collectWebVitals function
-export { collectWebVitals } from '@/lib/performance/web-vitals';
