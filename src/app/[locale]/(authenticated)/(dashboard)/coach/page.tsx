@@ -49,7 +49,11 @@ export default async function CoachDashboardPage({
 
   return (
     <HydrationBoundary state={dehydratedState}>
-      <CoachOverview locale={locale} />
+      <CoachOverview
+        locale={locale}
+        coachId={user.id}
+        userId={user.id}
+      />
     </HydrationBoundary>
   );
 }

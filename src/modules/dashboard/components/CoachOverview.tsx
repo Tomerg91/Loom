@@ -1,7 +1,7 @@
 /**
  * @fileoverview Client component rendering the coach dashboard overview. The
  * component orchestrates React Query data, summary metrics, and widget
- * composition.
+ * composition with session scheduling, resource highlights, and analytics.
  */
 
 'use client';
@@ -9,13 +9,18 @@
 import {
   AlertCircle,
   CalendarCheck,
+  CalendarPlus,
   ClipboardList,
+  LibraryBig,
   RefreshCcw,
   Users2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useMemo, type ComponentType } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState, useCallback, type ComponentType } from 'react';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 
+import { AddSessionModal } from '@/components/coach/add-session-modal';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,16 +31,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { trackEvent } from '@/lib/monitoring/analytics';
 import { useCoachOverview } from '@/modules/dashboard/api/useCoachOverview';
 import { ClientProgressOverview } from '@/modules/dashboard/components/widgets/ClientProgress';
 import { SessionsList } from '@/modules/dashboard/components/widgets/SessionsList';
 import { TasksSummary } from '@/modules/dashboard/components/widgets/TasksSummary';
+import { ResourceHighlights } from '@/modules/dashboard/components/widgets/ResourceHighlights';
 import type { TaskPriority, TaskStatus } from '@/modules/tasks/types/task';
 import type { SessionStatus } from '@/types';
+import type { LibraryAnalytics } from '@/types/resources';
 
 interface CoachOverviewProps {
   /** Active locale used for formatting dates and copy. */
   locale: string;
+  /** Coach user ID for tracking and session scheduling */
+  coachId?: string;
+  /** User ID for analytics tracking */
+  userId?: string;
 }
 
 interface SummaryCardConfig {
@@ -58,10 +70,85 @@ function formatTimestamp(value: string, locale: string): string {
   }).format(new Date(value));
 }
 
-export function CoachOverview({ locale }: CoachOverviewProps) {
+export function CoachOverview({ locale, coachId, userId }: CoachOverviewProps) {
   const t = useTranslations('dashboard.coach');
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const { data, error, isLoading, isError, refetch, isRefetching } =
     useCoachOverview();
+
+  // Session scheduling modal state
+  const [sessionModalOpen, setSessionModalOpen] = useState(false);
+
+  // Fetch resource analytics
+  const {
+    data: resourceAnalytics,
+    isLoading: resourcesLoading,
+  } = useQuery({
+    queryKey: ['coach-library-analytics'],
+    queryFn: async () => {
+      const response = await fetch('/api/coach/resources/analytics');
+      if (!response.ok) return null;
+      const result = await response.json();
+      return result.data as LibraryAnalytics | null;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Manual refresh handler with analytics tracking
+  const handleRefresh = useCallback(() => {
+    trackEvent({
+      action: 'refresh_dashboard',
+      category: 'engagement',
+      label: 'coach_overview',
+      userId,
+    });
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ['coach-library-analytics'] });
+  }, [refetch, queryClient, userId]);
+
+  // Session modal handlers
+  const handleOpenSessionModal = useCallback(() => {
+    trackEvent({
+      action: 'open_session_modal',
+      category: 'engagement',
+      label: 'coach_dashboard',
+      userId,
+    });
+    setSessionModalOpen(true);
+  }, [userId]);
+
+  const handleSessionCreated = useCallback(() => {
+    trackEvent({
+      action: 'session_created',
+      category: 'engagement',
+      label: 'coach_dashboard',
+      userId,
+    });
+    queryClient.invalidateQueries({ queryKey: ['dashboard', 'coach-overview'] });
+  }, [queryClient, userId]);
+
+  // Navigation handlers with analytics
+  const handleViewAllTasks = useCallback(() => {
+    trackEvent({
+      action: 'view_all_tasks',
+      category: 'engagement',
+      label: 'coach_dashboard',
+      userId,
+    });
+    router.push('/coach/tasks');
+  }, [router, userId]);
+
+  const handleViewAllSessions = useCallback(() => {
+    trackEvent({
+      action: 'view_all_sessions',
+      category: 'engagement',
+      label: 'coach_dashboard',
+      userId,
+    });
+    router.push('/coach/sessions');
+  }, [router, userId]);
 
   const summaryCards: SummaryCardConfig[] = useMemo(() => {
     const summary = data?.summary;
@@ -185,7 +272,16 @@ export function CoachOverview({ locale }: CoachOverviewProps) {
           ) : null}
           <Button
             type="button"
-            onClick={() => refetch()}
+            onClick={handleOpenSessionModal}
+            variant="default"
+            className="inline-flex items-center gap-2"
+          >
+            <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+            {t('actions.scheduleSession')}
+          </Button>
+          <Button
+            type="button"
+            onClick={handleRefresh}
             disabled={isRefetching}
             variant="secondary"
             className="inline-flex items-center gap-2"
@@ -246,13 +342,25 @@ export function CoachOverview({ locale }: CoachOverviewProps) {
         </Alert>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>{t('sections.upcomingSessions.title')}</CardTitle>
-            <CardDescription>
-              {t('sections.upcomingSessions.description')}
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>{t('sections.upcomingSessions.title')}</CardTitle>
+                <CardDescription>
+                  {t('sections.upcomingSessions.description')}
+                </CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleViewAllSessions}
+                className="shrink-0"
+              >
+                {t('actions.viewAll')}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <SessionsList
@@ -269,8 +377,20 @@ export function CoachOverview({ locale }: CoachOverviewProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('sections.tasks.title')}</CardTitle>
-            <CardDescription>{t('sections.tasks.description')}</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>{t('sections.tasks.title')}</CardTitle>
+                <CardDescription>{t('sections.tasks.description')}</CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleViewAllTasks}
+                className="shrink-0"
+              >
+                {t('actions.viewAll')}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <TasksSummary
@@ -286,24 +406,57 @@ export function CoachOverview({ locale }: CoachOverviewProps) {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('sections.clientProgress.title')}</CardTitle>
-          <CardDescription>
-            {t('sections.clientProgress.description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ClientProgressOverview
-            clients={data?.clientProgress ?? []}
-            isLoading={isLoading}
-            emptyMessage={t('sections.clientProgress.empty')}
-            completionLabel={completionLabel}
-            activeTasksLabel={activeTasksLabel}
-            lastSessionLabel={lastSessionLabel}
-          />
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('sections.clientProgress.title')}</CardTitle>
+            <CardDescription>
+              {t('sections.clientProgress.description')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ClientProgressOverview
+              clients={data?.clientProgress ?? []}
+              isLoading={isLoading}
+              emptyMessage={t('sections.clientProgress.empty')}
+              completionLabel={completionLabel}
+              activeTasksLabel={activeTasksLabel}
+              lastSessionLabel={lastSessionLabel}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <LibraryBig className="h-5 w-5 text-teal-600" aria-hidden="true" />
+              <div>
+                <CardTitle>{t('sections.resources.title')}</CardTitle>
+                <CardDescription>
+                  {t('sections.resources.description')}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ResourceHighlights
+              resources={resourceAnalytics?.topResources ?? []}
+              locale={locale}
+              isLoading={resourcesLoading}
+              emptyMessage={t('sections.resources.empty')}
+              viewAllLabel={t('actions.viewAllAnalytics')}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Session Scheduling Modal */}
+      <AddSessionModal
+        open={sessionModalOpen}
+        onOpenChange={setSessionModalOpen}
+        coachId={coachId}
+        onSuccess={handleSessionCreated}
+      />
     </div>
   );
 }

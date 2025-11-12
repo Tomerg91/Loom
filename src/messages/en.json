@@ -673,7 +673,10 @@
       "lastUpdated": "Last updated {timestamp}",
       "actions": {
         "refresh": "Refresh data",
-        "refreshing": "Refreshing…"
+        "refreshing": "Refreshing…",
+        "scheduleSession": "Schedule Session",
+        "viewAll": "View All",
+        "viewAllAnalytics": "View Full Analytics"
       },
       "summary": {
         "clients": {
@@ -736,6 +739,11 @@
           "activeTasks": "{count, plural, one {# active task} other {# active tasks}}",
           "noSession": "No recent session recorded",
           "lastSession": "Last session {timestamp}"
+        },
+        "resources": {
+          "title": "Top resources",
+          "description": "Your most viewed coaching resources.",
+          "empty": "Upload resources to see engagement analytics here."
         }
       },
       "errors": {
