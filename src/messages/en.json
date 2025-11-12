@@ -620,6 +620,14 @@
           "description": "Track how you're progressing on your goals.",
           "empty": "Create your first goal to see progress here.",
           "target": "Target"
+        },
+        "messages": {
+          "title": "Recent messages",
+          "description": "Stay connected with your coach.",
+          "empty": "No messages yet. Start a conversation with your coach!",
+          "viewAll": "View all messages",
+          "unread": "Unread",
+          "group": "Group"
         }
       },
       "errors": {

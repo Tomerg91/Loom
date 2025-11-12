@@ -28,6 +28,7 @@ import {
 import { useClientOverview } from '@/modules/dashboard/api/useClientOverview';
 import { GoalsProgress } from '@/modules/dashboard/components/widgets/GoalsProgress';
 import { MyTasks } from '@/modules/dashboard/components/widgets/MyTasks';
+import { RecentMessages } from '@/modules/dashboard/components/widgets/RecentMessages';
 import { UpcomingSessions } from '@/modules/dashboard/components/widgets/UpcomingSessions';
 import type {
   ClientGoalPriority,
@@ -246,8 +247,8 @@ export function ClientOverview({ locale }: ClientOverviewProps) {
         </Alert>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>{t('sections.upcomingSessions.title')}</CardTitle>
             <CardDescription>
@@ -283,6 +284,26 @@ export function ClientOverview({ locale }: ClientOverviewProps) {
               emptyMessage={t('sections.tasks.empty')}
               dueLabel={t('sections.tasks.due')}
               assignedLabel={t('sections.tasks.assignedBy')}
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>{t('sections.messages.title')}</CardTitle>
+            <CardDescription>
+              {t('sections.messages.description')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RecentMessages
+              messages={data?.messages ?? []}
+              locale={locale}
+              isLoading={isLoading}
+              emptyMessage={t('sections.messages.empty')}
+              viewAllLabel={t('sections.messages.viewAll')}
+              unreadLabel={t('sections.messages.unread')}
+              groupLabel={t('sections.messages.group')}
             />
           </CardContent>
         </Card>

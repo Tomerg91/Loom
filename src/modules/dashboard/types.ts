@@ -125,12 +125,25 @@ export interface ClientGoalProgress {
   targetDate: string | null;
 }
 
+/** Snapshot of a recent message from a conversation. */
+export interface ClientRecentMessage {
+  id: string;
+  conversationId: string;
+  content: string;
+  senderName: string;
+  senderAvatar: string | null;
+  sentAt: string;
+  unreadCount: number;
+  isGroup: boolean;
+}
+
 /** Primary payload returned by the client overview server loader. */
 export interface ClientOverviewData {
   summary: ClientOverviewSummary;
   upcomingSessions: ClientOverviewSession[];
   tasks: ClientOverviewTask[];
   goals: ClientGoalProgress[];
+  messages: ClientRecentMessage[];
   /** ISO timestamp denoting when the snapshot was generated. */
   generatedAt: string;
 }
