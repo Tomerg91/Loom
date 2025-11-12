@@ -32,18 +32,54 @@ export const initSentry = () => {
 };
 
 // Error tracking utilities
-export const captureError = (error: Error, context?: Record<string, unknown>) => {
+export const captureError = (
+  error: Error,
+  options?: {
+    level?: Sentry.SeverityLevel;
+    tags?: Record<string, string>;
+    extra?: Record<string, unknown>;
+    [key: string]: unknown;
+  }
+) => {
   if (SENTRY_DSN) {
     Sentry.withScope((scope) => {
-      if (context) {
-        Object.keys(context).forEach((key) => {
-          scope.setContext(key, context[key] as Sentry.Context);
+      // Set level if provided
+      if (options?.level) {
+        scope.setLevel(options.level);
+      }
+
+      // Set tags if provided
+      if (options?.tags) {
+        Object.entries(options.tags).forEach(([key, value]) => {
+          scope.setTag(key, value);
         });
       }
+
+      // Set extra context if provided
+      if (options?.extra) {
+        Object.entries(options.extra).forEach(([key, value]) => {
+          scope.setExtra(key, value);
+        });
+      }
+
+      // Set any remaining context
+      const contextKeys = Object.keys(options || {}).filter(
+        key => !['level', 'tags', 'extra'].includes(key)
+      );
+      if (contextKeys.length > 0) {
+        const context: Record<string, unknown> = {};
+        contextKeys.forEach(key => {
+          if (options?.[key] !== undefined) {
+            context[key] = options[key];
+          }
+        });
+        scope.setContext('additional', context);
+      }
+
       Sentry.captureException(error);
     });
   }
-  console.error('Error captured:', error, context);
+  console.error('Error captured:', error, options);
 };
 
 export const captureMessage = (message: string, level: Sentry.SeverityLevel = 'info') => {
@@ -120,7 +156,7 @@ export const trackBusinessMetric = (metricName: string, value: number, tags?: Re
           timestamp: Date.now(),
         });
       }
-      
+
       // Also add as breadcrumb for context
       addBreadcrumb({
         category: 'business_metric',
@@ -130,6 +166,45 @@ export const trackBusinessMetric = (metricName: string, value: number, tags?: Re
       });
     } catch (error) {
       console.warn('Failed to track business metric:', error);
+    }
+  }
+};
+
+// Metrics tracking with enhanced interface for auth/security events
+// Works in both client and server contexts
+export const captureMetric = (
+  metricName: string,
+  value: number,
+  options?: {
+    tags?: Record<string, string>;
+    level?: Sentry.SeverityLevel;
+    extra?: Record<string, unknown>;
+  }
+) => {
+  const { tags, level, extra } = options || {};
+
+  if (SENTRY_DSN) {
+    try {
+      // Try to use Sentry metrics API if available
+      if ('metrics' in Sentry && Sentry.metrics) {
+        Sentry.metrics.gauge(metricName, value, {
+          tags,
+          timestamp: Date.now(),
+        });
+      }
+
+      // Add as breadcrumb for context (works in both client and server)
+      Sentry.addBreadcrumb({
+        category: 'metric',
+        message: `${metricName}: ${value}`,
+        level: level || 'info',
+        data: { metric: metricName, value, tags, ...extra },
+      });
+    } catch (error) {
+      // Silently fail in case Sentry is not fully initialized
+      if (NODE_ENV === 'development') {
+        console.warn('Failed to capture metric:', error);
+      }
     }
   }
 };
