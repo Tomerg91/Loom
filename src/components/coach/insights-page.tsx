@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
-
   TrendingUp,
   TrendingDown,
   Users,
@@ -19,7 +18,6 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { SessionMetricsChart, RevenueChart } from '@/components/charts/chart-components';
-import { apiGet } from '@/lib/api/client-api-request';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

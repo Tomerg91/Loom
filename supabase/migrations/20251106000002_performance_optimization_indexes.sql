@@ -88,6 +88,16 @@ CREATE INDEX IF NOT EXISTS idx_file_uploads_shared
   ON file_uploads(is_shared, created_at DESC)
   WHERE is_shared = TRUE;
 
+-- Coach's library resources with category filter
+CREATE INDEX IF NOT EXISTS idx_file_uploads_coach_library_category
+  ON file_uploads(user_id, category, created_at DESC)
+  WHERE is_library_resource = TRUE;
+
+-- Shared resources for all clients
+CREATE INDEX IF NOT EXISTS idx_file_uploads_shared_with_all
+  ON file_uploads(shared_with_all_clients, is_library_resource, created_at DESC)
+  WHERE is_library_resource = TRUE;
+
 -- Session files by session and user
 CREATE INDEX IF NOT EXISTS idx_file_uploads_session_user
   ON file_uploads(session_id, user_id, created_at DESC)
@@ -96,6 +106,11 @@ CREATE INDEX IF NOT EXISTS idx_file_uploads_session_user
 -- Most downloaded resources
 CREATE INDEX IF NOT EXISTS idx_file_uploads_downloads
   ON file_uploads(download_count DESC, created_at DESC);
+
+-- Most viewed/completed resources
+CREATE INDEX IF NOT EXISTS idx_file_uploads_engagement
+  ON file_uploads(view_count DESC, completion_count DESC)
+  WHERE is_library_resource = TRUE;
 
 -- ============================================================================
 -- 5. COACH-CLIENT RELATIONSHIP INDEXES
@@ -178,6 +193,10 @@ BEGIN
     CREATE INDEX IF NOT EXISTS idx_practice_journal_shared_coach
       ON practice_journal_entries(client_id, shared_with_coach, created_at DESC)
       WHERE shared_with_coach = TRUE;
+
+    -- Shared journal entries
+    CREATE INDEX IF NOT EXISTS idx_practice_journal_client_shared
+      ON practice_journal_entries(client_id, is_shared, created_at DESC);
   END IF;
 END
 $$;
@@ -217,6 +236,15 @@ BEGIN
     -- Coach's tasks ordered by status and creation
     CREATE INDEX IF NOT EXISTS idx_tasks_coach_status
       ON tasks(coach_id, status, created_at DESC);
+
+    -- Task assignments (alternative schema)
+    CREATE INDEX IF NOT EXISTS idx_tasks_assignee_due
+      ON tasks(assignee_id, due_at, status)
+      WHERE status != 'completed';
+
+    -- Coach's assigned tasks (alternative schema)
+    CREATE INDEX IF NOT EXISTS idx_tasks_assigner_status
+      ON tasks(assigner_id, status, created_at DESC);
   END IF;
 END
 $$;
