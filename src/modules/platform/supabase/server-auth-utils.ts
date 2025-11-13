@@ -243,7 +243,7 @@ export async function retryWithBackoff<T>(
           captureMetric('auth.retry.success', 1, {
             tags: {
               operation: operationName,
-              attempts: attempt + 1
+              attempts: String(attempt + 1)
             }
           });
         }
@@ -264,7 +264,7 @@ export async function retryWithBackoff<T>(
           captureMetric('auth.operation.failure', 1, {
             tags: {
               operation: operationName,
-              attempts: attempt + 1,
+              attempts: String(attempt + 1),
               error_type: error instanceof Error ? error.name : 'unknown'
             }
           });
@@ -273,7 +273,7 @@ export async function retryWithBackoff<T>(
             level: 'error',
             tags: {
               operation: operationName,
-              attempts: attempt + 1,
+              attempts: String(attempt + 1),
               retry_exhausted: 'true'
             },
             extra: {
@@ -296,8 +296,8 @@ export async function retryWithBackoff<T>(
         captureMetric('auth.retry.attempt', 1, {
           tags: {
             operation: operationName,
-            attempt: attempt + 1,
-            delay_ms: delay
+            attempt: String(attempt + 1),
+            delay_ms: String(delay)
           }
         });
 

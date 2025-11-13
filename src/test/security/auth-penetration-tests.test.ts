@@ -26,6 +26,14 @@ vi.mock('@/lib/monitoring/sentry', () => ({
   captureMetric: vi.fn(),
 }));
 
+const createMockResponse = (status: number, body: unknown = {}): Response => ({
+  status,
+  ok: status >= 200 && status < 300,
+  json: async () => body,
+  text: async () => JSON.stringify(body),
+  headers: {} as Headers,
+}) as Response;
+
 describe('Authentication Penetration Tests', () => {
   describe('Session Refresh Security', () => {
     it('should retry session refresh with exponential backoff on network failures', async () => {
@@ -322,9 +330,26 @@ describe('Authentication Penetration Tests', () => {
   });
 
   describe('Rate Limiting Protection', () => {
+    let originalFetch: typeof fetch | undefined;
+
+    beforeEach(() => {
+      originalFetch = globalThis.fetch;
+    });
+
+    afterEach(() => {
+      if (originalFetch) {
+        globalThis.fetch = originalFetch;
+      } else {
+        delete (globalThis as { fetch?: typeof fetch }).fetch;
+      }
+    });
+
     it('should enforce rate limits on authentication attempts', async () => {
       // Test rate limiting by making rapid requests
       const requests = [];
+      const fetchMock = vi.fn(async () => createMockResponse(429));
+
+      (globalThis as { fetch: typeof fetch }).fetch = fetchMock as unknown as typeof fetch;
 
       for (let i = 0; i < 10; i++) {
         const promise = fetch('/api/auth/signin', {
@@ -343,13 +368,36 @@ describe('Authentication Penetration Tests', () => {
 
       // Should have at least some rate-limited responses
       expect(tooManyRequests.length).toBeGreaterThan(0);
+      expect(fetchMock).toHaveBeenCalledTimes(10);
     });
   });
 
   describe('MFA Bypass Attempt Detection', () => {
+    let originalFetch: typeof fetch | undefined;
+
+    beforeEach(() => {
+      originalFetch = globalThis.fetch;
+    });
+
+    afterEach(() => {
+      if (originalFetch) {
+        globalThis.fetch = originalFetch;
+      } else {
+        delete (globalThis as { fetch?: typeof fetch }).fetch;
+      }
+    });
+
     it('should detect rapid MFA verification attempts', async () => {
       // Simulate rapid-fire MFA code attempts
       const attempts = [];
+      let callCount = 0;
+      const fetchMock = vi.fn(async () => {
+        callCount++;
+        const status = callCount <= 5 ? 200 : 429;
+        return createMockResponse(status);
+      });
+
+      (globalThis as { fetch: typeof fetch }).fetch = fetchMock as unknown as typeof fetch;
 
       for (let i = 0; i < 10; i++) {
         attempts.push(
@@ -369,6 +417,7 @@ describe('Authentication Penetration Tests', () => {
       // Should encounter rate limiting or blocking
       const blocked = responses.filter(r => r.status === 429 || r.status === 403);
       expect(blocked.length).toBeGreaterThan(0);
+      expect(fetchMock).toHaveBeenCalledTimes(10);
     });
 
     it('should block MFA verification after max attempts', async () => {
@@ -455,14 +504,32 @@ describe('Authentication Penetration Tests', () => {
 });
 
 describe('MFA Security Penetration Tests', () => {
+  let originalFetch: typeof fetch | undefined;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+  });
+
+  afterEach(() => {
+    if (originalFetch) {
+      globalThis.fetch = originalFetch;
+    } else {
+      delete (globalThis as { fetch?: typeof fetch }).fetch;
+    }
+  });
+
   describe('MFA Setup Security', () => {
     it('should prevent MFA setup without valid session', async () => {
+      const fetchMock = vi.fn(async () => createMockResponse(401));
+      (globalThis as { fetch: typeof fetch }).fetch = fetchMock as unknown as typeof fetch;
+
       const response = await fetch('/api/auth/mfa/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
 
       expect(response.status).toBe(401);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it('should validate MFA secret encryption', async () => {
@@ -474,6 +541,11 @@ describe('MFA Security Penetration Tests', () => {
 
   describe('MFA Verification Security', () => {
     it('should reject invalid TOTP codes', async () => {
+      const fetchMock = vi.fn(async () =>
+        createMockResponse(400, { error: 'invalid_totp_code' })
+      );
+      (globalThis as { fetch: typeof fetch }).fetch = fetchMock as unknown as typeof fetch;
+
       const response = await fetch('/api/auth/signin-mfa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -485,6 +557,7 @@ describe('MFA Security Penetration Tests', () => {
 
       const data = await response.json();
       expect(data.error).toBeDefined();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it('should prevent replay attacks with used codes', async () => {
