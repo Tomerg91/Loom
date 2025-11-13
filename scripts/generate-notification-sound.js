@@ -1,0 +1,392 @@
+#!/usr/bin/env node
+
+/**
+ * Generate Notification Sound
+ *
+ * This script generates a simple notification sound using the Web Audio API approach.
+ * Since we can't generate actual audio files in Node.js without additional dependencies,
+ * this script provides instructions and code snippets for generating sounds.
+ *
+ * Usage:
+ *   node scripts/generate-notification-sound.js
+ *
+ * For actual audio file generation, use one of these methods:
+ * 1. sox command-line tool (recommended for Linux/Mac)
+ * 2. Audacity (recommended for Windows)
+ * 3. Web Audio API in browser console
+ * 4. Download from free sound libraries
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const soundsDir = path.join(__dirname, '../public/sounds');
+
+console.log('🔊 Notification Sound Generator\n');
+console.log('This script provides methods to generate notification sounds for your application.\n');
+
+// Check if sounds directory exists
+if (!fs.existsSync(soundsDir)) {
+  console.log('📁 Creating sounds directory...');
+  fs.mkdirSync(soundsDir, { recursive: true });
+  console.log('✅ Sounds directory created\n');
+}
+
+console.log('📝 Generating instructions and code snippets...\n');
+
+// Generate HTML file for browser-based generation
+const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notification Sound Generator</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .description {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    label {
+      font-weight: 500;
+      color: #555;
+      font-size: 14px;
+    }
+    input, select {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 500;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #007bff;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #0056b3;
+    }
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background: #545b62;
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .info-box {
+      background: #e7f3ff;
+      border-left: 4px solid #007bff;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 4px;
+    }
+    .info-box h3 {
+      margin-top: 0;
+      color: #0056b3;
+    }
+    .code-block {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔊 Notification Sound Generator</h1>
+    <p class="description">
+      Generate and test notification sounds for your application. Adjust the parameters below
+      and click "Play Sound" to preview. When satisfied, use the download button to save the sound.
+    </p>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="waveform">Waveform</label>
+        <select id="waveform">
+          <option value="sine">Sine (Smooth)</option>
+          <option value="triangle">Triangle (Warm)</option>
+          <option value="square">Square (Sharp)</option>
+          <option value="sawtooth">Sawtooth (Bright)</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="frequency">Frequency (Hz)</label>
+        <input type="range" id="frequency" min="200" max="2000" value="800" step="10">
+        <span id="frequency-value">800 Hz</span>
+      </div>
+
+      <div class="control-group">
+        <label for="duration">Duration (seconds)</label>
+        <input type="range" id="duration" min="0.1" max="2" value="0.3" step="0.1">
+        <span id="duration-value">0.3 s</span>
+      </div>
+
+      <div class="control-group">
+        <label for="volume">Volume</label>
+        <input type="range" id="volume" min="0" max="1" value="0.3" step="0.05">
+        <span id="volume-value">30%</span>
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button class="btn-primary" onclick="playSound()">▶️ Play Sound</button>
+      <button class="btn-secondary" onclick="stopSound()">⏹️ Stop</button>
+    </div>
+
+    <div class="info-box">
+      <h3>📝 Instructions</h3>
+      <p>Since browsers cannot directly save audio files, here's how to capture your sound:</p>
+      <ol>
+        <li>Adjust the parameters above to create your desired sound</li>
+        <li>Use audio recording software to capture the sound:
+          <ul>
+            <li><strong>Windows:</strong> Use built-in Voice Recorder or Audacity</li>
+            <li><strong>Mac:</strong> Use QuickTime Player's audio recording</li>
+            <li><strong>Linux:</strong> Use Audacity or command-line tools</li>
+          </ul>
+        </li>
+        <li>Play the sound using the button above while recording</li>
+        <li>Save the recording as MP3 and WAV formats</li>
+        <li>Place files in <code>/public/sounds/</code> directory</li>
+      </ol>
+    </div>
+
+    <div class="info-box" style="background: #fff3cd; border-left-color: #ffc107;">
+      <h3>⚡ Quick Alternative: Use Command Line</h3>
+      <p>If you have <code>sox</code> installed, generate sounds directly:</p>
+      <div class="code-block">
+# Install sox (if not already installed)<br>
+# macOS: brew install sox<br>
+# Ubuntu/Debian: sudo apt-get install sox libsox-fmt-mp3<br>
+<br>
+# Generate notification sound<br>
+sox -n notification.wav synth 0.3 sine 800 fade 0 0.3 0.1<br>
+<br>
+# Convert to MP3 (requires lame)<br>
+sox notification.wav notification.mp3
+      </div>
+    </div>
+
+    <div class="info-box" style="background: #d4edda; border-left-color: #28a745;">
+      <h3>🎵 Recommended Free Sound Sources</h3>
+      <ul>
+        <li><a href="https://freesound.org/" target="_blank">Freesound.org</a> - Large library of CC-licensed sounds</li>
+        <li><a href="https://notificationsounds.com/" target="_blank">NotificationSounds.com</a> - Free notification sounds</li>
+        <li><a href="https://www.zapsplat.com/" target="_blank">Zapsplat</a> - Free sound effects</li>
+        <li><a href="https://mixkit.co/free-sound-effects/" target="_blank">Mixkit</a> - Free sound effects</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    let audioContext = null;
+    let oscillator = null;
+    let gainNode = null;
+
+    // Update value displays
+    document.getElementById('frequency').addEventListener('input', (e) => {
+      document.getElementById('frequency-value').textContent = e.target.value + ' Hz';
+    });
+    document.getElementById('duration').addEventListener('input', (e) => {
+      document.getElementById('duration-value').textContent = e.target.value + ' s';
+    });
+    document.getElementById('volume').addEventListener('input', (e) => {
+      document.getElementById('volume-value').textContent = Math.round(e.target.value * 100) + '%';
+    });
+
+    function playSound() {
+      stopSound(); // Stop any existing sound
+
+      const waveform = document.getElementById('waveform').value;
+      const frequency = parseFloat(document.getElementById('frequency').value);
+      const duration = parseFloat(document.getElementById('duration').value);
+      const volume = parseFloat(document.getElementById('volume').value);
+
+      // Create audio context
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Create oscillator
+      oscillator = audioContext.createOscillator();
+      gainNode = audioContext.createGain();
+
+      // Configure oscillator
+      oscillator.type = waveform;
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+      // Configure gain (volume) with fade out
+      gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+      // Connect nodes
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      // Play
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + duration);
+
+      // Cleanup
+      oscillator.onended = () => {
+        oscillator = null;
+        gainNode = null;
+      };
+    }
+
+    function stopSound() {
+      if (oscillator) {
+        oscillator.stop();
+        oscillator = null;
+      }
+      if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+      }
+    }
+  </script>
+</body>
+</html>`;
+
+const htmlPath = path.join(soundsDir, 'generator.html');
+fs.writeFileSync(htmlPath, htmlContent);
+
+console.log('✅ Created browser-based sound generator');
+console.log(`   Open: ${htmlPath}\n`);
+
+// Create shell script for sox
+const soxScript = `#!/bin/bash
+
+# Notification Sound Generator using SOX
+# This script generates notification sounds in multiple formats
+
+echo "🔊 Generating notification sounds..."
+
+# Check if sox is installed
+if ! command -v sox &> /dev/null; then
+    echo "❌ Error: sox is not installed"
+    echo ""
+    echo "Install sox:"
+    echo "  macOS:   brew install sox"
+    echo "  Ubuntu:  sudo apt-get install sox libsox-fmt-all"
+    echo "  Fedora:  sudo dnf install sox"
+    exit 1
+fi
+
+# Create sounds directory
+mkdir -p "$(dirname "$0")/../public/sounds"
+cd "$(dirname "$0")/../public/sounds"
+
+# Generate WAV file (source)
+echo "📝 Generating WAV..."
+sox -n notification.wav synth 0.3 sine 800 fade 0 0.3 0.1
+echo "✅ notification.wav created"
+
+# Convert to MP3 (requires lame)
+if command -v lame &> /dev/null || sox --help 2>&1 | grep -q mp3; then
+    echo "📝 Generating MP3..."
+    sox notification.wav notification.mp3
+    echo "✅ notification.mp3 created"
+else
+    echo "⚠️  Skipping MP3 (lame not installed)"
+fi
+
+# Convert to OGG (requires vorbis-tools)
+if sox --help 2>&1 | grep -q ogg; then
+    echo "📝 Generating OGG..."
+    sox notification.wav notification.ogg
+    echo "✅ notification.ogg created"
+else
+    echo "⚠️  Skipping OGG (vorbis-tools not installed)"
+fi
+
+echo ""
+echo "✨ Done! Notification sounds generated in public/sounds/"
+echo ""
+echo "Generated files:"
+ls -lh notification.*
+
+echo ""
+echo "🎧 Test the sounds:"
+echo "  play notification.wav"
+`;
+
+const scriptPath = path.join(__dirname, 'generate-sounds.sh');
+fs.writeFileSync(scriptPath, soxScript);
+fs.chmodSync(scriptPath, '755');
+
+console.log('✅ Created shell script for sox-based generation');
+console.log(`   Run: ${scriptPath}\n`);
+
+// Summary
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+console.log('📋 Summary\n');
+console.log('Three methods available for generating notification sounds:\n');
+console.log('1. 🌐 Browser Generator (easiest)');
+console.log(`   Open: file://${htmlPath}`);
+console.log('   - Adjust parameters visually');
+console.log('   - Preview sounds instantly');
+console.log('   - Record using system audio recorder\n');
+
+console.log('2. 🔧 Command Line (recommended)');
+console.log(`   Run: ${scriptPath}`);
+console.log('   - Requires sox installation');
+console.log('   - Generates all formats automatically');
+console.log('   - Consistent, reproducible results\n');
+
+console.log('3. 📥 Download Free Sounds');
+console.log('   - Freesound.org (CC-licensed)');
+console.log('   - NotificationSounds.com');
+console.log('   - Zapsplat.com');
+console.log('   - Mixkit.co\n');
+
+console.log('📁 Place generated files in:');
+console.log(`   ${soundsDir}/`);
+console.log('   - notification.mp3 (required)');
+console.log('   - notification.wav (required)');
+console.log('   - notification.ogg (optional)');
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
