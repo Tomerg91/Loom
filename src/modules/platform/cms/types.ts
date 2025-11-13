@@ -154,10 +154,22 @@ export const LandingCtaSchema = z.object({
 });
 
 /**
+ * Schema for page metadata (SEO and social sharing).
+ */
+export const LandingMetadataSchema = z.object({
+  title: z.string().min(1, 'Page title is required'),
+  description: z.string().min(1, 'Page description is required'),
+  openGraphTitle: z.string().min(1).optional(),
+  openGraphDescription: z.string().min(1).optional(),
+  keywords: z.array(z.string()).optional(),
+});
+
+/**
  * Main schema exported by the CMS client.
  */
 export const LandingContentSchema = z.object({
   locale: z.enum(['en', 'he']),
+  metadata: LandingMetadataSchema,
   navigation: LandingNavigationSchema,
   hero: LandingHeroSchema,
   socialProof: LandingSocialProofSchema,
@@ -172,6 +184,7 @@ export type CtaExperiment = z.infer<typeof CtaExperimentSchema>;
 export type LandingNavigationLink = z.infer<typeof LandingNavigationLinkSchema>;
 export type LandingAction = z.infer<typeof LandingActionSchema>;
 export type LandingNavigation = z.infer<typeof LandingNavigationSchema>;
+export type LandingMetadata = z.infer<typeof LandingMetadataSchema>;
 export type LandingHero = z.infer<typeof LandingHeroSchema>;
 export type LandingSocialProof = z.infer<typeof LandingSocialProofSchema>;
 export type LandingFeatures = z.infer<typeof LandingFeaturesSchema>;

@@ -23,7 +23,7 @@ export function FinalCtaSection({ cta, locale }: FinalCtaSectionProps) {
   });
 
   return (
-    <section id="cta" className="relative isolate overflow-hidden py-20">
+    <section id="cta" className="relative isolate overflow-hidden py-20" aria-labelledby="cta-heading">
       <div
         className="absolute inset-0 -z-10 bg-gradient-to-r from-purple-600 via-purple-500 to-violet-600 opacity-90"
         aria-hidden="true"
@@ -33,7 +33,7 @@ export function FinalCtaSection({ cta, locale }: FinalCtaSectionProps) {
         aria-hidden="true"
       />
       <div className="mx-auto max-w-4xl px-4 text-center text-white sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        <h2 id="cta-heading" className="text-3xl font-bold tracking-tight sm:text-4xl">
           {cta.title}
         </h2>
         <p className="mt-4 text-lg leading-relaxed text-purple-100">

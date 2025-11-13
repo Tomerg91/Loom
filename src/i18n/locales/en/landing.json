@@ -1,5 +1,12 @@
 {
   "locale": "en",
+  "metadata": {
+    "title": "Loom – Coaching Platform for Satya Method Practitioners",
+    "description": "A modern coaching platform built for Satya Method coaches and clients. Manage sessions, track progress, and grow your practice with one integrated workspace.",
+    "openGraphTitle": "Loom – The Satya Method Operating System",
+    "openGraphDescription": "Unify client records, scheduling, payments, and progress tracking. Focus on transformation, not admin work.",
+    "keywords": ["coaching platform", "satya method", "client management", "session tracking", "coaching software"]
+  },
   "navigation": {
     "links": [
       { "label": "Platform", "href": "#platform" },

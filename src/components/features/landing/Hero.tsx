@@ -79,6 +79,7 @@ export function LandingHero({
   return (
     <section
       id="hero"
+      aria-labelledby="hero-heading"
       className={cn(
         'relative overflow-hidden bg-gradient-to-b from-white via-purple-50/60 to-white',
         className
@@ -98,7 +99,7 @@ export function LandingHero({
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-purple-500">
             {hero.eyebrow}
           </p>
-          <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+          <h1 id="hero-heading" className="text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
             {hero.title}
           </h1>
           <p className="max-w-2xl text-lg leading-relaxed text-slate-600 sm:text-xl">

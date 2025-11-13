@@ -18,19 +18,16 @@ export const revalidate = 3600;
 
 export async function generateMetadata({ params }: HomePageProps): Promise<Metadata> {
   const { locale } = await params;
-
-  const title = locale === 'he' ? 'לום – פלטפורמת האימון של שיטת סאטיה' : 'Loom – Coaching Platform';
-  const description =
-    locale === 'he'
-      ? 'פלטפורמת אימון מודרנית למאמנים ומטופלים עם כלים לשיטת סאטיה.'
-      : 'A modern coaching platform built for Satya Method coaches and clients.';
+  const content = await getLandingContent(locale);
+  const { metadata } = content;
 
   return {
-    title,
-    description,
+    title: metadata.title,
+    description: metadata.description,
+    keywords: metadata.keywords,
     openGraph: {
-      title,
-      description,
+      title: metadata.openGraphTitle || metadata.title,
+      description: metadata.openGraphDescription || metadata.description,
     },
   };
 }
@@ -47,26 +44,25 @@ interface HomePageProps {
  */
 function renderFeatureGrid(features: LandingFeatures) {
   return (
-    <section id="platform" className="py-20">
+    <section id="platform" className="py-20" aria-labelledby="features-heading">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <span id="solutions" className="sr-only" aria-hidden="true" />
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 id="features-heading" className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             {features.title}
           </h2>
         </div>
-        <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3" role="list">
           {features.items.map(feature => (
-            <div
+            <li
               key={feature.title}
               className="flex h-full flex-col gap-4 rounded-3xl border border-slate-100 bg-gradient-to-b from-white to-purple-50/40 p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-600">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-600" aria-hidden="true">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   className="h-6 w-6"
-                  aria-hidden="true"
                 >
                   <path
                     fill="currentColor"
@@ -82,9 +78,9 @@ function renderFeatureGrid(features: LandingFeatures) {
                   {feature.description}
                 </p>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );
