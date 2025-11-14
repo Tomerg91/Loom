@@ -26,6 +26,7 @@ import { SessionList } from '@/components/sessions/session-list';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CoachDashboardSkeleton } from '@/components/ui/skeletons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiGet } from '@/lib/api/client-api-request';
 import { useUser } from '@/lib/auth/use-user';
@@ -165,13 +166,18 @@ export function CoachDashboard() {
     );
   }, [upcomingSessions]);
 
+  // Show skeleton during initial load
+  if (statsLoading) {
+    return <CoachDashboardSkeleton />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Accessibility: Screen reader announcements */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {statsLoading ? 'Loading coach dashboard statistics...' : 'Coach dashboard loaded successfully'}
+        Coach dashboard loaded successfully
       </div>
-      
+
       {/* Header - Satya Method */}
       <div className="flex items-center justify-between">
         <div>
@@ -218,7 +224,7 @@ export function CoachDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-semibold text-sand-900">
-                  {statsLoading ? '...' : stats?.upcomingSessions || 0}
+                  {stats?.upcomingSessions || 0}
                 </div>
                 <p className="text-xs text-sand-500">
                   {thisWeekSessions.length} {t('stats.thisWeek')}
@@ -235,7 +241,7 @@ export function CoachDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-semibold text-sand-900">
-                  {statsLoading ? '...' : stats?.activeClients || 0}
+                  {stats?.activeClients || 0}
                 </div>
                 <p className="text-xs text-sand-500">
                   {t('stats.of')} {stats?.totalClients || 0} {t('stats.total')}
@@ -252,7 +258,7 @@ export function CoachDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-semibold text-sand-900">
-                  {statsLoading ? '...' : stats?.completedSessions || 0}
+                  {stats?.completedSessions || 0}
                 </div>
                 <p className="text-xs text-sand-500">
                   {t('stats.of')} {stats?.totalSessions || 0} {t('stats.total')}
