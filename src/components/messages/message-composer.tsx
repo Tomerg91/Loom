@@ -15,13 +15,15 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { OptimizedThumbnailImage } from '@/components/ui/optimized-image';
-import { 
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast-provider';
+import { offlineQueue } from '@/lib/messaging/offline-queue';
+import { useNetworkStatus } from '@/lib/messaging/use-offline-queue';
 import { useTypingIndicators } from '@/lib/realtime/hooks';
 
 interface MessageComposerProps {
@@ -74,6 +76,7 @@ export function MessageComposer({
   const queryClient = useQueryClient();
   const toast = useToast();
   const { setTyping } = useTypingIndicators(conversationId);
+  const isOnline = useNetworkStatus();
 
   // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
@@ -100,7 +103,7 @@ export function MessageComposer({
     setTypingTimeout(newTimeout);
   }, [setTyping, typingTimeout]);
 
-  // Send message mutation
+  // Send message mutation with optimistic updates
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData: {
       content: string;
@@ -125,27 +128,90 @@ export function MessageComposer({
 
       return response.json();
     },
+    onMutate: async (messageData) => {
+      // Cancel outgoing refetches to prevent overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['messages', conversationId] });
+
+      // Snapshot the previous value
+      const previousMessages = queryClient.getQueryData(['messages', conversationId]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(['messages', conversationId], (old: any) => {
+        if (!old) return old;
+
+        const optimisticMessage = {
+          id: `temp-${Date.now()}`,
+          conversationId,
+          senderId: queryClient.getQueryData(['user'])?.id || 'unknown',
+          sender: queryClient.getQueryData(['user']) || { firstName: 'You', lastName: '' },
+          content: messageData.content,
+          type: 'text',
+          status: 'sending', // Custom status for optimistic messages
+          isEdited: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          replyToId: messageData.replyToId,
+          attachments: messageData.attachments || [],
+          reactions: [],
+        };
+
+        // Add optimistic message to the first page
+        const newPages = [...old.pages];
+        if (newPages[0]) {
+          newPages[0] = {
+            ...newPages[0],
+            data: [...newPages[0].data, optimisticMessage],
+          };
+        }
+
+        return {
+          ...old,
+          pages: newPages,
+        };
+      });
+
+      // Return context with snapshot value
+      return { previousMessages };
+    },
     onSuccess: () => {
       // Clear composer
       setMessage('');
       setAttachments([]);
       if (onReplyCancel) onReplyCancel();
-      
+
       // Stop typing indicator
       setTyping(false);
-      
+
       // Reset textarea height
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
-      
-      // Invalidate messages query to refetch
+
+      // Invalidate to get the real message from server
       queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, variables, context: any) => {
+      // Rollback to previous state on error
+      if (context?.previousMessages) {
+        queryClient.setQueryData(['messages', conversationId], context.previousMessages);
+      }
+
       console.error('Failed to send message:', error);
-      toast.error('Error', error.message || 'Failed to send message');
+
+      // If offline, add to retry queue
+      if (!navigator.onLine) {
+        offlineQueue.addMessage({
+          id: `queued-${Date.now()}`,
+          conversationId,
+          content: variables.content,
+          replyToId: variables.replyToId,
+          attachments: variables.attachments,
+        });
+        toast.info('Offline', 'Message queued. Will send when connection is restored.');
+      } else {
+        toast.error('Error', error.message || 'Failed to send message. Please try again.');
+      }
     },
     onSettled: () => {
       setIsSending(false);
@@ -309,6 +375,16 @@ export function MessageComposer({
 
   return (
     <div className="border-t bg-background p-4">
+      {/* Network status indicator */}
+      {!isOnline && (
+        <div className="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-center gap-2">
+          <div className="h-2 w-2 bg-yellow-500 rounded-full" />
+          <span className="text-sm text-yellow-700 dark:text-yellow-400">
+            You're offline. Messages will be sent when connection is restored.
+          </span>
+        </div>
+      )}
+
       {/* Reply context */}
       {replyTo && (
         <div className="mb-3 p-2 bg-muted/50 border-l-2 border-primary rounded flex items-start justify-between">

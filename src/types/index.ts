@@ -430,7 +430,7 @@ export interface AppError {
 // Messaging types
 export type ConversationType = 'direct' | 'group';
 export type MessageType = 'text' | 'file' | 'system';
-export type MessageStatus = 'sent' | 'delivered' | 'read';
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 export type AttachmentType = 'image' | 'document' | 'video' | 'audio' | 'other';
 
 export interface Conversation {
