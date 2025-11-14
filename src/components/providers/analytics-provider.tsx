@@ -82,7 +82,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
 
         // Remove gtag function
         if (typeof window !== 'undefined' && 'gtag' in window) {
-          delete window.gtag;
+          delete (window as unknown).gtag;
         }
       };
     }
