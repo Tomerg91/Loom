@@ -331,6 +331,122 @@ export interface Notification {
   updatedAt: string;
 }
 
+// User Preferences types
+export type Theme = 'light' | 'dark' | 'system';
+export type DateFormat = 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
+export type TimeFormat = '12h' | '24h';
+export type ProfileVisibility = 'public' | 'private' | 'contacts';
+export type FontSize = 'small' | 'medium' | 'large' | 'x-large';
+export type VideoQuality = 'auto' | 'low' | 'medium' | 'high';
+export type DataExportFrequency = 'never' | 'weekly' | 'monthly' | 'quarterly';
+
+export interface UserPreferences {
+  id: string;
+  userId: string;
+  // Display preferences
+  theme: Theme;
+  sidebarCollapsed: boolean;
+  compactMode: boolean;
+  // Localization preferences
+  language: Language;
+  timezone: string;
+  dateFormat: DateFormat;
+  timeFormat: TimeFormat;
+  // Communication preferences
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  // Privacy preferences
+  profileVisibility: ProfileVisibility;
+  showOnlineStatus: boolean;
+  allowSearchIndexing: boolean;
+  // Accessibility preferences
+  reducedMotion: boolean;
+  highContrast: boolean;
+  fontSize: FontSize;
+  screenReaderOptimized: boolean;
+  // Session preferences
+  autoJoinVideo: boolean;
+  autoStartAudio: boolean;
+  videoQuality: VideoQuality;
+  // Data preferences
+  dataExportFrequency: DataExportFrequency;
+  analyticsEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Notification Preferences types
+export type DigestFrequency = 'immediate' | 'hourly' | 'daily' | 'weekly' | 'never';
+
+export interface NotificationPreferences {
+  id: string;
+  userId: string;
+  // Email notification preferences
+  emailEnabled: boolean;
+  emailSessionReminders: boolean;
+  emailSessionUpdates: boolean;
+  emailMessages: boolean;
+  emailSystemUpdates: boolean;
+  emailMarketing: boolean;
+  // In-app notification preferences
+  inappEnabled: boolean;
+  inappSessionReminders: boolean;
+  inappSessionUpdates: boolean;
+  inappMessages: boolean;
+  inappSystemUpdates: boolean;
+  // Push notification preferences
+  pushEnabled: boolean;
+  pushSessionReminders: boolean;
+  pushMessages: boolean;
+  // Timing preferences
+  quietHoursEnabled: boolean;
+  quietHoursStart: string; // Time format
+  quietHoursEnd: string; // Time format
+  timezone: string;
+  // Frequency preferences
+  digestFrequency: DigestFrequency;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Settings Audit Log types
+export type SettingCategory =
+  | 'profile'
+  | 'notification'
+  | 'display'
+  | 'localization'
+  | 'privacy'
+  | 'accessibility'
+  | 'session'
+  | 'data'
+  | 'security';
+
+export type ChangeSource = 'user' | 'admin' | 'system' | 'migration';
+
+export interface SettingsAuditLog {
+  id: string;
+  userId: string;
+  settingCategory: SettingCategory;
+  settingKey: string;
+  oldValue?: Record<string, unknown>;
+  newValue?: Record<string, unknown>;
+  changeSource: ChangeSource;
+  changeReason?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  deviceInfo?: Record<string, unknown>;
+  countryCode?: string;
+  timezone?: string;
+  createdAt: string;
+}
+
+// Complete User Settings (combined)
+export interface UserSettings {
+  profile: Partial<User>;
+  preferences: UserPreferences;
+  notifications: NotificationPreferences;
+}
+
 // Coach Availability types
 export interface CoachAvailability {
   id: string;
