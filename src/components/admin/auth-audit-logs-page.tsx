@@ -156,7 +156,13 @@ export function AuthAuditLogsPage() {
         dateRange,
       });
 
-      const response = await fetch(`/api/admin/audit-logs/export?${params.toString()}`);
+      const response = await fetch(`/api/admin/audit-logs?${params.toString()}`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed with status ${response.status}`);
+      }
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');

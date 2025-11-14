@@ -245,12 +245,16 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     // Get logs using same logic as GET
-    const { searchParams } = new URL(request.url);
+    const url = new URL(request.url);
 
     // Reuse GET logic but with higher limits for export
-    searchParams.set('limit', '10000');
+    url.searchParams.set('limit', '10000');
 
-    const getRequest = new NextRequest(request.url, { method: 'GET' });
+    const requestHeaders = new Headers(request.headers);
+    const getRequest = new NextRequest(url.toString(), {
+      method: 'GET',
+      headers: requestHeaders,
+    });
     const getResponse = await GET(getRequest);
 
     const data = await getResponse.json();
