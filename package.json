@@ -55,7 +55,9 @@
     "supabase:migration": "supabase migration new",
     "supabase:push": "supabase db push",
     "db:seed": "supabase db reset",
-    "seed:staging": "node scripts/seed/staging.mjs"
+    "seed:staging": "node scripts/seed/staging.mjs",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -131,8 +133,17 @@
     "zustand": "^5.0.6"
   },
   "devDependencies": {
+    "@chromatic-com/storybook": "^4.1.2",
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.53.2",
+    "@storybook/addon-a11y": "^8.6.14",
+    "@storybook/addon-docs": "^10.0.7",
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/addon-interactions": "^8.6.14",
+    "@storybook/addon-links": "^8.6.14",
+    "@storybook/addon-onboarding": "^10.0.7",
+    "@storybook/nextjs": "^8.6.14",
+    "@storybook/react": "^8.6.14",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -153,11 +164,13 @@
     "chokidar": "^4.0.1",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
+    "eslint-plugin-storybook": "^10.0.7",
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "lint-staged": "^16.1.2",
     "playwright": "^1.53.2",
     "prettier": "^3.6.2",
+    "storybook": "^8.6.14",
     "supabase": "^2.30.4",
     "tailwindcss": "^4",
     "tdd-guard": "^0.1.4",
