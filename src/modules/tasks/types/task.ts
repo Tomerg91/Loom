@@ -54,6 +54,7 @@ export const createTaskSchema = z.object({
   clientId: uuidSchema,
   coachId: uuidSchema.optional(),
   categoryId: uuidSchema.optional(),
+  sessionId: uuidSchema.optional(),
   priority: taskPrioritySchema.default('MEDIUM').optional(),
   visibilityToCoach: z.boolean().optional(),
   dueDate: isoDateStringSchema.optional(),
@@ -76,6 +77,7 @@ export const updateTaskSchema = z
       .nullable()
       .optional(),
     categoryId: uuidSchema.nullish(),
+    sessionId: uuidSchema.nullish(),
     priority: taskPrioritySchema.optional(),
     visibilityToCoach: z.boolean().optional(),
     dueDate: isoDateStringSchema.optional(),
@@ -140,6 +142,7 @@ export interface TaskDto {
   id: string;
   coachId: string;
   clientId: string;
+  sessionId?: string | null;
   client: TaskClientDto | null;
   category?: {
     id: string;

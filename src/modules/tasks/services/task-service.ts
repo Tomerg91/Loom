@@ -8,6 +8,11 @@ import { createAdminClient } from '@/lib/supabase/server';
 import type { Database, Json } from '@/types/supabase';
 
 import {
+  trackTaskCreation,
+  trackTaskUpdate,
+  trackRecurringTaskInstance,
+} from '../analytics/task-analytics';
+import {
   RecurrenceService,
   RecurrenceServiceError,
 } from './recurrence-service';
@@ -116,6 +121,7 @@ export const serializeTaskRecord = (task: TaskRecord): TaskDto => {
     id: task.id,
     coachId: task.coach_id,
     clientId: task.client_id ?? '',
+    sessionId: (task as any).session_id ?? null,
     client: buildTaskClient(task),
     category,
     title: task.title,
@@ -252,6 +258,7 @@ export class TaskService {
         coach_id: coachId,
         client_id: input.clientId,
         category_id: input.categoryId ?? null,
+        session_id: (input as any).sessionId ?? null,
         title: input.title,
         description: input.description ?? null,
         priority: (input.priority ?? 'MEDIUM') as TaskPriority,
@@ -292,9 +299,34 @@ export class TaskService {
           'TASK_INSTANCE_CREATE_FAILED'
         );
       }
+
+      // Track recurring task instance generation
+      trackRecurringTaskInstance({
+        taskId: insertedTask.id,
+        coachId,
+        clientId: input.clientId,
+        sessionId: (input as any).sessionId,
+        priority: input.priority,
+        instanceCount: plan.instances.length,
+      });
     }
 
-    return this.getTaskById(insertedTask.id, actor);
+    const createdTask = await this.getTaskById(insertedTask.id, actor);
+
+    // Track task creation analytics
+    trackTaskCreation({
+      taskId: createdTask.id,
+      coachId: createdTask.coachId,
+      clientId: createdTask.clientId,
+      sessionId: createdTask.sessionId,
+      priority: createdTask.priority,
+      status: createdTask.status,
+      categoryId: createdTask.category?.id,
+      hasRecurrence: !!createdTask.recurrenceRule,
+      hasDueDate: !!createdTask.dueDate,
+    });
+
+    return createdTask;
   }
 
   public async listTasks(
@@ -608,7 +640,22 @@ export class TaskService {
       }
     }
 
-    return this.getTaskById(taskId, actor);
+    const updatedTask = await this.getTaskById(taskId, actor);
+
+    // Track task update analytics
+    trackTaskUpdate({
+      taskId: updatedTask.id,
+      coachId: updatedTask.coachId,
+      clientId: updatedTask.clientId,
+      sessionId: updatedTask.sessionId,
+      priority: updatedTask.priority,
+      status: updatedTask.status,
+      previousStatus: task.status as TaskStatus,
+      previousPriority: task.priority as TaskPriority,
+      changedFields: Object.keys(payload),
+    });
+
+    return updatedTask;
   }
 
   private async fetchTaskRecord(taskId: string): Promise<TaskRecord> {
