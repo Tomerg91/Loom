@@ -667,6 +667,8 @@ declare global {
       ) => void;
       identify: (userId: string, properties?: Record<string, unknown>) => void;
       reset: () => void;
+      opt_in_capturing?: () => void;
+      opt_out_capturing?: () => void;
     };
   }
 }

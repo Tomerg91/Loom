@@ -2,12 +2,14 @@
 
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+import posthog from 'posthog-js';
 
 // Use the app's active AuthProvider hook to avoid context mismatch
 import { useUser } from '@/lib/auth/use-user';
 import {
   GA_TRACKING_ID,
   POSTHOG_KEY,
+  POSTHOG_HOST,
   pageView,
   trackPageView,
   posthogIdentify,
@@ -27,6 +29,8 @@ declare global {
       capture: (event: string, properties?: Record<string, unknown>) => void;
       identify: (userId: string, properties?: Record<string, unknown>) => void;
       reset: () => void;
+      opt_in_capturing?: () => void;
+      opt_out_capturing?: () => void;
     };
     __POSTHOG_LOADED__?: boolean;
   }
@@ -89,64 +93,51 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Initialize PostHog
-  // useEffect(() => {
-  //   if (POSTHOG_KEY && POSTHOG_HOST) {
-  //     // Check if PostHog is already initialized to prevent duplicates
-  //     const existingPostHog = document.querySelector('script[data-analytics="posthog"]');
-  //     if (existingPostHog) return;
+  useEffect(() => {
+    if (POSTHOG_KEY && POSTHOG_HOST && typeof window !== 'undefined') {
+      // Check if PostHog is already initialized to prevent duplicates
+      if (window.__POSTHOG_LOADED__) return;
 
-  //     const script = document.createElement('script');
-  //     script.setAttribute('data-analytics', 'posthog');
-  //     script.innerHTML = `
-  //       !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);var n=t;if("undefined"!=typeof console&&console.error)console.error("PostHog disabled");else{for(var p="get identify capture register register_once alias unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset distinct_id isFeatureEnabled getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys".split(" "),r=0;r<p.length;r++)!function(t){n[t]=function(){var e=Array.prototype.slice.call(arguments);e.unshift(t),n._i.push(e)}}(p[r])}(p=t,r=e,p[r]=function(){p._i.push([r].concat(Array.prototype.slice.call(arguments,0)))},p._i=[],i=document.createElement("script"),i.type="text/javascript",i.async=!0,i.src=s.api_host+"/static/array.js",(a=document.getElementsByTagName("script")[0]).parentNode.insertBefore(i,a),t.__SV=1)}(window,document,window.posthog||[]);
-  //       window.posthog.init('${POSTHOG_KEY}', {
-  //         api_host: '${POSTHOG_HOST}',
-  //         person_profiles: 'identified_only',
-  //         loaded: function(posthog) {
-  //           console.log('PostHog loaded');
-  //         }
-  //       });
-  //     `;
-  //     document.head.appendChild(script);
+      posthog.init(POSTHOG_KEY, {
+        api_host: POSTHOG_HOST || 'https://app.posthog.com',
+        person_profiles: 'identified_only',
+        loaded: (posthog) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('PostHog loaded');
+          }
+          window.posthog = posthog;
+          window.__POSTHOG_LOADED__ = true;
+        },
+        capture_pageview: false, // We handle this manually
+        capture_pageleave: true,
+        autocapture: {
+          dom_event_allowlist: ['click', 'change', 'submit'],
+          element_allowlist: ['a', 'button', 'form', 'input', 'select', 'textarea'],
+        },
+        session_recording: {
+          maskAllInputs: true,
+          maskTextSelector: '[data-private]',
+        },
+        advanced_disable_decide: false,
+      });
 
-  //     // Cleanup function
-  //     return () => {
-  //       // Properly shutdown PostHog before cleanup
-  //       if (window.posthog && typeof window.posthog.reset === 'function') {
-  //         try {
-  //           window.posthog.reset();
-  //         } catch (error) {
-  //           console.warn('PostHog reset failed:', error);
-  //         }
-  //       }
+      // Cleanup function
+      return () => {
+        if (window.posthog && typeof window.posthog.reset === 'function') {
+          try {
+            window.posthog.reset();
+          } catch (error) {
+            console.warn('PostHog reset failed:', error);
+          }
+        }
 
-  //       // Remove PostHog scripts
-  //       const posthogScripts = document.querySelectorAll('script[data-analytics="posthog"]');
-  //       posthogScripts.forEach(script => {
-  //         if (script.parentNode) {
-  //           script.parentNode.removeChild(script);
-  //         }
-  //       });
-
-  //       // Remove additional PostHog scripts that might be loaded dynamically
-  //       const dynamicPostHogScripts = document.querySelectorAll('script[src*="posthog"]');
-  //       dynamicPostHogScripts.forEach(script => {
-  //         if (script.parentNode) {
-  //           script.parentNode.removeChild(script);
-  //         }
-  //       });
-
-  //       // Clean up PostHog instance and related properties
-  //       if (typeof window !== 'undefined') {
-  //         delete window.posthog;
-  //         // Clean up PostHog-related window properties
-  //         if (window.__POSTHOG_LOADED__) {
-  //           delete window.__POSTHOG_LOADED__;
-  //         }
-  //       }
-  //     };
-  //   }
-  // }, []);
+        if (typeof window !== 'undefined') {
+          delete window.posthog;
+          delete window.__POSTHOG_LOADED__;
+        }
+      };
+    }
+  }, []);
 
   // Track page views
   useEffect(() => {

@@ -4,13 +4,16 @@ import { captureError, captureMessage, trackBusinessMetric } from './sentry';
 export type AlertSeverity = 'info' | 'warning' | 'error' | 'critical';
 
 // Alert types
-export type AlertType = 
+export type AlertType =
   | 'performance_degradation'
   | 'error_rate_spike'
   | 'system_health'
   | 'business_metric'
   | 'security_incident'
-  | 'dependency_failure';
+  | 'dependency_failure'
+  | 'engagement_drop'
+  | 'auth_failure_spike'
+  | 'performance_anomaly';
 
 // Alert configuration
 export interface AlertConfig {
@@ -196,7 +199,7 @@ export class AlertManager {
   constructor() {
     this.initializeNotificationChannels();
   }
-  
+
   private initializeNotificationChannels() {
     // Sentry notifications
     if (process.env.SENTRY_DSN) {
@@ -233,6 +236,10 @@ export class AlertManager {
         enabled: true,
       });
     }
+  }
+
+  public async dispatchAlert(alert: Alert): Promise<void> {
+    await this.triggerAlert(alert);
   }
   
   // Check metric against alert configurations
@@ -503,6 +510,36 @@ Loom App Monitoring System
 
 // Global alert manager instance
 export const alertManager = new AlertManager();
+
+export interface TriggerAlertOptions {
+  name: string;
+  type: AlertType;
+  severity: AlertSeverity;
+  metric: string;
+  currentValue: number;
+  threshold: number;
+  message: string;
+  metadata?: Record<string, unknown>;
+}
+
+export const triggerAlert = async (options: TriggerAlertOptions): Promise<void> => {
+  const alert: Alert = {
+    id: `${options.type}_${Date.now()}`,
+    type: options.type,
+    severity: options.severity,
+    title: options.name,
+    message: options.message,
+    metric: options.metric,
+    value: options.currentValue,
+    threshold: options.threshold,
+    timestamp: new Date(),
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    resolved: false,
+    metadata: options.metadata,
+  };
+
+  await alertManager.dispatchAlert(alert);
+};
 
 // Convenience functions for common alert checks
 export const checkPerformanceMetric = (metric: string, value: number, metadata?: Record<string, unknown>) => {

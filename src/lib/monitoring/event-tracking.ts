@@ -41,6 +41,26 @@ export async function trackEvent(params: TrackEventParams): Promise<void> {
 }
 
 /**
+ * Track a generic engagement event
+ */
+export async function trackEngagementEvent(
+  userId: string,
+  eventName: string,
+  target: string,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  await trackEvent({
+    eventName,
+    eventCategory: 'engagement',
+    userId,
+    properties: {
+      target,
+      ...(metadata || {}),
+    },
+  });
+}
+
+/**
  * Get event context (device, browser, etc.)
  * This should be called from the client and passed to server actions
  */
