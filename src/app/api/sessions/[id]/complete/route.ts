@@ -1,16 +1,18 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
+import {
+  createSuccessResponse,
+  createErrorResponse,
   withErrorHandling,
   validateRequestBody,
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { uuidSchema } from '@/lib/api/validation';
 import { getSessionById, completeSession } from '@/lib/database/sessions';
+import { sessionNotificationService } from '@/lib/notifications/session-notifications';
 import { createCorsResponse } from '@/lib/security/cors';
+import type { Session } from '@/types';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -90,7 +92,17 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
   
   // Get updated session data
   const updatedSession = await getSessionById(id);
-  
+
+  // Send completion notifications
+  if (updatedSession) {
+    try {
+      await sessionNotificationService.onSessionCompleted(updatedSession as Session);
+    } catch (error) {
+      console.error('Error sending completion notifications:', error);
+      // Don't fail the completion if notifications fail
+    }
+  }
+
   return createSuccessResponse(updatedSession, 'Session completed successfully');
 });
 

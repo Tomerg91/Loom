@@ -1,16 +1,19 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
+import {
+  createSuccessResponse,
+  createErrorResponse,
   withErrorHandling,
   validateRequestBody,
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { uuidSchema } from '@/lib/api/validation';
 import { getSessionById, cancelSession } from '@/lib/database/sessions';
+import { sessionNotificationService } from '@/lib/notifications/session-notifications';
 import { createCorsResponse } from '@/lib/security/cors';
+import type { Session } from '@/types';
+import { createAuthenticatedSupabaseClient } from '@/lib/api/auth-client';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -118,10 +121,56 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
   
   // Get updated session data
   const updatedSession = await getSessionById(id);
-  
+
+  // Send cancellation notifications
+  if (updatedSession) {
+    try {
+      let cancelledBy: 'coach' | 'client' | null = null;
+
+      if (validatedData.cancellationType === 'coach') {
+        cancelledBy = 'coach';
+      } else if (validatedData.cancellationType === 'client') {
+        cancelledBy = 'client';
+      }
+
+      if (!cancelledBy) {
+        try {
+          const { client: supabase } = createAuthenticatedSupabaseClient(
+            request,
+            new NextResponse()
+          );
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          if (user) {
+            if (user.id === updatedSession.clientId) {
+              cancelledBy = 'client';
+            } else if (user.id === updatedSession.coachId) {
+              cancelledBy = 'coach';
+            }
+          }
+        } catch (authError) {
+          console.error('Error determining cancellation actor', authError);
+        }
+      }
+
+      const fallbackCancelledBy: 'coach' | 'client' =
+        cancelledBy ?? 'coach';
+
+      await sessionNotificationService.onSessionCancelled(
+        updatedSession as Session,
+        fallbackCancelledBy
+      );
+    } catch (error) {
+      console.error('Error sending cancellation notifications:', error);
+      // Don't fail the cancellation if notifications fail
+    }
+  }
+
   return createSuccessResponse(
-    updatedSession, 
-    hoursUntilSession < 24 && !isPrivilegedCancellation 
+    updatedSession,
+    hoursUntilSession < 24 && !isPrivilegedCancellation
       ? 'Session cancelled successfully (late cancellation policy applied)'
       : 'Session cancelled successfully'
   );

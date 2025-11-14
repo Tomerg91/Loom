@@ -180,3 +180,78 @@ export const useUpdateSession = (options?: UpdateSessionMutationOptions) => {
     ...options,
   });
 };
+
+interface ApproveSessionRequestInput {
+  requestId: string;
+  meetingUrl?: string;
+  notes?: string;
+}
+
+type ApproveSessionMutationOptions = UseMutationOptions<
+  SessionMutationResult,
+  Error,
+  ApproveSessionRequestInput
+>;
+
+export const useApproveSessionRequest = (
+  options?: ApproveSessionMutationOptions
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ requestId, meetingUrl, notes }) =>
+      fetchJson<SessionMutationResult>(
+        `/api/sessions/requests/${requestId}/approve`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ meetingUrl, notes }),
+        }
+      ),
+    async onSuccess(result, variables, context) {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: sessionKeys.all }),
+        queryClient.invalidateQueries({ queryKey: sessionKeys.requests() }),
+      ]);
+      await options?.onSuccess?.(result, variables, context);
+      return result;
+    },
+    ...options,
+  });
+};
+
+interface DeclineSessionRequestInput {
+  requestId: string;
+  reason?: string;
+}
+
+type DeclineSessionMutationOptions = UseMutationOptions<
+  { id: string; status: string },
+  Error,
+  DeclineSessionRequestInput
+>;
+
+export const useDeclineSessionRequest = (
+  options?: DeclineSessionMutationOptions
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ requestId, reason }) =>
+      fetchJson<{ id: string; status: string }>(
+        `/api/sessions/requests/${requestId}/decline`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ reason }),
+        }
+      ),
+    async onSuccess(result, variables, context) {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: sessionKeys.all }),
+        queryClient.invalidateQueries({ queryKey: sessionKeys.requests() }),
+      ]);
+      await options?.onSuccess?.(result, variables, context);
+      return result;
+    },
+    ...options,
+  });
+};
