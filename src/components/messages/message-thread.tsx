@@ -226,13 +226,19 @@ export function MessageThread({ conversationId, className }: MessageThreadProps)
   // Render message status
   const renderMessageStatus = (message: Message) => {
     if (message.senderId !== user?.id) return null;
-    
+
     return (
       <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        {message.status === 'sending' && (
+          <>
+            <div className="h-3 w-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+            <span className="text-xs opacity-70">Sending...</span>
+          </>
+        )}
         {message.status === 'sent' && <Check className="h-3 w-3" />}
         {message.status === 'delivered' && <CheckCheck className="h-3 w-3" />}
         {message.status === 'read' && <CheckCheck className="h-3 w-3 text-blue-500" />}
-        <span>{formatMessageTime(message.createdAt)}</span>
+        {message.status !== 'sending' && <span>{formatMessageTime(message.createdAt)}</span>}
       </div>
     );
   };
