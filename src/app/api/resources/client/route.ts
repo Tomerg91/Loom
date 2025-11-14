@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 import { getClientSharedResources } from '@/lib/database/resources';
 import { createClient } from '@/lib/supabase/server';
@@ -14,8 +15,39 @@ import {
   sanitizeError,
   unauthorizedError,
   forbiddenError,
+  validationError,
 } from '@/lib/utils/api-errors';
-import { isResourceCategory, type ResourceListParams } from '@/types/resources';
+import {
+  isResourceCategory,
+  normalizeResourceCategory,
+  type ResourceListParams,
+  RESOURCE_CATEGORY_VALUES,
+  LEGACY_RESOURCE_CATEGORY_VALUES,
+} from '@/types/resources';
+
+/**
+ * Zod schema for GET /api/resources/client query parameters
+ */
+const getClientResourcesQuerySchema = z.object({
+  category: z
+    .string()
+    .refine(
+      (val) =>
+        RESOURCE_CATEGORY_VALUES.includes(val as never) ||
+        LEGACY_RESOURCE_CATEGORY_VALUES.includes(val as never),
+      { message: 'Invalid category' }
+    )
+    .optional(),
+  tags: z.string().optional(),
+  search: z.string().optional(),
+  coach: z.string().uuid().optional(),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
+  sortBy: z
+    .enum(['created_at', 'filename', 'file_size', 'view_count', 'download_count'])
+    .default('created_at'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+});
 
 /**
  * GET /api/resources/client
@@ -27,6 +59,8 @@ import { isResourceCategory, type ResourceListParams } from '@/types/resources';
  * - tags: Filter by tags (comma-separated)
  * - search: Search in filename and description
  * - coach: Filter by coach ID
+ * - page: Page number (default: 1)
+ * - limit: Items per page (default: 20, max: 100)
  * - sortBy: Sort field
  * - sortOrder: Sort direction (asc, desc)
  *
@@ -34,7 +68,9 @@ import { isResourceCategory, type ResourceListParams } from '@/types/resources';
  * {
  *   success: true,
  *   data: {
- *     resources: ClientResourceItem[]
+ *     resources: ClientResourceItem[],
+ *     total: number,
+ *     pagination: PaginationMetadata
  *   }
  * }
  */
@@ -61,53 +97,70 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response, { status: statusCode });
     }
 
-    // Parse query parameters
+    // Parse and validate query parameters
     const searchParams = request.nextUrl.searchParams;
-    const rawCategory = searchParams.get('category');
-    const rawSortBy = searchParams.get('sortBy');
-    const rawSortOrder = searchParams.get('sortOrder');
-    const rawCoach = searchParams.get('coach');
-
-    const sortByOptions: ResourceListParams['sortBy'][] = [
-      'created_at',
-      'filename',
-      'file_size',
-      'view_count',
-      'download_count',
-    ];
-
-    const filters: ResourceListParams = {
-      category:
-        rawCategory && isResourceCategory(rawCategory)
-          ? rawCategory
-          : undefined,
-      tags: searchParams.get('tags')?.split(',').filter(Boolean) || undefined,
+    const queryParams = {
+      category: searchParams.get('category') || undefined,
+      tags: searchParams.get('tags') || undefined,
       search: searchParams.get('search') || undefined,
-      sortBy:
-        rawSortBy &&
-        sortByOptions.includes(rawSortBy as ResourceListParams['sortBy'])
-          ? (rawSortBy as ResourceListParams['sortBy'])
-          : 'created_at',
-      sortOrder:
-        rawSortOrder === 'asc' || rawSortOrder === 'desc'
-          ? rawSortOrder
-          : 'desc',
-      coachId: rawCoach || undefined,
+      coach: searchParams.get('coach') || undefined,
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+      sortBy: searchParams.get('sortBy') || undefined,
+      sortOrder: searchParams.get('sortOrder') || undefined,
     };
 
-    // Get shared resources
-    const resources = await getClientSharedResources(user.id, filters);
+    const validation = getClientResourcesQuerySchema.safeParse(queryParams);
+    if (!validation.success) {
+      const { response, statusCode } = validationError(
+        'Invalid query parameters',
+        validation.error.errors
+      );
+      return NextResponse.json(response, { status: statusCode });
+    }
+
+    const { category, tags, search, coach, page, limit, sortBy, sortOrder } =
+      validation.data;
+
+    // Build filters
+    const filters: ResourceListParams = {
+      category: category ? normalizeResourceCategory(category) : undefined,
+      tags: tags?.split(',').filter(Boolean) || undefined,
+      search,
+      sortBy,
+      sortOrder,
+      coachId: coach,
+    };
+
+    // Get shared resources (note: this currently fetches all and filters in memory)
+    const allResources = await getClientSharedResources(user.id, filters);
 
     // Filter by coach if specified
-    const coachId = filters.coachId;
-    const filteredResources = coachId
-      ? resources.filter(r => r.sharedBy.id === coachId)
-      : resources;
+    const filteredResources = coach
+      ? allResources.filter(r => r.sharedBy.id === coach)
+      : allResources;
+
+    // Apply pagination in memory (since getClientSharedResources doesn't support it yet)
+    const total = filteredResources.length;
+    const offset = (page - 1) * limit;
+    const paginatedResources = filteredResources.slice(offset, offset + limit);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(total / limit);
 
     return NextResponse.json({
       success: true,
       data: {
-        resources: filteredResources,
+        resources: paginatedResources,
+        total,
+        pagination: {
+          page,
+          limit,
+          totalItems: total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
       },
     });
   } catch (error) {

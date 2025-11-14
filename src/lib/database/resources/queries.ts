@@ -27,17 +27,17 @@ import { mapFileUploadToResource, mapFileUploadsToResources } from './utils';
  *
  * @param coachId - Coach's user ID
  * @param filters - Optional filters (category, tags, search)
- * @returns Array of resources matching filters
+ * @returns Object with resources array and total count
  */
 export async function getCoachLibraryResources(
   coachId: string,
   filters?: ResourceListParams
-): Promise<ResourceLibraryItem[]> {
+): Promise<{ resources: ResourceLibraryItem[]; count: number }> {
   const supabase = await createClient();
 
   let query = supabase
     .from('file_uploads')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('user_id', coachId)
     .eq('is_library_resource', true);
 
@@ -65,13 +65,16 @@ export async function getCoachLibraryResources(
   const sortOrder = filters?.sortOrder || 'desc';
   query = query.order(sortBy, { ascending: sortOrder === 'asc' });
 
-  // Apply pagination
-  if (filters?.limit) {
+  // Apply pagination - support both page-based and offset-based
+  if (filters?.page && filters?.limit) {
+    const offset = (filters.page - 1) * filters.limit;
+    query = query.range(offset, offset + filters.limit - 1);
+  } else if (filters?.limit) {
     const offset = filters.offset || 0;
     query = query.range(offset, offset + filters.limit - 1);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
     // Log RLS policy violations for debugging
@@ -86,7 +89,10 @@ export async function getCoachLibraryResources(
     throw new Error(`Failed to fetch library resources: ${error.message}`);
   }
 
-  return mapFileUploadsToResources(data || []);
+  return {
+    resources: mapFileUploadsToResources(data || []),
+    count: count || 0,
+  };
 }
 
 /**

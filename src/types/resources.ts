@@ -486,14 +486,27 @@ export interface CategoryAnalytics {
 // ============================================================================
 
 /**
+ * Pagination metadata for API responses
+ */
+export interface PaginationMetadata {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+/**
  * Query parameters for listing resources
  */
 export interface ResourceListParams {
   category?: ResourceCategory;
   tags?: string[];
   search?: string;
+  page?: number;
   limit?: number;
-  offset?: number;
+  offset?: number; // Kept for backward compatibility
   sortBy?:
     | 'created_at'
     | 'filename'
@@ -512,7 +525,8 @@ export interface ResourceListResponse {
   success: boolean;
   data: {
     resources: ResourceLibraryItem[];
-    total: number;
+    total: number; // Kept for backward compatibility
+    pagination?: PaginationMetadata;
     collections?: ResourceCollection[];
   };
 }

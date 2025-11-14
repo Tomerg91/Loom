@@ -112,18 +112,18 @@ class ResourceLibraryService {
    *
    * @param coachId - Coach's user ID
    * @param filters - Optional filters (category, tags, search, sort)
-   * @returns Resources matching filters or error
+   * @returns Resources matching filters with total count or error
    */
   async getResources(
     coachId: string,
     filters?: ResourceListParams
   ): Promise<Result<{ resources: ResourceLibraryItem[]; total: number }>> {
     try {
-      const resources = await db.getCoachLibraryResources(coachId, filters);
+      const { resources, count } = await db.getCoachLibraryResources(coachId, filters);
 
       return Result.success({
         resources,
-        total: resources.length, // TODO: Get actual total count for pagination
+        total: count,
       });
     } catch (error) {
       console.error('Get resources error:', error);

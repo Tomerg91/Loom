@@ -73,6 +73,11 @@ export function requiresCSRFProtection(method: string): boolean {
 export function isCSRFExempt(pathname: string): boolean {
   const exemptRoutes = [
     '/api/auth/callback', // OAuth callbacks
+    '/api/auth/signin', // Initial signin (no CSRF token yet)
+    '/api/auth/signup', // Initial signup (no CSRF token yet)
+    '/api/auth/reset-password', // Password reset (may not have token)
+    '/api/auth/verify', // Email verification (may not have token)
+    '/api/auth/resend-verification', // Resend verification (may not have token)
     '/api/payments/tranzila/notify', // Payment webhooks (signature verified)
     '/api/webhooks/', // Other webhooks (should have signature verification)
   ];
