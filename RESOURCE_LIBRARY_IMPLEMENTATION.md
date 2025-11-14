@@ -126,7 +126,7 @@ Features:
 **Migration**: `supabase/migrations/20251114000004_resource_download_helpers.sql`
 
 - Created `file_download_tracking` table
-- Added restricted `increment()` helper function for download counters
+- Added restricted `increment_file_download()` helper function for download counters
 - Added `track_resource_access()` function
 - Added `download_count` column to `file_uploads`
 - Implemented RLS policies for download tracking
@@ -369,7 +369,7 @@ Settings managed:
 - `has_active_subscription(uuid)` - Check subscription status
 - `has_paid_subscription(uuid)` - Check if paid tier
 - `can_access_resource_library(uuid)` - Check resource library access
-- `increment(table, row, column)` - Restricted helper to increment library download counts
+- `increment_file_download(file_id)` - Restricted helper to increment library download counts
 - `track_resource_access(file_id, client_id)` - Track access event
 
 ## API Routes Summary

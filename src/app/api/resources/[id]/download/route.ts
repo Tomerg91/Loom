@@ -180,10 +180,8 @@ export async function GET(
     // Track download if not inline view
     if (!inline && hasDownloadPermission) {
       // Update file_uploads download count
-      await supabase.rpc('increment', {
-        table_name: 'file_uploads',
-        row_id: resourceId,
-        column_name: 'download_count',
+      await supabase.rpc('increment_file_download', {
+        p_file_id: resourceId,
       });
 
       // Track client progress if user is a client

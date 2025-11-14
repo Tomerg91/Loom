@@ -9,16 +9,15 @@
 -- 1. INCREMENT COUNTER FUNCTION
 -- ============================================================================
 
+-- Remove legacy helper if it exists to prevent privilege escalation
+DROP FUNCTION IF EXISTS increment(TEXT, UUID, TEXT);
+
 /**
  * Controlled increment helper for resource download counters.
- * Only supports incrementing file_uploads.download_count for
- * callers that have access to the specified resource.
+ * Executes as SECURITY DEFINER but is hard-coded to update the
+ * file_uploads.download_count column for the supplied file id only.
  */
-CREATE OR REPLACE FUNCTION increment(
-  table_name TEXT,
-  row_id UUID,
-  column_name TEXT
-)
+CREATE OR REPLACE FUNCTION increment_file_download(p_file_id UUID)
 RETURNS VOID
 SECURITY DEFINER
 SET search_path = public
@@ -27,22 +26,11 @@ AS $$
 DECLARE
   has_access BOOLEAN;
 BEGIN
-  -- Restrict the helper to the single supported table/column pair
-  IF table_name <> 'file_uploads' OR column_name <> 'download_count' THEN
-    RAISE EXCEPTION USING
-      ERRCODE = '42501',
-      MESSAGE = format(
-        'increment() is not permitted for table %s column %s',
-        table_name,
-        column_name
-      );
-  END IF;
-
   -- Ensure the caller is allowed to record a download for the target resource
   SELECT EXISTS (
     SELECT 1
     FROM public.file_uploads f
-    WHERE f.id = row_id
+    WHERE f.id = p_file_id
       AND f.is_library_resource = TRUE
       AND (
         f.user_id = auth.uid()
@@ -59,7 +47,7 @@ BEGIN
         OR EXISTS (
           SELECT 1
           FROM public.file_shares fs
-          WHERE fs.file_id = row_id
+          WHERE fs.file_id = p_file_id
             AND fs.shared_with = auth.uid()
             AND (fs.expires_at IS NULL OR fs.expires_at > NOW())
         )
@@ -70,18 +58,18 @@ BEGIN
   IF NOT COALESCE(has_access, FALSE) THEN
     RAISE EXCEPTION USING
       ERRCODE = '42501',
-      MESSAGE = 'increment() not authorized for the specified resource';
+      MESSAGE = 'increment_file_download not authorized for the specified resource';
   END IF;
 
   UPDATE public.file_uploads
   SET download_count = COALESCE(download_count, 0) + 1
-  WHERE id = row_id;
+  WHERE id = p_file_id;
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION increment(TEXT, UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION increment_file_download(UUID) TO authenticated;
 
-COMMENT ON FUNCTION increment(TEXT, UUID, TEXT) IS 'Increments file_uploads.download_count when the caller has access rights';
+COMMENT ON FUNCTION increment_file_download(UUID) IS 'Increments file_uploads.download_count when the caller has access rights';
 
 -- ============================================================================
 -- 2. TRACK RESOURCE ACCESS FUNCTION
