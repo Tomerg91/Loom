@@ -13,6 +13,7 @@ import { useAuthLoading, useUser, useAuthStore } from '@/lib/store/auth-store';
 
 import { ClientOnboardingForm } from './client-onboarding-form';
 import { CoachOnboardingForm } from './coach-onboarding-form';
+import { OnboardingProgress } from './onboarding-progress';
 
 export function OnboardingContainer() {
   const t = useTranslations('onboarding');
@@ -71,6 +72,9 @@ export function OnboardingContainer() {
   const showClientOnboarding = user.role === 'client';
   const showCoachOnboarding = user.role === 'coach';
 
+  const totalSteps = showCoachOnboarding ? 5 : showClientOnboarding ? 3 : 0;
+  const currentStep = user.onboardingStep ?? (showCoachOnboarding ? 5 : showClientOnboarding ? 3 : 0);
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-10">
       <Card className="border-dashed">
@@ -103,6 +107,15 @@ export function OnboardingContainer() {
           </div>
         </CardContent>
       </Card>
+
+      {(showClientOnboarding || showCoachOnboarding) && (
+        <OnboardingProgress
+          role={user.role}
+          currentStep={currentStep}
+          totalSteps={totalSteps}
+          status={status}
+        />
+      )}
 
       {showClientOnboarding && (
         <ClientOnboardingForm user={user} onUserUpdate={updateUser} />
