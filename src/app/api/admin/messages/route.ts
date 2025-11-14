@@ -5,17 +5,19 @@
 
 import { NextResponse } from 'next/server';
 
-import { getCurrentUser } from '@/lib/auth/session';
-import { supabase } from '@/lib/supabase/client';
+import { authService } from '@/lib/services/auth-service';
+import { createClient } from '@/lib/supabase/server';
 
 // GET /api/admin/messages - Get all messages with filtering
 export async function GET(request: Request) {
   try {
-    const user = await getCurrentUser();
+    const user = await authService.getCurrentUser();
 
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    const supabase = await createClient();
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -117,11 +119,13 @@ export async function GET(request: Request) {
 // DELETE /api/admin/messages - Delete a message (admin only)
 export async function DELETE(request: Request) {
   try {
-    const user = await getCurrentUser();
+    const user = await authService.getCurrentUser();
 
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    const supabase = await createClient();
 
     const { searchParams } = new URL(request.url);
     const messageId = searchParams.get('messageId');

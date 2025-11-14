@@ -5,17 +5,19 @@
 
 import { NextResponse } from 'next/server';
 
-import { getCurrentUser } from '@/lib/auth/session';
-import { supabase } from '@/lib/supabase/client';
+import { authService } from '@/lib/services/auth-service';
+import { createClient } from '@/lib/supabase/server';
 
 // GET /api/admin/messages/retention - Get retention statistics
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const user = await authService.getCurrentUser();
 
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    const supabase = await createClient();
 
     // Get retention statistics
     const { data: stats, error: statsError } = await supabase.rpc(
@@ -49,11 +51,13 @@ export async function GET() {
 // POST /api/admin/messages/retention/archive - Trigger message archival
 export async function POST(request: Request) {
   try {
-    const user = await getCurrentUser();
+    const user = await authService.getCurrentUser();
 
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    const supabase = await createClient();
 
     const body = await request.json();
     const { policyName = 'default_retention' } = body;

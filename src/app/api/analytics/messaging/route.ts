@@ -5,17 +5,19 @@
 
 import { NextResponse } from 'next/server';
 
-import { getCurrentUser } from '@/lib/auth/session';
-import { supabase } from '@/lib/supabase/client';
+import { authService } from '@/lib/services/auth-service';
+import { createClient } from '@/lib/supabase/server';
 
 // GET /api/analytics/messaging - Get user's messaging analytics
 export async function GET(request: Request) {
   try {
-    const user = await getCurrentUser();
+    const user = await authService.getCurrentUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const supabase = await createClient();
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
