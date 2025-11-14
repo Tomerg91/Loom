@@ -84,9 +84,29 @@ export async function getSessionContext(
     const mfaVerified = isTrue(user?.user_metadata?.mfa_verified);
 
     // Check onboarding completion status from metadata
-    const onboardingStatus = (user?.user_metadata?.onboarding_status ??
+    const metadataOnboardingStatus = (user?.user_metadata?.onboarding_status ??
       user?.app_metadata?.onboarding_status) as string | undefined;
-    const onboardingCompleted = onboardingStatus === 'completed';
+
+    let onboardingCompleted = metadataOnboardingStatus === 'completed';
+
+    if (user && !onboardingCompleted && !metadataOnboardingStatus) {
+      const { data: onboardingRecord, error: onboardingError } = await supabase
+        .from('users')
+        .select('onboarding_status')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (onboardingError) {
+        console.warn(
+          '[auth] Failed to read onboarding status from users table:',
+          onboardingError
+        );
+      }
+
+      if (onboardingRecord) {
+        onboardingCompleted = onboardingRecord.onboarding_status === 'completed';
+      }
+    }
 
     return { session, user, role, mfaEnabled, mfaVerified, onboardingCompleted };
   } catch (error) {
