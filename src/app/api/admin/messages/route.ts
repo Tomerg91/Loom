@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server';
 
 import { authService } from '@/lib/services/auth-service';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 
 // GET /api/admin/messages - Get all messages with filtering
 export async function GET(request: Request) {
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -125,7 +125,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { searchParams } = new URL(request.url);
     const messageId = searchParams.get('messageId');
