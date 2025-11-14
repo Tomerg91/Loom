@@ -10,7 +10,7 @@
  */
 
 import * as Sentry from '@sentry/nextjs';
-import { triggerAlert } from './alerting';
+import { triggerAlert, type TriggerAlertOptions } from './alerting';
 import { createAdminClient } from '@/modules/platform/supabase/server';
 
 // ============================================================================
@@ -102,7 +102,7 @@ export async function detectEngagementDrop(options: {
           threshold: previousCount,
           message: `User engagement dropped by ${dropPercent.toFixed(1)}% in the last ${windowMinutes} minutes`,
           metadata: anomaly.metadata,
-        });
+        } satisfies TriggerAlertOptions);
 
         // Track in Sentry
         Sentry.captureMessage('Engagement drop detected', {
@@ -194,7 +194,7 @@ export async function detectAuthFailureSpike(options: {
         threshold: spikeThreshold,
         message: `${totalFailures} authentication failures detected in the last ${windowMinutes} minutes`,
         metadata: anomaly.metadata,
-      });
+      } satisfies TriggerAlertOptions);
 
       // Track in Sentry
       Sentry.captureMessage('Authentication failure spike detected', {
