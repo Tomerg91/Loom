@@ -1,16 +1,18 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
+import {
+  createSuccessResponse,
+  createErrorResponse,
   withErrorHandling,
   validateRequestBody,
   HTTP_STATUS
 } from '@/lib/api/utils';
 import { uuidSchema } from '@/lib/api/validation';
 import { getSessionById, cancelSession } from '@/lib/database/sessions';
+import { sessionNotificationService } from '@/lib/notifications/session-notifications';
 import { createCorsResponse } from '@/lib/security/cors';
+import type { Session } from '@/types';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -118,10 +120,24 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
   
   // Get updated session data
   const updatedSession = await getSessionById(id);
-  
+
+  // Send cancellation notifications
+  if (updatedSession) {
+    try {
+      const cancelledBy = validatedData.cancellationType === 'coach' || updatedSession.coachId === updatedSession.coachId ? 'coach' : 'client';
+      await sessionNotificationService.onSessionCancelled(
+        updatedSession as Session,
+        cancelledBy
+      );
+    } catch (error) {
+      console.error('Error sending cancellation notifications:', error);
+      // Don't fail the cancellation if notifications fail
+    }
+  }
+
   return createSuccessResponse(
-    updatedSession, 
-    hoursUntilSession < 24 && !isPrivilegedCancellation 
+    updatedSession,
+    hoursUntilSession < 24 && !isPrivilegedCancellation
       ? 'Session cancelled successfully (late cancellation policy applied)'
       : 'Session cancelled successfully'
   );

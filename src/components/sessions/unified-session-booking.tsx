@@ -34,6 +34,7 @@ const bookingSchema = z.object({
   title: z.string().min(1, 'Session title is required').max(100),
   description: z.string().max(500).optional(),
   duration: z.number().min(15).max(240),
+  timezone: z.string().optional(),
 });
 
 type BookingFormData = z.infer<typeof bookingSchema>;
@@ -290,6 +291,7 @@ function UnifiedSessionBookingComponent({
     defaultValues: {
       coachId: selectedCoachId || '',
       duration: 60,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     },
   });
 
@@ -367,10 +369,10 @@ function UnifiedSessionBookingComponent({
   const createSessionMutation = realtimeBookingHook?.createSessionMutation ?? useMutation({
     mutationFn: async (formData: BookingFormData) => {
       const scheduledAtDateTime = `${formData.date}T${formData.timeSlot}:00`;
-      
+
       const response = await fetch('/api/sessions/book', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -379,6 +381,7 @@ function UnifiedSessionBookingComponent({
           scheduledAt: scheduledAtDateTime,
           durationMinutes: formData.duration,
           coachId: formData.coachId,
+          timezone: formData.timezone,
         }),
       });
 
@@ -790,6 +793,25 @@ function UnifiedSessionBookingComponent({
                 <SelectItem value="120">120 {t('minutes')}</SelectItem>
               </SelectContent>
             </Select>
+          </fieldset>
+
+          {/* Timezone Selection */}
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Timezone
+            </legend>
+            <Input
+              {...register('timezone')}
+              placeholder={Intl.DateTimeFormat().resolvedOptions().timeZone}
+              disabled={isLoading}
+              data-testid="timezone-input"
+            />
+            {errors.timezone && (
+              <p className="text-sm text-destructive" role="alert">{errors.timezone.message}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Your timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </p>
           </fieldset>
 
           {/* Time Slot Selection */}
