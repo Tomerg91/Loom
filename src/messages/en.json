@@ -1837,5 +1837,178 @@
         }
       }
     }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your preferences and account settings",
+    "saved": "Settings saved successfully",
+    "error": "Failed to save settings",
+    "tabs": {
+      "profile": "Profile",
+      "preferences": "Preferences",
+      "notifications": "Notifications",
+      "privacy": "Privacy",
+      "accessibility": "Accessibility",
+      "audit": "Activity History"
+    },
+    "profile": {
+      "title": "Profile Settings",
+      "subtitle": "Manage your personal information",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email address",
+      "phone": "Phone number",
+      "avatar": "Profile picture",
+      "changeAvatar": "Change picture",
+      "removeAvatar": "Remove picture",
+      "updateSuccess": "Profile updated successfully",
+      "updateError": "Failed to update profile"
+    },
+    "preferences": {
+      "title": "App Preferences",
+      "subtitle": "Customize your experience",
+      "display": {
+        "title": "Display",
+        "theme": "Theme",
+        "themeLight": "Light",
+        "themeDark": "Dark",
+        "themeSystem": "System",
+        "sidebarCollapsed": "Collapse sidebar",
+        "compactMode": "Compact mode",
+        "fontSize": "Font size",
+        "fontSizeSmall": "Small",
+        "fontSizeMedium": "Medium",
+        "fontSizeLarge": "Large",
+        "fontSizeXLarge": "Extra large"
+      },
+      "localization": {
+        "title": "Localization",
+        "language": "Language",
+        "languageEn": "English",
+        "languageHe": "Hebrew",
+        "timezone": "Timezone",
+        "dateFormat": "Date format",
+        "timeFormat": "Time format",
+        "timeFormat12": "12-hour",
+        "timeFormat24": "24-hour"
+      },
+      "session": {
+        "title": "Session Preferences",
+        "autoJoinVideo": "Auto-join video",
+        "autoStartAudio": "Auto-start audio",
+        "videoQuality": "Video quality",
+        "videoQualityAuto": "Auto",
+        "videoQualityLow": "Low",
+        "videoQualityMedium": "Medium",
+        "videoQualityHigh": "High"
+      },
+      "data": {
+        "title": "Data & Analytics",
+        "analyticsEnabled": "Enable analytics",
+        "dataExportFrequency": "Data export frequency",
+        "exportNever": "Never",
+        "exportWeekly": "Weekly",
+        "exportMonthly": "Monthly",
+        "exportQuarterly": "Quarterly"
+      }
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "subtitle": "Control how you receive notifications",
+      "email": {
+        "title": "Email Notifications",
+        "enabled": "Enable email notifications",
+        "sessionReminders": "Session reminders",
+        "sessionUpdates": "Session updates",
+        "messages": "Messages",
+        "systemUpdates": "System updates",
+        "marketing": "Marketing emails"
+      },
+      "inApp": {
+        "title": "In-App Notifications",
+        "enabled": "Enable in-app notifications",
+        "sessionReminders": "Session reminders",
+        "sessionUpdates": "Session updates",
+        "messages": "Messages",
+        "systemUpdates": "System notifications"
+      },
+      "push": {
+        "title": "Push Notifications",
+        "enabled": "Enable push notifications",
+        "sessionReminders": "Session reminders",
+        "messages": "New messages",
+        "setup": "Setup push notifications"
+      },
+      "quietHours": {
+        "title": "Quiet Hours",
+        "enabled": "Enable quiet hours",
+        "start": "Start time",
+        "end": "End time",
+        "description": "Pause notifications during these hours"
+      },
+      "digestFrequency": {
+        "title": "Notification Digest",
+        "immediate": "Immediate",
+        "hourly": "Hourly",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "never": "Never"
+      }
+    },
+    "privacy": {
+      "title": "Privacy Settings",
+      "subtitle": "Control your privacy and visibility",
+      "profileVisibility": "Profile visibility",
+      "visibilityPublic": "Public",
+      "visibilityPrivate": "Private",
+      "visibilityContacts": "Contacts only",
+      "showOnlineStatus": "Show online status",
+      "allowSearchIndexing": "Allow search indexing"
+    },
+    "accessibility": {
+      "title": "Accessibility",
+      "subtitle": "Adjust settings for better accessibility",
+      "reducedMotion": "Reduce motion",
+      "highContrast": "High contrast",
+      "screenReaderOptimized": "Screen reader optimized",
+      "description": "These settings help make the app more accessible"
+    },
+    "audit": {
+      "title": "Activity History",
+      "subtitle": "View your settings change history",
+      "category": "Category",
+      "setting": "Setting",
+      "oldValue": "Previous value",
+      "newValue": "New value",
+      "changedBy": "Changed by",
+      "timestamp": "Time",
+      "reason": "Reason",
+      "noHistory": "No activity history yet",
+      "loadMore": "Load more",
+      "categories": {
+        "profile": "Profile",
+        "notification": "Notifications",
+        "display": "Display",
+        "localization": "Localization",
+        "privacy": "Privacy",
+        "accessibility": "Accessibility",
+        "session": "Session",
+        "data": "Data",
+        "security": "Security"
+      },
+      "sources": {
+        "user": "You",
+        "admin": "Admin",
+        "system": "System",
+        "migration": "Migration"
+      }
+    },
+    "actions": {
+      "save": "Save changes",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "reset": "Reset to defaults",
+      "export": "Export settings"
+    }
   }
 }
