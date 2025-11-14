@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import {
@@ -13,6 +13,7 @@ import { getSessionById, cancelSession } from '@/lib/database/sessions';
 import { sessionNotificationService } from '@/lib/notifications/session-notifications';
 import { createCorsResponse } from '@/lib/security/cors';
 import type { Session } from '@/types';
+import { createAuthenticatedSupabaseClient } from '@/lib/api/auth-client';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -124,10 +125,42 @@ export const POST = withErrorHandling(async (request: NextRequest, { params }: R
   // Send cancellation notifications
   if (updatedSession) {
     try {
-      const cancelledBy = validatedData.cancellationType === 'coach' || updatedSession.coachId === updatedSession.coachId ? 'coach' : 'client';
+      let cancelledBy: 'coach' | 'client' | null = null;
+
+      if (validatedData.cancellationType === 'coach') {
+        cancelledBy = 'coach';
+      } else if (validatedData.cancellationType === 'client') {
+        cancelledBy = 'client';
+      }
+
+      if (!cancelledBy) {
+        try {
+          const { client: supabase } = createAuthenticatedSupabaseClient(
+            request,
+            new NextResponse()
+          );
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          if (user) {
+            if (user.id === updatedSession.clientId) {
+              cancelledBy = 'client';
+            } else if (user.id === updatedSession.coachId) {
+              cancelledBy = 'coach';
+            }
+          }
+        } catch (authError) {
+          console.error('Error determining cancellation actor', authError);
+        }
+      }
+
+      const fallbackCancelledBy: 'coach' | 'client' =
+        cancelledBy ?? 'coach';
+
       await sessionNotificationService.onSessionCancelled(
         updatedSession as Session,
-        cancelledBy
+        fallbackCancelledBy
       );
     } catch (error) {
       console.error('Error sending cancellation notifications:', error);
