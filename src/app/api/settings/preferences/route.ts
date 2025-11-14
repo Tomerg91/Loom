@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createClient } from '@/lib/supabase/server';
-import { createAuthenticatedSupabaseClient } from '@/lib/api/auth-client';
+import {
+  createAuthenticatedSupabaseClient,
+  propagateCookies,
+} from '@/lib/api/auth-client';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -190,7 +193,9 @@ export async function PUT(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || null;
 
     // Use the authenticated client that ensures proper RLS
-    const authSupabase = await createAuthenticatedSupabaseClient();
+    const supabaseAuthResponse = new NextResponse();
+    const { client: authSupabase, response: authResponse } =
+      createAuthenticatedSupabaseClient(request, supabaseAuthResponse);
 
     // Call the database function that handles update + audit logging
     const { data, error } = await authSupabase.rpc(
@@ -236,10 +241,12 @@ export async function PUT(request: NextRequest) {
       updatedAt: data.updated_at,
     };
 
-    return createSuccessResponse(
+    const successResponse = createSuccessResponse(
       apiResponse,
       'User preferences updated successfully'
     );
+
+    return propagateCookies(authResponse, successResponse);
 
   } catch (error) {
     console.error('User preferences PUT error:', error);
