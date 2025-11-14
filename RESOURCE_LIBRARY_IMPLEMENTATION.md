@@ -11,6 +11,7 @@ This document summarizes the Resource Library & Analytics implementation for the
 The following features were already fully implemented:
 
 #### 1. Database Schema
+
 - **File**: `supabase/migrations/20251009000001_resource_library_schema.sql`
 - Resource storage extending `file_uploads` table
 - Collections for grouping resources
@@ -19,6 +20,7 @@ The following features were already fully implemented:
 - Helper functions for analytics
 
 #### 2. RLS Policies
+
 - **File**: `supabase/migrations/20251009000002_resource_library_rls.sql`
 - Coach-only access to collections
 - Client access to shared resources
@@ -26,6 +28,7 @@ The following features were already fully implemented:
 - Settings access control
 
 #### 3. API Endpoints
+
 - **GET/POST** `/api/resources` - List and upload resources
 - **GET/PUT/DELETE** `/api/resources/[id]` - Individual resource operations
 - **GET** `/api/resources/analytics` - Library and resource analytics
@@ -33,6 +36,7 @@ The following features were already fully implemented:
 - **GET** `/api/resources/client` - Client-facing resource access
 
 #### 4. Service Layer
+
 - **File**: `src/lib/services/resource-library-service.ts`
 - Full CRUD operations
 - Collection management
@@ -41,12 +45,14 @@ The following features were already fully implemented:
 - Storage usage tracking
 
 #### 5. TypeScript Types
+
 - **File**: `src/types/resources.ts`
 - Canonical category enums with legacy normalization
 - Resource, collection, analytics, and settings types
 - Complete type safety across the stack
 
 #### 6. Frontend Components
+
 - Resource library page for coaches
 - Client resource library page
 - Resource grid and card components
@@ -63,6 +69,7 @@ The following features were already fully implemented:
 The following features were added to complete the requirements:
 
 #### 1. Subscription Support
+
 **Migration**: `supabase/migrations/20251114000002_add_subscription_support.sql`
 
 - Added `subscription_tier` enum type: `free`, `basic`, `professional`, `enterprise`
@@ -78,19 +85,23 @@ The following features were added to complete the requirements:
   - `can_access_resource_library(coach_uuid)` - Check resource library access
 
 **TypeScript Updates**: `src/types/index.ts`
+
 - Added `SubscriptionTier` type
 - Added subscription fields to `User` interface
 
 #### 2. Subscription-Based Access Gating
+
 **Migration**: `supabase/migrations/20251114000003_resource_subscription_access_gating.sql`
 
 Updated RLS policies to enforce subscription requirements:
+
 - Free tier coaches can **view** their resources but cannot create, update, or delete
 - Paid tier coaches (`basic`, `professional`, `enterprise`) have full CRUD access
 - Admins always have full access
 - Client access unaffected - can still view shared resources regardless of coach's tier
 
 **Protected Operations**:
+
 - Creating library resources
 - Updating library resources
 - Deleting library resources
@@ -99,9 +110,11 @@ Updated RLS policies to enforce subscription requirements:
 - Managing library settings
 
 #### 3. Resource Download Endpoint
+
 **API Route**: `src/app/api/resources/[id]/download/route.ts`
 
 Features:
+
 - Permission-based access (download or higher)
 - Signed URL generation (1 hour expiration)
 - Download count tracking
@@ -111,20 +124,24 @@ Features:
 - JSON response mode (returns URL instead of redirecting)
 
 **Migration**: `supabase/migrations/20251114000004_resource_download_helpers.sql`
+
 - Created `file_download_tracking` table
-- Added `increment()` helper function
+- Added restricted `increment()` helper function for download counters
 - Added `track_resource_access()` function
 - Added `download_count` column to `file_uploads`
 - Implemented RLS policies for download tracking
 
 #### 4. Auto-Share Settings API
+
 **API Route**: `src/app/api/resources/settings/route.ts`
 
 Endpoints:
+
 - **GET** `/api/resources/settings` - Get coach's library settings
 - **PUT** `/api/resources/settings` - Update settings
 
 Settings managed:
+
 - `defaultPermission`: Default permission for shares ('view' or 'download')
 - `autoShareNewClients`: Automatically share resources with new clients
 - `allowClientRequests`: Allow clients to request resources
@@ -134,6 +151,7 @@ Settings managed:
 ### 1. Resource CRUD Operations ✅
 
 **Upload**:
+
 - POST `/api/resources` with FormData
 - File validation (type, size, malware scanning)
 - Category and tag assignment
@@ -141,6 +159,7 @@ Settings managed:
 - Subscription gating (paid tier required)
 
 **List/Filter**:
+
 - GET `/api/resources?category=video&tags=intro&search=welcome`
 - Filter by category (canonical + legacy support)
 - Filter by tags
@@ -149,17 +168,20 @@ Settings managed:
 - Pagination support
 
 **Update**:
+
 - PUT `/api/resources/[id]`
 - Update filename, description, category, tags
 - Subscription gating (paid tier required)
 
 **Delete**:
+
 - DELETE `/api/resources/[id]`
 - Cascading deletion (removes from collections, revokes shares)
 - Storage cleanup
 - Subscription gating (paid tier required)
 
 **Download**:
+
 - GET `/api/resources/[id]/download`
 - Permission checking (download or edit permission)
 - Signed URL generation
@@ -169,14 +191,17 @@ Settings managed:
 ### 2. Canonical Category System ✅
 
 **Categories**:
+
 - `worksheet`, `video`, `audio`, `article`, `template`, `guide`, `other`
 
 **Legacy Support**:
+
 - Normalizes plural forms: `worksheets` → `worksheet`
 - Normalizes `resources` → `other`
 - Transparent migration for existing data
 
 **Implementation**:
+
 - `isResourceCategory()` - Type guard for canonical values
 - `isLegacyResourceCategory()` - Type guard for legacy values
 - `normalizeResourceCategory()` - Converts any value to canonical
@@ -185,6 +210,7 @@ Settings managed:
 ### 3. Metadata & Analytics ✅
 
 **Resource Metadata**:
+
 - File information (name, type, size, path)
 - Organization (category, tags, description)
 - Flags (isLibraryResource, isPublic, sharedWithAllClients)
@@ -193,6 +219,7 @@ Settings managed:
 - Share information
 
 **Library Analytics**:
+
 - GET `/api/resources/analytics`
 - Total resources, views, downloads, completions
 - Average completion rate
@@ -202,6 +229,7 @@ Settings managed:
 - Unique viewers
 
 **Resource Analytics**:
+
 - GET `/api/resources/analytics?resourceId=xxx`
 - Per-resource engagement metrics
 - Client-by-client breakdown
@@ -209,6 +237,7 @@ Settings managed:
 - Time-series data support
 
 **Client Progress Tracking**:
+
 - Automatic tracking via `resource_client_progress` table
 - Fields: viewedAt, completedAt, lastAccessedAt, accessCount
 - Updated on download, view, or completion
@@ -242,17 +271,20 @@ Settings managed:
 ### 5. Access Gating for Paid Coaches ✅
 
 **Subscription Tiers**:
+
 - **Free**: Can view existing resources, no CRUD operations
 - **Basic**: Full resource library access
 - **Professional**: Full resource library access + advanced features (future)
 - **Enterprise**: Full resource library access + team features (future)
 
 **Enforcement Points**:
+
 - Database RLS policies (primary enforcement)
 - API route checks (secondary validation)
 - Service layer (business logic)
 
 **Grace Period**:
+
 - When subscription expires, tier automatically downgraded to 'free'
 - Existing resources remain accessible (view-only)
 - Cannot create, update, or delete until subscription renewed
@@ -262,6 +294,7 @@ Settings managed:
 **Component**: `src/components/resources/resource-analytics-dashboard.tsx`
 
 **Metrics Displayed**:
+
 - Overview cards: total resources, views, downloads, completions
 - Top resources list (sorted by engagement)
 - Category performance chart
@@ -270,6 +303,7 @@ Settings managed:
 - Active clients count
 
 **Features**:
+
 - Time range selector (7d, 30d, 90d, all)
 - Refresh button
 - Export to CSV (TODO)
@@ -277,6 +311,7 @@ Settings managed:
 - Real-time updates (5-minute cache)
 
 **Backend**:
+
 - `/api/resources/analytics` - Library-wide stats
 - `/api/resources/analytics?resourceId=xxx` - Resource-specific stats
 - Aggregation via database functions and service layer
@@ -334,35 +369,36 @@ Settings managed:
 - `has_active_subscription(uuid)` - Check subscription status
 - `has_paid_subscription(uuid)` - Check if paid tier
 - `can_access_resource_library(uuid)` - Check resource library access
-- `increment(table, row, column)` - Generic counter increment
+- `increment(table, row, column)` - Restricted helper to increment library download counts
 - `track_resource_access(file_id, client_id)` - Track access event
 
 ## API Routes Summary
 
-| Method | Endpoint | Description | Auth | Subscription |
-|--------|----------|-------------|------|--------------|
-| GET | `/api/resources` | List coach's resources | Coach/Admin | Any |
-| POST | `/api/resources` | Upload resource | Coach/Admin | Paid |
-| GET | `/api/resources/[id]` | Get resource details | Owner/Shared | Any |
-| PUT | `/api/resources/[id]` | Update resource | Owner | Paid |
-| DELETE | `/api/resources/[id]` | Delete resource | Owner | Paid |
-| GET | `/api/resources/[id]/download` | Download resource | Permission | Any |
-| POST | `/api/resources/[id]/share-all-clients` | Share with all clients | Owner | Paid |
-| GET | `/api/resources/collections` | List collections | Coach/Admin | Any |
-| POST | `/api/resources/collections` | Create collection | Coach/Admin | Paid |
-| GET | `/api/resources/collections/[id]` | Get collection | Owner | Any |
-| PUT | `/api/resources/collections/[id]` | Update collection | Owner | Paid |
-| DELETE | `/api/resources/collections/[id]` | Delete collection | Owner | Paid |
-| GET | `/api/resources/analytics` | Get analytics | Coach/Admin | Any |
-| GET | `/api/resources/client` | List client resources | Client | N/A |
-| GET | `/api/resources/settings` | Get library settings | Coach/Admin | Any |
-| PUT | `/api/resources/settings` | Update library settings | Coach/Admin | Paid |
+| Method | Endpoint                                | Description             | Auth         | Subscription |
+| ------ | --------------------------------------- | ----------------------- | ------------ | ------------ |
+| GET    | `/api/resources`                        | List coach's resources  | Coach/Admin  | Any          |
+| POST   | `/api/resources`                        | Upload resource         | Coach/Admin  | Paid         |
+| GET    | `/api/resources/[id]`                   | Get resource details    | Owner/Shared | Any          |
+| PUT    | `/api/resources/[id]`                   | Update resource         | Owner        | Paid         |
+| DELETE | `/api/resources/[id]`                   | Delete resource         | Owner        | Paid         |
+| GET    | `/api/resources/[id]/download`          | Download resource       | Permission   | Any          |
+| POST   | `/api/resources/[id]/share-all-clients` | Share with all clients  | Owner        | Paid         |
+| GET    | `/api/resources/collections`            | List collections        | Coach/Admin  | Any          |
+| POST   | `/api/resources/collections`            | Create collection       | Coach/Admin  | Paid         |
+| GET    | `/api/resources/collections/[id]`       | Get collection          | Owner        | Any          |
+| PUT    | `/api/resources/collections/[id]`       | Update collection       | Owner        | Paid         |
+| DELETE | `/api/resources/collections/[id]`       | Delete collection       | Owner        | Paid         |
+| GET    | `/api/resources/analytics`              | Get analytics           | Coach/Admin  | Any          |
+| GET    | `/api/resources/client`                 | List client resources   | Client       | N/A          |
+| GET    | `/api/resources/settings`               | Get library settings    | Coach/Admin  | Any          |
+| PUT    | `/api/resources/settings`               | Update library settings | Coach/Admin  | Paid         |
 
 ## Testing Recommendations
 
 ### Manual Testing Checklist
 
 #### Resource CRUD
+
 - [ ] Upload resource with category and tags
 - [ ] Upload fails without subscription (free tier)
 - [ ] List resources with filters (category, tags, search)
@@ -371,6 +407,7 @@ Settings managed:
 - [ ] Download resource (check signed URL)
 
 #### Collections
+
 - [ ] Create collection
 - [ ] Add resources to collection
 - [ ] Reorder resources in collection
@@ -378,6 +415,7 @@ Settings managed:
 - [ ] Delete collection (resources remain)
 
 #### Sharing
+
 - [ ] Share individual resource with client
 - [ ] Share with all clients
 - [ ] Verify client can access shared resource
@@ -385,6 +423,7 @@ Settings managed:
 - [ ] Check expiration date enforcement
 
 #### Analytics
+
 - [ ] View library analytics dashboard
 - [ ] Check top resources list
 - [ ] Verify category breakdown
@@ -392,12 +431,14 @@ Settings managed:
 - [ ] Verify client progress tracking
 
 #### Access Gating
+
 - [ ] Free tier: can view, cannot create/update/delete
 - [ ] Paid tier: full CRUD access
 - [ ] Subscription expiration downgrades access
 - [ ] Admin always has access
 
 #### Auto-Share Settings
+
 - [ ] Configure auto-share settings
 - [ ] Verify new client receives resources
 - [ ] Test default permission application
@@ -456,12 +497,14 @@ Execute migrations in this exact order:
 3. `20251114000004_resource_download_helpers.sql`
 
 Existing migrations (already applied):
+
 - `20251009000001_resource_library_schema.sql`
 - `20251009000002_resource_library_rls.sql`
 
 ## Files Modified/Created
 
 ### Created Files
+
 - `supabase/migrations/20251114000002_add_subscription_support.sql`
 - `supabase/migrations/20251114000003_resource_subscription_access_gating.sql`
 - `supabase/migrations/20251114000004_resource_download_helpers.sql`
@@ -470,14 +513,17 @@ Existing migrations (already applied):
 - `RESOURCE_LIBRARY_IMPLEMENTATION.md` (this file)
 
 ### Modified Files
+
 - `src/types/index.ts` (added subscription types and fields)
 
 ### Existing Files (No Changes)
+
 - Database schema, RLS policies, API endpoints, service layer, components (all previously implemented)
 
 ## Future Enhancements
 
 ### Planned Features
+
 1. **CSV Export**: Analytics export functionality
 2. **Public Marketplace**: Enable `is_public` resources
 3. **Resource Templates**: Reusable resource templates
@@ -488,6 +534,7 @@ Existing migrations (already applied):
 8. **Team Libraries**: Shared libraries for enterprise tier
 
 ### Technical Improvements
+
 1. **Caching**: Redis caching for analytics
 2. **CDN Integration**: Faster downloads via CDN
 3. **Webhooks**: Notify external systems on resource events
@@ -500,18 +547,22 @@ Existing migrations (already applied):
 ### Common Issues
 
 **Issue**: "Forbidden" when uploading resources
+
 - **Solution**: Verify user has paid subscription tier
 
 **Issue**: Analytics not updating
+
 - **Solution**: Check 5-minute cache, click refresh button
 
 **Issue**: Client can't access shared resource
+
 - **Solution**: Verify:
   1. Resource is shared via `/api/resources/[id]/share-all-clients`
   2. Client has active session with coach
   3. Share hasn't expired
 
 **Issue**: Download fails with "Not Found"
+
 - **Solution**: Check storage bucket and path in `file_uploads` table
 
 ### Debug Queries
@@ -536,6 +587,7 @@ WHERE tablename IN ('file_uploads', 'resource_collections', 'resource_library_se
 ## Conclusion
 
 The Resource Library & Analytics system is now fully implemented with:
+
 - ✅ Complete CRUD operations with collection filters
 - ✅ Canonical category enums with legacy normalization
 - ✅ Analytics dashboards with comprehensive metrics
