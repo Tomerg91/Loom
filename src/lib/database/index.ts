@@ -3,8 +3,9 @@ import { NotificationService } from './notifications';
 import { PaymentService } from './payments';
 import { SessionService } from './sessions';
 import { UserService, type UserServiceOptions } from './users';
+import { WebhookService } from './webhooks';
 
-export { UserService, SessionService, NotificationService };
+export { UserService, SessionService, NotificationService, WebhookService };
 
 // Convenience factory functions
 export const createUserService = (
@@ -13,3 +14,4 @@ export const createUserService = (
 export const createSessionService = (isServer = true) => new SessionService(isServer);
 export const createNotificationService = (isServer = true) => new NotificationService(isServer);
 export const createPaymentService = () => new PaymentService();
+export const createWebhookService = () => new WebhookService();
