@@ -45,6 +45,9 @@ vi.mock('@/modules/platform/supabase/server', () => ({
 
 vi.mock('@/lib/services/mfa-service', () => ({
   createMfaService: createMfaServiceMock,
+}));
+
+vi.mock('@/lib/services/edge-helpers', () => ({
   getClientIP: getClientIPMock,
 }));
 
@@ -65,6 +68,7 @@ describe('middleware', () => {
     role: null,
     mfaEnabled: false,
     mfaVerified: false,
+    onboardingCompleted: true,
   };
 
   function stubSessionContext(overrides: Partial<SessionContext>) {
