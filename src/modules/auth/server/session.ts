@@ -44,6 +44,7 @@ export interface SessionContext {
   role: UserRole | null;
   mfaEnabled: boolean;
   mfaVerified: boolean;
+  onboardingCompleted: boolean;
 }
 
 /**
@@ -70,6 +71,7 @@ export async function getSessionContext(
         role: null,
         mfaEnabled: false,
         mfaVerified: false,
+        onboardingCompleted: false,
       };
     }
 
@@ -81,7 +83,12 @@ export async function getSessionContext(
       isTrue(user?.app_metadata?.mfa_enabled);
     const mfaVerified = isTrue(user?.user_metadata?.mfa_verified);
 
-    return { session, user, role, mfaEnabled, mfaVerified };
+    // Check onboarding completion status from metadata
+    const onboardingStatus = (user?.user_metadata?.onboarding_status ??
+      user?.app_metadata?.onboarding_status) as string | undefined;
+    const onboardingCompleted = onboardingStatus === 'completed';
+
+    return { session, user, role, mfaEnabled, mfaVerified, onboardingCompleted };
   } catch (error) {
     console.warn('[auth] Unexpected error resolving session context:', error);
     return {
@@ -90,6 +97,7 @@ export async function getSessionContext(
       role: null,
       mfaEnabled: false,
       mfaVerified: false,
+      onboardingCompleted: false,
     };
   }
 }

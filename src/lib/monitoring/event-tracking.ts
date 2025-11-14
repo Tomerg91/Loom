@@ -225,6 +225,159 @@ export async function trackOnboardingCompleted(
   await recordOnboardingStep(userId, 'onboarding_completed', properties);
 }
 
+/**
+ * Track onboarding step viewed
+ * Fires when user lands on a specific onboarding step
+ */
+export async function trackOnboardingStepViewed(
+  userId: string,
+  step: number,
+  stepName: string,
+  role: string,
+  properties?: Record<string, unknown>
+): Promise<void> {
+  await trackEvent({
+    eventName: 'onboarding_step_viewed',
+    eventCategory: 'onboarding',
+    userId,
+    properties: {
+      step,
+      stepName,
+      role,
+      ...properties,
+    },
+  });
+}
+
+/**
+ * Track onboarding step completed
+ * Fires when user successfully completes and moves past a step
+ */
+export async function trackOnboardingStepCompleted(
+  userId: string,
+  step: number,
+  stepName: string,
+  role: string,
+  timeSpentSeconds?: number,
+  properties?: Record<string, unknown>
+): Promise<void> {
+  await trackEvent({
+    eventName: 'onboarding_step_completed',
+    eventCategory: 'onboarding',
+    userId,
+    properties: {
+      step,
+      stepName,
+      role,
+      timeSpentSeconds,
+      ...properties,
+    },
+  });
+}
+
+/**
+ * Track onboarding step abandoned
+ * Fires when user navigates away from onboarding without completing
+ */
+export async function trackOnboardingStepAbandoned(
+  userId: string,
+  step: number,
+  stepName: string,
+  role: string,
+  timeSpentSeconds?: number,
+  properties?: Record<string, unknown>
+): Promise<void> {
+  await trackEvent({
+    eventName: 'onboarding_step_abandoned',
+    eventCategory: 'onboarding',
+    userId,
+    properties: {
+      step,
+      stepName,
+      role,
+      timeSpentSeconds,
+      ...properties,
+    },
+  });
+}
+
+/**
+ * Track onboarding form error
+ * Fires when validation fails on an onboarding form field
+ */
+export async function trackOnboardingFormError(
+  userId: string,
+  step: number,
+  fieldName: string,
+  errorMessage: string,
+  role: string,
+  properties?: Record<string, unknown>
+): Promise<void> {
+  await trackEvent({
+    eventName: 'onboarding_form_error',
+    eventCategory: 'onboarding',
+    userId,
+    properties: {
+      step,
+      fieldName,
+      errorMessage,
+      role,
+      ...properties,
+    },
+  });
+}
+
+/**
+ * Track onboarding auto-save
+ * Fires when onboarding progress is automatically saved
+ */
+export async function trackOnboardingAutoSave(
+  userId: string,
+  step: number,
+  role: string,
+  fieldsCompleted: number,
+  totalFields: number,
+  properties?: Record<string, unknown>
+): Promise<void> {
+  await trackEvent({
+    eventName: 'onboarding_auto_save',
+    eventCategory: 'onboarding',
+    userId,
+    properties: {
+      step,
+      role,
+      fieldsCompleted,
+      totalFields,
+      completionPercentage: Math.round((fieldsCompleted / totalFields) * 100),
+      ...properties,
+    },
+  });
+}
+
+/**
+ * Track onboarding resumed
+ * Fires when user returns to continue incomplete onboarding
+ */
+export async function trackOnboardingResumed(
+  userId: string,
+  step: number,
+  role: string,
+  daysSinceLastSave?: number,
+  properties?: Record<string, unknown>
+): Promise<void> {
+  await trackEvent({
+    eventName: 'onboarding_resumed',
+    eventCategory: 'onboarding',
+    userId,
+    properties: {
+      step,
+      role,
+      daysSinceLastSave,
+      ...properties,
+    },
+  });
+}
+
 // =====================================================================
 // SESSION EVENTS
 // =====================================================================

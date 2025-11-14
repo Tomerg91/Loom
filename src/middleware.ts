@@ -280,6 +280,29 @@ export async function middleware(request: NextRequest) {
       });
     }
 
+    // Onboarding gating: Redirect to onboarding if not completed
+    // Only enforce for coaches and clients accessing dashboard/protected routes
+    const requiresOnboarding =
+      (sessionContext.role === 'coach' || sessionContext.role === 'client') &&
+      !sessionContext.onboardingCompleted &&
+      !path.startsWith('/onboarding') &&
+      (path.startsWith('/dashboard') ||
+       path.startsWith('/coach') ||
+       path.startsWith('/client') ||
+       path.startsWith('/sessions') ||
+       path.startsWith('/settings'));
+
+    if (requiresOnboarding) {
+      const redirectTarget = resolveRedirect(locale, '/onboarding');
+      const res = NextResponse.redirect(new URL(redirectTarget, request.url));
+      return applyFinalisers(request, res, {
+        logRequests,
+        reqId,
+        start,
+        metadata: { reason: 'onboarding incomplete', redirect: redirectTarget },
+      });
+    }
+
     if (isAuth && path !== MFA_VERIFY_ROUTE) {
       const target = resolveRoleLanding(locale, sessionContext.role);
       const res = NextResponse.redirect(new URL(target, request.url));
