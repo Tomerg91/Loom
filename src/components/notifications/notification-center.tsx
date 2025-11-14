@@ -261,6 +261,24 @@ function NotificationCenterComponent() {
   const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [notificationSounds, setNotificationSounds] = useState(true);
+
+  // Load sound preference from user settings on mount
+  useEffect(() => {
+    const loadSoundPreference = async () => {
+      try {
+        const response = await apiGet<{ data: { inApp: { sounds: boolean } } }>('/api/notifications/preferences');
+        if (response?.data?.inApp?.sounds !== undefined) {
+          setNotificationSounds(response.data.inApp.sounds);
+        }
+      } catch (error) {
+        console.warn('Could not load sound preference:', error);
+      }
+    };
+
+    if (user?.id) {
+      loadSoundPreference();
+    }
+  }, [user?.id]);
   const [navigationHistory, setNavigationHistory] = useState<string[]>([]);
   const [loadingActions, setLoadingActions] = useState<Set<string>>(new Set());
   const [previewNotification, setPreviewNotification] = useState<NotificationWithEnhancement | null>(null);
@@ -399,21 +417,34 @@ function NotificationCenterComponent() {
         throw new Error('offline');
       }
 
-      return await apiPost(`/api/notifications/${notificationId}/read`);
+      try {
+        return await apiPost(`/api/notifications/${notificationId}/read`);
+      } catch (error) {
+        // Enhanced error tracking
+        if (typeof window !== 'undefined' && window.posthog) {
+          window.posthog.capture('notification_error', {
+            action: 'mark_read',
+            notificationId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date().toISOString(),
+          });
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error, notificationId) => {
       if (error.message === 'offline') {
-        toast.info('Offline', 'Action queued for when connection is restored');
+        toast.info('Offline Mode', 'Your action will be saved and processed when you reconnect');
         // Optimistically update the UI
         queryClient.setQueryData<NotificationsResponse>(['notifications', user?.id], (old) => {
           if (!old) return old;
           return {
             ...old,
-            data: old.data.map(n => 
-              n.id === notificationId 
+            data: old.data.map(n =>
+              n.id === notificationId
                 ? { ...n, readAt: new Date().toISOString() }
                 : n
             ),
@@ -425,7 +456,7 @@ function NotificationCenterComponent() {
         });
       } else {
         console.error('Failed to mark notification as read:', error);
-        toast.error('Error', 'Failed to mark notification as read. Please try again.');
+        toast.error('Unable to Mark as Read', 'There was a problem marking this notification as read. Please check your connection and try again.');
       }
     },
   });
@@ -444,6 +475,15 @@ function NotificationCenterComponent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Success', 'All notifications marked as read');
+
+      // Track analytics
+      if (typeof window !== 'undefined' && window.posthog) {
+        window.posthog.capture('notification_mark_all_read', {
+          count: unreadCount,
+          timestamp: new Date().toISOString(),
+          userRole: user?.role,
+        });
+      }
     },
     onError: (error) => {
       if (error.message === 'offline') {
@@ -476,15 +516,28 @@ function NotificationCenterComponent() {
         throw new Error('offline');
       }
 
-      return await apiDelete(`/api/notifications/${notificationId}`);
+      try {
+        return await apiDelete(`/api/notifications/${notificationId}`);
+      } catch (error) {
+        // Enhanced error tracking
+        if (typeof window !== 'undefined' && window.posthog) {
+          window.posthog.capture('notification_error', {
+            action: 'delete',
+            notificationId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date().toISOString(),
+          });
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast.success('Success', 'Notification deleted');
+      toast.success('Deleted', 'Notification removed successfully');
     },
     onError: (error, notificationId) => {
       if (error.message === 'offline') {
-        toast.info('Offline', 'Action queued for when connection is restored');
+        toast.info('Offline Mode', 'Your deletion will be processed when you reconnect');
         // Optimistically update the UI
         queryClient.setQueryData<NotificationsResponse>(['notifications', user?.id], (old) => {
           if (!old) return old;
@@ -495,15 +548,15 @@ function NotificationCenterComponent() {
             pagination: {
               ...old.pagination,
               total: old.pagination.total - 1,
-              unreadCount: deletedNotification && !deletedNotification.readAt 
-                ? old.pagination.unreadCount - 1 
+              unreadCount: deletedNotification && !deletedNotification.readAt
+                ? old.pagination.unreadCount - 1
                 : old.pagination.unreadCount,
             },
           };
         });
       } else {
         console.error('Failed to delete notification:', error);
-        toast.error('Error', 'Failed to delete notification. Please try again.');
+        toast.error('Deletion Failed', 'Unable to delete this notification. Please check your connection and try again.');
       }
     },
   });
@@ -611,9 +664,21 @@ function NotificationCenterComponent() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+
+      return format;
     },
-    onSuccess: (_, format) => {
+    onSuccess: (format) => {
       toast.success('Success', `Notifications exported as ${format.toUpperCase()}`);
+
+      // Track analytics
+      if (typeof window !== 'undefined' && window.posthog) {
+        window.posthog.capture('notification_export', {
+          format,
+          count: notifications.length,
+          timestamp: new Date().toISOString(),
+          userRole: user?.role,
+        });
+      }
     },
     onError: (error) => {
       console.error('Failed to export notifications:', error);
@@ -624,7 +689,18 @@ function NotificationCenterComponent() {
   // Handle bulk actions
   const handleBulkAction = useCallback((action: string, notificationIds: string[]) => {
     if (notificationIds.length === 0) return;
-    
+
+    // Track bulk action analytics
+    if (typeof window !== 'undefined' && window.posthog) {
+      window.posthog.capture('notification_bulk_action', {
+        action,
+        count: notificationIds.length,
+        notificationIds,
+        timestamp: new Date().toISOString(),
+        userRole: user?.role,
+      });
+    }
+
     setActionLoading('bulk-action', true);
     bulkActionMutation.mutate(
       { action, notificationIds },
@@ -632,7 +708,7 @@ function NotificationCenterComponent() {
         onSettled: () => setActionLoading('bulk-action', false),
       }
     );
-  }, [bulkActionMutation, setActionLoading]);
+  }, [bulkActionMutation, setActionLoading, user?.role]);
 
   const getNotificationIcon = useCallback((type: NotificationType) => {
     switch (type) {
@@ -877,6 +953,18 @@ function NotificationCenterComponent() {
   
   const notifications = enhancedNotifications;
   const unreadCount = notifications.filter(n => !n.readAt).length;
+
+  // Track filter/sort/group changes
+  const trackViewChange = useCallback((type: 'filter' | 'sort' | 'group', value: string) => {
+    if (typeof window !== 'undefined' && window.posthog) {
+      window.posthog.capture('notification_view_change', {
+        changeType: type,
+        newValue: value,
+        timestamp: new Date().toISOString(),
+        resultsCount: notifications.length,
+      });
+    }
+  }, [notifications.length]);
   
   // Selection management
   const handleSelectNotification = useCallback((notificationId: string, selected: boolean) => {
@@ -970,7 +1058,33 @@ function NotificationCenterComponent() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setNotificationSounds(!notificationSounds)}
+                      onClick={async () => {
+                        const newValue = !notificationSounds;
+                        setNotificationSounds(newValue);
+
+                        // Persist to backend
+                        try {
+                          const currentPrefs = await apiGet<{ data: unknown }>('/api/notifications/preferences');
+                          await apiPost('/api/notifications/preferences', {
+                            ...currentPrefs.data,
+                            inApp: {
+                              ...((currentPrefs.data as Record<string, unknown>)?.inApp || {}),
+                              sounds: newValue,
+                            },
+                          });
+
+                          // Track analytics
+                          if (typeof window !== 'undefined' && window.posthog) {
+                            window.posthog.capture('notification_sound_toggle', {
+                              enabled: newValue,
+                              timestamp: new Date().toISOString(),
+                            });
+                          }
+                        } catch (error) {
+                          console.error('Failed to save sound preference:', error);
+                          toast.error('Error', 'Failed to save sound preference');
+                        }
+                      }}
                       className="h-8 w-8 p-0"
                       aria-label={`${notificationSounds ? 'Disable' : 'Enable'} notification sounds`}
                     >
@@ -1180,7 +1294,10 @@ function NotificationCenterComponent() {
               
               {showFilters && (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Select value={filterBy} onValueChange={(value) => setFilterBy(value as FilterOption)}>
+                  <Select value={filterBy} onValueChange={(value) => {
+                    setFilterBy(value as FilterOption);
+                    trackViewChange('filter', value);
+                  }}>
                     <SelectTrigger className="w-24 h-8">
                       <SelectValue />
                     </SelectTrigger>
@@ -1192,8 +1309,11 @@ function NotificationCenterComponent() {
                       <SelectItem value="week">This Week</SelectItem>
                     </SelectContent>
                   </Select>
-                  
-                  <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+
+                  <Select value={sortBy} onValueChange={(value) => {
+                    setSortBy(value as SortOption);
+                    trackViewChange('sort', value);
+                  }}>
                     <SelectTrigger className="w-24 h-8">
                       <SelectValue />
                     </SelectTrigger>
@@ -1205,8 +1325,11 @@ function NotificationCenterComponent() {
                       <SelectItem value="type">Type</SelectItem>
                     </SelectContent>
                   </Select>
-                  
-                  <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByOption)}>
+
+                  <Select value={groupBy} onValueChange={(value) => {
+                    setGroupBy(value as GroupByOption);
+                    trackViewChange('group', value);
+                  }}>
                     <SelectTrigger className="w-20 h-8">
                       <SelectValue />
                     </SelectTrigger>
@@ -1321,7 +1444,7 @@ function NotificationCenterComponent() {
                     </p>
                   )}
                 </div>
-              ) : (
+              ) : groupBy === 'none' ? (
                 <div className="divide-y">
                   {notifications.map((notification) => (
                     <NotificationItem
@@ -1335,6 +1458,62 @@ function NotificationCenterComponent() {
                       markAsReadMutation={markAsReadMutation}
                       deleteNotificationMutation={deleteNotificationMutation}
                     />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {groupedNotifications.map((group) => (
+                    <div key={group.key} className="border-b last:border-b-0">
+                      {/* Group Header */}
+                      <div className="sticky top-0 bg-muted/80 backdrop-blur-sm px-4 py-2 border-b border-border/50 z-10">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-foreground">
+                            {group.label}
+                          </h3>
+                          <div className="flex items-center gap-2">
+                            {group.unreadCount > 0 && (
+                              <Badge variant="secondary" className="text-xs">
+                                {group.unreadCount} unread
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-xs">
+                              {group.notifications.length}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Group Notifications */}
+                      <div className="divide-y">
+                        {group.notifications.map((notification) => (
+                          <NotificationItem
+                            key={notification.id}
+                            notification={notification}
+                            isSelected={selectedNotifications.has(notification.id)}
+                            getNotificationIcon={getNotificationIcon}
+                            getNotificationTypeLabel={getNotificationTypeLabel}
+                            formatNotificationTime={formatNotificationTime}
+                            handleNotificationClick={(notif) => {
+                              handleNotificationClick(notif);
+
+                              // Track group interaction
+                              if (typeof window !== 'undefined' && window.posthog) {
+                                window.posthog.capture('notification_group_interaction', {
+                                  groupKey: group.key,
+                                  groupLabel: group.label,
+                                  groupBy,
+                                  notificationId: notif.id,
+                                  notificationType: notif.type,
+                                  timestamp: new Date().toISOString(),
+                                });
+                              }
+                            }}
+                            markAsReadMutation={markAsReadMutation}
+                            deleteNotificationMutation={deleteNotificationMutation}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
