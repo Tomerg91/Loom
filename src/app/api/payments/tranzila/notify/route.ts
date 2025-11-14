@@ -28,8 +28,8 @@ async function handler(req: NextRequest): Promise<NextResponse> {
     }
 
     const txId = data.TranID || data.tran_id || data.index || data.orderid || 'unknown';
-    const timestamp = new Date().getTime();
-    const idemKey = `${txId}:${data.sum || data.Amount || ''}:${timestamp}`;
+    const amount = data.sum ?? data.Amount ?? '';
+    const idemKey = `${txId}:${amount}`;
 
     // Database-based idempotency check
     const webhookSvc = createWebhookService();
