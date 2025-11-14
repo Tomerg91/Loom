@@ -22,6 +22,7 @@ import { SessionList } from '@/components/sessions/session-list';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ClientDashboardSkeleton } from '@/components/ui/skeletons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/lib/auth/use-user';
 import type { Session } from '@/types';
@@ -124,13 +125,18 @@ export function ClientDashboard() {
     router.push(`/sessions/${sessionId}`);
   }, [router]);
 
+  // Show skeleton during initial load
+  if (statsLoading) {
+    return <ClientDashboardSkeleton />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Accessibility: Screen reader announcements */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {statsLoading ? 'Loading dashboard statistics...' : 'Dashboard loaded successfully'}
+        Dashboard loaded successfully
       </div>
-      
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">My Coaching Journey</h1>
@@ -159,7 +165,7 @@ export function ClientDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {statsLoading ? '...' : stats?.upcomingSessions || 0}
+                  {stats?.upcomingSessions || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {thisWeekSessions.length} this week
@@ -176,7 +182,7 @@ export function ClientDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {statsLoading ? '...' : stats?.completedSessions || 0}
+                  {stats?.completedSessions || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   of {stats?.totalSessions || 0} total sessions
@@ -193,7 +199,7 @@ export function ClientDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {statsLoading ? '...' : stats?.totalReflections || 0}
+                  {stats?.totalReflections || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   insights captured
@@ -210,7 +216,7 @@ export function ClientDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {statsLoading ? '...' : stats?.averageMoodRating || 0}/10
+                  {stats?.averageMoodRating || 0}/10
                 </div>
                 <p className="text-xs text-muted-foreground">
                   recent feeling
