@@ -1077,28 +1077,49 @@ export class AuthService {
 
   /**
    * Update password with reset token
+   *
+   * SECURITY: Supports two password reset flows:
+   *
+   * Flow 1: Supabase Recovery Token (from email link)
+   * 1. User receives password reset email with token in URL fragment
+   * 2. Supabase JS SDK auto-sets up session from fragment
+   * 3. Token parameter identifies this is a recovery flow
+   * 4. Call updateUser({ password }) with established session
+   *
+   * Flow 2: Email Verification Code (custom flow)
+   * 1. User requests password reset via email
+   * 2. User receives verification code (handled separately)
+   * 3. User enters verification code (validated server-side)
+   * 4. User enters new password
+   * 5. Call updateUser({ password }) with established session
+   * 6. No token needed - verification already happened
+   *
+   * In both cases, Supabase session must be established before calling this method.
    */
   async updatePasswordWithToken(
     token: string,
     password: string
   ): Promise<{ error: string | null }> {
     try {
-      // Verify the reset token and update password
+      // Update the password with the authenticated session
       const { error } = await this.supabase.auth.updateUser({
         password,
       });
 
       if (error) {
+        console.error('Password update failed:', error);
         return { error: error.message };
       }
 
+      console.info('Password successfully updated');
       return { error: null };
     } catch (error) {
+      console.error('Password reset error:', error);
       return {
         error:
           error instanceof Error
             ? error.message
-            : 'Failed to update password with token',
+            : 'Failed to update password',
       };
     }
   }
