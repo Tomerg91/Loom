@@ -34,20 +34,20 @@ function PricingTier({
   });
 
   return (
-    <div className="flex h-full flex-col justify-between rounded-3xl border border-slate-100 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+    <article className="flex h-full flex-col justify-between rounded-3xl border border-slate-100 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-semibold text-slate-900">
             {tier.name}
           </h3>
           {tier.popular ? (
-            <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold uppercase text-purple-600">
+            <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold uppercase text-purple-600" aria-label={`${tier.badgeLabel ?? 'Popular'} plan`}>
               {tier.badgeLabel ?? 'Popular'}
             </span>
           ) : null}
         </div>
         <div>
-          <span className="text-4xl font-bold text-slate-900">
+          <span className="text-4xl font-bold text-slate-900" aria-label={`Price: ${tier.price}`}>
             {tier.price}
           </span>
           <p className="text-sm text-slate-500">{tier.priceCaption}</p>
@@ -55,7 +55,7 @@ function PricingTier({
         <p className="text-base leading-relaxed text-slate-600">
           {tier.description}
         </p>
-        <ul className="space-y-2 text-sm text-slate-600">
+        <ul className="space-y-2 text-sm text-slate-600" aria-label="Plan features">
           {tier.features.map(feature => (
             <li key={feature} className="flex items-start gap-2">
               <span
@@ -71,11 +71,12 @@ function PricingTier({
         <Link
           href={tier.cta.href}
           locale={resolveLocale(tier.cta.href)}
+          aria-label={`${tierCta.label} - ${tier.name} plan`}
         >
           {tierCta.label}
         </Link>
       </Button>
-    </div>
+    </article>
   );
 }
 
@@ -96,25 +97,26 @@ export function LandingPricing({
     href.startsWith('/') ? locale : undefined;
 
   return (
-    <section id="pricing" className="py-20">
+    <section id="pricing" className="py-20" aria-labelledby="pricing-heading">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 id="pricing-heading" className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             {pricing.title}
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-slate-600">
             {pricing.description}
           </p>
         </div>
-        <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3" role="list">
           {pricing.tiers.map((tier, index) => (
-            <PricingTier
-              key={tier.name}
-              tier={tier}
-              index={index}
-              locale={locale}
-              resolveLocale={resolveLocale}
-            />
+            <div key={tier.name} role="listitem">
+              <PricingTier
+                tier={tier}
+                index={index}
+                locale={locale}
+                resolveLocale={resolveLocale}
+              />
+            </div>
           ))}
         </div>
       </div>

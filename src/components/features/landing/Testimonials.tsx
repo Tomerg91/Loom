@@ -20,10 +20,10 @@ export function LandingTestimonials({
   const { title, highlight, items } = testimonials;
 
   return (
-    <section id="testimonials" className="bg-slate-50/80 py-20">
+    <section id="testimonials" className="bg-slate-50/80 py-20" aria-labelledby="testimonials-heading">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 id="testimonials-heading" className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             {title}
           </h2>
         </div>
@@ -33,7 +33,7 @@ export function LandingTestimonials({
               className="text-6xl font-serif text-purple-400"
               aria-hidden="true"
             >
-              “
+              "
             </span>
           </div>
           <blockquote className="space-y-6">
@@ -48,24 +48,26 @@ export function LandingTestimonials({
             </footer>
           </blockquote>
         </div>
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
+        <ul className="mt-12 grid gap-6 md:grid-cols-3" role="list">
           {items.map(testimonial => (
-            <div
+            <li
               key={`${testimonial.name}-${testimonial.role}`}
               className="flex h-full flex-col justify-between gap-4 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm"
             >
-              <p className="text-base leading-relaxed text-slate-600">
-                {testimonial.quote}
-              </p>
-              <div>
+              <blockquote>
+                <p className="text-base leading-relaxed text-slate-600">
+                  {testimonial.quote}
+                </p>
+              </blockquote>
+              <footer>
                 <p className="text-sm font-semibold text-slate-900">
                   {testimonial.name}
                 </p>
                 <p className="text-xs text-slate-500">{testimonial.role}</p>
-              </div>
-            </div>
+              </footer>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );
