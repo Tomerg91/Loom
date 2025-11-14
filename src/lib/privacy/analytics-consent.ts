@@ -133,9 +133,9 @@ export async function updateUserConsent(
     // Update PostHog opt-in/opt-out status
     if (typeof window !== 'undefined' && window.posthog) {
       if (preferences.analyticsEnabled) {
-        window.posthog.opt_in_capturing();
+        window.posthog.opt_in_capturing?.();
       } else {
-        window.posthog.opt_out_capturing();
+        window.posthog.opt_out_capturing?.();
       }
     }
 
@@ -180,7 +180,7 @@ export async function revokeAllConsent(userId: string): Promise<void> {
 
   // Opt out of PostHog
   if (typeof window !== 'undefined' && window.posthog) {
-    window.posthog.opt_out_capturing();
+    window.posthog.opt_out_capturing?.();
     window.posthog.reset();
   }
 }

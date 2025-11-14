@@ -13,10 +13,10 @@
 import { trackEvent, posthogEvent } from './analytics';
 import {
   trackOnboardingProgress,
-  trackOnboardingCompleted,
+  trackOnboardingCompleted as persistOnboardingCompleted,
   trackOnboardingStepCompleted as persistOnboardingStepCompleted,
   trackOnboardingStepViewed,
-  trackOnboardingStepAbandoned,
+  trackOnboardingStepAbandoned as persistOnboardingStepAbandoned,
 } from './event-tracking';
 import * as Sentry from '@sentry/nextjs';
 
@@ -184,7 +184,7 @@ export const trackOnboardingFlowCompleted = (data: {
   posthogEvent('onboarding_completed', eventData.properties);
 
   // Track in database
-  trackOnboardingCompleted(
+  persistOnboardingCompleted(
     data.userId,
     (data.metadata?.role as string) || 'unknown',
     {
@@ -250,7 +250,7 @@ export const trackOnboardingFlowAbandoned = (data: {
   posthogEvent('onboarding_abandoned', eventData.properties);
 
   // Track in database
-  trackOnboardingStepAbandoned(
+  persistOnboardingStepAbandoned(
     data.userId,
     data.stepNumber,
     data.step,

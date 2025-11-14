@@ -11,7 +11,7 @@
  */
 
 import { trackEvent, posthogEvent } from './analytics';
-import { trackEngagementEvent } from './event-tracking';
+import { trackEngagementEvent as persistEngagementEvent } from './event-tracking';
 import * as Sentry from '@sentry/nextjs';
 
 export interface MarketingConversionEvent {
@@ -57,7 +57,7 @@ export const trackLandingPageView = (data: MarketingConversionEvent) => {
   posthogEvent('landing_page_view', eventData.properties);
 
   // Track in database for retention analysis
-  trackEngagementEvent(
+  persistEngagementEvent(
     data.userId || 'anonymous',
     'landing_page_view',
     data.landingPage || 'unknown',
@@ -99,7 +99,7 @@ export const trackLeadCapture = (data: MarketingConversionEvent & {
   posthogEvent('lead_capture', eventData.properties);
 
   // Track in database
-  trackEngagementEvent(
+  persistEngagementEvent(
     data.userId || 'anonymous',
     'lead_capture',
     data.leadType,
@@ -387,7 +387,7 @@ export const trackNewsletterSignup = (data: MarketingConversionEvent & {
   posthogEvent('newsletter_signup', eventData.properties);
 
   // Track in database
-  trackEngagementEvent(
+  persistEngagementEvent(
     data.userId || 'anonymous',
     'newsletter_signup',
     data.frequency || 'weekly',
