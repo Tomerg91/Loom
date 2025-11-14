@@ -12,17 +12,33 @@ import { useQuery } from '@tanstack/react-query';
 import type {
   ResourceLibraryItem,
   ResourceListParams,
+  PaginationMetadata,
 } from '@/types/resources';
+
+/**
+ * Response type for resources API
+ */
+interface ResourcesResponse {
+  resources: ResourceLibraryItem[];
+  total: number;
+  pagination?: PaginationMetadata;
+}
 
 /**
  * Fetch resources from API
  */
-async function fetchResources(filters: Partial<ResourceListParams>) {
+async function fetchResources(
+  filters: Partial<ResourceListParams>
+): Promise<ResourcesResponse> {
   const params = new URLSearchParams();
 
   if (filters.category) params.set('category', filters.category);
   if (filters.tags?.length) params.set('tags', filters.tags.join(','));
   if (filters.search) params.set('search', filters.search);
+  if (filters.page !== undefined) params.set('page', filters.page.toString());
+  if (filters.limit !== undefined) params.set('limit', filters.limit.toString());
+  if (filters.offset !== undefined)
+    params.set('offset', filters.offset.toString());
   if (filters.sortBy) params.set('sortBy', filters.sortBy);
   if (filters.sortOrder) params.set('sortOrder', filters.sortOrder);
 
@@ -33,7 +49,11 @@ async function fetchResources(filters: Partial<ResourceListParams>) {
   }
 
   const data = await res.json();
-  return data.data.resources as ResourceLibraryItem[];
+  return {
+    resources: data.data.resources,
+    total: data.data.total,
+    pagination: data.data.pagination,
+  };
 }
 
 /**
@@ -62,12 +82,16 @@ export function useResources(filters: Partial<ResourceListParams> = {}) {
 /**
  * Fetch client shared resources
  */
-async function fetchClientResources(filters: Partial<ResourceListParams>) {
+async function fetchClientResources(
+  filters: Partial<ResourceListParams>
+): Promise<ResourcesResponse> {
   const params = new URLSearchParams();
 
   if (filters.category) params.set('category', filters.category);
   if (filters.tags?.length) params.set('tags', filters.tags.join(','));
   if (filters.search) params.set('search', filters.search);
+  if (filters.page !== undefined) params.set('page', filters.page.toString());
+  if (filters.limit !== undefined) params.set('limit', filters.limit.toString());
   if (filters.sortBy) params.set('sortBy', filters.sortBy);
   if (filters.sortOrder) params.set('sortOrder', filters.sortOrder);
   if (filters.coachId) params.set('coach', filters.coachId);
@@ -79,7 +103,11 @@ async function fetchClientResources(filters: Partial<ResourceListParams>) {
   }
 
   const data = await res.json();
-  return data.data.resources as ResourceLibraryItem[];
+  return {
+    resources: data.data.resources,
+    total: data.data.total,
+    pagination: data.data.pagination,
+  };
 }
 
 /**
