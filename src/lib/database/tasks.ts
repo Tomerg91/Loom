@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
+import { trackTaskCompletion, trackTaskProgress } from '@/modules/tasks/analytics/task-analytics'
 import { Database } from './schema.types'
 
 /**
@@ -354,6 +355,10 @@ export async function createProgressUpdate(
     attachments?: Array<{ id: string; url: string; filename: string; size: number }>
   }
 ) {
+  // Fetch task instance details for analytics
+  const instanceData = await getTaskInstanceById(supabase, progressUpdate.instanceId)
+  const previousPercentage = instanceData.progress_percentage || 0
+
   const { data, error } = await supabase
     .from('task_progress_updates')
     .insert({
@@ -367,11 +372,40 @@ export async function createProgressUpdate(
 
   if (error) throw error
 
+  // Track progress update analytics
+  if (instanceData.tasks) {
+    const task = instanceData.tasks as any
+    trackTaskProgress({
+      taskId: task.id,
+      instanceId: progressUpdate.instanceId,
+      clientId: instanceData.client_id,
+      coachId: task.coach_id || '',
+      percentage: progressUpdate.progressPercentage,
+      previousPercentage,
+      isVisibleToCoach: true, // Default visibility
+      hasNote: !!progressUpdate.notes,
+    })
+  }
+
   // Auto-complete if progress is 100%
   if (progressUpdate.progressPercentage === 100) {
     await updateTaskInstance(supabase, progressUpdate.instanceId, {
       status: 'completed',
     })
+
+    // Track completion analytics
+    if (instanceData.tasks) {
+      const task = instanceData.tasks as any
+      trackTaskCompletion({
+        taskId: task.id,
+        coachId: task.coach_id || '',
+        clientId: instanceData.client_id,
+        sessionId: task.session_id,
+        priority: task.priority,
+        status: 'COMPLETED',
+        instanceId: progressUpdate.instanceId,
+      })
+    }
   }
 
   return data
