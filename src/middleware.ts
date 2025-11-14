@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
 
 import { getClientIP } from '@/lib/services/edge-helpers';
+import { ensureCSRFToken } from '@/lib/security/csrf';
 import { resolveRedirect } from '@/lib/utils/redirect';
 import {
   AUTH_ROUTES,
@@ -117,6 +118,7 @@ async function applyFinalisers(
 ): Promise<NextResponse> {
   let res = applySecurityHeaders(request, response);
   res = await refreshSessionOnResponse(request, res);
+  res = ensureCSRFToken(request, res); // Add CSRF token to response
   if (logRequests) {
     res.headers.set('X-Request-ID', reqId);
     console.info('[RES]', {
@@ -140,7 +142,7 @@ export async function middleware(request: NextRequest) {
         'Access-Control-Allow-Methods':
           'GET, POST, PUT, DELETE, PATCH, OPTIONS',
         'Access-Control-Allow-Headers':
-          'Content-Type, Authorization, X-Requested-With',
+          'Content-Type, Authorization, X-Requested-With, X-CSRF-Token',
         'Access-Control-Max-Age': '86400',
       },
     });
