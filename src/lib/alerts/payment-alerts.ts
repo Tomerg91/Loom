@@ -4,6 +4,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/server';
+import { createLogger } from '@/modules/platform/logging/logger';
 
 export interface PaymentAlert {
   type: 'payment_failed' | 'payment_pending' | 'subscription_expiring' | 'payment_disputed';
@@ -21,6 +22,8 @@ export interface AlertRecipient {
   name?: string;
 }
 
+const logger = createLogger({ context: 'PaymentAlerts' });
+
 export class PaymentAlertService {
   private admin = createAdminClient();
 
@@ -37,7 +40,10 @@ export class PaymentAlertService {
         .single();
 
       if (userError || !user) {
-        console.error('User not found for payment alert:', alert.userId);
+        logger.error('User not found for payment alert', {
+          userId: alert.userId,
+          error: userError,
+        });
         return;
       }
 
@@ -65,7 +71,11 @@ export class PaymentAlertService {
         await this.notifyAdmins(alert, user);
       }
     } catch (error) {
-      console.error('Error sending payment alert:', error);
+      logger.error('Error sending payment alert', {
+        error,
+        alertType: alert.type,
+        userId: alert.userId,
+      });
       // Don't throw - we don't want to fail payment processing due to notification errors
     }
   }
@@ -77,8 +87,11 @@ export class PaymentAlertService {
     const subject = this.getEmailSubject(alert.type);
     const body = this.getEmailBody(alert, recipient.name);
 
-    console.log(`[EMAIL ALERT] To: ${recipient.email}, Subject: ${subject}`);
-    console.log(`[EMAIL ALERT] Body: ${body}`);
+    logger.info('Sending email alert', {
+      email: recipient.email, // Will be auto-sanitized by logger
+      subject,
+      alertType: alert.type,
+    });
 
     // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
     // Example:
@@ -95,7 +108,10 @@ export class PaymentAlertService {
   private async sendSMSAlert(recipient: AlertRecipient, alert: PaymentAlert): Promise<void> {
     const message = this.getSMSMessage(alert);
 
-    console.log(`[SMS ALERT] To: ${recipient.phone}, Message: ${message}`);
+    logger.info('Sending SMS alert', {
+      phone: recipient.phone, // Will be auto-sanitized by logger
+      alertType: alert.type,
+    });
 
     // TODO: Integrate with SMS service (Twilio, AWS SNS, etc.)
     // Example:
@@ -114,23 +130,15 @@ export class PaymentAlertService {
       .select('email, full_name')
       .eq('role', 'admin');
 
-    const subject = `[CRITICAL] High-value payment failure - ${user.email}`;
-    const body = `
-      <h2>High-Value Payment Failure Alert</h2>
-      <p>A payment failure occurred for a high-value transaction:</p>
-      <ul>
-        <li><strong>User:</strong> ${user.full_name} (${user.email})</li>
-        <li><strong>Amount:</strong> ${(alert.amount || 0) / 100} ${alert.currency || 'ILS'}</li>
-        <li><strong>Type:</strong> ${alert.type}</li>
-        <li><strong>Reason:</strong> ${alert.reason || 'Unknown'}</li>
-        <li><strong>Payment ID:</strong> ${alert.paymentId || 'N/A'}</li>
-      </ul>
-      <p>Please review this transaction in the admin dashboard.</p>
-    `;
-
-    (admins || []).forEach((admin) => {
-      console.log(`[ADMIN ALERT] To: ${admin.email}, Subject: ${subject}`);
-      console.log(`[ADMIN ALERT] Body: ${body}`);
+    logger.warn('High-value payment failure - notifying admins', {
+      userEmail: user.email, // Will be auto-sanitized by logger
+      userName: user.full_name,
+      amount: (alert.amount || 0) / 100,
+      currency: alert.currency || 'ILS',
+      alertType: alert.type,
+      reason: alert.reason,
+      paymentId: alert.paymentId,
+      adminCount: (admins || []).length,
     });
 
     // TODO: Send actual emails to admins
@@ -152,7 +160,11 @@ export class PaymentAlertService {
         created_at: new Date().toISOString(),
       });
     } catch (error) {
-      console.error('Error logging payment alert:', error);
+      logger.error('Error logging payment alert to database', {
+        error,
+        alertType: alert.type,
+        userId: alert.userId,
+      });
       // Don't throw - logging failure shouldn't stop the alert
     }
   }

@@ -40,7 +40,14 @@ const nextConfig = {
 
   // Performance optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    // Remove debug/info/log console statements in production, keep error/warn for debugging
+    // This allows the centralized logger's error/warn logs to remain in production
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? {
+            exclude: ['error', 'warn'],
+          }
+        : false,
     // Remove test IDs in production
     reactRemoveProperties:
       process.env.NODE_ENV === 'production'
