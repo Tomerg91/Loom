@@ -21,6 +21,7 @@ import { useMemo, useState, useCallback, type ComponentType } from 'react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 
 import { AddSessionModal } from '@/components/coach/add-session-modal';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,8 @@ import {
 } from '@/components/ui/card';
 import { trackEvent } from '@/lib/monitoring/analytics';
 import { useCoachOverview } from '@/modules/dashboard/api/useCoachOverview';
+import { DashboardErrorFallback } from '@/modules/dashboard/components/errors/DashboardErrorFallback';
+import { CoachDashboardSkeleton } from '@/modules/dashboard/components/skeletons/DashboardSkeleton';
 import { ClientProgressOverview } from '@/modules/dashboard/components/widgets/ClientProgress';
 import { SessionsList } from '@/modules/dashboard/components/widgets/SessionsList';
 import { TasksSummary } from '@/modules/dashboard/components/widgets/TasksSummary';
@@ -255,208 +258,222 @@ export function CoachOverview({ locale, coachId, userId }: CoachOverviewProps) {
     }
   };
 
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-sand-900">
-            {t('title')}
-          </h1>
-          <p className="text-muted-foreground max-w-2xl">{t('subtitle')}</p>
-        </div>
-        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-          {generatedAtLabel ? (
-            <Badge variant="outline" className="whitespace-nowrap">
-              {generatedAtLabel}
-            </Badge>
-          ) : null}
-          <Button
-            type="button"
-            onClick={handleOpenSessionModal}
-            variant="default"
-            className="inline-flex items-center gap-2"
-          >
-            <CalendarPlus className="h-4 w-4" aria-hidden="true" />
-            {t('actions.scheduleSession')}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleRefresh}
-            disabled={isRefetching}
-            variant="secondary"
-            className="inline-flex items-center gap-2"
-          >
-            <RefreshCcw className="h-4 w-4" aria-hidden="true" />
-            {isRefetching ? t('actions.refreshing') : t('actions.refresh')}
-          </Button>
-        </div>
-      </div>
+  // Show comprehensive skeleton during initial load
+  if (isLoading) {
+    return <CoachDashboardSkeleton />;
+  }
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map(card => {
-          const Icon = card.icon;
-          return (
-            <Card
-              key={card.id}
-              className="overflow-hidden border border-sand-200"
+  // Show error state if data fetching failed
+  if (isError && error) {
+    return (
+      <DashboardErrorFallback
+        error={error instanceof Error ? error : new Error('Failed to load dashboard')}
+        resetError={() => refetch()}
+        locale={locale}
+        dashboardType="coach"
+      />
+    );
+  }
+
+  return (
+    <ErrorBoundary
+      fallback={({ error: boundaryError, resetError }) => (
+        <DashboardErrorFallback
+          error={boundaryError}
+          resetError={resetError}
+          locale={locale}
+          dashboardType="coach"
+        />
+      )}
+    >
+      <div className="space-y-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-sand-900">
+              {t('title')}
+            </h1>
+            <p className="text-muted-foreground max-w-2xl">{t('subtitle')}</p>
+          </div>
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+            {generatedAtLabel ? (
+              <Badge variant="outline" className="whitespace-nowrap">
+                {generatedAtLabel}
+              </Badge>
+            ) : null}
+            <Button
+              type="button"
+              onClick={handleOpenSessionModal}
+              variant="default"
+              className="inline-flex items-center gap-2"
             >
-              <CardHeader className="flex flex-row items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg font-semibold text-sand-900">
-                    {card.label}
-                  </CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
-                    {card.description}
-                  </CardDescription>
-                </div>
-                <span
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full ${card.accent}`}
-                >
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </span>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
+              <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+              {t('actions.scheduleSession')}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isRefetching}
+              variant="secondary"
+              className="inline-flex items-center gap-2"
+            >
+              <RefreshCcw
+                className={`h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`}
+                aria-hidden="true"
+              />
+              {isRefetching ? t('actions.refreshing') : t('actions.refresh')}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {summaryCards.map(card => {
+            const Icon = card.icon;
+            return (
+              <Card
+                key={card.id}
+                className="overflow-hidden border border-sand-200"
+              >
+                <CardHeader className="flex flex-row items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg font-semibold text-sand-900">
+                      {card.label}
+                    </CardTitle>
+                    <CardDescription className="text-sm text-muted-foreground">
+                      {card.description}
+                    </CardDescription>
+                  </div>
                   <span
-                    className="block h-10 w-20 animate-pulse rounded-lg bg-sand-200"
-                    aria-hidden="true"
-                  />
-                ) : (
+                    className={`inline-flex h-10 w-10 items-center justify-center rounded-full ${card.accent}`}
+                  >
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                </CardHeader>
+                <CardContent>
                   <span className="text-3xl font-semibold text-sand-900">
                     {formatNumber(card.value, locale)}
                   </span>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
 
-      {isError ? (
-        <Alert variant="destructive">
-          <AlertTitle>{t('errors.title')}</AlertTitle>
-          <AlertDescription>
-            {t('errors.description')}
-            {error instanceof Error ? ` — ${error.message}` : null}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>{t('sections.upcomingSessions.title')}</CardTitle>
-                <CardDescription>
-                  {t('sections.upcomingSessions.description')}
-                </CardDescription>
+        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+          <Card className="xl:col-span-2">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>{t('sections.upcomingSessions.title')}</CardTitle>
+                  <CardDescription>
+                    {t('sections.upcomingSessions.description')}
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleViewAllSessions}
+                  className="shrink-0"
+                >
+                  {t('actions.viewAll')}
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleViewAllSessions}
-                className="shrink-0"
-              >
-                {t('actions.viewAll')}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <SessionsList
-              locale={locale}
-              sessions={data?.upcomingSessions ?? []}
-              statusLabels={sessionStatusLabels}
-              isLoading={isLoading}
-              emptyMessage={t('sections.upcomingSessions.empty')}
-              joinLabel={t('sections.upcomingSessions.join')}
-              durationLabel={t('sections.upcomingSessions.duration')}
-            />
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <SessionsList
+                locale={locale}
+                sessions={data?.upcomingSessions ?? []}
+                statusLabels={sessionStatusLabels}
+                isLoading={false}
+                emptyMessage={t('sections.upcomingSessions.empty')}
+                joinLabel={t('sections.upcomingSessions.join')}
+                durationLabel={t('sections.upcomingSessions.duration')}
+              />
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>{t('sections.tasks.title')}</CardTitle>
-                <CardDescription>{t('sections.tasks.description')}</CardDescription>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>{t('sections.tasks.title')}</CardTitle>
+                  <CardDescription>{t('sections.tasks.description')}</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleViewAllTasks}
+                  className="shrink-0"
+                >
+                  {t('actions.viewAll')}
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleViewAllTasks}
-                className="shrink-0"
-              >
-                {t('actions.viewAll')}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <TasksSummary
-              locale={locale}
-              tasks={data?.taskHighlights ?? []}
-              statusLabels={taskStatusLabels}
-              priorityLabels={taskPriorityLabels}
-              isLoading={isLoading}
-              emptyMessage={t('sections.tasks.empty')}
-              dueLabel={t('sections.tasks.due')}
-            />
-          </CardContent>
-        </Card>
-      </div>
+            </CardHeader>
+            <CardContent>
+              <TasksSummary
+                locale={locale}
+                tasks={data?.taskHighlights ?? []}
+                statusLabels={taskStatusLabels}
+                priorityLabels={taskPriorityLabels}
+                isLoading={false}
+                emptyMessage={t('sections.tasks.empty')}
+                dueLabel={t('sections.tasks.due')}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('sections.clientProgress.title')}</CardTitle>
-            <CardDescription>
-              {t('sections.clientProgress.description')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ClientProgressOverview
-              clients={data?.clientProgress ?? []}
-              isLoading={isLoading}
-              emptyMessage={t('sections.clientProgress.empty')}
-              completionLabel={completionLabel}
-              activeTasksLabel={activeTasksLabel}
-              lastSessionLabel={lastSessionLabel}
-            />
-          </CardContent>
-        </Card>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('sections.clientProgress.title')}</CardTitle>
+              <CardDescription>
+                {t('sections.clientProgress.description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClientProgressOverview
+                clients={data?.clientProgress ?? []}
+                isLoading={false}
+                emptyMessage={t('sections.clientProgress.empty')}
+                completionLabel={completionLabel}
+                activeTasksLabel={activeTasksLabel}
+                lastSessionLabel={lastSessionLabel}
+              />
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <LibraryBig className="h-5 w-5 text-teal-600" aria-hidden="true" />
-              <div>
-                <CardTitle>{t('sections.resources.title')}</CardTitle>
-                <CardDescription>
-                  {t('sections.resources.description')}
-                </CardDescription>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <LibraryBig className="h-5 w-5 text-teal-600" aria-hidden="true" />
+                <div>
+                  <CardTitle>{t('sections.resources.title')}</CardTitle>
+                  <CardDescription>
+                    {t('sections.resources.description')}
+                  </CardDescription>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ResourceHighlights
-              resources={resourceAnalytics?.topResources ?? []}
-              locale={locale}
-              isLoading={resourcesLoading}
-              emptyMessage={t('sections.resources.empty')}
-              viewAllLabel={t('actions.viewAllAnalytics')}
-            />
-          </CardContent>
-        </Card>
-      </div>
+            </CardHeader>
+            <CardContent>
+              <ResourceHighlights
+                resources={resourceAnalytics?.topResources ?? []}
+                locale={locale}
+                isLoading={resourcesLoading}
+                emptyMessage={t('sections.resources.empty')}
+                viewAllLabel={t('actions.viewAllAnalytics')}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Session Scheduling Modal */}
-      <AddSessionModal
-        open={sessionModalOpen}
-        onOpenChange={setSessionModalOpen}
-        coachId={coachId}
-        onSuccess={handleSessionCreated}
-      />
-    </div>
+        {/* Session Scheduling Modal */}
+        <AddSessionModal
+          open={sessionModalOpen}
+          onOpenChange={setSessionModalOpen}
+          coachId={coachId}
+          onSuccess={handleSessionCreated}
+        />
+      </div>
+    </ErrorBoundary>
   );
 }

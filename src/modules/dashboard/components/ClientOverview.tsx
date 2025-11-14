@@ -15,6 +15,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useMemo, type ComponentType } from 'react';
 
+import { ErrorBoundary } from '@/components/error-boundary';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useClientOverview } from '@/modules/dashboard/api/useClientOverview';
+import { DashboardErrorFallback } from '@/modules/dashboard/components/errors/DashboardErrorFallback';
+import { ClientDashboardSkeleton } from '@/modules/dashboard/components/skeletons/DashboardSkeleton';
 import { GoalsProgress } from '@/modules/dashboard/components/widgets/GoalsProgress';
 import { MyTasks } from '@/modules/dashboard/components/widgets/MyTasks';
 import { UpcomingSessions } from '@/modules/dashboard/components/widgets/UpcomingSessions';
@@ -168,143 +171,157 @@ export function ClientOverview({ locale }: ClientOverviewProps) {
     }
   }, [data?.generatedAt, locale, t]);
 
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-sand-900">
-            {t('title')}
-          </h1>
-          <p className="text-muted-foreground max-w-2xl">{t('subtitle')}</p>
-        </div>
-        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-          {generatedAtLabel ? (
-            <Badge variant="outline" className="whitespace-nowrap">
-              {generatedAtLabel}
-            </Badge>
-          ) : null}
-          <Button
-            type="button"
-            onClick={() => refetch()}
-            disabled={isRefetching}
-            variant="secondary"
-            className="inline-flex items-center gap-2"
-          >
-            <RefreshCcw className="h-4 w-4" aria-hidden="true" />
-            {isRefetching ? t('actions.refreshing') : t('actions.refresh')}
-          </Button>
-        </div>
-      </div>
+  // Show comprehensive skeleton during initial load
+  if (isLoading) {
+    return <ClientDashboardSkeleton />;
+  }
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map(card => {
-          const Icon = card.icon;
-          return (
-            <Card
-              key={card.id}
-              className="overflow-hidden border border-sand-200"
+  // Show error state if data fetching failed
+  if (isError && error) {
+    return (
+      <DashboardErrorFallback
+        error={error instanceof Error ? error : new Error('Failed to load dashboard')}
+        resetError={() => refetch()}
+        locale={locale}
+        dashboardType="client"
+      />
+    );
+  }
+
+  return (
+    <ErrorBoundary
+      fallback={({ error: boundaryError, resetError }) => (
+        <DashboardErrorFallback
+          error={boundaryError}
+          resetError={resetError}
+          locale={locale}
+          dashboardType="client"
+        />
+      )}
+    >
+      <div className="space-y-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-sand-900">
+              {t('title')}
+            </h1>
+            <p className="text-muted-foreground max-w-2xl">{t('subtitle')}</p>
+          </div>
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+            {generatedAtLabel ? (
+              <Badge variant="outline" className="whitespace-nowrap">
+                {generatedAtLabel}
+              </Badge>
+            ) : null}
+            <Button
+              type="button"
+              onClick={() => refetch()}
+              disabled={isRefetching}
+              variant="secondary"
+              className="inline-flex items-center gap-2"
             >
-              <CardHeader className="flex flex-row items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg font-semibold text-sand-900">
-                    {card.label}
-                  </CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
-                    {card.description}
-                  </CardDescription>
-                </div>
-                <span
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full ${card.accent}`}
-                >
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </span>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
+              <RefreshCcw
+                className={`h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`}
+                aria-hidden="true"
+              />
+              {isRefetching ? t('actions.refreshing') : t('actions.refresh')}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {summaryCards.map(card => {
+            const Icon = card.icon;
+            return (
+              <Card
+                key={card.id}
+                className="overflow-hidden border border-sand-200"
+              >
+                <CardHeader className="flex flex-row items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg font-semibold text-sand-900">
+                      {card.label}
+                    </CardTitle>
+                    <CardDescription className="text-sm text-muted-foreground">
+                      {card.description}
+                    </CardDescription>
+                  </div>
                   <span
-                    className="block h-10 w-20 animate-pulse rounded-lg bg-sand-200"
-                    aria-hidden="true"
-                  />
-                ) : (
+                    className={`inline-flex h-10 w-10 items-center justify-center rounded-full ${card.accent}`}
+                  >
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                </CardHeader>
+                <CardContent>
                   <span className="text-3xl font-semibold text-sand-900">
                     {formatNumber(card.value, locale)}
                   </span>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
 
-      {isError ? (
-        <Alert variant="destructive">
-          <AlertTitle>{t('errors.title')}</AlertTitle>
-          <AlertDescription>
-            {t('errors.description')}
-            {error instanceof Error ? ` — ${error.message}` : null}
-          </AlertDescription>
-        </Alert>
-      ) : null}
+        <div className="grid gap-6 xl:grid-cols-3">
+          <Card className="xl:col-span-2">
+            <CardHeader>
+              <CardTitle>{t('sections.upcomingSessions.title')}</CardTitle>
+              <CardDescription>
+                {t('sections.upcomingSessions.description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <UpcomingSessions
+                locale={locale}
+                sessions={data?.upcomingSessions ?? []}
+                statusLabels={sessionStatusLabels}
+                isLoading={false}
+                emptyMessage={t('sections.upcomingSessions.empty')}
+                joinLabel={t('sections.upcomingSessions.join')}
+                withLabel={t('sections.upcomingSessions.with')}
+                durationLabel={t('sections.upcomingSessions.duration')}
+              />
+            </CardContent>
+          </Card>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
-          <CardHeader>
-            <CardTitle>{t('sections.upcomingSessions.title')}</CardTitle>
-            <CardDescription>
-              {t('sections.upcomingSessions.description')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UpcomingSessions
-              locale={locale}
-              sessions={data?.upcomingSessions ?? []}
-              statusLabels={sessionStatusLabels}
-              isLoading={isLoading}
-              emptyMessage={t('sections.upcomingSessions.empty')}
-              joinLabel={t('sections.upcomingSessions.join')}
-              withLabel={t('sections.upcomingSessions.with')}
-              durationLabel={t('sections.upcomingSessions.duration')}
-            />
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('sections.tasks.title')}</CardTitle>
+              <CardDescription>{t('sections.tasks.description')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MyTasks
+                locale={locale}
+                tasks={data?.tasks ?? []}
+                statusLabels={taskStatusLabels}
+                priorityLabels={taskPriorityLabels}
+                isLoading={false}
+                emptyMessage={t('sections.tasks.empty')}
+                dueLabel={t('sections.tasks.due')}
+                assignedLabel={t('sections.tasks.assignedBy')}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('sections.tasks.title')}</CardTitle>
-            <CardDescription>{t('sections.tasks.description')}</CardDescription>
+            <CardTitle>{t('sections.goals.title')}</CardTitle>
+            <CardDescription>{t('sections.goals.description')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <MyTasks
+            <GoalsProgress
+              goals={data?.goals ?? []}
+              isLoading={false}
+              emptyMessage={t('sections.goals.empty')}
+              statusLabels={goalStatusLabels}
+              priorityLabels={goalPriorityLabels}
               locale={locale}
-              tasks={data?.tasks ?? []}
-              statusLabels={taskStatusLabels}
-              priorityLabels={taskPriorityLabels}
-              isLoading={isLoading}
-              emptyMessage={t('sections.tasks.empty')}
-              dueLabel={t('sections.tasks.due')}
-              assignedLabel={t('sections.tasks.assignedBy')}
+              targetLabel={t('sections.goals.target')}
             />
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('sections.goals.title')}</CardTitle>
-          <CardDescription>{t('sections.goals.description')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <GoalsProgress
-            goals={data?.goals ?? []}
-            isLoading={isLoading}
-            emptyMessage={t('sections.goals.empty')}
-            statusLabels={goalStatusLabels}
-            priorityLabels={goalPriorityLabels}
-            locale={locale}
-            targetLabel={t('sections.goals.target')}
-          />
-        </CardContent>
-      </Card>
-    </div>
+    </ErrorBoundary>
   );
 }
