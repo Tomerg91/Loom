@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server';
 
 import { authService } from '@/lib/services/auth-service';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 // GET /api/analytics/messaging - Get user's messaging analytics
 export async function GET(request: Request) {
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = await createClient();
+    const supabase = createClient();
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -34,7 +34,9 @@ export async function GET(request: Request) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        ({ data, error } = await supabase.rpc('get_overall_messaging_analytics', {
+        const adminClient = createAdminClient();
+
+        ({ data, error } = await adminClient.rpc('get_overall_messaging_analytics', {
           p_start_date: startDate,
           p_end_date: endDate,
         }));
