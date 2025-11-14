@@ -1,19 +1,66 @@
 'use client';
 
 import { supabase } from '@/modules/platform/supabase/client';
+import { CSRF_TOKEN_HEADER } from '@/lib/security/csrf';
+import { fetchWithRetry, RETRY_PRESETS, type RetryConfig } from './retry';
 
 /**
- * Fetches from the API with automatic Bearer token authentication.
+ * Get CSRF token from meta tag (set by layout/middleware)
+ */
+function getCSRFToken(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  // Try to get from meta tag first
+  const metaTag = document.querySelector('meta[name="csrf-token"]');
+  if (metaTag) {
+    return metaTag.getAttribute('content');
+  }
+
+  // Try to get from last response header (stored in sessionStorage)
+  return sessionStorage.getItem('csrf-token');
+}
+
+/**
+ * Store CSRF token from response for future requests
+ */
+function storeCSRFToken(response: Response) {
+  const csrfToken = response.headers.get(CSRF_TOKEN_HEADER);
+  if (csrfToken && typeof window !== 'undefined') {
+    sessionStorage.setItem('csrf-token', csrfToken);
+  }
+}
+
+export interface ApiRequestOptions extends RequestInit {
+  /** Custom retry configuration (default: 'default' preset) */
+  retry?: RetryConfig | keyof typeof RETRY_PRESETS | false;
+  /** Request timeout in milliseconds (default: 30000) */
+  timeout?: number;
+}
+
+/**
+ * Fetches from the API with automatic Bearer token authentication, CSRF protection, and retry logic.
  * This bypasses cookie-based authentication and uses explicit Authorization headers.
+ *
+ * Features:
+ * - Automatic authentication via Supabase session
+ * - CSRF token inclusion for state-changing requests
+ * - Automatic retry with exponential backoff on network errors and 5xx responses
+ * - Request timeout handling
  *
  * Usage:
  *   const response = await apiRequest('/api/coach/stats');
- *   const data = await response.json();
+ *   const response = await apiRequest('/api/sessions', { method: 'POST', body: JSON.stringify(data) });
+ *   const response = await apiRequest('/api/data', { retry: 'aggressive' });
+ *   const response = await apiRequest('/api/critical', { retry: false }); // No retries
  */
 export async function apiRequest(
   input: RequestInfo | URL,
-  init?: RequestInit
+  options?: ApiRequestOptions
 ): Promise<Response> {
+  const { retry = 'default', timeout = 30000, ...init } = options || {};
+
   try {
     // Get the current session and access token
     const { data, error } = await supabase.auth.getSession();
@@ -29,11 +76,44 @@ export async function apiRequest(
     const headers = new Headers(init?.headers || {});
     headers.set('Authorization', `Bearer ${accessToken}`);
 
-    // Make the request
-    const response = await fetch(input, {
+    // Add CSRF token for state-changing requests
+    const method = init?.method?.toUpperCase() || 'GET';
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      const csrfToken = getCSRFToken();
+      if (csrfToken) {
+        headers.set(CSRF_TOKEN_HEADER, csrfToken);
+      } else {
+        console.warn('[API-REQUEST] No CSRF token available for state-changing request');
+      }
+    }
+
+    const fetchOptions: RequestInit = {
       ...init,
       headers,
-    });
+    };
+
+    // Determine retry configuration
+    let retryConfig: RetryConfig | undefined;
+    if (retry === false) {
+      retryConfig = RETRY_PRESETS.none;
+    } else if (typeof retry === 'string') {
+      retryConfig = RETRY_PRESETS[retry];
+    } else if (retry) {
+      retryConfig = retry;
+    } else {
+      retryConfig = RETRY_PRESETS.default;
+    }
+
+    // Add timeout to retry config
+    if (timeout) {
+      retryConfig = { ...retryConfig, timeout };
+    }
+
+    // Make the request with retry logic
+    const response = await fetchWithRetry(input, fetchOptions, retryConfig);
+
+    // Store CSRF token from response for future requests
+    storeCSRFToken(response);
 
     return response;
   } catch (error) {
@@ -43,10 +123,10 @@ export async function apiRequest(
 }
 
 /**
- * GET request with automatic authentication
+ * GET request with automatic authentication and retry
  */
-export async function apiGet<T = unknown>(url: string, init?: RequestInit): Promise<T> {
-  const response = await apiRequest(url, { ...init, method: 'GET' });
+export async function apiGet<T = unknown>(url: string, options?: ApiRequestOptions): Promise<T> {
+  const response = await apiRequest(url, { ...options, method: 'GET' });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(`API Error: ${response.status} - ${JSON.stringify(errorData)}`);
@@ -55,19 +135,19 @@ export async function apiGet<T = unknown>(url: string, init?: RequestInit): Prom
 }
 
 /**
- * POST request with automatic authentication
+ * POST request with automatic authentication and retry
  */
 export async function apiPost<T = unknown>(
   url: string,
   body?: unknown,
-  init?: RequestInit
+  options?: ApiRequestOptions
 ): Promise<T> {
   const response = await apiRequest(url, {
-    ...init,
+    ...options,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...init?.headers,
+      ...options?.headers,
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -80,19 +160,19 @@ export async function apiPost<T = unknown>(
 }
 
 /**
- * PUT request with automatic authentication
+ * PUT request with automatic authentication and retry
  */
 export async function apiPut<T = unknown>(
   url: string,
   body?: unknown,
-  init?: RequestInit
+  options?: ApiRequestOptions
 ): Promise<T> {
   const response = await apiRequest(url, {
-    ...init,
+    ...options,
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      ...init?.headers,
+      ...options?.headers,
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -105,10 +185,10 @@ export async function apiPut<T = unknown>(
 }
 
 /**
- * DELETE request with automatic authentication
+ * DELETE request with automatic authentication and retry
  */
-export async function apiDelete<T = unknown>(url: string, init?: RequestInit): Promise<T> {
-  const response = await apiRequest(url, { ...init, method: 'DELETE' });
+export async function apiDelete<T = unknown>(url: string, options?: ApiRequestOptions): Promise<T> {
+  const response = await apiRequest(url, { ...options, method: 'DELETE' });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -118,19 +198,19 @@ export async function apiDelete<T = unknown>(url: string, init?: RequestInit): P
 }
 
 /**
- * PATCH request with automatic authentication
+ * PATCH request with automatic authentication and retry
  */
 export async function apiPatch<T = unknown>(
   url: string,
   body?: unknown,
-  init?: RequestInit
+  options?: ApiRequestOptions
 ): Promise<T> {
   const response = await apiRequest(url, {
-    ...init,
+    ...options,
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-      ...init?.headers,
+      ...options?.headers,
     },
     body: body ? JSON.stringify(body) : undefined,
   });

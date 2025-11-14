@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
 
 import { getClientIP } from '@/lib/services/edge-helpers';
+import { ensureCSRFToken, withCSRFProtection } from '@/lib/security/csrf';
 import { resolveRedirect } from '@/lib/utils/redirect';
 import {
   AUTH_ROUTES,
@@ -117,6 +118,7 @@ async function applyFinalisers(
 ): Promise<NextResponse> {
   let res = applySecurityHeaders(request, response);
   res = await refreshSessionOnResponse(request, res);
+  res = ensureCSRFToken(request, res); // Add CSRF token to response
   if (logRequests) {
     res.headers.set('X-Request-ID', reqId);
     console.info('[RES]', {
@@ -140,7 +142,7 @@ export async function middleware(request: NextRequest) {
         'Access-Control-Allow-Methods':
           'GET, POST, PUT, DELETE, PATCH, OPTIONS',
         'Access-Control-Allow-Headers':
-          'Content-Type, Authorization, X-Requested-With',
+          'Content-Type, Authorization, X-Requested-With, X-CSRF-Token',
         'Access-Control-Max-Age': '86400',
       },
     });
@@ -150,6 +152,38 @@ export async function middleware(request: NextRequest) {
   const logRequests = process.env.LOG_REQUESTS === 'true';
   const reqId = crypto.randomUUID();
   const start = Date.now();
+
+  if (pathname.startsWith('/api/')) {
+    if (logRequests) {
+      console.info('[REQ]', {
+        id: reqId,
+        method: request.method,
+        path: pathname,
+        ua: request.headers.get('user-agent') || '',
+        ip:
+          request.headers.get('x-forwarded-for') ||
+          request.headers.get('x-real-ip') ||
+          'unknown',
+      });
+    }
+
+    const response = await withCSRFProtection(async (_request: NextRequest) =>
+      NextResponse.next()
+    )(request);
+
+    if (logRequests) {
+      response.headers.set('X-Request-ID', reqId);
+      console.info('[RES]', {
+        id: reqId,
+        path: pathname,
+        status: response.status,
+        durMs: Date.now() - start,
+        api: true,
+      });
+    }
+
+    return response;
+  }
 
   if (logRequests) {
     console.info('[REQ]', {
@@ -362,5 +396,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/((?!api/|_next/static|_next/image|_next/webpack-hmr|favicon.ico|robots.txt|sitemap.xml|manifest.json|.*\\.).*)',
+    '/api/:path*',
   ],
 };
