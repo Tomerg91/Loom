@@ -82,11 +82,12 @@ export function CoachClientsPage() {
   }, [searchTerm]);
 
   // Fetch clients from API with server-side filtering
-  const { data: clientsData, isLoading, error } = useQuery({
+  const { data: clientsResponse, isLoading, error } = useQuery({
     queryKey: ['coach-clients', debouncedSearchTerm, statusFilter, sortBy],
     queryFn: async () => {
       const params = new URLSearchParams({
         limit: '50',
+        offset: '0',
         search: debouncedSearchTerm,
         status: statusFilter,
         sortBy: sortBy
@@ -96,8 +97,12 @@ export function CoachClientsPage() {
     },
   });
 
+  // Extract clients array from response
+  const clientsData = clientsResponse?.clients || clientsResponse || [];
+  const pagination = clientsResponse?.pagination;
+
   // Transform API data to match component interface
-  const clients: Client[] = clientsData?.map((client: unknown) => {
+  const clients: Client[] = (Array.isArray(clientsData) ? clientsData : []).map((client: unknown) => {
     const totalSessions = client.totalSessions ?? client.total_sessions ?? 0;
     const completedSessions = client.completedSessions ?? client.completed_sessions ?? 0;
     const rawProgress = client.progress ?? null;
