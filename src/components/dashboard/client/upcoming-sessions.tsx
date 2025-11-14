@@ -1,8 +1,9 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { Calendar, ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,13 +24,45 @@ interface UpcomingSession {
 
 const UPCOMING_LIMIT = 2;
 
+async function fetchUpcomingSessions(userId: string): Promise<UpcomingSession[]> {
+  if (!userId) {
+    return [];
+  }
+
+  const supabase = createClient();
+  const nowIso = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('id, scheduled_at, status, meeting_url')
+    .eq('client_id', userId)
+    .gte('scheduled_at', nowIso)
+    .order('scheduled_at', { ascending: true })
+    .limit(UPCOMING_LIMIT);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((session) => ({
+    id: session.id,
+    scheduledAt: session.scheduled_at,
+    status: session.status,
+    meetingUrl: (session as { meeting_url?: string | null }).meeting_url ?? null,
+  }));
+}
+
 export function ClientUpcomingSessions({ userId, locale }: ClientUpcomingSessionsProps) {
   const t = useTranslations('dashboard.clientSections.upcomingSessions');
   const commonT = useTranslations('common');
 
-  const [sessions, setSessions] = useState<UpcomingSession[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { data: sessions, isLoading, error, refetch } = useQuery({
+    queryKey: ['client-upcoming-sessions', userId],
+    queryFn: () => fetchUpcomingSessions(userId),
+    enabled: !!userId,
+    staleTime: 60_000, // 1 minute
+    refetchInterval: 5 * 60_000, // Refetch every 5 minutes
+  });
 
   const dateFormatter = useMemo(
     () =>
@@ -42,68 +75,6 @@ export function ClientUpcomingSessions({ userId, locale }: ClientUpcomingSession
       }),
     [locale]
   );
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadSessions() {
-      if (!userId) {
-        if (isMounted) {
-          setSessions([]);
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const supabase = createClient();
-        const nowIso = new Date().toISOString();
-
-        const { data, error } = await supabase
-          .from('sessions')
-          .select('id, scheduled_at, status, meeting_url')
-          .eq('client_id', userId)
-          .gte('scheduled_at', nowIso)
-          .order('scheduled_at', { ascending: true })
-          .limit(UPCOMING_LIMIT);
-
-        console.log('[ClientUpcomingSessions] Supabase response', { data, error });
-
-        if (error) {
-          throw error;
-        }
-
-        const normalizedSessions: UpcomingSession[] = (data ?? []).map((session) => ({
-          id: session.id,
-          scheduledAt: session.scheduled_at,
-          status: session.status,
-          meetingUrl: (session as { meeting_url?: string | null }).meeting_url ?? null,
-        }));
-
-        if (isMounted) {
-          setSessions(normalizedSessions);
-        }
-      } catch (error) {
-        console.error('[ClientUpcomingSessions] Failed to load sessions', error);
-        if (isMounted) {
-          setErrorMessage(error instanceof Error ? error.message : String(error));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadSessions();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userId]);
 
   return (
     <Card>
@@ -121,14 +92,17 @@ export function ClientUpcomingSessions({ userId, locale }: ClientUpcomingSession
           </div>
         )}
 
-        {errorMessage && !isLoading && (
+        {error && !isLoading && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
             <p>{t('error')}</p>
-            <p className="mt-2 text-xs text-destructive/80">{errorMessage}</p>
+            <p className="mt-2 text-xs text-destructive/80">{error instanceof Error ? error.message : String(error)}</p>
+            <Button onClick={() => refetch()} size="sm" variant="outline" className="mt-3">
+              {commonT('retry')}
+            </Button>
           </div>
         )}
 
-        {!isLoading && !errorMessage && sessions.length === 0 && (
+        {!isLoading && !error && (!sessions || sessions.length === 0) && (
           <div className="rounded-lg border border-dashed border-muted-foreground/40 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
             <Calendar className="mx-auto mb-4 h-10 w-10 opacity-50" />
             <p>{t('empty')}</p>
@@ -140,7 +114,7 @@ export function ClientUpcomingSessions({ userId, locale }: ClientUpcomingSession
           </div>
         )}
 
-        {!isLoading && !errorMessage && sessions.length > 0 && (
+        {!isLoading && !error && sessions && sessions.length > 0 && (
           <ul className="space-y-3">
             {sessions.map((session) => {
               const scheduledAt = new Date(session.scheduledAt);

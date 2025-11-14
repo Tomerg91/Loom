@@ -1,8 +1,9 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, MessageSquare, UserCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,13 +26,110 @@ interface MessageItem {
 
 const MESSAGE_LIMIT = 4;
 
+async function fetchRecentMessages(userId: string): Promise<MessageItem[]> {
+  if (!userId) {
+    return [];
+  }
+
+  const supabase = createClient() as unknown;
+
+  const { data, error } = await supabase
+    .from('messages')
+    .select(
+      `
+        id,
+        content,
+        created_at,
+        sender_id,
+        conversation_id,
+        conversations!inner (
+          conversation_participants!inner (
+            user_id,
+            last_read_at
+          )
+        ),
+        message_read_receipts (
+          user_id,
+          read_at
+        )
+      `
+    )
+    .eq('conversations.conversation_participants.user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(MESSAGE_LIMIT);
+
+  if (error) {
+    throw error;
+  }
+
+  const rawMessages = Array.isArray(data) ? data : [];
+  const uniqueMessages = new Map<string, MessageItem>();
+
+  rawMessages.forEach((message: unknown) => {
+    const messageId = typeof message.id === 'string' ? message.id : String(message.id ?? '');
+    if (!messageId || uniqueMessages.has(messageId)) {
+      return;
+    }
+
+    const participants = Array.isArray(message?.conversations?.conversation_participants)
+      ? message.conversations.conversation_participants
+      : [];
+
+    const currentParticipant = participants.find(
+      (participant: unknown) => typeof participant?.user_id === 'string' && participant.user_id === userId
+    );
+    const otherParticipant = participants.find(
+      (participant: unknown) => typeof participant?.user_id === 'string' && participant.user_id !== userId
+    );
+
+    const messageReceipts = Array.isArray(message?.message_read_receipts)
+      ? message.message_read_receipts
+      : [];
+
+    const createdAt =
+      typeof message.created_at === 'string'
+        ? message.created_at
+        : new Date().toISOString();
+    const senderId = typeof message.sender_id === 'string' ? message.sender_id : userId;
+
+    const hasReadReceipt = messageReceipts.some(
+      (receipt: unknown) => typeof receipt?.user_id === 'string' && receipt.user_id === userId
+    );
+
+    const lastReadAt =
+      typeof currentParticipant?.last_read_at === 'string'
+        ? currentParticipant.last_read_at
+        : null;
+
+    const read =
+      senderId === userId ||
+      hasReadReceipt ||
+      (lastReadAt ? new Date(lastReadAt).getTime() >= new Date(createdAt).getTime() : false);
+
+    uniqueMessages.set(messageId, {
+      id: messageId,
+      content: typeof message.content === 'string' ? message.content : null,
+      createdAt,
+      senderId,
+      receiverId: typeof otherParticipant?.user_id === 'string' ? otherParticipant.user_id : null,
+      read,
+    });
+  });
+
+  return Array.from(uniqueMessages.values());
+}
+
 export function ClientRecentMessages({ userId, locale }: ClientRecentMessagesProps) {
   const t = useTranslations('dashboard.clientSections.recentMessages');
   const commonT = useTranslations('common');
 
-  const [messages, setMessages] = useState<MessageItem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { data: messages, isLoading, error, refetch } = useQuery({
+    queryKey: ['client-recent-messages', userId],
+    queryFn: () => fetchRecentMessages(userId),
+    enabled: !!userId,
+    staleTime: 30_000, // 30 seconds
+    refetchInterval: 60_000, // Refetch every minute for new messages
+  });
 
   const dateFormatter = useMemo(
     () =>
@@ -43,133 +141,6 @@ export function ClientRecentMessages({ userId, locale }: ClientRecentMessagesPro
       }),
     [locale]
   );
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadMessages() {
-      if (!userId) {
-        if (isMounted) {
-          setMessages([]);
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const supabase = createClient() as unknown;
-
-        const { data, error } = await supabase
-          .from('messages')
-          .select(
-            `
-              id,
-              content,
-              created_at,
-              sender_id,
-              conversation_id,
-              conversations!inner (
-                conversation_participants!inner (
-                  user_id,
-                  last_read_at
-                )
-              ),
-              message_read_receipts (
-                user_id,
-                read_at
-              )
-            `
-          )
-          .eq('conversations.conversation_participants.user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(MESSAGE_LIMIT);
-
-        console.log('[ClientRecentMessages] Supabase response', { data, error });
-
-        if (error) {
-          throw error;
-        }
-
-        const rawMessages = Array.isArray(data) ? data : [];
-        const uniqueMessages = new Map<string, MessageItem>();
-
-        rawMessages.forEach((message: unknown) => {
-          const messageId = typeof message.id === 'string' ? message.id : String(message.id ?? '');
-          if (!messageId || uniqueMessages.has(messageId)) {
-            return;
-          }
-
-          const participants = Array.isArray(message?.conversations?.conversation_participants)
-            ? message.conversations.conversation_participants
-            : [];
-
-          const currentParticipant = participants.find(
-            (participant: unknown) => typeof participant?.user_id === 'string' && participant.user_id === userId
-          );
-          const otherParticipant = participants.find(
-            (participant: unknown) => typeof participant?.user_id === 'string' && participant.user_id !== userId
-          );
-
-          const messageReceipts = Array.isArray(message?.message_read_receipts)
-            ? message.message_read_receipts
-            : [];
-
-          const createdAt =
-            typeof message.created_at === 'string'
-              ? message.created_at
-              : new Date().toISOString();
-          const senderId = typeof message.sender_id === 'string' ? message.sender_id : userId;
-
-          const hasReadReceipt = messageReceipts.some(
-            (receipt: unknown) => typeof receipt?.user_id === 'string' && receipt.user_id === userId
-          );
-
-          const lastReadAt =
-            typeof currentParticipant?.last_read_at === 'string'
-              ? currentParticipant.last_read_at
-              : null;
-
-          const read =
-            senderId === userId ||
-            hasReadReceipt ||
-            (lastReadAt ? new Date(lastReadAt).getTime() >= new Date(createdAt).getTime() : false);
-
-          uniqueMessages.set(messageId, {
-            id: messageId,
-            content: typeof message.content === 'string' ? message.content : null,
-            createdAt,
-            senderId,
-            receiverId: typeof otherParticipant?.user_id === 'string' ? otherParticipant.user_id : null,
-            read,
-          });
-        });
-
-        const normalizedMessages = Array.from(uniqueMessages.values());
-
-        if (isMounted) {
-          setMessages(normalizedMessages);
-        }
-      } catch (error) {
-        console.error('[ClientRecentMessages] Failed to load messages', error);
-        if (isMounted) {
-          setErrorMessage(error instanceof Error ? error.message : String(error));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadMessages();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userId]);
 
   return (
     <Card>
@@ -187,14 +158,17 @@ export function ClientRecentMessages({ userId, locale }: ClientRecentMessagesPro
           </div>
         )}
 
-        {errorMessage && !isLoading && (
+        {error && !isLoading && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
             <p>{t('error')}</p>
-            <p className="mt-2 text-xs text-destructive/80">{errorMessage}</p>
+            <p className="mt-2 text-xs text-destructive/80">{error instanceof Error ? error.message : String(error)}</p>
+            <Button onClick={() => refetch()} size="sm" variant="outline" className="mt-3">
+              {commonT('retry')}
+            </Button>
           </div>
         )}
 
-        {!isLoading && !errorMessage && messages.length === 0 && (
+        {!isLoading && !error && (!messages || messages.length === 0) && (
           <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
             <UserCircle className="mx-auto mb-3 h-10 w-10 opacity-50" />
             <p>{t('empty')}</p>
@@ -207,7 +181,7 @@ export function ClientRecentMessages({ userId, locale }: ClientRecentMessagesPro
           </div>
         )}
 
-        {!isLoading && !errorMessage && messages.length > 0 && (
+        {!isLoading && !error && messages && messages.length > 0 && (
           <ul className="space-y-3">
             {messages.map((message) => {
               const messageDate = dateFormatter.format(new Date(message.createdAt));

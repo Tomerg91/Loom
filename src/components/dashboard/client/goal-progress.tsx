@@ -1,8 +1,9 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, Flag, TrendingUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,14 +31,71 @@ interface GoalStats {
   inProgress: number;
 }
 
+interface GoalsData {
+  goals: GoalRecord[];
+  stats: GoalStats;
+}
+
+async function fetchClientGoals(userId: string): Promise<GoalsData> {
+  if (!userId) {
+    return {
+      goals: [],
+      stats: { total: 0, completed: 0, inProgress: 0 }
+    };
+  }
+
+  const supabase = createClient() as unknown;
+  const { data, error } = await supabase
+    .from('client_goals')
+    .select('id, title, description, progress_percentage, created_at, client_id')
+    .eq('client_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  const goalRowsRaw = Array.isArray(data) ? data : [];
+  const goalRows: GoalRecord[] = goalRowsRaw.map((goal: unknown) => ({
+    id: String(goal.id ?? ''),
+    title: typeof goal.title === 'string' ? goal.title : null,
+    description: typeof goal.description === 'string' ? goal.description : null,
+    progress:
+      typeof goal.progress_percentage === 'number'
+        ? goal.progress_percentage
+        : goal.progress_percentage != null && !Number.isNaN(Number(goal.progress_percentage))
+          ? Number(goal.progress_percentage)
+          : null,
+    created_at: typeof goal.created_at === 'string' ? goal.created_at : new Date().toISOString(),
+    client_id: typeof goal.client_id === 'string' ? goal.client_id : userId,
+  }));
+
+  const completed = goalRows.filter((goal) => (goal.progress ?? 0) >= 100).length;
+  const inProgress = goalRows.filter((goal) => (goal.progress ?? 0) > 0 && (goal.progress ?? 0) < 100).length;
+
+  return {
+    goals: goalRows,
+    stats: {
+      total: goalRows.length,
+      completed,
+      inProgress,
+    }
+  };
+}
+
 export function ClientGoalProgress({ userId, locale }: GoalProgressProps) {
   const t = useTranslations('dashboard.clientSections.goalProgress');
   const commonT = useTranslations('common');
 
-  const [goals, setGoals] = useState<GoalRecord[]>([]);
-  const [stats, setStats] = useState<GoalStats>({ total: 0, completed: 0, inProgress: 0 });
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['client-goals', userId],
+    queryFn: () => fetchClientGoals(userId),
+    enabled: !!userId,
+    staleTime: 2 * 60_000, // 2 minutes
+  });
+
+  const goals = data?.goals ?? [];
+  const stats = data?.stats ?? { total: 0, completed: 0, inProgress: 0 };
 
   const dateFormatter = useMemo(
     () =>
@@ -47,82 +105,6 @@ export function ClientGoalProgress({ userId, locale }: GoalProgressProps) {
       }),
     [locale]
   );
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadGoals() {
-      if (!userId) {
-        if (isMounted) {
-          setGoals([]);
-          setStats({ total: 0, completed: 0, inProgress: 0 });
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const supabase = createClient() as unknown;
-        const { data, error } = await supabase
-          .from('client_goals')
-          .select('id, title, description, progress_percentage, created_at, client_id')
-          .eq('client_id', userId)
-          .order('created_at', { ascending: false });
-
-        console.log('[ClientGoalProgress] Supabase response', { data, error });
-
-        if (error) {
-          throw error;
-        }
-
-        const goalRowsRaw = Array.isArray(data) ? data : [];
-        const goalRows: GoalRecord[] = goalRowsRaw.map((goal: unknown) => ({
-          id: String(goal.id ?? ''),
-          title: typeof goal.title === 'string' ? goal.title : null,
-          description: typeof goal.description === 'string' ? goal.description : null,
-          progress:
-            typeof goal.progress_percentage === 'number'
-              ? goal.progress_percentage
-              : goal.progress_percentage != null && !Number.isNaN(Number(goal.progress_percentage))
-                ? Number(goal.progress_percentage)
-                : null,
-          created_at: typeof goal.created_at === 'string' ? goal.created_at : new Date().toISOString(),
-          client_id: typeof goal.client_id === 'string' ? goal.client_id : userId,
-        }));
-
-        if (isMounted) {
-          setGoals(goalRows);
-
-          const completed = goalRows.filter((goal) => (goal.progress ?? 0) >= 100).length;
-          const inProgress = goalRows.filter((goal) => (goal.progress ?? 0) > 0 && (goal.progress ?? 0) < 100).length;
-
-          setStats({
-            total: goalRows.length,
-            completed,
-            inProgress,
-          });
-        }
-      } catch (error) {
-        console.error('[ClientGoalProgress] Failed to load goals', error);
-        if (isMounted) {
-          setErrorMessage(error instanceof Error ? error.message : String(error));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadGoals();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userId]);
 
   return (
     <Card>
@@ -140,14 +122,17 @@ export function ClientGoalProgress({ userId, locale }: GoalProgressProps) {
           </div>
         )}
 
-        {errorMessage && !isLoading && (
+        {error && !isLoading && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
             <p>{t('error')}</p>
-            <p className="mt-2 text-xs text-destructive/80">{errorMessage}</p>
+            <p className="mt-2 text-xs text-destructive/80">{error instanceof Error ? error.message : String(error)}</p>
+            <Button onClick={() => refetch()} size="sm" variant="outline" className="mt-3">
+              {commonT('retry')}
+            </Button>
           </div>
         )}
 
-        {!isLoading && !errorMessage && goals.length === 0 && (
+        {!isLoading && !error && goals.length === 0 && (
           <div className="rounded-lg border border-dashed border-muted-foreground/40 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
             <Flag className="mx-auto mb-3 h-10 w-10 opacity-40" />
             <p>{t('empty')}</p>
@@ -159,7 +144,7 @@ export function ClientGoalProgress({ userId, locale }: GoalProgressProps) {
           </div>
         )}
 
-        {!isLoading && !errorMessage && goals.length > 0 && (
+        {!isLoading && !error && goals.length > 0 && (
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-lg border border-border/60 bg-muted/10 p-4 text-center">
