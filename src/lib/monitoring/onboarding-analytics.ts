@@ -12,9 +12,11 @@
 
 import { trackEvent, posthogEvent } from './analytics';
 import {
-  trackOnboardingStep,
+  trackOnboardingProgress,
   trackOnboardingCompleted,
-  trackOnboardingAbandoned,
+  trackOnboardingStepCompleted as persistOnboardingStepCompleted,
+  trackOnboardingStepViewed,
+  trackOnboardingStepAbandoned,
 } from './event-tracking';
 import * as Sentry from '@sentry/nextjs';
 
@@ -50,11 +52,26 @@ export const trackOnboardingStepStarted = (data: OnboardingEvent) => {
   posthogEvent('onboarding_step_started', eventData.properties);
 
   // Track in database
-  trackOnboardingStep(
+  trackOnboardingProgress(data.userId, data.step, {
+    stepNumber: data.stepNumber,
+    totalSteps: data.totalSteps,
+    ...(data.metadata || {}),
+  }).catch((error) => {
+    Sentry.captureException(error, {
+      tags: { event_type: 'onboarding_tracking_error' },
+    });
+  });
+
+  // Persist detailed step view analytics
+  trackOnboardingStepViewed(
     data.userId,
-    data.step,
     data.stepNumber,
-    data.totalSteps
+    data.step,
+    (data.metadata?.role as string) || 'unknown',
+    {
+      totalSteps: data.totalSteps,
+      ...(data.metadata || {}),
+    }
   ).catch((error) => {
     Sentry.captureException(error, {
       tags: { event_type: 'onboarding_tracking_error' },
@@ -117,6 +134,24 @@ export const trackOnboardingStepCompleted = (
       ...eventData.properties,
     });
   }
+
+  // Persist completion event in database
+  persistOnboardingStepCompleted(
+    data.userId,
+    data.stepNumber,
+    data.step,
+    (data.metadata?.role as string) || 'unknown',
+    data.timeSpentSeconds,
+    {
+      totalSteps: data.totalSteps,
+      interactionCount: data.interactionCount,
+      ...(data.metadata || {}),
+    }
+  ).catch((error) => {
+    Sentry.captureException(error, {
+      tags: { event_type: 'onboarding_tracking_error' },
+    });
+  });
 };
 
 /**
@@ -149,7 +184,16 @@ export const trackOnboardingFlowCompleted = (data: {
   posthogEvent('onboarding_completed', eventData.properties);
 
   // Track in database
-  trackOnboardingCompleted(data.userId).catch((error) => {
+  trackOnboardingCompleted(
+    data.userId,
+    (data.metadata?.role as string) || 'unknown',
+    {
+      totalTimeSeconds: data.totalTimeSeconds,
+      stepsCompleted: data.stepsCompleted,
+      totalSteps: data.totalSteps,
+      ...(data.metadata || {}),
+    }
+  ).catch((error) => {
     Sentry.captureException(error);
   });
 
@@ -206,7 +250,18 @@ export const trackOnboardingFlowAbandoned = (data: {
   posthogEvent('onboarding_abandoned', eventData.properties);
 
   // Track in database
-  trackOnboardingAbandoned(data.userId, data.step).catch((error) => {
+  trackOnboardingStepAbandoned(
+    data.userId,
+    data.stepNumber,
+    data.step,
+    (data.metadata?.role as string) || 'unknown',
+    data.timeSpentSeconds,
+    {
+      totalSteps: data.totalSteps,
+      reason: data.reason,
+      ...(data.metadata || {}),
+    }
+  ).catch((error) => {
     Sentry.captureException(error);
   });
 

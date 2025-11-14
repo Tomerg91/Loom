@@ -11,9 +11,9 @@
 
 import { trackEvent, posthogEvent } from './analytics';
 import {
-  trackResourceView,
-  trackResourceDownload,
-  trackResourceShare,
+  trackResourceViewed as persistResourceViewed,
+  trackResourceDownloaded as persistResourceDownloaded,
+  trackResourceShared as persistResourceShared,
 } from './event-tracking';
 import * as Sentry from '@sentry/nextjs';
 
@@ -57,7 +57,7 @@ export const trackResourceViewed = (
   posthogEvent('resource_viewed', eventData.properties);
 
   // Track in database
-  trackResourceView(data.userId, data.resourceId, data.metadata).catch(
+  persistResourceViewed(data.userId, data.resourceId, data.metadata).catch(
     (error) => {
       Sentry.captureException(error, {
         tags: { event_type: 'resource_tracking_error' },
@@ -130,7 +130,11 @@ export const trackResourceDownloaded = (
   posthogEvent('resource_downloaded', eventData.properties);
 
   // Track in database
-  trackResourceDownload(data.userId, data.resourceId, data.metadata).catch(
+  persistResourceDownloaded(
+    data.userId,
+    data.resourceId,
+    data.metadata
+  ).catch(
     (error) => {
       Sentry.captureException(error);
     }
@@ -187,7 +191,7 @@ export const trackResourceShared = (
   posthogEvent('resource_shared', eventData.properties);
 
   // Track in database
-  trackResourceShare(data.userId, data.resourceId, data.metadata).catch(
+  persistResourceShared(data.userId, data.resourceId, data.metadata).catch(
     (error) => {
       Sentry.captureException(error);
     }

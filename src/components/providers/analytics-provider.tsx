@@ -29,6 +29,8 @@ declare global {
       capture: (event: string, properties?: Record<string, unknown>) => void;
       identify: (userId: string, properties?: Record<string, unknown>) => void;
       reset: () => void;
+      opt_in_capturing?: () => void;
+      opt_out_capturing?: () => void;
     };
     __POSTHOG_LOADED__?: boolean;
   }
