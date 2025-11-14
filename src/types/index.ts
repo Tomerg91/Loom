@@ -7,6 +7,7 @@ export * from './analytics';
 export type UserRole = 'client' | 'coach' | 'admin';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 export type Language = 'en' | 'he';
+export type SubscriptionTier = 'free' | 'basic' | 'professional' | 'enterprise';
 
 // MFA types
 export type MfaMethod = 'totp' | 'backup_code' | 'sms';
@@ -74,6 +75,11 @@ export interface User {
   mfaSetupCompleted?: boolean;
   mfaVerifiedAt?: string;
   rememberDeviceEnabled?: boolean;
+  // Subscription fields
+  subscriptionTier?: SubscriptionTier;
+  subscriptionExpiresAt?: string;
+  subscriptionStartedAt?: string;
+  subscriptionMetadata?: Record<string, unknown>;
   // Additional fields for auth compatibility
   isActive?: boolean;
   emailVerified?: boolean;
