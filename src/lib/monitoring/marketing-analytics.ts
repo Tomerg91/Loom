@@ -387,7 +387,7 @@ export const trackNewsletterSignup = (data: MarketingConversionEvent & {
   posthogEvent('newsletter_signup', eventData.properties);
 
   // Track in database
-  trackEngagementEvent(
+  persistEngagementEvent(
     data.userId || 'anonymous',
     'newsletter_signup',
     data.frequency || 'weekly',
