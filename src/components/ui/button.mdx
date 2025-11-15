@@ -1,0 +1,295 @@
+import { Meta, Canvas, Story, Controls } from '@storybook/blocks';
+import * as ButtonStories from './button.stories';
+
+<Meta of={ButtonStories} />
+
+# Button Component
+
+The Button component is the primary interactive element in the Satya Method design system, built with accessibility-first principles and full design token integration.
+
+## Design Token Integration
+
+All button variants are built using CSS custom properties from `src/styles/tokens.css`, ensuring consistent theming and dark mode support:
+
+### Color Tokens
+
+| Variant | Light Mode | Dark Mode | Token Reference |
+|---------|-----------|-----------|-----------------|
+| **Default (Primary)** | Teal 700 (#0f766e) | Gold (#ddbf73) | `--primary` |
+| **Secondary** | Sand 200/700 (#e7e5e4) | Dark Charcoal | `--secondary` |
+| **Destructive** | Terracotta 700 (#f97316) | Red 500 | `--destructive` |
+| **Success** | Moss 500 (#84cc16) | Moss 500 | `--success` |
+| **Accent** | Teal 500 (#14b8a6) | Warm Gold | `--accent` |
+
+### Spacing Tokens
+
+Buttons use the design system spacing scale:
+
+- `--spacing-sm` (8px): Internal icon spacing
+- `--spacing-md` (16px): Horizontal padding baseline
+- `--spacing-lg` (24px): Large button padding
+- `--spacing-xl` (32px): Extra-large button padding
+
+### Typography Tokens
+
+Font sizes map to the typography scale:
+- Small: `--text-xs` (12px)
+- Default: `--text-sm` (14px)
+- Large: `--text-base` (16px)
+
+### Border & Radius Tokens
+
+- Border Radius: `--radius-xl` (12px) for soft, approachable corners
+- Border Width: `--border-width-2` (2px) for outline variant
+- Border Color: `--border` (Sand 200 in light mode)
+
+### Shadow Tokens
+
+Elevation uses the shadow scale:
+- Default state: `--shadow-md`
+- Hover state: `--shadow-lg`
+- Pressed state: Reduced to `--shadow-sm`
+
+### Animation Tokens
+
+Smooth transitions using:
+- Duration: `--transition-base` (200ms)
+- Easing: `--ease-out` for natural feel
+- Active scale: 0.98 (subtle press effect)
+- Hover scale: 1.01 (gentle lift)
+
+## Accessibility Features
+
+### WCAG Compliance
+
+✅ **2.5.5 Target Size (Level AAA)** - All buttons meet minimum 44×44px touch target
+✅ **1.4.3 Contrast (Level AA)** - 4.5:1 minimum contrast ratio for text
+✅ **2.4.7 Focus Visible (Level AA)** - Clear focus indicators with `--ring` token
+✅ **4.1.2 Name, Role, Value (Level A)** - Proper ARIA attributes
+
+### Keyboard Navigation
+
+- **Tab**: Focus next/previous button
+- **Enter/Space**: Activate button
+- **Esc**: Blur focused button (in forms)
+
+### Screen Reader Support
+
+- Descriptive `aria-label` for icon-only buttons
+- `aria-busy="true"` during loading states
+- `aria-disabled="true"` when disabled
+- Live region announcements for loading text
+
+### RTL Language Support
+
+Buttons automatically adapt for Hebrew and Arabic:
+- Flex direction reverses (`flex-row-reverse`)
+- Icon positions swap (leading ↔ trailing)
+- Text alignment adjusts
+- Proper `dir="rtl"` attribute handling
+
+## Usage Guidelines
+
+### When to Use Each Variant
+
+**Default (Primary)**
+- Primary actions that advance user flow
+- Form submissions
+- Main call-to-action buttons
+- Examples: "Save", "Continue", "Submit"
+
+**Secondary**
+- Supporting actions
+- Alternative paths
+- Less critical actions
+- Examples: "Save Draft", "Skip", "Back"
+
+**Destructive**
+- Dangerous or irreversible actions
+- Data deletion
+- Account cancellation
+- Examples: "Delete", "Remove", "Cancel Subscription"
+
+**Success**
+- Affirmative confirmations
+- Approvals
+- Positive completions
+- Examples: "Approve", "Accept", "Confirm"
+
+**Outline**
+- Lower-emphasis actions
+- Multiple button groups
+- Neutral alternatives
+- Examples: "Cancel", "Learn More", "Details"
+
+**Ghost**
+- Tertiary actions
+- Inline actions in tables
+- Minimal-impact interactions
+- Examples: "Edit", "View", "More Options"
+
+**Link**
+- In-line navigation
+- Text-based actions
+- Supplementary links
+- Examples: "Learn more", "View terms", "Help"
+
+### Size Guidelines
+
+**Small (`sm`)**
+- Compact UIs and tight layouts
+- Secondary actions in cards
+- Table row actions
+- Mobile-optimized interfaces
+
+**Default**
+- Standard UI interactions
+- Most common use case
+- Recommended for accessibility
+
+**Large (`lg`)**
+- Primary CTAs
+- Hero sections
+- Landing pages
+- Marketing buttons
+
+**Icon**
+- Toolbar actions
+- Compact controls
+- Icon-only interactions
+- Always provide `aria-label`
+
+### Common Patterns
+
+#### Form Actions
+```tsx
+<div className="flex gap-3 justify-end">
+  <Button variant="outline">Cancel</Button>
+  <Button>Save Changes</Button>
+</div>
+```
+
+#### Dialog Actions
+```tsx
+<div className="flex gap-3 justify-end">
+  <Button variant="ghost">Cancel</Button>
+  <Button variant="destructive">Delete</Button>
+</div>
+```
+
+#### CTA Section
+```tsx
+<div className="flex flex-col gap-3 items-center">
+  <Button size="lg">
+    Start Free Trial
+    <ArrowRight />
+  </Button>
+  <Button variant="link" size="sm">
+    Learn more
+  </Button>
+</div>
+```
+
+#### Loading State
+```tsx
+<Button 
+  loading={isSubmitting}
+  loadingText="Saving your changes..."
+  disabled={!isValid}
+>
+  Save Changes
+</Button>
+```
+
+#### Icon Button
+```tsx
+<Button 
+  size="icon" 
+  variant="outline"
+  aria-label="Download report"
+>
+  <Download className="h-4 w-4" />
+</Button>
+```
+
+## Dark Mode
+
+All button variants automatically adapt to dark mode using CSS custom properties:
+
+```css
+.dark {
+  --primary: 46 75% 55%; /* Gold in dark mode */
+  --destructive: 0 55% 45%; /* Softer red */
+  --success: 84 65% 50%; /* Adjusted moss green */
+}
+```
+
+Toggle dark mode in Storybook using the theme toolbar.
+
+## Implementation Details
+
+### Technology Stack
+
+- **Class Variance Authority (CVA)**: Type-safe variant management
+- **Tailwind CSS 4**: Utility-first styling with design tokens
+- **Radix UI Slot**: Polymorphic component support (`asChild` prop)
+- **Lucide React**: Accessible icon system
+
+### Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `variant` | `string` | `'default'` | Visual style variant |
+| `size` | `string` | `'default'` | Size variant |
+| `loading` | `boolean` | `false` | Show loading spinner |
+| `loadingText` | `string` | `'Loading...'` | Screen reader text |
+| `disabled` | `boolean` | `false` | Disable interaction |
+| `iconOnly` | `boolean` | `false` | Icon-only mode |
+| `aria-label` | `string` | - | Accessible label |
+| `asChild` | `boolean` | `false` | Polymorphic rendering |
+
+### Component Composition
+
+```tsx
+<Button>           {/* Root element */}
+  <Spinner />      {/* Optional loading indicator */}
+  <span>           {/* Content wrapper */}
+    {children}     {/* Button content */}
+  </span>
+  <LiveRegion />   {/* Screen reader announcements */}
+</Button>
+```
+
+## Best Practices
+
+### ✅ Do
+
+- Use descriptive button labels ("Add New Client" not "Add")
+- Provide `aria-label` for icon-only buttons
+- Use appropriate variant for action hierarchy
+- Test with keyboard navigation
+- Verify touch target sizes on mobile
+- Use loading states for async actions
+
+### ❌ Don't
+
+- Use all caps text (reduces readability)
+- Chain multiple primary buttons
+- Omit `aria-label` on icon buttons
+- Use tiny buttons below 36px height
+- Mix too many variants in one group
+- Use disabled state without explanation
+
+## Related Components
+
+- **Link**: For navigation-only actions
+- **IconButton**: Specialized icon-only variant
+- **DropdownMenu**: For action menus
+- **AlertDialog**: For confirmation dialogs
+
+## Resources
+
+- [Design Tokens Documentation](../../styles/tokens.css)
+- [Accessibility Guidelines](../../styles/accessibility.css)
+- [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+- [Tailwind CSS Configuration](../../../tailwind.config.ts)

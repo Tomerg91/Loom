@@ -55,7 +55,9 @@
     "supabase:migration": "supabase migration new",
     "supabase:push": "supabase db push",
     "db:seed": "supabase db reset",
-    "seed:staging": "node scripts/seed/staging.mjs"
+    "seed:staging": "node scripts/seed/staging.mjs",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -133,6 +135,12 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.53.2",
+    "@storybook/addon-a11y": "^8.6.14",
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/addon-interactions": "^8.6.14",
+    "@storybook/addon-links": "^8.6.14",
+    "@storybook/nextjs": "^8.6.14",
+    "@storybook/react": "^8.6.14",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -158,6 +166,7 @@
     "lint-staged": "^16.1.2",
     "playwright": "^1.53.2",
     "prettier": "^3.6.2",
+    "storybook": "^8.6.14",
     "supabase": "^2.30.4",
     "tailwindcss": "^4",
     "tdd-guard": "^0.1.4",
