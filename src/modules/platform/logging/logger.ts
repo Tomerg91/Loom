@@ -88,13 +88,18 @@ const sanitizeValue = (value: unknown): unknown => {
     }
 
     // Credit card pattern (13-19 digits with optional separators)
-    if (/^[\d\s\-]{13,19}$/.test(value) && /\d{13,19}/.test(value.replace(/\D/g, ''))) {
+    if (
+      /^[\d\s\-]{13,19}$/.test(value) &&
+      /\d{13,19}/.test(value.replace(/\D/g, ''))
+    ) {
       return sanitizeCreditCard(value);
     }
 
     // Token/API key pattern (long alphanumeric strings)
-    if (/^(sk_|pk_|tok_|key_|api_|auth_|bearer_)/i.test(value) ||
-        (value.length > 20 && /^[A-Za-z0-9_\-\.]+$/.test(value))) {
+    if (
+      /^(sk_|pk_|tok_|key_|api_|auth_|bearer_)/i.test(value) ||
+      (value.length > 20 && /^[A-Za-z0-9_\-\.]+$/.test(value))
+    ) {
       return sanitizeToken(value);
     }
 
@@ -109,10 +114,23 @@ const sanitizeValue = (value: unknown): unknown => {
     const sanitized: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(value)) {
       // Check if key suggests sensitive data
-      const sensitiveKeys = ['email', 'phone', 'password', 'token', 'apiKey', 'api_key',
-                            'creditCard', 'credit_card', 'ssn', 'secret'];
-      if (sensitiveKeys.some(k => key.toLowerCase().includes(k.toLowerCase()))) {
-        sanitized[key] = typeof val === 'string' ? sanitizeValue(val) : '[REDACTED]';
+      const sensitiveKeys = [
+        'email',
+        'phone',
+        'password',
+        'token',
+        'apiKey',
+        'api_key',
+        'creditCard',
+        'credit_card',
+        'ssn',
+        'secret',
+      ];
+      if (
+        sensitiveKeys.some(k => key.toLowerCase().includes(k.toLowerCase()))
+      ) {
+        sanitized[key] =
+          typeof val === 'string' ? sanitizeValue(val) : '[REDACTED]';
       } else {
         sanitized[key] = sanitizeValue(val);
       }
@@ -149,7 +167,9 @@ const sanitizeMessage = (message: string): string => {
   let sanitized = message;
 
   // Sanitize emails in message
-  sanitized = sanitized.replace(/\b[^\s@]+@[^\s@]+\.[^\s@]+\b/g, match => sanitizeEmail(match));
+  sanitized = sanitized.replace(/\b[^\s@]+@[^\s@]+\.[^\s@]+\b/g, match =>
+    sanitizeEmail(match)
+  );
 
   // Sanitize phone numbers in message
   sanitized = sanitized.replace(/\b[\d\s\-\+\(\)]{8,}\b/g, match => {
@@ -160,8 +180,10 @@ const sanitizeMessage = (message: string): string => {
   });
 
   // Sanitize tokens in message
-  sanitized = sanitized.replace(/\b(sk_|pk_|tok_|key_|api_|auth_|bearer_)[A-Za-z0-9_\-\.]+\b/gi,
-    match => sanitizeToken(match));
+  sanitized = sanitized.replace(
+    /\b(sk_|pk_|tok_|key_|api_|auth_|bearer_)[A-Za-z0-9_\-\.]+\b/gi,
+    match => sanitizeToken(match)
+  );
 
   return sanitized;
 };
@@ -233,12 +255,8 @@ const logToConsole = (
   message: string,
   metadata?: LogMetadata
 ): void => {
-  // Sanitize message and metadata to prevent PII leakage
-  const sanitizedMessage = sanitizeMessage(message);
-  const sanitizedMetadata = sanitizeMetadata(metadata);
-
-  const prefix = formatPrefix(level, sanitizedMetadata?.context);
-  const extras = { ...sanitizedMetadata };
+  const prefix = formatPrefix(level, metadata?.context);
+  const extras = { ...metadata };
   if ('error' in extras) {
     delete (extras as Record<string, unknown>).error;
   }
@@ -253,24 +271,24 @@ const logToConsole = (
 
   if (level === 'error') {
     if (errorCandidate instanceof Error) {
-      console.error(prefix, sanitizedMessage, payload, errorCandidate);
+      console.error(prefix, message, payload, errorCandidate);
       return;
     }
-    console.error(prefix, sanitizedMessage, payload, errorCandidate);
+    console.error(prefix, message, payload, errorCandidate);
     return;
   }
 
   if (level === 'warn') {
-    console.warn(prefix, sanitizedMessage, payload);
+    console.warn(prefix, message, payload);
     return;
   }
 
   if (level === 'info') {
-    console.info(prefix, sanitizedMessage, payload);
+    console.info(prefix, message, payload);
     return;
   }
 
-  console.debug(prefix, sanitizedMessage, payload);
+  console.debug(prefix, message, payload);
 };
 
 const dispatchLog = (
@@ -278,8 +296,11 @@ const dispatchLog = (
   message: string,
   metadata?: LogMetadata
 ): void => {
-  logToConsole(level, message, metadata);
-  captureWithSentry(level, message, metadata);
+  const sanitizedMessage = sanitizeMessage(message);
+  const sanitizedMetadata = sanitizeMetadata(metadata);
+
+  logToConsole(level, sanitizedMessage, sanitizedMetadata);
+  captureWithSentry(level, sanitizedMessage, sanitizedMetadata);
 };
 
 export const logger = {
