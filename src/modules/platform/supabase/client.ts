@@ -17,6 +17,15 @@ import {
 } from '@/env/client';
 import { Database } from '@/types/supabase';
 import { captureError, captureMetric } from '@/lib/monitoring/sentry';
+import {
+  trackSessionRefreshStarted,
+  trackSessionRefreshSuccess,
+  trackSessionRefreshFailed,
+  trackSessionRefreshRetry,
+  trackForcedSignout,
+  trackSupabaseClientInitialized,
+  trackSupabaseValidationFailed,
+} from '@/lib/auth/auth-telemetry';
 
 /**
  * Shape of the browser Supabase client so downstream modules can reference a
@@ -59,6 +68,7 @@ function validateClientEnv(): void {
   const anonKey = clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url) {
+    trackSupabaseValidationFailed('missing_url');
     throw new Error(
       'Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL. ' +
         'Update your deployment configuration or .env.local file to include it.'
@@ -66,6 +76,7 @@ function validateClientEnv(): void {
   }
 
   if (!anonKey) {
+    trackSupabaseValidationFailed('missing_anon_key');
     throw new Error(
       'Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY. ' +
         'Update your deployment configuration or .env.local file to include it.'
@@ -84,6 +95,7 @@ function validateClientEnv(): void {
     url === PLACEHOLDER_SUPABASE_URL ||
     placeholderPatterns.some(pattern => url.includes(pattern))
   ) {
+    trackSupabaseValidationFailed('placeholder_url');
     throw new Error(
       `Invalid Supabase URL configuration: "${url}". ` +
         'Replace placeholder values with the project URL from the Supabase dashboard.'
@@ -103,6 +115,7 @@ function validateClientEnv(): void {
       );
     }
   } catch (_error) {
+    trackSupabaseValidationFailed('invalid_url_format');
     throw new Error(
       `Invalid Supabase URL format: "${url}". Expected a valid https://{project}.supabase.co URL.`
     );
@@ -111,6 +124,7 @@ function validateClientEnv(): void {
   const looksLegacyJwt = anonKey.startsWith('eyJ');
   const looksNewKey = anonKey.startsWith('sb_');
   if (!looksLegacyJwt && !looksNewKey) {
+    trackSupabaseValidationFailed('invalid_key_prefix');
     throw new Error(
       `Invalid Supabase publishable key prefix: "${anonKey.substring(0, 8)}...". ` +
         'Expected a legacy JWT (eyJ...) or the newer sb_ prefixed key.'
@@ -121,6 +135,7 @@ function validateClientEnv(): void {
     anonKey === PLACEHOLDER_SUPABASE_ANON_KEY ||
     anonKey.includes('your-supabase')
   ) {
+    trackSupabaseValidationFailed('placeholder_anon_key');
     throw new Error(
       'Invalid Supabase anon key: appears to be a placeholder value. ' +
         'Replace it with the publishable key from the Supabase dashboard.'
@@ -139,6 +154,12 @@ async function handleInvalidToken(
   isHandlingSignOut = true;
 
   // Track forced sign-out event
+  const { data: session } = await client.auth.getSession();
+  await trackForcedSignout('token_refresh_exhausted', {
+    userId: session?.session?.user?.id,
+    retryCount: tokenRefreshRetries
+  });
+
   captureMetric('auth.force_signout', 1, {
     tags: {
       reason: 'token_expired',
@@ -201,6 +222,14 @@ async function retryTokenRefresh(
   client: BrowserSupabaseClient
 ): Promise<boolean> {
   const startTime = Date.now();
+  const { data: sessionData } = await client.auth.getSession();
+  const userId = sessionData?.session?.user?.id;
+
+  // Track refresh start
+  await trackSessionRefreshStarted({
+    userId,
+    sessionId: sessionData?.session?.access_token
+  });
 
   for (let attempt = 0; attempt < MAX_REFRESH_RETRIES; attempt++) {
     try {
@@ -211,6 +240,13 @@ async function retryTokenRefresh(
 
         // Track successful refresh
         const duration = Date.now() - startTime;
+        await trackSessionRefreshSuccess({
+          userId,
+          sessionId: data.session.access_token,
+          attemptCount: attempt + 1,
+          durationMs: duration
+        });
+
         captureMetric('auth.token_refresh.success', 1, {
           tags: {
             attempts: (attempt + 1).toString(),
@@ -231,8 +267,19 @@ async function retryTokenRefresh(
       }
     } catch (error) {
       const delay = REFRESH_RETRY_DELAY_MS * 2 ** attempt;
+      const willRetry = attempt < MAX_REFRESH_RETRIES - 1;
 
       // Track retry attempt
+      if (willRetry) {
+        await trackSessionRefreshRetry({
+          userId,
+          sessionId: sessionData?.session?.access_token,
+          attemptNumber: attempt + 1,
+          maxAttempts: MAX_REFRESH_RETRIES,
+          delayMs: delay
+        });
+      }
+
       captureMetric('auth.retry.attempt', 1, {
         tags: {
           operation: 'token_refresh',
@@ -245,13 +292,20 @@ async function retryTokenRefresh(
         console.warn(`Token refresh attempt ${attempt + 1} failed:`, error);
       }
 
-      if (attempt < MAX_REFRESH_RETRIES - 1) {
+      if (willRetry) {
         await new Promise(resolve =>
           setTimeout(resolve, delay)
         );
       } else {
         // Final failure - track comprehensive telemetry
         const duration = Date.now() - startTime;
+        await trackSessionRefreshFailed(error as Error, {
+          userId,
+          sessionId: sessionData?.session?.access_token,
+          attemptCount: MAX_REFRESH_RETRIES,
+          willRetry: false
+        });
+
         captureMetric('auth.token_refresh.failure', 1, {
           tags: {
             attempts: MAX_REFRESH_RETRIES.toString(),
@@ -306,6 +360,13 @@ export const createClient = (): BrowserSupabaseClient => {
         },
       }
     );
+
+    // Track client initialization
+    if (typeof window !== 'undefined') {
+      trackSupabaseClientInitialized({
+        environment: process.env.NODE_ENV
+      });
+    }
 
     if (typeof window !== 'undefined') {
       clientInstance.auth.onAuthStateChange(async (event, session) => {
