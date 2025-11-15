@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiError } from '@/lib/api/errors';
@@ -117,21 +117,24 @@ export async function GET(request: NextRequest): Promise<Response> {
       ? Number(clientsData[0].total_count)
       : 0;
 
+    const pagination = {
+      total: totalCount,
+      limit,
+      offset,
+      hasMore: offset + clients.length < totalCount,
+    };
+
     console.log('[/api/coach/clients] Returning clients:', {
       count: clients.length,
       totalCount,
       offset,
-      limit
+      limit,
     });
 
-    return ApiResponseHelper.success({
-      clients,
-      pagination: {
-        total: totalCount,
-        limit,
-        offset,
-        hasMore: offset + clients.length < totalCount
-      }
+    return NextResponse.json({
+      success: true,
+      data: clients,
+      pagination,
     });
 
   } catch (error) {
