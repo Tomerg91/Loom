@@ -3,8 +3,6 @@ import { NextRequest } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
-import { getCoachSessionRate } from '@/lib/coach-dashboard/coach-profile';
-import { getDefaultCoachRating } from '@/lib/config/analytics-constants';
 import { createClient } from '@/lib/supabase/server';
 import { queryMonitor } from '@/lib/performance/query-monitoring';
 
@@ -42,150 +40,50 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     console.log('[/api/coach/stats] Fetching stats for coach:', coachId);
 
-    // Calculate date ranges
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 7);
-    endOfWeek.setHours(23, 59, 59, 999);
-
-    // Fetch session statistics and coach rate concurrently
-    let sessionData: Array<{ id: string; status: string; scheduled_at: string; client_id: string }> = [];
-    let sessionsFetchError: Error | null = null;
-
-    try {
-      sessionData = await queryMonitor.trackQueryExecution(
-        'Coach Statistics Sessions',
-        async () => {
-          const result = await supabase
-            .from('sessions')
-            .select('id, status, scheduled_at, client_id')
-            .eq('coach_id', coachId);
-
-          if (result.error) {
-            throw result.error;
-          }
-          return result.data || [];
-        }
-      );
-    } catch (error) {
-      sessionsFetchError = error instanceof Error ? error : new Error('Unknown error');
-      console.error('[/api/coach/stats] Error fetching sessions:', sessionsFetchError);
-    }
-
-    const coachRate = await getCoachSessionRate(supabase, coachId);
-
-    const sessionStats = sessionData;
-
-    console.log('[/api/coach/stats] Sessions query result:', {
-      count: sessionStats.length,
-      hasError: !!sessionsFetchError,
-      error: sessionsFetchError?.message,
-    });
-
-    const totalSessions = sessionStats.length;
-    const completedSessions = sessionStats.filter((s) => s.status === 'completed').length;
-    const upcomingSessions = sessionStats.filter((s) => {
-      if (s.status !== 'scheduled') return false;
-      const scheduledAt = new Date(s.scheduled_at);
-      return scheduledAt > now;
-    }).length;
-
-    const thisWeekSessions = sessionStats.filter((s) => {
-      if (s.status === 'cancelled') return false;
-      const scheduledAt = new Date(s.scheduled_at);
-      return scheduledAt >= startOfWeek && scheduledAt <= endOfWeek;
-    }).length;
-
-    const uniqueClientIds = new Set(sessionStats.map((s) => s.client_id).filter(Boolean));
-    const totalClients = uniqueClientIds.size;
-
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setDate(now.getDate() - 30);
-
-    const recentClientIds = new Set<string>();
-    sessionStats.forEach((session) => {
-      if (!session.client_id) return;
-      const scheduledAt = new Date(session.scheduled_at);
-      if (scheduledAt >= thirtyDaysAgo && session.status !== 'cancelled') {
-        recentClientIds.add(session.client_id);
-      }
-    });
-
-    const activeClients = recentClientIds.size;
-
-    // Calculate revenue using the coach's configured session rate
-    const totalRevenue = Number((completedSessions * coachRate.rate).toFixed(2));
-
-    // Calculate average rating from feedback/ratings tables
-    let averageRating = 0;
-    const completedSessionIds = sessionStats
-      .filter((s) => s.status === 'completed')
-      .map((s) => s.id);
-
-    if (completedSessionIds.length > 0) {
-      const [feedbackResult, ratingsResult] = await Promise.all([
-        supabase
-          .from('session_feedback')
-          .select('session_id, overall_rating')
-          .eq('coach_id', coachId)
-          .in('session_id', completedSessionIds),
-        supabase
-          .from('session_ratings')
-          .select('session_id, rating')
-          .eq('coach_id', coachId)
-          .in('session_id', completedSessionIds),
-      ]);
-
-      if (feedbackResult.error) {
-        console.warn('[/api/coach/stats] Failed to load session feedback', feedbackResult.error);
-      }
-      if (ratingsResult.error) {
-        console.warn('[/api/coach/stats] Failed to load session ratings', ratingsResult.error);
-      }
-
-      const ratingBySession = new Map<string, number>();
-
-      feedbackResult.data
-        ?.filter((feedback) => feedback.overall_rating != null)
-        .forEach((feedback) => {
-          const rating = Number(feedback.overall_rating);
-          if (Number.isFinite(rating) && rating > 0) {
-            ratingBySession.set(feedback.session_id, rating);
-          }
+    // Use the optimized RPC function for dashboard stats
+    const { data: statsData, error } = await queryMonitor.trackQueryExecution(
+      'Coach Dashboard Stats RPC',
+      async () => {
+        return await supabase.rpc('get_coach_dashboard_stats', {
+          p_coach_id: coachId,
         });
-
-      ratingsResult.data
-        ?.filter((rating) => rating.rating != null)
-        .forEach((rating) => {
-          const parsed = Number(rating.rating);
-          if (!ratingBySession.has(rating.session_id) && Number.isFinite(parsed) && parsed > 0) {
-            ratingBySession.set(rating.session_id, parsed);
-          }
-        });
-
-      const ratingValues = Array.from(ratingBySession.values());
-      if (ratingValues.length > 0) {
-        const sum = ratingValues.reduce((total, value) => total + value, 0);
-        averageRating = Math.round(((sum / ratingValues.length) + Number.EPSILON) * 10) / 10;
       }
+    );
+
+    if (error) {
+      console.error('[/api/coach/stats] Error fetching stats:', error);
+      throw new ApiError('FETCH_STATS_FAILED', 'Failed to fetch coach statistics', 500);
     }
 
-    if (averageRating === 0) {
-      averageRating = getDefaultCoachRating();
+    // Extract data from RPC result (returns single row)
+    const statsRow = statsData && statsData.length > 0 ? statsData[0] : null;
+
+    if (!statsRow) {
+      console.warn('[/api/coach/stats] No stats data returned for coach:', coachId);
+      // Return default values
+      const stats: DashboardStats = {
+        totalSessions: 0,
+        completedSessions: 0,
+        upcomingSessions: 0,
+        totalClients: 0,
+        activeClients: 0,
+        thisWeekSessions: 0,
+        averageRating: 4.8,
+        totalRevenue: 0,
+      };
+      return ApiResponseHelper.success(stats);
     }
 
+    // Transform RPC result to match the expected interface
     const stats: DashboardStats = {
-      totalSessions,
-      completedSessions,
-      upcomingSessions,
-      totalClients,
-      activeClients,
-      thisWeekSessions,
-      averageRating,
-      totalRevenue,
+      totalSessions: Number(statsRow.total_sessions) || 0,
+      completedSessions: Number(statsRow.completed_sessions) || 0,
+      upcomingSessions: Number(statsRow.upcoming_sessions) || 0,
+      totalClients: Number(statsRow.total_clients) || 0,
+      activeClients: Number(statsRow.active_clients) || 0,
+      thisWeekSessions: Number(statsRow.this_week_sessions) || 0,
+      averageRating: Number(statsRow.average_rating) || 4.8,
+      totalRevenue: Number(statsRow.total_revenue) || 0,
     };
 
     console.log('[/api/coach/stats] Returning stats:', stats);
@@ -194,11 +92,11 @@ export async function GET(request: NextRequest): Promise<Response> {
 
   } catch (error) {
     console.error('Coach stats API error:', error);
-    
+
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);
     }
-    
+
     return ApiResponseHelper.internalError('Failed to fetch coach statistics');
   }
 }
