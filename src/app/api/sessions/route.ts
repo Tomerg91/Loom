@@ -97,8 +97,10 @@ async function getAuthenticatedActor(
 }
 
 const parseCalendarSearchParams = (request: NextRequest) => {
-  const start = request.nextUrl.searchParams.get('start') ?? undefined;
-  const end = request.nextUrl.searchParams.get('end') ?? undefined;
+  const start = request.nextUrl.searchParams.get('start') ??
+                request.nextUrl.searchParams.get('from') ?? undefined;
+  const end = request.nextUrl.searchParams.get('end') ??
+              request.nextUrl.searchParams.get('to') ?? undefined;
   const limitParam = request.nextUrl.searchParams.get('limit');
   const limit = limitParam ? Number.parseInt(limitParam, 10) : undefined;
 
@@ -118,6 +120,9 @@ export const GET = async (request: NextRequest) => {
 
   const { actor, authResponse } = authResult;
   const view = request.nextUrl.searchParams.get('view') ?? 'calendar';
+  const status = request.nextUrl.searchParams.get('status');
+  const coachId = request.nextUrl.searchParams.get('coachId');
+  const sortOrder = request.nextUrl.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
 
   try {
     if (view === 'requests') {
@@ -126,11 +131,34 @@ export const GET = async (request: NextRequest) => {
       return propagateCookies(authResponse, successResponse);
     }
 
-    const calendar = await scheduler.listCalendar(
+    let calendar = await scheduler.listCalendar(
       actor,
       parseCalendarSearchParams(request)
     );
-    const successResponse = createSuccessResponse({ sessions: calendar });
+
+    // Apply additional filters if provided
+    if (status) {
+      calendar = calendar.filter(session => session.status === status);
+    }
+
+    if (coachId && actor.role !== 'coach') {
+      // Only filter by coachId if the actor is not a coach (for client/admin views)
+      calendar = calendar.filter(session => session.coachId === coachId);
+    }
+
+    // Apply sorting if requested
+    if (sortOrder) {
+      calendar = calendar.sort((a, b) => {
+        const dateA = new Date(a.scheduledAt).getTime();
+        const dateB = new Date(b.scheduledAt).getTime();
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      });
+    }
+
+    const successResponse = createSuccessResponse({
+      data: calendar, // Use 'data' key for consistency with dashboard expectations
+      sessions: calendar // Keep both for backward compatibility
+    });
     return propagateCookies(authResponse, successResponse);
   } catch (error) {
     if (error instanceof SessionSchedulerError) {

@@ -44,31 +44,40 @@ export async function GET(_request: NextRequest) {
   try {
     const supabase = createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+
     if (authError || !user) {
+      console.error('[/api/notifications/preferences] Auth error:', authError)
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
+    console.log('[/api/notifications/preferences] Fetching preferences for user:', user.id)
+
     // Get user's notification preferences
     const { data: preferences, error } = await supabase
       .from('notification_preferences')
       .select('*')
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle() // Use maybeSingle() instead of single() to handle no results gracefully
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-      console.error('Error fetching notification preferences:', error)
+    if (error) {
+      console.error('[/api/notifications/preferences] Database error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
       return NextResponse.json(
-        { error: 'Failed to fetch notification preferences' },
+        { error: 'Failed to fetch notification preferences', details: error.message },
         { status: 500 }
       )
     }
 
     // If no preferences exist, return defaults
     if (!preferences) {
+      console.log('[/api/notifications/preferences] No preferences found, returning defaults')
       const defaultPreferences = notificationPreferencesSchema.parse({})
       return NextResponse.json({ data: defaultPreferences })
     }
