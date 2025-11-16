@@ -82,7 +82,7 @@ export function SessionsListPage() {
       const response = await fetch(`/api/sessions?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch sessions');
       const result = await response.json();
-      return result.data as Session[];
+      return Array.isArray(result.data?.sessions) ? result.data.sessions : [];
     },
   });
 

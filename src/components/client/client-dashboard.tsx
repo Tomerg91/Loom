@@ -89,7 +89,7 @@ export function ClientDashboard() {
       const response = await fetch(`/api/sessions?clientId=${user?.id}&status=scheduled&limit=5&sortOrder=asc`);
       if (!response.ok) throw new Error('Failed to fetch sessions');
       const data = await response.json();
-      return data.data;
+      return Array.isArray(data.data?.sessions) ? data.data.sessions : [];
     },
     enabled: !!user?.id,
   });

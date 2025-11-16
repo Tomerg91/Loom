@@ -32,7 +32,10 @@ interface SessionCalendarProps {
 }
 
 interface SessionsResponse {
-  data: Session[];
+  success: boolean;
+  data: {
+    sessions: Session[];
+  };
 }
 
 export function SessionCalendar({ coachId, clientId, onSessionClick }: SessionCalendarProps) {
@@ -79,7 +82,9 @@ export function SessionCalendar({ coachId, clientId, onSessionClick }: SessionCa
     staleTime: 15000, // Consider data stale after 15 seconds
   });
 
-  const sessions = sessionsData?.data || [];
+  const sessions = Array.isArray(sessionsData?.data?.sessions)
+    ? sessionsData.data.sessions
+    : [];
 
   // Group sessions by date
   const sessionsByDate = sessions.reduce((acc, session) => {

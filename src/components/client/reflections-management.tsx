@@ -107,7 +107,7 @@ export function ReflectionsManagement({ sessionId: initialSessionId }: Reflectio
       const response = await fetch('/api/sessions?limit=20&sortOrder=desc&status=completed');
       if (!response.ok) throw new Error('Failed to fetch sessions');
       const data = await response.json();
-      return data.data;
+      return Array.isArray(data.data?.sessions) ? data.data.sessions : [];
     },
   });
 

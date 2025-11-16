@@ -17,7 +17,10 @@ interface CoachTodaysAgendaProps {
 }
 
 interface SessionsResponse {
-  data?: Session[];
+  success: boolean;
+  data?: {
+    sessions: Session[];
+  };
 }
 
 async function fetchTodaysAgenda(userId: string): Promise<Session[]> {
@@ -46,7 +49,8 @@ async function fetchTodaysAgenda(userId: string): Promise<Session[]> {
   }
 
   const payload: SessionsResponse = await response.json();
-  return (payload.data ?? []).sort(
+  const sessions = Array.isArray(payload.data?.sessions) ? payload.data.sessions : [];
+  return sessions.sort(
     (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
   );
 }
