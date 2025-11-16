@@ -217,47 +217,85 @@ export class SessionSchedulerService {
     const supabase = createClient();
     const limit = options.limit ?? DEFAULT_LIMIT;
 
-    let query = supabase
-      .from('sessions')
-      .select(
-        `
-          id,
-          coach_id,
-          client_id,
-          title,
-          scheduled_at,
-          duration_minutes,
-          status,
-          meeting_url,
-          timezone,
-          notes,
-          created_at,
-          updated_at,
-          coach:coach_id(first_name,last_name,email),
-          client:client_id(first_name,last_name,email)
-        `
-      )
-      .order('scheduled_at', { ascending: true })
-      .limit(limit);
+    try {
+      let query = supabase
+        .from('sessions')
+        .select(
+          `
+            id,
+            coach_id,
+            client_id,
+            title,
+            scheduled_at,
+            duration_minutes,
+            status,
+            meeting_url,
+            timezone,
+            notes,
+            created_at,
+            updated_at,
+            coach:users!coach_id(first_name,last_name,email),
+            client:users!client_id(first_name,last_name,email)
+          `
+        )
+        .order('scheduled_at', { ascending: true })
+        .limit(limit);
 
-    if (actor.role === 'coach') {
-      query = query.eq('coach_id', actor.id);
-    } else if (actor.role === 'client') {
-      query = query.eq('client_id', actor.id);
+      if (actor.role === 'coach') {
+        query = query.eq('coach_id', actor.id);
+      } else if (actor.role === 'client') {
+        query = query.eq('client_id', actor.id);
+      }
+
+      if (options.start) {
+        query = query.gte('scheduled_at', options.start);
+      }
+      if (options.end) {
+        query = query.lte('scheduled_at', options.end);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('SessionScheduler.listCalendar query error:', {
+          error,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          actor,
+          options
+        });
+      }
+
+      handlePostgrestError(error);
+
+      if (!data) {
+        console.warn('SessionScheduler.listCalendar returned null data, returning empty array');
+        return [];
+      }
+
+      if (!Array.isArray(data)) {
+        console.error('SessionScheduler.listCalendar data is not an array:', typeof data, data);
+        throw new SessionSchedulerError(
+          'Invalid response from database: expected array',
+          HTTP_STATUS.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      const rows = data as unknown as SessionRow[];
+      return rows.map(mapSessionRow);
+    } catch (error) {
+      console.error('SessionScheduler.listCalendar unexpected error:', error);
+      if (error instanceof SessionSchedulerError) {
+        throw error;
+      }
+      throw new SessionSchedulerError(
+        'Failed to fetch calendar sessions',
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        error
+      );
     }
-
-    if (options.start) {
-      query = query.gte('scheduled_at', options.start);
-    }
-    if (options.end) {
-      query = query.lte('scheduled_at', options.end);
-    }
-
-    const { data, error } = await query;
-    handlePostgrestError(error);
-
-    const rows = (data ?? []) as unknown as SessionRow[];
-    return rows.map(mapSessionRow);
   }
 
   async listRequests(
@@ -265,45 +303,82 @@ export class SessionSchedulerService {
   ): Promise<SessionRequestSummary[]> {
     const supabase = createClient();
 
-    let query = supabase
-      .from('session_requests')
-      .select(
-        `
-          id,
-          coach_id,
-          client_id,
-          session_id,
-          requested_by,
-          requested_at,
-          scheduled_at,
-          duration_minutes,
-          status,
-          title,
-          timezone,
-          meeting_url,
-          notes,
-          reschedule_reason,
-          coach:coach_id(first_name,last_name,email),
-          client:client_id(first_name,last_name,email),
-          requester:requested_by(first_name,last_name,email)
-        `
-      )
-      .order('requested_at', { ascending: false })
-      .limit(DEFAULT_LIMIT);
+    try {
+      let query = supabase
+        .from('session_requests')
+        .select(
+          `
+            id,
+            coach_id,
+            client_id,
+            session_id,
+            requested_by,
+            requested_at,
+            scheduled_at,
+            duration_minutes,
+            status,
+            title,
+            timezone,
+            meeting_url,
+            notes,
+            reschedule_reason,
+            coach:users!coach_id(first_name,last_name,email),
+            client:users!client_id(first_name,last_name,email),
+            requester:users!requested_by(first_name,last_name,email)
+          `
+        )
+        .order('requested_at', { ascending: false })
+        .limit(DEFAULT_LIMIT);
 
-    if (actor.role === 'coach') {
-      query = query.eq('coach_id', actor.id);
-    } else if (actor.role === 'client') {
-      query = query.eq('client_id', actor.id);
-    } else {
-      query = query.eq('requested_by', actor.id);
+      if (actor.role === 'coach') {
+        query = query.eq('coach_id', actor.id);
+      } else if (actor.role === 'client') {
+        query = query.eq('client_id', actor.id);
+      } else {
+        query = query.eq('requested_by', actor.id);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('SessionScheduler.listRequests query error:', {
+          error,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          actor
+        });
+      }
+
+      handlePostgrestError(error);
+
+      if (!data) {
+        console.warn('SessionScheduler.listRequests returned null data, returning empty array');
+        return [];
+      }
+
+      if (!Array.isArray(data)) {
+        console.error('SessionScheduler.listRequests data is not an array:', typeof data, data);
+        throw new SessionSchedulerError(
+          'Invalid response from database: expected array',
+          HTTP_STATUS.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      const rows = data as unknown as SessionRequestRow[];
+      return rows.map(mapRequestRow);
+    } catch (error) {
+      console.error('SessionScheduler.listRequests unexpected error:', error);
+      if (error instanceof SessionSchedulerError) {
+        throw error;
+      }
+      throw new SessionSchedulerError(
+        'Failed to fetch session requests',
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        error
+      );
     }
-
-    const { data, error } = await query;
-    handlePostgrestError(error);
-
-    const rows = (data ?? []) as unknown as SessionRequestRow[];
-    return rows.map(mapRequestRow);
   }
 
   async createRequest(
@@ -338,8 +413,8 @@ export class SessionSchedulerService {
             notes,
             created_at,
             updated_at,
-            coach:coach_id(first_name,last_name,email),
-            client:client_id(first_name,last_name,email)
+            coach:users!coach_id(first_name,last_name,email),
+            client:users!client_id(first_name,last_name,email)
           `
         )
         .single();
@@ -376,9 +451,9 @@ export class SessionSchedulerService {
             meeting_url,
             notes,
             reschedule_reason,
-            coach:coach_id(first_name,last_name,email),
-            client:client_id(first_name,last_name,email),
-            requester:requested_by(first_name,last_name,email)
+            coach:users!coach_id(first_name,last_name,email),
+            client:users!client_id(first_name,last_name,email),
+            requester:users!requested_by(first_name,last_name,email)
           `
         )
         .single();
@@ -416,9 +491,9 @@ export class SessionSchedulerService {
           meeting_url,
           notes,
           reschedule_reason,
-          coach:coach_id(first_name,last_name,email),
-          client:client_id(first_name,last_name,email),
-          requester:requested_by(first_name,last_name,email)
+          coach:users!coach_id(first_name,last_name,email),
+          client:users!client_id(first_name,last_name,email),
+          requester:users!requested_by(first_name,last_name,email)
         `
       )
       .single();
@@ -485,8 +560,8 @@ export class SessionSchedulerService {
           notes,
           created_at,
           updated_at,
-          coach:coach_id(first_name,last_name,email),
-          client:client_id(first_name,last_name,email)
+          coach:users!coach_id(first_name,last_name,email),
+          client:users!client_id(first_name,last_name,email)
         `
       )
       .single();
