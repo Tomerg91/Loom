@@ -157,18 +157,27 @@ export default function MonitoringDashboard() {
 
   // Auto-refresh effect
   useEffect(() => {
-    const abortController = new AbortController();
-    fetchMonitoringData(abortController.signal);
+    const activeControllers = new Set<AbortController>();
+
+    const runFetch = () => {
+      const controller = new AbortController();
+      activeControllers.add(controller);
+      fetchMonitoringData(controller.signal).finally(() => {
+        activeControllers.delete(controller);
+      });
+    };
+
+    runFetch();
 
     let interval: NodeJS.Timeout | undefined;
     if (autoRefresh) {
       interval = setInterval(() => {
-        fetchMonitoringData();
+        runFetch();
       }, 30000); // Refresh every 30 seconds
     }
 
     return () => {
-      abortController.abort();
+      activeControllers.forEach((controller) => controller.abort());
       if (interval) {
         clearInterval(interval);
       }
