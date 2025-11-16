@@ -137,21 +137,20 @@ export function CoachFileManagement({ userId, _userRole, onFileUpload }: CoachFi
       // Load coach's clients based on session relationships
       const data = await apiGet<{ data?: any[]; clients?: any[] }>('/api/coach/clients');
 
-      if (response.ok) {
-        const clientsPayload = data?.data ?? data.clients ?? [];
-        const normalizedClients: User[] = clientsPayload.map((client: unknown) => {
-          const firstName = client.firstName ?? client.first_name ?? '';
-          const lastName = client.lastName ?? client.last_name ?? '';
-          const fullName = `${firstName} ${lastName}`.trim();
+      const clientsPayload = data?.data ?? data.clients ?? [];
+      const normalizedClients: User[] = clientsPayload.map((client: unknown) => {
+        const firstName = client.firstName ?? client.first_name ?? '';
+        const lastName = client.lastName ?? client.last_name ?? '';
+        const fullName = `${firstName} ${lastName}`.trim();
 
-          return {
-            id: client.id,
-            name: fullName || client.email || 'Client',
-            role: (client.role as User['role']) || 'client',
-            email: client.email || undefined,
-          };
-        });
-        setClients(normalizedClients);
+        return {
+          id: client.id,
+          name: fullName || client.email || 'Client',
+          role: (client.role as User['role']) || 'client',
+          email: client.email || undefined,
+        };
+      });
+      setClients(normalizedClients);
     } catch (error) {
       console.error('Failed to load clients:', error);
       if (error instanceof Error) {
