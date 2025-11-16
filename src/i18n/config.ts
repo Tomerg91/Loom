@@ -23,6 +23,17 @@ export default getRequestConfig(async ({ locale }) => {
   return {
     locale: normalized,
     messages,
-    timeZone: 'UTC'
+    timeZone: 'UTC',
+    // Gracefully handle missing translation keys
+    onError(error) {
+      // Only log in development to avoid console spam in production
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('i18n error:', error.message);
+      }
+    },
+    getMessageFallback({ namespace, key }) {
+      // Return the key itself as fallback (e.g., "coach" for "navigation.coach")
+      return key;
+    }
   };
 });
