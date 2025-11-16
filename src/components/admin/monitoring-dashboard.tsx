@@ -19,7 +19,7 @@ import {
   AlertCircle,
   XCircle,
 } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -114,14 +114,14 @@ export default function MonitoringDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Fetch monitoring data
-  const fetchMonitoringData = async () => {
+  const fetchMonitoringData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      
+
       const [healthResponse, businessResponse, performanceResponse] = await Promise.allSettled([
-        fetch('/api/health'),
-        fetch('/api/monitoring/business-metrics'),
-        fetch('/api/monitoring/performance'),
+        fetch('/api/health', { signal }),
+        fetch('/api/monitoring/business-metrics', { signal }),
+        fetch('/api/monitoring/performance', { signal }),
       ]);
 
       if (healthResponse.status === 'fulfilled' && healthResponse.value.ok) {
@@ -145,21 +145,44 @@ export default function MonitoringDashboard() {
 
       setLastUpdated(new Date());
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        // Request was cancelled, don't update state
+        return;
+      }
       console.error('Failed to fetch monitoring data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Auto-refresh effect
   useEffect(() => {
-    fetchMonitoringData();
+    const activeControllers = new Set<AbortController>();
 
+    const runFetch = () => {
+      const controller = new AbortController();
+      activeControllers.add(controller);
+      fetchMonitoringData(controller.signal).finally(() => {
+        activeControllers.delete(controller);
+      });
+    };
+
+    runFetch();
+
+    let interval: NodeJS.Timeout | undefined;
     if (autoRefresh) {
-      const interval = setInterval(fetchMonitoringData, 30000); // Refresh every 30 seconds
-      return () => clearInterval(interval);
+      interval = setInterval(() => {
+        runFetch();
+      }, 30000); // Refresh every 30 seconds
     }
-  }, [autoRefresh]);
+
+    return () => {
+      activeControllers.forEach((controller) => controller.abort());
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [autoRefresh, fetchMonitoringData]);
 
   // Status badge component
   const StatusBadge: React.FC<{ status: string; size?: 'sm' | 'default' }> = ({ status, size = 'default' }) => {

@@ -26,11 +26,14 @@ export function useAuthMonitor(options: AuthMonitorOptions = {}) {
 
   useEffect(() => {
     const supabase = createClient();
+    let isMounted = true;
 
     // Subscribe to auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      if (!isMounted) return;
+
       const { onSessionExpired, onTokenRefreshed, onSignOut, _onError} = optionsRef.current;
 
       switch (event) {
@@ -52,16 +55,12 @@ export function useAuthMonitor(options: AuthMonitorOptions = {}) {
 
     // Set up periodic session validation (every 5 minutes)
     const sessionCheckInterval = setInterval(async () => {
-      // Prevent overlapping session checks (race condition protection)
-      if (isCheckingRef.current) {
-        console.log('Session check already in progress, skipping...');
-        return;
-      }
-
-      isCheckingRef.current = true;
+      if (!isMounted) return;
 
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
 
         if (error) {
           console.warn('Session validation error:', error);
@@ -85,6 +84,8 @@ export function useAuthMonitor(options: AuthMonitorOptions = {}) {
             console.log('Session expiring soon, attempting refresh...');
             const { error: refreshError } = await supabase.auth.refreshSession();
 
+            if (!isMounted) return;
+
             if (refreshError) {
               console.error('Failed to refresh expiring session:', refreshError);
               optionsRef.current.onError?.(refreshError);
@@ -92,15 +93,16 @@ export function useAuthMonitor(options: AuthMonitorOptions = {}) {
           }
         }
       } catch (error) {
-        console.error('Error during session check:', error);
-        optionsRef.current.onError?.(error as Error);
-      } finally {
-        isCheckingRef.current = false;
+        if (isMounted) {
+          console.error('Error during session check:', error);
+          optionsRef.current.onError?.(error as Error);
+        }
       }
     }, 5 * 60 * 1000); // Check every 5 minutes
 
     // Cleanup on unmount
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
       clearInterval(sessionCheckInterval);
     };

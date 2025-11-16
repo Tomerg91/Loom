@@ -231,11 +231,19 @@ export function useRealtimeNotifications() {
 
   // Request notification permission on mount
   useEffect(() => {
+    let isMounted = true;
+
     const getPermission = async () => {
       const permission = await requestNotificationPermission();
-      setNotificationPermission(permission);
+      if (isMounted) {
+        setNotificationPermission(permission);
+      }
     };
     getPermission();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Connection status monitoring
@@ -666,18 +674,24 @@ export function useTypingIndicators(conversationId?: string) {
   useEffect(() => {
     if (!user?.id || !conversationId) return;
 
+    const abortController = new AbortController();
+
     const handleTypingChange = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
       console.log('Typing indicator change:', payload);
-      
+
       // Refetch typing indicators
-      fetch(`/api/messages/${conversationId}/typing`)
+      fetch(`/api/messages/${conversationId}/typing`, { signal: abortController.signal })
         .then(res => res.json())
         .then(data => {
           if (data.data) {
             setTypingUsers(data.data);
           }
         })
-        .catch(err => console.error('Error fetching typing indicators:', err));
+        .catch(err => {
+          if (err.name !== 'AbortError') {
+            console.error('Error fetching typing indicators:', err);
+          }
+        });
     };
 
     subscriptionRef.current = realtimeClient.subscribeToTypingIndicators(
@@ -686,6 +700,7 @@ export function useTypingIndicators(conversationId?: string) {
     );
 
     return () => {
+      abortController.abort();
       if (subscriptionRef.current) {
         realtimeClient.unsubscribe(subscriptionRef.current);
       }
