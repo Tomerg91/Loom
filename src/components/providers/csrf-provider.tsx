@@ -28,20 +28,27 @@ export function CSRFProvider({ children, csrfToken }: { children: React.ReactNod
     // Intercept fetch to store CSRF tokens from responses
     const originalFetch = window.fetch;
     window.fetch = async function(...args) {
-      const response = await originalFetch(...args);
+      try {
+        const response = await originalFetch(...args);
 
-      // Store CSRF token from response if present
-      const newToken = response.headers.get(CSRF_TOKEN_HEADER);
-      if (newToken) {
-        sessionStorage.setItem('csrf-token', newToken);
+        // Only process CSRF token if response is valid and has headers
+        if (response && response.headers) {
+          const newToken = response.headers.get(CSRF_TOKEN_HEADER);
+          if (newToken) {
+            sessionStorage.setItem('csrf-token', newToken);
 
-        const metaTag = document.querySelector('meta[name="csrf-token"]');
-        if (metaTag) {
-          metaTag.setAttribute('content', newToken);
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            if (metaTag) {
+              metaTag.setAttribute('content', newToken);
+            }
+          }
         }
-      }
 
-      return response;
+        return response;
+      } catch (error) {
+        // Re-throw the error to maintain fetch behavior
+        throw error;
+      }
     };
 
     return () => {
