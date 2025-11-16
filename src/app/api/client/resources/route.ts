@@ -102,6 +102,44 @@ export async function GET(request: NextRequest) {
       .eq('is_library_resource', true)
       .eq('shares.shared_with', user.id);
 
+    // If filtering by collection, constrain the query before pagination so counts remain accurate
+    if (collectionId) {
+      const { data: collectionItems, error: collectionError } = await supabase
+        .from('resource_collection_items')
+        .select('file_id')
+        .eq('collection_id', collectionId);
+
+      if (collectionError) {
+        console.error('Error fetching collection items:', collectionError);
+        return NextResponse.json(
+          { error: 'Failed to fetch resources' },
+          { status: 500 }
+        );
+      }
+
+      const collectionFileIds = (collectionItems || []).map(item => item.file_id);
+
+      if (collectionFileIds.length === 0) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            resources: [],
+            total: 0,
+            pagination: {
+              page,
+              limit,
+              totalItems: 0,
+              totalPages: 0,
+              hasNextPage: false,
+              hasPreviousPage: page > 1,
+            },
+          },
+        });
+      }
+
+      query = query.in('id', collectionFileIds);
+    }
+
     // Apply filters
     if (category && category !== 'all') {
       query = query.eq('category', category);
@@ -181,23 +219,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // If filtering by collection, join with collection items
-    let filteredResources = clientResources;
-    let totalCount = count || 0;
-
-    if (collectionId) {
-      const { data: collectionItems } = await supabase
-        .from('resource_collection_items')
-        .select('file_id')
-        .eq('collection_id', collectionId);
-
-      const collectionFileIds = new Set(collectionItems?.map(item => item.file_id) || []);
-      filteredResources = clientResources.filter(r => collectionFileIds.has(r.id));
-      // Note: When filtering by collection after pagination, the count may not be accurate
-      // This is a known limitation - for accurate counts with collection filtering,
-      // the collection filter should be applied at the database level
-      totalCount = filteredResources.length;
-    }
+    const totalCount = count || 0;
 
     // Calculate pagination metadata
     const totalPages = Math.ceil(totalCount / limit);
@@ -205,7 +227,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        resources: filteredResources,
+        resources: clientResources,
         total: totalCount,
         pagination: {
           page,

@@ -231,6 +231,10 @@ export async function getClientSharedResources(
     });
 
   // Apply filters
+  if (filters?.coachId) {
+    resources = resources.filter(r => r.sharedBy.id === filters.coachId);
+  }
+
   if (filters?.category) {
     const normalizedCategory = normalizeResourceCategory(filters.category);
     resources = resources.filter(r => r.category === normalizedCategory);

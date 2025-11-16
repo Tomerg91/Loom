@@ -135,29 +135,20 @@ export async function GET(request: NextRequest) {
     };
 
     // Get shared resources with server-driven pagination
-    const result = await getClientSharedResources(user.id, filters);
+    const { resources, count } = await getClientSharedResources(user.id, filters);
 
-    // Filter by coach if specified (in-memory filter for coach-specific resources)
-    let filteredResources = result.resources;
-    let total = result.count;
-
-    if (coach) {
-      filteredResources = result.resources.filter(r => r.sharedBy.id === coach);
-      total = filteredResources.length;
-    }
-
-    // Calculate pagination metadata
-    const totalPages = Math.ceil(total / limit);
+    // Calculate pagination metadata based on total count returned by query
+    const totalPages = Math.ceil(count / limit);
 
     return NextResponse.json({
       success: true,
       data: {
-        resources: filteredResources,
-        total,
+        resources,
+        total: count,
         pagination: {
           page,
           limit,
-          totalItems: total,
+          totalItems: count,
           totalPages,
           hasNextPage: page < totalPages,
           hasPreviousPage: page > 1,
