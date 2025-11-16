@@ -341,9 +341,29 @@ export const createClient = (): BrowserSupabaseClient => {
       window.fetch = async (...args) => {
         const response = await originalFetch(...args);
 
+        // Safely extract URL from fetch arguments to avoid RSC fetch errors
+        let urlString = '';
+        try {
+          const url = args[0];
+          if (typeof url === 'string') {
+            urlString = url;
+          } else if (url instanceof URL) {
+            urlString = url.toString();
+          } else if (url instanceof Request) {
+            urlString = url.url;
+          } else if (url != null) {
+            urlString = String(url);
+          }
+        } catch {
+          // If we can't extract a URL, skip auth handling (e.g., RSC internal fetches)
+          return response;
+        }
+
+        // Only intercept 401 errors from Supabase API calls
         if (
           response.status === 401 &&
-          args[0]?.toString().includes('supabase')
+          urlString &&
+          urlString.includes('supabase')
         ) {
           const cloned = response.clone();
           try {
