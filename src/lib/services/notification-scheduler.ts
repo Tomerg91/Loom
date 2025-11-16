@@ -41,6 +41,8 @@ export class NotificationScheduler {
   private pushService: PushNotificationService;
   private isProcessing = false;
   private processingInterval: NodeJS.Timeout | null = null;
+  private shouldContinueProcessing = false;
+  private processingIntervalMs = 60000;
 
   constructor() {
     this.supabase = createServerClient();
@@ -559,31 +561,59 @@ export class NotificationScheduler {
 
   /**
    * Start automatic processing (for server environments)
+   * Uses recursive scheduling to prevent race conditions
    */
   startProcessing(intervalMs: number = 60000): void {
-    if (this.processingInterval) {
-      this.stopProcessing();
+    if (this.shouldContinueProcessing) {
+      console.log('Notification processor already running');
+      return;
     }
 
-    console.log(`Starting notification processor with ${intervalMs}ms interval`);
-    
-    this.processingInterval = setInterval(async () => {
-      await this.processPendingNotifications();
-    }, intervalMs);
+    this.shouldContinueProcessing = true;
+    this.processingIntervalMs = intervalMs;
 
-    // Process immediately on start
-    this.processPendingNotifications();
+    console.log(`Starting notification processor with ${intervalMs}ms interval`);
+
+    // Start the recursive processing loop
+    this.scheduleNextProcessing();
+  }
+
+  /**
+   * Schedules the next processing cycle after the current one completes
+   * This prevents overlapping executions and race conditions
+   */
+  private async scheduleNextProcessing(): Promise<void> {
+    if (!this.shouldContinueProcessing) {
+      return;
+    }
+
+    try {
+      // Process pending notifications
+      await this.processPendingNotifications();
+    } catch (error) {
+      console.error('Error in notification processing cycle:', error);
+    }
+
+    // Schedule next execution only after current one completes
+    if (this.shouldContinueProcessing) {
+      this.processingInterval = setTimeout(() => {
+        this.scheduleNextProcessing();
+      }, this.processingIntervalMs);
+    }
   }
 
   /**
    * Stop automatic processing
    */
   stopProcessing(): void {
+    this.shouldContinueProcessing = false;
+
     if (this.processingInterval) {
-      clearInterval(this.processingInterval);
+      clearTimeout(this.processingInterval);
       this.processingInterval = null;
-      console.log('Stopped notification processor');
     }
+
+    console.log('Stopped notification processor');
   }
 
   /**
