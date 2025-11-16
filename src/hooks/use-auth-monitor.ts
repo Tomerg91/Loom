@@ -21,6 +21,7 @@ interface AuthMonitorOptions {
  */
 export function useAuthMonitor(options: AuthMonitorOptions = {}) {
   const optionsRef = useRef(options);
+  const isCheckingRef = useRef(false);
   optionsRef.current = options;
 
   useEffect(() => {
