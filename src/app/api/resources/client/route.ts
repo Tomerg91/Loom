@@ -122,28 +122,29 @@ export async function GET(request: NextRequest) {
     const { category, tags, search, coach, page, limit, sortBy, sortOrder } =
       validation.data;
 
-    // Build filters
+    // Build filters with pagination
     const filters: ResourceListParams = {
       category: category ? normalizeResourceCategory(category) : undefined,
       tags: tags?.split(',').filter(Boolean) || undefined,
       search,
+      page,
+      limit,
       sortBy,
       sortOrder,
       coachId: coach,
     };
 
-    // Get shared resources (note: this currently fetches all and filters in memory)
-    const allResources = await getClientSharedResources(user.id, filters);
+    // Get shared resources with server-driven pagination
+    const result = await getClientSharedResources(user.id, filters);
 
-    // Filter by coach if specified
-    const filteredResources = coach
-      ? allResources.filter(r => r.sharedBy.id === coach)
-      : allResources;
+    // Filter by coach if specified (in-memory filter for coach-specific resources)
+    let filteredResources = result.resources;
+    let total = result.count;
 
-    // Apply pagination in memory (since getClientSharedResources doesn't support it yet)
-    const total = filteredResources.length;
-    const offset = (page - 1) * limit;
-    const paginatedResources = filteredResources.slice(offset, offset + limit);
+    if (coach) {
+      filteredResources = result.resources.filter(r => r.sharedBy.id === coach);
+      total = filteredResources.length;
+    }
 
     // Calculate pagination metadata
     const totalPages = Math.ceil(total / limit);
@@ -151,7 +152,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        resources: paginatedResources,
+        resources: filteredResources,
         total,
         pagination: {
           page,
