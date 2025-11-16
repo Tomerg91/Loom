@@ -44,9 +44,9 @@ function shouldBypass(pathname: string): boolean {
 function stripLocale(pathname: string): { locale: string; path: string } {
   const segments = pathname.split('/').filter(Boolean);
   const first = segments[0];
-  const isLocale = routing.locales.includes(
+  const isLocale = routing?.locales?.includes(
     first as (typeof routing.locales)[number]
-  );
+  ) ?? false;
   const locale = isLocale ? (first as string) : routing.defaultLocale;
   const pathSegments = isLocale ? segments.slice(1) : segments;
   const path = `/${pathSegments.join('/')}`.replace(/\/+$/, '') || '/';

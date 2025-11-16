@@ -264,7 +264,7 @@ export function validateUserAgent(userAgent: string): boolean {
   if (process.env.NODE_ENV !== 'production') {
     return true;
   }
-  
+
   // In production, be more permissive and only block obviously malicious patterns
   const maliciousPatterns = [
     /sqlmap/i,
@@ -278,15 +278,12 @@ export function validateUserAgent(userAgent: string): boolean {
     /burpsuite/i,
     /owasp/i,
   ];
-  
-  // Block empty or suspicious user agents
-  if (!userAgent || userAgent.length < 10) {
+
+  // Allow empty or short user agents (for Next.js RSC requests, etc.)
+  // Only block if it matches known malicious patterns
+  if (userAgent && maliciousPatterns.some(pattern => pattern.test(userAgent))) {
     return false;
   }
-  
-  if (maliciousPatterns.some(pattern => pattern.test(userAgent))) {
-    return false;
-  }
-  
+
   return true;
 }
