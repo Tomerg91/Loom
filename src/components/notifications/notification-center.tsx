@@ -448,7 +448,7 @@ function NotificationCenterComponent() {
         toast.info('Offline Mode', 'Your action will be saved and processed when you reconnect');
         // Optimistically update the UI
         queryClient.setQueryData<NotificationsResponse>(['notifications', user?.id], (old) => {
-          if (!old) return old;
+          if (!old || !Array.isArray(old.data)) return old;
           return {
             ...old,
             data: old.data.map(n =>
@@ -498,7 +498,7 @@ function NotificationCenterComponent() {
         toast.info('Offline', 'Action queued for when connection is restored');
         // Optimistically update the UI
         queryClient.setQueryData<NotificationsResponse>(['notifications', user?.id], (old) => {
-          if (!old) return old;
+          if (!old || !Array.isArray(old.data)) return old;
           return {
             ...old,
             data: old.data.map(n => ({ ...n, readAt: n.readAt || new Date().toISOString() })),
@@ -592,14 +592,14 @@ function NotificationCenterComponent() {
         toast.info('Offline', 'Actions queued for when connection is restored');
         // Optimistically update the UI
         queryClient.setQueryData<NotificationsResponse>(['notifications', user?.id], (old) => {
-          if (!old) return old;
-          
+          if (!old || !Array.isArray(old.data)) return old;
+
           switch (action) {
             case 'mark_read':
               return {
                 ...old,
-                data: old.data.map(n => 
-                  notificationIds.includes(n.id) && !n.readAt 
+                data: old.data.map(n =>
+                  notificationIds.includes(n.id) && !n.readAt
                     ? { ...n, readAt: new Date().toISOString() }
                     : n
                 ),
@@ -625,10 +625,11 @@ function NotificationCenterComponent() {
                 },
               };
             case 'archive':
+              if (!Array.isArray(old.data)) return old;
               return {
                 ...old,
-                data: old.data.map(n => 
-                  notificationIds.includes(n.id) 
+                data: old.data.map(n =>
+                  notificationIds.includes(n.id)
                     ? { ...n, data: { ...n.data, isArchived: true }, readAt: n.readAt || new Date().toISOString() }
                     : n
                 ),
@@ -805,7 +806,9 @@ function NotificationCenterComponent() {
 
   // Enhanced notification processing with filtering, sorting, and grouping
   const enhancedNotifications = useMemo(() => {
-    const baseNotifications = (notificationsData?.data || []).map((n: Notification): NotificationWithEnhancement => ({
+    // Ensure data is an array before mapping
+    const dataArray = Array.isArray(notificationsData?.data) ? notificationsData.data : [];
+    const baseNotifications = dataArray.map((n: Notification): NotificationWithEnhancement => ({
       ...n,
       priority: (n.data?.priority as NotificationPriority) || n.priority || 'normal',
       importance: (n.data?.importance as NotificationImportance) || 'normal',

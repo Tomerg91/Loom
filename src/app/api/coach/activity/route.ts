@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
 
-import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { createClient } from '@/lib/supabase/server';
@@ -16,27 +15,40 @@ interface RecentActivity {
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
-    // Verify authentication and get user from Authorization header
-    const user = await getAuthenticatedUser(request);
+    // Use cookie-based authentication (same as sessions endpoint)
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     console.log('[/api/coach/activity] Auth check:', {
       hasUser: !!user,
       userId: user?.id,
-      userRole: user?.role,
+      authError: authError?.message,
       timestamp: new Date().toISOString()
     });
 
-    if (!user) {
-      console.error('[/api/coach/activity] No user found');
+    if (authError || !user) {
+      console.error('[/api/coach/activity] Authentication failed:', authError);
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
-    if (user.role !== 'coach') {
+    // Get user profile to check role
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('[/api/coach/activity] Failed to fetch user profile:', profileError);
+      return ApiResponseHelper.unauthorized('User profile not found');
+    }
+
+    if (profile.role !== 'coach') {
       console.error('[/api/coach/activity] User is not a coach:', {
         userId: user.id,
-        role: user.role
+        role: profile.role
       });
-      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${user.role}`);
+      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${profile.role}`);
     }
 
     const coachId = user.id;
@@ -44,8 +56,6 @@ export async function GET(request: NextRequest): Promise<Response> {
     const limit = parseInt(searchParams.get('limit') || '10', 10);
 
     console.log('[/api/coach/activity] Fetching activity for coach:', coachId);
-
-    const supabase = createClient();
 
     // Use the optimized RPC function for recent activity
     const { data: activityData, error } = await queryMonitor.trackQueryExecution(

@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
 
-import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { createClient } from '@/lib/supabase/server';
@@ -19,24 +18,36 @@ interface DashboardStats {
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
-    // Verify authentication and get user from Authorization header
-    const user = await getAuthenticatedUser(request);
+    // Use cookie-based authentication (same as sessions endpoint)
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (!user) {
-      console.error('[/api/coach/stats] Authentication failed: No user found');
+    if (authError || !user) {
+      console.error('[/api/coach/stats] Authentication failed:', authError);
       return ApiResponseHelper.unauthorized('Authentication required');
     }
 
-    if (user.role !== 'coach') {
+    // Get user profile to check role
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('[/api/coach/stats] Failed to fetch user profile:', profileError);
+      return ApiResponseHelper.unauthorized('User profile not found');
+    }
+
+    if (profile.role !== 'coach') {
       console.error('[/api/coach/stats] Authorization failed: User is not a coach', {
         userId: user.id,
-        role: user.role
+        role: profile.role
       });
-      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${user.role}`);
+      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${profile.role}`);
     }
 
     const coachId = user.id;
-    const supabase = createClient();
 
     console.log('[/api/coach/stats] Fetching stats for coach:', coachId);
 

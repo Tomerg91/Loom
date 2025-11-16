@@ -360,9 +360,11 @@ export const createClient = (): BrowserSupabaseClient => {
         }
 
         // Only intercept 401 errors from Supabase API calls
+        // Check that urlString is a valid non-empty string before calling includes
         if (
           response.status === 401 &&
-          urlString &&
+          typeof urlString === 'string' &&
+          urlString.length > 0 &&
           urlString.includes('supabase')
         ) {
           const cloned = response.clone();
