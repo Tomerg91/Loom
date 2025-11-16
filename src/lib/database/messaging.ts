@@ -114,55 +114,96 @@ export class MessagingService {
       throw error;
     }
 
-    // Process conversations to include other participants and unread counts
-    const processedConversations = await Promise.all(
-      data?.map(async (conversation: unknown) => {
-        // Get other participants
-        const { data: participants } = await this.supabase
-          .from('conversation_participants')
-          .select(`
-            user_id,
-            users (
-              id,
-              first_name,
-              last_name,
-              avatar_url,
-              role,
-              last_seen_at
-            )
-          `)
-          .eq('conversation_id', conversation.id)
-          .neq('user_id', userId)
-          .is('left_at', null);
+    if (!data || data.length === 0) {
+      return [];
+    }
 
-        // Get unread count
-        const unreadCount = await this.getUnreadMessageCount(conversation.id, userId);
+    // Extract conversation IDs for batch queries
+    const conversationIds = data.map((c: unknown) => c.id);
 
-        // Get the last message
-        const { data: lastMessage } = await this.supabase
-          .from('messages')
-          .select(`
-            *,
-            users!messages_sender_id_fkey (
-              id,
-              first_name,
-              last_name,
-              avatar_url
-            )
-          `)
-          .eq('conversation_id', conversation.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
+    // Batch fetch all participants for all conversations in one query
+    const { data: allParticipants } = await this.supabase
+      .from('conversation_participants')
+      .select(`
+        conversation_id,
+        user_id,
+        users (
+          id,
+          first_name,
+          last_name,
+          avatar_url,
+          role,
+          last_seen_at
+        )
+      `)
+      .in('conversation_id', conversationIds)
+      .neq('user_id', userId)
+      .is('left_at', null);
 
-        return {
-          ...conversation,
-          participants: participants?.map((p: unknown) => p.users) || [],
-          unreadCount,
-          lastMessage,
-        };
-      }) || []
-    );
+    // Batch fetch unread counts using parallel RPC calls
+    // This is more efficient than sequential but ideally should use a batch RPC function
+    const unreadCountPromises = conversationIds.map(async (convId) => {
+      const count = await this.getUnreadMessageCount(convId, userId);
+      return { conversation_id: convId, count };
+    });
+
+    const unreadCounts = await Promise.all(unreadCountPromises);
+
+    // Batch fetch last messages for all conversations in one query
+    // Use a lateral join approach via SQL or fetch all and filter
+    const { data: allLastMessages } = await this.supabase
+      .from('messages')
+      .select(`
+        conversation_id,
+        id,
+        content,
+        type,
+        created_at,
+        sender_id,
+        users!messages_sender_id_fkey (
+          id,
+          first_name,
+          last_name,
+          avatar_url
+        )
+      `)
+      .in('conversation_id', conversationIds)
+      .order('created_at', { ascending: false });
+
+    // Group participants by conversation_id
+    const participantsByConversation = new Map<string, unknown[]>();
+    allParticipants?.forEach((p: unknown) => {
+      const convId = p.conversation_id;
+      if (!participantsByConversation.has(convId)) {
+        participantsByConversation.set(convId, []);
+      }
+      participantsByConversation.get(convId)!.push(p.users);
+    });
+
+    // Group unread counts by conversation_id
+    const unreadCountsByConversation = new Map<string, number>();
+    unreadCounts?.forEach((uc: { conversation_id: string; count: number }) => {
+      unreadCountsByConversation.set(uc.conversation_id, uc.count || 0);
+    });
+
+    // Get the most recent message per conversation
+    const lastMessageByConversation = new Map<string, unknown>();
+    allLastMessages?.forEach((msg: unknown) => {
+      const convId = msg.conversation_id;
+      if (!lastMessageByConversation.has(convId)) {
+        lastMessageByConversation.set(convId, msg);
+      }
+    });
+
+    // Process conversations with batched data
+    const processedConversations = data.map((conversation: unknown) => {
+      return {
+        ...conversation,
+        participants: participantsByConversation.get(conversation.id) || [],
+        unreadCount: unreadCountsByConversation.get(conversation.id) || 0,
+        lastMessage: lastMessageByConversation.get(conversation.id) || null,
+      };
+    });
 
     return processedConversations as Conversation[];
   }

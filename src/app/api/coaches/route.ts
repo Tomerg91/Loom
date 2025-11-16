@@ -98,78 +98,94 @@ const rateLimitedHandler = rateLimit(200, 60000)( // 200 requests per minute
       return propagateCookies(authResponse, errorResponse);
     }
 
-    // Get additional statistics for each coach
-    const coaches: Coach[] = await Promise.all(
-      (coachData || []).map(async (coach) => {
-        // Session count tracking (rating functionality will be implemented later)
-        // Note: Currently unused but kept for future rating calculations
-        await supabase
-          .from('sessions')
-          .select('status')
-          .eq('coach_id', coach.id)
-          .eq('status', 'completed');
+    if (!coachData || coachData.length === 0) {
+      const successResponse = ApiResponseHelper.success([]);
+      return propagateCookies(authResponse, successResponse);
+    }
 
-        // Get real rating data from reflections of completed sessions
-        const { data: ratingStats } = await supabase
-          .from('reflections')
-          .select('mood_rating, sessions!inner(coach_id, status)')
-          .eq('sessions.coach_id', coach.id)
-          .eq('sessions.status', 'completed')
-          .not('mood_rating', 'is', null);
+    // Extract coach IDs for batch queries
+    const coachIds = coachData.map(c => c.id);
 
-        let averageRating = 0;
-        let reviewCount = 0;
-        
-        if (ratingStats && ratingStats.length > 0) {
-          const ratings = ratingStats.map(s => s.mood_rating).filter(r => r !== null && r > 0) as number[];
-          averageRating = ratings.length > 0 
-            ? Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * 10) / 10
-            : 0;
-          reviewCount = ratings.length;
-        }
+    // Batch fetch all rating stats for all coaches in one query
+    const { data: allRatingStats } = await supabase
+      .from('reflections')
+      .select('mood_rating, sessions!inner(coach_id, status)')
+      .in('sessions.coach_id', coachIds)
+      .eq('sessions.status', 'completed')
+      .not('mood_rating', 'is', null);
 
-        // Get unique clients count (success stories)
-        const { data: clientSessions } = await supabase
-          .from('sessions')
-          .select('client_id')
-          .eq('coach_id', coach.id)
-          .eq('status', 'completed');
+    // Batch fetch all client sessions for all coaches in one query
+    const { data: allClientSessions } = await supabase
+      .from('sessions')
+      .select('coach_id, client_id, status')
+      .in('coach_id', coachIds)
+      .eq('status', 'completed');
 
-        const uniqueClients = new Set(clientSessions?.map(s => s.client_id) || []);
+    // Group rating stats by coach_id
+    const ratingStatsByCoach = new Map<string, number[]>();
+    allRatingStats?.forEach((stat: { mood_rating: number; sessions: { coach_id: string } }) => {
+      const coachId = stat.sessions.coach_id;
+      if (!ratingStatsByCoach.has(coachId)) {
+        ratingStatsByCoach.set(coachId, []);
+      }
+      if (stat.mood_rating !== null && stat.mood_rating > 0) {
+        ratingStatsByCoach.get(coachId)!.push(stat.mood_rating);
+      }
+    });
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const profile = coach.coach_profiles?.[0] as any;
+    // Group client sessions by coach_id to count unique clients
+    const clientSessionsByCoach = new Map<string, Set<string>>();
+    allClientSessions?.forEach((session: { coach_id: string; client_id: string }) => {
+      if (!clientSessionsByCoach.has(session.coach_id)) {
+        clientSessionsByCoach.set(session.coach_id, new Set());
+      }
+      clientSessionsByCoach.get(session.coach_id)!.add(session.client_id);
+    });
 
-        return {
-          id: coach.id,
-          firstName: coach.first_name || '',
-          lastName: coach.last_name || '',
-          email: coach.email,
-          phone: coach.phone || undefined,
-          avatarUrl: coach.avatar_url || undefined,
-          title: profile?.title || 'Professional Coach',
-          bio: profile?.bio || 'Experienced coach dedicated to helping clients achieve their goals.',
-          specialties: Array.isArray(profile?.specialties) ? profile.specialties : [],
-          experience: typeof profile?.experience_years === 'number' ? profile.experience_years : 0,
-          rating: averageRating,
-          reviewCount: reviewCount,
-          hourlyRate: typeof profile?.hourly_rate === 'number' ? profile.hourly_rate : 100,
-          location: profile?.location || 'Online',
-          languages: Array.isArray(profile?.languages) ? profile.languages : ['English'],
-          availability: {
-            timezone: coach.timezone || 'UTC',
-            slots: [
-              { day: 'Monday', times: ['09:00', '14:00', '16:00'] },
-              { day: 'Tuesday', times: ['10:00', '15:00'] },
-              { day: 'Wednesday', times: ['09:00', '13:00', '17:00'] },
-            ], // This would come from availability table in real implementation
-          },
-          credentials: Array.isArray(profile?.credentials) ? profile.credentials : [],
-          approach: profile?.approach || 'Client-centered coaching approach focused on practical solutions.',
-          successStories: uniqueClients.size,
-        };
-      })
-    );
+    // Process coaches with batched data
+    const coaches: Coach[] = coachData.map((coach) => {
+      // Calculate average rating and review count from batched data
+      const ratings = ratingStatsByCoach.get(coach.id) || [];
+      const averageRating = ratings.length > 0
+        ? Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * 10) / 10
+        : 0;
+      const reviewCount = ratings.length;
+
+      // Get unique clients count from batched data
+      const uniqueClients = clientSessionsByCoach.get(coach.id) || new Set();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const profile = coach.coach_profiles?.[0] as any;
+
+      return {
+        id: coach.id,
+        firstName: coach.first_name || '',
+        lastName: coach.last_name || '',
+        email: coach.email,
+        phone: coach.phone || undefined,
+        avatarUrl: coach.avatar_url || undefined,
+        title: profile?.title || 'Professional Coach',
+        bio: profile?.bio || 'Experienced coach dedicated to helping clients achieve their goals.',
+        specialties: Array.isArray(profile?.specialties) ? profile.specialties : [],
+        experience: typeof profile?.experience_years === 'number' ? profile.experience_years : 0,
+        rating: averageRating,
+        reviewCount: reviewCount,
+        hourlyRate: typeof profile?.hourly_rate === 'number' ? profile.hourly_rate : 100,
+        location: profile?.location || 'Online',
+        languages: Array.isArray(profile?.languages) ? profile.languages : ['English'],
+        availability: {
+          timezone: coach.timezone || 'UTC',
+          slots: [
+            { day: 'Monday', times: ['09:00', '14:00', '16:00'] },
+            { day: 'Tuesday', times: ['10:00', '15:00'] },
+            { day: 'Wednesday', times: ['09:00', '13:00', '17:00'] },
+          ], // This would come from availability table in real implementation
+        },
+        credentials: Array.isArray(profile?.credentials) ? profile.credentials : [],
+        approach: profile?.approach || 'Client-centered coaching approach focused on practical solutions.',
+        successStories: uniqueClients.size,
+      };
+    });
 
     // Apply additional filters
     let filteredCoaches = coaches;
