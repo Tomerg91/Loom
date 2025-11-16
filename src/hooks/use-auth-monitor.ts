@@ -21,6 +21,7 @@ interface AuthMonitorOptions {
  */
 export function useAuthMonitor(options: AuthMonitorOptions = {}) {
   const optionsRef = useRef(options);
+  const isCheckingRef = useRef(false);
   optionsRef.current = options;
 
   useEffect(() => {
@@ -51,6 +52,14 @@ export function useAuthMonitor(options: AuthMonitorOptions = {}) {
 
     // Set up periodic session validation (every 5 minutes)
     const sessionCheckInterval = setInterval(async () => {
+      // Prevent overlapping session checks (race condition protection)
+      if (isCheckingRef.current) {
+        console.log('Session check already in progress, skipping...');
+        return;
+      }
+
+      isCheckingRef.current = true;
+
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
 
@@ -85,6 +94,8 @@ export function useAuthMonitor(options: AuthMonitorOptions = {}) {
       } catch (error) {
         console.error('Error during session check:', error);
         optionsRef.current.onError?.(error as Error);
+      } finally {
+        isCheckingRef.current = false;
       }
     }, 5 * 60 * 1000); // Check every 5 minutes
 
