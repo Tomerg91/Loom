@@ -143,17 +143,17 @@ export async function getResourceById(
  * Get resources shared with a client
  *
  * @param clientId - Client's user ID
- * @param filters - Optional filters
- * @returns Array of shared resources with share metadata
+ * @param filters - Optional filters including pagination
+ * @returns Object with resources array and total count
  */
 export async function getClientSharedResources(
   clientId: string,
   filters?: ResourceListParams
-): Promise<ClientResourceItem[]> {
+): Promise<{ resources: ClientResourceItem[]; count: number }> {
   const supabase = await createClient();
 
-  // Get file shares for this client
-  const sharesQuery = supabase
+  // Get file shares for this client with exact count
+  let sharesQuery = supabase
     .from('file_shares')
     .select(
       `
@@ -162,12 +162,15 @@ export async function getClientSharedResources(
         *,
         users!file_uploads_user_id_fkey(first_name, last_name, user_metadata)
       )
-    `
+    `,
+      { count: 'exact' }
     )
     .eq('shared_with', clientId)
     .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString());
 
-  const { data: shares, error } = await sharesQuery;
+  // Note: Pagination will be applied after filtering and sorting for now
+  // This is because complex filtering on nested relationships is easier in-memory
+  const { data: shares, error, count } = await sharesQuery;
 
   if (error) {
     // Log RLS policy violations for debugging
@@ -182,7 +185,7 @@ export async function getClientSharedResources(
   }
 
   if (!shares || shares.length === 0) {
-    return [];
+    return { resources: [], count: 0 };
   }
 
   // Get progress for all shared resources
@@ -228,6 +231,10 @@ export async function getClientSharedResources(
     });
 
   // Apply filters
+  if (filters?.coachId) {
+    resources = resources.filter(r => r.sharedBy.id === filters.coachId);
+  }
+
   if (filters?.category) {
     const normalizedCategory = normalizeResourceCategory(filters.category);
     resources = resources.filter(r => r.category === normalizedCategory);
@@ -272,7 +279,22 @@ export async function getClientSharedResources(
     return sortOrder === 'asc' ? comparison : -comparison;
   });
 
-  return resources;
+  // Apply pagination in-memory (after filtering and sorting)
+  const totalCount = resources.length;
+  let paginatedResources = resources;
+
+  if (filters?.page && filters?.limit) {
+    const offset = (filters.page - 1) * filters.limit;
+    paginatedResources = resources.slice(offset, offset + filters.limit);
+  } else if (filters?.limit) {
+    const offset = filters.offset || 0;
+    paginatedResources = resources.slice(offset, offset + filters.limit);
+  }
+
+  return {
+    resources: paginatedResources,
+    count: totalCount,
+  };
 }
 
 /**

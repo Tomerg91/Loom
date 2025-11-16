@@ -12,6 +12,8 @@
  * - tags: Comma-separated list of tags
  * - search: Search by filename or description
  * - collectionId: Filter by collection ID
+ * - page: Page number (default: 1)
+ * - limit: Items per page (default: 20, max: 100)
  * - sortBy: Sort field (created_at, filename, view_count)
  * - sortOrder: Sort order (asc, desc)
  * - showCompleted: Include completed resources (default: true)
@@ -51,17 +53,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden: Client access only' }, { status: 403 });
     }
 
-    // Parse query parameters
+    // Parse query parameters with pagination
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const tags = searchParams.get('tags')?.split(',').filter(Boolean);
     const search = searchParams.get('search');
     const collectionId = searchParams.get('collectionId');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
     const showCompleted = searchParams.get('showCompleted') !== 'false';
 
-    // Build base query
+    // Build base query with exact count for pagination
     // RLS automatically filters to only show resources shared with this client
     let query = supabase
       .from('file_uploads')
@@ -94,9 +98,47 @@ export async function GET(request: NextRequest) {
           last_accessed_at,
           access_count
         )
-      `)
+      `, { count: 'exact' })
       .eq('is_library_resource', true)
       .eq('shares.shared_with', user.id);
+
+    // If filtering by collection, constrain the query before pagination so counts remain accurate
+    if (collectionId) {
+      const { data: collectionItems, error: collectionError } = await supabase
+        .from('resource_collection_items')
+        .select('file_id')
+        .eq('collection_id', collectionId);
+
+      if (collectionError) {
+        console.error('Error fetching collection items:', collectionError);
+        return NextResponse.json(
+          { error: 'Failed to fetch resources' },
+          { status: 500 }
+        );
+      }
+
+      const collectionFileIds = (collectionItems || []).map(item => item.file_id);
+
+      if (collectionFileIds.length === 0) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            resources: [],
+            total: 0,
+            pagination: {
+              page,
+              limit,
+              totalItems: 0,
+              totalPages: 0,
+              hasNextPage: false,
+              hasPreviousPage: page > 1,
+            },
+          },
+        });
+      }
+
+      query = query.in('id', collectionFileIds);
+    }
 
     // Apply filters
     if (category && category !== 'all') {
@@ -120,7 +162,11 @@ export async function GET(request: NextRequest) {
     const sortColumn = sortBy === 'filename' ? 'filename' : sortBy === 'view_count' ? 'view_count' : 'created_at';
     query = query.order(sortColumn, { ascending: sortOrder === 'asc' });
 
-    const { data: resources, error } = await query;
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    query = query.range(offset, offset + limit - 1);
+
+    const { data: resources, error, count } = await query;
 
     if (error) {
       console.error('Error fetching client resources:', error);
@@ -173,23 +219,24 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // If filtering by collection, join with collection items
-    let filteredResources = clientResources;
-    if (collectionId) {
-      const { data: collectionItems } = await supabase
-        .from('resource_collection_items')
-        .select('file_id')
-        .eq('collection_id', collectionId);
+    const totalCount = count || 0;
 
-      const collectionFileIds = new Set(collectionItems?.map(item => item.file_id) || []);
-      filteredResources = clientResources.filter(r => collectionFileIds.has(r.id));
-    }
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / limit);
 
     return NextResponse.json({
       success: true,
       data: {
-        resources: filteredResources,
-        total: filteredResources.length,
+        resources: clientResources,
+        total: totalCount,
+        pagination: {
+          page,
+          limit,
+          totalItems: totalCount,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
       },
     });
   } catch (error) {
