@@ -307,7 +307,10 @@ function SessionListComponent({
     }
   }, [t, cancelSessionMutation]);
 
-  const sessions = React.useMemo(() => sessionsData?.data || [], [sessionsData?.data]);
+  const sessions = React.useMemo(() =>
+    Array.isArray(sessionsData?.data?.sessions) ? sessionsData.data.sessions : [],
+    [sessionsData?.data?.sessions]
+  );
   const pagination = React.useMemo(() => sessionsData?.pagination, [sessionsData?.pagination]);
 
   if (isLoading) {
