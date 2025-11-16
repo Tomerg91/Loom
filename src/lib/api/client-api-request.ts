@@ -55,6 +55,31 @@ export interface ApiRequestOptions extends RequestInit {
  *   const response = await apiRequest('/api/data', { retry: 'aggressive' });
  *   const response = await apiRequest('/api/critical', { retry: false }); // No retries
  */
+let refreshSessionPromise: Promise<string> | null = null;
+
+async function getFreshAccessToken(): Promise<string> {
+  if (!refreshSessionPromise) {
+    refreshSessionPromise = (async () => {
+      console.log('[API-REQUEST] Access token expired or expiring soon, refreshing...');
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+      if (refreshError || !refreshData.session?.access_token) {
+        console.error('[API-REQUEST] Failed to refresh session:', refreshError?.message);
+        throw new Error('Session expired. Please sign in again.');
+      }
+
+      console.log('[API-REQUEST] Session refreshed successfully');
+      return refreshData.session.access_token;
+    })().finally(() => {
+      refreshSessionPromise = null;
+    });
+  } else {
+    console.log('[API-REQUEST] Awaiting in-flight session refresh');
+  }
+
+  return refreshSessionPromise;
+}
+
 export async function apiRequest(
   input: RequestInfo | URL,
   options?: ApiRequestOptions
@@ -80,16 +105,7 @@ export async function apiRequest(
 
     // If token is expired or about to expire, refresh it
     if (isExpired) {
-      console.log('[API-REQUEST] Access token expired or expiring soon, refreshing...');
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-
-      if (refreshError || !refreshData.session?.access_token) {
-        console.error('[API-REQUEST] Failed to refresh session:', refreshError?.message);
-        throw new Error('Session expired. Please sign in again.');
-      }
-
-      accessToken = refreshData.session.access_token;
-      console.log('[API-REQUEST] Session refreshed successfully');
+      accessToken = await getFreshAccessToken();
     }
 
     // Create or merge headers
