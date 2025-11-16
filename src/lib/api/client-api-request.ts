@@ -55,6 +55,31 @@ export interface ApiRequestOptions extends RequestInit {
  *   const response = await apiRequest('/api/data', { retry: 'aggressive' });
  *   const response = await apiRequest('/api/critical', { retry: false }); // No retries
  */
+let refreshSessionPromise: Promise<string> | null = null;
+
+async function getFreshAccessToken(): Promise<string> {
+  if (!refreshSessionPromise) {
+    refreshSessionPromise = (async () => {
+      console.log('[API-REQUEST] Access token expired or expiring soon, refreshing...');
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+      if (refreshError || !refreshData.session?.access_token) {
+        console.error('[API-REQUEST] Failed to refresh session:', refreshError?.message);
+        throw new Error('Session expired. Please sign in again.');
+      }
+
+      console.log('[API-REQUEST] Session refreshed successfully');
+      return refreshData.session.access_token;
+    })().finally(() => {
+      refreshSessionPromise = null;
+    });
+  } else {
+    console.log('[API-REQUEST] Awaiting in-flight session refresh');
+  }
+
+  return refreshSessionPromise;
+}
+
 export async function apiRequest(
   input: RequestInfo | URL,
   options?: ApiRequestOptions
@@ -63,14 +88,25 @@ export async function apiRequest(
 
   try {
     // Get the current session and access token
-    const { data, error } = await supabase.auth.getSession();
+    // First, try to get the cached session
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
-    if (error || !data.session?.access_token) {
-      console.error('[API-REQUEST] No access token available');
+    if (sessionError || !sessionData.session) {
+      console.error('[API-REQUEST] No session available:', sessionError?.message);
       throw new Error('Authentication required');
     }
 
-    const accessToken = data.session.access_token;
+    let accessToken = sessionData.session.access_token;
+
+    // Check if the token is expired or about to expire (within 60 seconds)
+    const expiresAt = sessionData.session.expires_at;
+    const now = Math.floor(Date.now() / 1000);
+    const isExpired = expiresAt ? (expiresAt - now) < 60 : false;
+
+    // If token is expired or about to expire, refresh it
+    if (isExpired) {
+      accessToken = await getFreshAccessToken();
+    }
 
     // Create or merge headers
     const headers = new Headers(init?.headers || {});
@@ -86,6 +122,15 @@ export async function apiRequest(
         console.warn('[API-REQUEST] No CSRF token available for state-changing request');
       }
     }
+
+    // Log the request for debugging (redact the full token)
+    console.log('[API-REQUEST] Making authenticated request:', {
+      url: typeof input === 'string' ? input : input instanceof URL ? input.toString() : 'Request object',
+      method,
+      hasAuthHeader: headers.has('Authorization'),
+      tokenPrefix: accessToken.substring(0, 20) + '...',
+      timestamp: new Date().toISOString()
+    });
 
     const fetchOptions: RequestInit = {
       ...init,
@@ -129,6 +174,12 @@ export async function apiGet<T = unknown>(url: string, options?: ApiRequestOptio
   const response = await apiRequest(url, { ...options, method: 'GET' });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    console.error(`[API-GET] Request failed:`, {
+      url,
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData
+    });
     throw new Error(`API Error: ${response.status} - ${JSON.stringify(errorData)}`);
   }
   return response.json();
