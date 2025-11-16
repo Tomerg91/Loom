@@ -4,6 +4,7 @@ import { getAuthenticatedUser } from '@/lib/api/authenticated-request';
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
 import { createClient } from '@/lib/supabase/server';
+import { queryMonitor } from '@/lib/performance/query-monitoring';
 
 interface RecentActivity {
   id: string;
@@ -46,121 +47,45 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const supabase = createClient();
 
-    // Fetch recent activities from different sources
-    const activities: RecentActivity[] = [];
-
-    // Get recent completed sessions
-    const { data: completedSessions } = await supabase
-      .from('sessions')
-      .select(`
-        id,
-        updated_at,
-        status,
-        users!sessions_client_id_fkey (
-          first_name,
-          last_name
-        )
-      `)
-      .eq('coach_id', coachId)
-      .eq('status', 'completed')
-      .order('updated_at', { ascending: false })
-      .limit(5);
-
-    completedSessions?.forEach(session => {
-      const client = Array.isArray(session.users) ? session.users[0] : session.users;
-      if (client) {
-        activities.push({
-          id: `session_completed_${session.id}`,
-          type: 'session_completed',
-          description: `Completed session with ${client.first_name} ${client.last_name}`,
-          timestamp: session.updated_at,
-          clientName: `${client.first_name} ${client.last_name}`,
+    // Use the optimized RPC function for recent activity
+    const { data: activityData, error } = await queryMonitor.trackQueryExecution(
+      'Coach Recent Activity RPC',
+      async () => {
+        return await supabase.rpc('get_coach_recent_activity', {
+          p_coach_id: coachId,
+          p_limit: limit,
         });
       }
-    });
+    );
 
-    // Get recent scheduled sessions
-    const { data: scheduledSessions } = await supabase
-      .from('sessions')
-      .select(`
-        id,
-        created_at,
-        status,
-        users!sessions_client_id_fkey (
-          first_name,
-          last_name
-        )
-      `)
-      .eq('coach_id', coachId)
-      .eq('status', 'scheduled')
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    scheduledSessions?.forEach(session => {
-      const client = Array.isArray(session.users) ? session.users[0] : session.users;
-      if (client) {
-        activities.push({
-          id: `session_scheduled_${session.id}`,
-          type: 'session_scheduled',
-          description: `New session scheduled with ${client.first_name} ${client.last_name}`,
-          timestamp: session.created_at,
-          clientName: `${client.first_name} ${client.last_name}`,
-        });
-      }
-    });
-
-    // Get recent notes (gracefully handle if table doesn't exist)
-    const { data: recentNotes, error: notesError } = await supabase
-      .from('coach_notes')
-      .select(`
-        id,
-        created_at,
-        title,
-        users!coach_notes_client_id_fkey (
-          first_name,
-          last_name
-        )
-      `)
-      .eq('coach_id', coachId)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (notesError) {
-      console.warn('[/api/coach/activity] Error fetching notes (may not exist):', notesError.message);
-    } else {
-      recentNotes?.forEach(note => {
-        const client = Array.isArray(note.users) ? note.users[0] : note.users;
-        if (client) {
-          activities.push({
-            id: `note_added_${note.id}`,
-            type: 'note_added',
-            description: `Added progress note for ${client.first_name} ${client.last_name}`,
-            timestamp: note.created_at,
-            clientName: `${client.first_name} ${client.last_name}`,
-          });
-        }
-      });
+    if (error) {
+      console.error('[/api/coach/activity] Error fetching activity:', error);
+      throw new ApiError('FETCH_ACTIVITY_FAILED', 'Failed to fetch coach activity', 500);
     }
 
-    // Sort all activities by timestamp and limit
-    const sortedActivities = activities
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, limit);
+    // Transform RPC result to match the expected interface
+    const activities: RecentActivity[] = (activityData || []).map((row: any) => ({
+      id: row.activity_id,
+      type: row.activity_type as 'session_completed' | 'note_added' | 'client_joined' | 'session_scheduled',
+      description: row.description,
+      timestamp: row.timestamp,
+      clientName: row.client_name || undefined,
+    }));
 
     console.log('[/api/coach/activity] Returning activities:', {
-      count: sortedActivities.length,
-      types: sortedActivities.map(a => a.type)
+      count: activities.length,
+      types: activities.map(a => a.type)
     });
 
-    return ApiResponseHelper.success(sortedActivities);
+    return ApiResponseHelper.success(activities);
 
   } catch (error) {
     console.error('Coach activity API error:', error);
-    
+
     if (error instanceof ApiError) {
       return ApiResponseHelper.error(error.code, error.message);
     }
-    
+
     return ApiResponseHelper.internalError('Failed to fetch coach activity');
   }
 }
