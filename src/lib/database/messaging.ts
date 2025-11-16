@@ -151,24 +151,34 @@ export class MessagingService {
 
     // Batch fetch last messages for all conversations in one query
     // Use a lateral join approach via SQL or fetch all and filter
-    const { data: allLastMessages } = await this.supabase
-      .from('messages')
-      .select(`
-        conversation_id,
-        id,
-        content,
-        type,
-        created_at,
-        sender_id,
-        users!messages_sender_id_fkey (
-          id,
-          first_name,
-          last_name,
-          avatar_url
-        )
-      `)
-      .in('conversation_id', conversationIds)
-      .order('created_at', { ascending: false });
+    let allLastMessages: Array<{
+      conversation_id: string;
+      id: string;
+      content: string | null;
+      type: MessageType;
+      created_at: string;
+      sender_id: string;
+      users: {
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        avatar_url: string | null;
+      } | null;
+    }> = [];
+
+    if (conversationIds.length > 0) {
+      const { data: lastMessagesData, error: lastMessagesError } =
+        await this.supabase.rpc('get_last_messages_for_conversations', {
+          conversation_ids: conversationIds,
+        });
+
+      if (lastMessagesError) {
+        console.error('Error fetching last messages:', lastMessagesError);
+        throw lastMessagesError;
+      }
+
+      allLastMessages = lastMessagesData ?? [];
+    }
 
     // Group participants by conversation_id
     const participantsByConversation = new Map<string, unknown[]>();
