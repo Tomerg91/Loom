@@ -49,14 +49,14 @@ export function useFiles(params: UseFilesParams = {}) {
     return params.toString();
   }, []);
 
-  const fetchFiles = useCallback(async () => {
+  const fetchFiles = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
 
     try {
       const queryString = buildQueryString(params);
-      const response = await fetch(`/api/files?${queryString}`);
-      
+      const response = await fetch(`/api/files?${queryString}`, { signal });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -65,6 +65,10 @@ export function useFiles(params: UseFilesParams = {}) {
       setFiles(data.files || []);
       setTotal(data.total || 0);
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // Request was cancelled, don't update state
+        return;
+      }
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch files';
       setError(errorMessage);
       console.error('Error fetching files:', err);
@@ -174,11 +178,11 @@ export function useFiles(params: UseFilesParams = {}) {
     }
   }, []);
 
-  const getSharedFiles = useCallback(async () => {
+  const getSharedFiles = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const response = await fetch('/api/files/shared');
-      
+      const response = await fetch('/api/files/shared', { signal });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -187,6 +191,10 @@ export function useFiles(params: UseFilesParams = {}) {
       setFiles(sharedFiles);
       setTotal(sharedFiles.length);
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // Request was cancelled, don't update state
+        return;
+      }
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch shared files';
       setError(errorMessage);
       console.error('Error fetching shared files:', err);
@@ -195,16 +203,21 @@ export function useFiles(params: UseFilesParams = {}) {
     }
   }, []);
 
-  const refetch = useCallback(() => {
+  const refetch = useCallback((signal?: AbortSignal) => {
     if (params.sharedWithMe) {
-      getSharedFiles();
+      getSharedFiles(signal);
     } else {
-      fetchFiles();
+      fetchFiles(signal);
     }
   }, [fetchFiles, getSharedFiles, params.sharedWithMe]);
 
   useEffect(() => {
-    refetch();
+    const abortController = new AbortController();
+    refetch(abortController.signal);
+
+    return () => {
+      abortController.abort();
+    };
   }, [refetch]);
 
   return {

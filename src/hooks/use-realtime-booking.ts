@@ -128,31 +128,39 @@ export function useRealtimeBooking(initialCoachId?: string) {
     queryKey: ['timeSlots', selectedCoach, selectedDate, lastRefresh.getTime()],
     queryFn: async (): Promise<TimeSlot[]> => {
       if (!selectedCoach || !selectedDate) return [];
-      
+
       const response = await fetch(
         `/api/coaches/${selectedCoach}/availability?date=${selectedDate}&duration=60&detailed=true`
       );
       if (!response.ok) throw new Error('Failed to fetch time slots');
       const data = await response.json();
-      
-      const slots: TimeSlot[] = data.data;
-      
-      // Calculate availability status
-      const status: AvailabilityStatus = {
-        totalSlots: slots.length,
-        availableSlots: slots.filter(slot => slot.isAvailable && !slot.isBooked && !slot.isBlocked).length,
-        bookedSlots: slots.filter(slot => slot.isBooked).length,
-        blockedSlots: slots.filter(slot => slot.isBlocked).length,
-        lastUpdated: new Date(),
-      };
-      setAvailabilityStatus(status);
-      
-      return slots;
+
+      return data.data;
     },
     enabled: !!(selectedCoach && selectedDate),
     staleTime: 30000,
     refetchInterval: isConnected ? 60000 : false, // Only auto-refetch if connected
   });
+
+  // Calculate availability status when time slots change
+  useEffect(() => {
+    let isMounted = true;
+
+    if (timeSlots && isMounted) {
+      const status: AvailabilityStatus = {
+        totalSlots: timeSlots.length,
+        availableSlots: timeSlots.filter(slot => slot.isAvailable && !slot.isBooked && !slot.isBlocked).length,
+        bookedSlots: timeSlots.filter(slot => slot.isBooked).length,
+        blockedSlots: timeSlots.filter(slot => slot.isBlocked).length,
+        lastUpdated: new Date(),
+      };
+      setAvailabilityStatus(status);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [timeSlots]);
 
   // Create session mutation with optimistic updates
   const createSessionMutation = useMutation({

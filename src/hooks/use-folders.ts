@@ -20,7 +20,7 @@ export function useFolders(params: UseFoldersParams) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchFolders = useCallback(async () => {
+  const fetchFolders = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
 
@@ -30,8 +30,8 @@ export function useFolders(params: UseFoldersParams) {
         queryParams.set('folderId', params.parentFolderId);
       }
 
-      const response = await fetch(`/api/folders?${queryParams.toString()}`);
-      
+      const response = await fetch(`/api/folders?${queryParams.toString()}`, { signal });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -39,6 +39,10 @@ export function useFolders(params: UseFoldersParams) {
       const data = await response.json();
       setFolders(data.folders || []);
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // Request was cancelled, don't update state
+        return;
+      }
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch folders';
       setError(errorMessage);
       console.error('Error fetching folders:', err);
@@ -117,12 +121,17 @@ export function useFolders(params: UseFoldersParams) {
     }
   }, []);
 
-  const refetch = useCallback(() => {
-    fetchFolders();
+  const refetch = useCallback((signal?: AbortSignal) => {
+    fetchFolders(signal);
   }, [fetchFolders]);
 
   useEffect(() => {
-    fetchFolders();
+    const abortController = new AbortController();
+    fetchFolders(abortController.signal);
+
+    return () => {
+      abortController.abort();
+    };
   }, [fetchFolders]);
 
   return {

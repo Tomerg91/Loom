@@ -264,20 +264,28 @@ function NotificationCenterComponent() {
 
   // Load sound preference from user settings on mount
   useEffect(() => {
+    let isMounted = true;
+
     const loadSoundPreference = async () => {
       try {
         const response = await apiGet<{ data: { inApp: { sounds: boolean } } }>('/api/notifications/preferences');
-        if (response?.data?.inApp?.sounds !== undefined) {
+        if (isMounted && response?.data?.inApp?.sounds !== undefined) {
           setNotificationSounds(response.data.inApp.sounds);
         }
       } catch (error) {
-        console.warn('Could not load sound preference:', error);
+        if (isMounted) {
+          console.warn('Could not load sound preference:', error);
+        }
       }
     };
 
     if (user?.id) {
       loadSoundPreference();
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [user?.id]);
   const [navigationHistory, setNavigationHistory] = useState<string[]>([]);
   const [loadingActions, setLoadingActions] = useState<Set<string>>(new Set());

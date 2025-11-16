@@ -38,12 +38,12 @@ export function SystemHealthDisplay() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHealthData = async () => {
+  const fetchHealthData = async (signal?: AbortSignal) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch('/api/admin/system-health');
+      const response = await fetch('/api/admin/system-health', { signal });
       if (!response.ok) {
         throw new Error('Failed to fetch system health data');
       }
@@ -54,6 +54,10 @@ export function SystemHealthDisplay() {
         throw new Error(result.error || 'Failed to fetch system health');
       }
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // Request was cancelled, don't update state
+        return;
+      }
       console.error('Failed to fetch system health:', err);
       setError('Unable to fetch real-time system health data');
       // Use mock data as fallback for development
@@ -91,7 +95,12 @@ export function SystemHealthDisplay() {
   });
 
   useEffect(() => {
-    fetchHealthData();
+    const abortController = new AbortController();
+    fetchHealthData(abortController.signal);
+
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
   const getStatusIcon = (status: 'healthy' | 'warning' | 'error') => {
