@@ -169,14 +169,17 @@ interface SessionListProps {
 }
 
 interface SessionsResponse {
-  data: Session[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
+  success: boolean;
+  data: {
+    sessions: Session[];
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
   };
 }
 
@@ -311,7 +314,7 @@ function SessionListComponent({
     Array.isArray(sessionsData?.data?.sessions) ? sessionsData.data.sessions : [],
     [sessionsData?.data?.sessions]
   );
-  const pagination = React.useMemo(() => sessionsData?.pagination, [sessionsData?.pagination]);
+  const pagination = React.useMemo(() => sessionsData?.data?.pagination, [sessionsData?.data?.pagination]);
 
   if (isLoading) {
     return (
