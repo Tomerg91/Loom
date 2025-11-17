@@ -1,10 +1,11 @@
 'use client';
 
 // src/lib/realtime/coach-subscriptions.ts
-import { createClient } from '@/lib/supabase/client';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
-export type CoachEvent = RealtimePostgresChangesPayload<Record<string, any>>;
+import { createClient } from '@/lib/supabase/client';
+
+export type CoachEvent = RealtimePostgresChangesPayload<Record<string, unknown>>;
 
 /**
  * Subscribe to session changes (INSERT/UPDATE/DELETE)

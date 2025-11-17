@@ -90,7 +90,7 @@ export function CoachDashboard() {
   const [showAddSessionModal, setShowAddSessionModal] = useState(false);
 
   // Initialize realtime subscriptions
-  const { isConnected, connectionStatus } = useCoachDashboardSubscriptions(
+  const { connectionStatus } = useCoachDashboardSubscriptions(
     user?.id ?? ''
   );
 

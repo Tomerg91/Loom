@@ -1,11 +1,13 @@
 // src/components/coach/coach-dashboard-realtime.integration.test.tsx
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
-import { CoachDashboard } from "./coach-dashboard";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+import { useUser } from "@/lib/auth/use-user";
 import * as coachSubscriptions from "@/lib/realtime/coach-subscriptions";
 import type { CoachEvent } from "@/lib/realtime/coach-subscriptions";
-import { useUser } from "@/lib/auth/use-user";
 import { renderWithProviders, createTestQueryClient, mockFetch } from "@/test/utils";
+
+import { CoachDashboard } from "./coach-dashboard";
 
 // Unmock TanStack Query to use real implementation with test QueryClient
 vi.unmock('@tanstack/react-query');
@@ -47,8 +49,8 @@ vi.mock("@/components/coach/empty-state", () => ({
 
 describe("Coach Dashboard Realtime Integration", () => {
   let sessionEventHandler: ((event: CoachEvent) => void) | undefined;
-  let feedbackEventHandler: ((event: CoachEvent) => void) | undefined;
-  let ratingEventHandler: ((event: CoachEvent) => void) | undefined;
+  let _feedbackEventHandler: ((event: CoachEvent) => void) | undefined;
+  let _ratingEventHandler: ((event: CoachEvent) => void) | undefined;
 
   beforeEach(() => {
     // Mock fetch for API calls
@@ -65,6 +67,14 @@ describe("Coach Dashboard Realtime Integration", () => {
       },
     });
 
+    interface MockUser {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      role: string;
+    }
+
     // Mock user
     vi.mocked(useUser).mockReturnValue({
       id: "coach-123",
@@ -72,12 +82,12 @@ describe("Coach Dashboard Realtime Integration", () => {
       lastName: "Doe",
       email: "john@example.com",
       role: "coach",
-    } as any);
+    } as MockUser);
 
     // Reset handlers
     sessionEventHandler = undefined;
-    feedbackEventHandler = undefined;
-    ratingEventHandler = undefined;
+    _feedbackEventHandler = undefined;
+    _ratingEventHandler = undefined;
 
     // Capture the event handlers so we can trigger them manually
     vi.mocked(coachSubscriptions.subscribeToSessions).mockImplementation(
@@ -89,14 +99,14 @@ describe("Coach Dashboard Realtime Integration", () => {
 
     vi.mocked(coachSubscriptions.subscribeToSessionFeedback).mockImplementation(
       (_coachId, onEvent) => {
-        feedbackEventHandler = onEvent;
+        _feedbackEventHandler = onEvent;
         return vi.fn(); // unsubscribe
       }
     );
 
     vi.mocked(coachSubscriptions.subscribeToSessionRatings).mockImplementation(
       (_coachId, onEvent) => {
-        ratingEventHandler = onEvent;
+        _ratingEventHandler = onEvent;
         return vi.fn(); // unsubscribe
       }
     );
