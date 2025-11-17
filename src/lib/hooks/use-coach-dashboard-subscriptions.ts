@@ -2,7 +2,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   subscribeToSessions,
@@ -43,56 +43,36 @@ export function useCoachDashboardSubscriptions(
     []
   );
 
-  // Handle session changes
-  const handleSessionChange = useCallback(
-    (event: CoachEvent) => {
+  useEffect(() => {
+    const handleSessionChange = (event: CoachEvent) => {
       console.log('[Dashboard] Session change:', event);
       queryClient.invalidateQueries({ queryKey: ['coach-stats'] });
       queryClient.invalidateQueries({ queryKey: ['coach-activity'] });
-    },
-    [queryClient]
-  );
+    };
 
-  // Handle feedback changes
-  const handleFeedbackChange = useCallback(
-    (event: CoachEvent) => {
+    const handleFeedbackChange = (event: CoachEvent) => {
       console.log('[Dashboard] Feedback change:', event);
       queryClient.invalidateQueries({ queryKey: ['coach-insights'] });
       queryClient.invalidateQueries({ queryKey: ['coach-stats'] });
-    },
-    [queryClient]
-  );
+    };
 
-  // Handle rating changes
-  const handleRatingChange = useCallback(
-    (event: CoachEvent) => {
+    const handleRatingChange = (event: CoachEvent) => {
       console.log('[Dashboard] Rating change:', event);
       queryClient.invalidateQueries({ queryKey: ['coach-insights'] });
-    },
-    [queryClient]
-  );
+    };
 
-  // Handle client changes
-  const handleClientChange = useCallback(
-    (event: CoachEvent) => {
+    const handleClientChange = (event: CoachEvent) => {
       console.log('[Dashboard] Client change:', event);
       queryClient.invalidateQueries({ queryKey: ['coach-clients'] });
-    },
-    [queryClient]
-  );
+    };
 
-  // Handle goal changes
-  const handleGoalChange = useCallback(
-    (event: CoachEvent) => {
+    const handleGoalChange = (event: CoachEvent) => {
       console.log('[Dashboard] Goal change:', event);
       queryClient.invalidateQueries({ queryKey: ['coach-insights'] });
-    },
-    [queryClient]
-  );
+    };
 
-  useEffect(() => {
     try {
-      setConnectionStatus('reconnecting');
+      setConnectionStatus('connected');
 
       // Initialize all subscriptions
       const unsubSessions = subscribeToSessions(coachId, handleSessionChange);
@@ -130,7 +110,7 @@ export function useCoachDashboardSubscriptions(
       // Cleanup on unmount
       return () => {
         console.log('[Dashboard] Cleaning up realtime subscriptions');
-        subs.forEach(sub => {
+        subs.forEach((sub) => {
           try {
             sub.unsubscribe();
           } catch (error) {
@@ -140,20 +120,16 @@ export function useCoachDashboardSubscriptions(
             );
           }
         });
+        setSubscriptions([]);
+        setIsConnected(false);
+        setConnectionStatus('disconnected');
       };
     } catch (error) {
       console.error('[Dashboard] Error initializing subscriptions:', error);
       setIsConnected(false);
       setConnectionStatus('disconnected');
     }
-  }, [
-    coachId,
-    handleSessionChange,
-    handleFeedbackChange,
-    handleRatingChange,
-    handleClientChange,
-    handleGoalChange,
-  ]);
+  }, [coachId, queryClient]); // Only coachId and queryClient as deps
 
   return {
     isConnected,
