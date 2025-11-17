@@ -1,3 +1,5 @@
+'use client';
+
 // src/lib/realtime/coach-subscriptions.ts
 import { createClient } from '@/lib/supabase/client';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
@@ -28,7 +30,12 @@ export function subscribeToSessions(
         },
         onEvent
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Sessions subscription status for coach ${coachId}:`, status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Session subscription failed:', status);
+        }
+      });
   } catch (error) {
     console.error('Failed to subscribe to sessions:', error);
   }
@@ -64,7 +71,12 @@ export function subscribeToSessionFeedback(
         },
         onEvent
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Session feedback subscription status for coach ${coachId}:`, status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Session feedback subscription failed:', status);
+        }
+      });
   } catch (error) {
     console.error('Failed to subscribe to session feedback:', error);
   }
@@ -100,7 +112,12 @@ export function subscribeToSessionRatings(
         },
         onEvent
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Session ratings subscription status for coach ${coachId}:`, status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Session ratings subscription failed:', status);
+        }
+      });
   } catch (error) {
     console.error('Failed to subscribe to session ratings:', error);
   }
@@ -136,7 +153,12 @@ export function subscribeToClientUpdates(
         },
         onEvent
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Client updates subscription status for coach ${coachId}:`, status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Client updates subscription failed:', status);
+        }
+      });
   } catch (error) {
     console.error('Failed to subscribe to client updates:', error);
   }
@@ -172,7 +194,12 @@ export function subscribeToGoalUpdates(
         },
         onEvent
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Goal updates subscription status for coach ${coachId}:`, status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Goal updates subscription failed:', status);
+        }
+      });
   } catch (error) {
     console.error('Failed to subscribe to goal updates:', error);
   }
