@@ -299,31 +299,59 @@ class WebVitalsMonitor {
 
     // Intercept fetch requests to monitor API performance
     const originalFetch = window.fetch;
-    
+
     window.fetch = async function(...args) {
       const startTime = performance.now();
-      const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url;
-      
+
+      // Safely extract URL from fetch arguments to avoid RSC fetch errors
+      let url: string | undefined;
+      try {
+        const firstArg = args[0];
+        if (typeof firstArg === 'string') {
+          url = firstArg;
+        } else if (firstArg instanceof URL) {
+          url = firstArg.toString();
+        } else if (firstArg instanceof Request) {
+          url = firstArg.url;
+        } else if (firstArg != null && typeof firstArg === 'object' && 'url' in firstArg) {
+          url = String(firstArg.url);
+        }
+      } catch {
+        // If we can't extract a URL, skip monitoring (e.g., RSC internal fetches)
+        return originalFetch.apply(this, args);
+      }
+
       try {
         const response = await originalFetch.apply(this, args);
         const duration = performance.now() - startTime;
-        
+
         // Monitor API calls to our endpoints
-        if (url.includes('/api/')) {
+        // Check that url is a valid non-empty string before calling includes
+        if (
+          url &&
+          typeof url === 'string' &&
+          url.length > 0 &&
+          url.includes('/api/')
+        ) {
           webVitalsMonitor.reportCustomMetric('api_request', duration, {
             endpoint: url,
             status: response.status,
             method: args[1]?.method || 'GET',
           });
         }
-        
+
         return response;
       } catch (error) {
         const duration = performance.now() - startTime;
-        webVitalsMonitor.reportCustomMetric('api_request_error', duration, {
-          endpoint: url,
-          error: (error as Error).message,
-        });
+
+        // Only report error with url if we have a valid url string
+        if (url && typeof url === 'string' && url.length > 0) {
+          webVitalsMonitor.reportCustomMetric('api_request_error', duration, {
+            endpoint: url,
+            error: (error as Error).message,
+          });
+        }
+
         throw error;
       }
     };
