@@ -29,6 +29,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiGet } from '@/lib/api/client-api-request';
 import { useUser } from '@/lib/auth/use-user';
+import { useCoachDashboardSubscriptions } from '@/lib/hooks/use-coach-dashboard-subscriptions';
 import type { Session } from '@/types';
 
 // Helper function moved outside component to prevent re-creation
@@ -88,8 +89,13 @@ export function CoachDashboard() {
   const [showAddClientModal, setShowAddClientModal] = useState(false);
   const [showAddSessionModal, setShowAddSessionModal] = useState(false);
 
-  // Refresh data every 5 minutes
-  const refreshInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
+  // Initialize realtime subscriptions
+  const { isConnected, connectionStatus } = useCoachDashboardSubscriptions(
+    user?.id || ''
+  );
+
+  // Refresh data every 1 minute (reduced from 5 minutes for fallback)
+  const refreshInterval = 1 * 60 * 1000; // 1 minute in milliseconds
 
   // Fetch dashboard stats
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -180,22 +186,43 @@ export function CoachDashboard() {
             {t('welcome', { name: user?.firstName || '' })}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => setShowAddClientModal(true)}
-            className="gap-2"
-          >
-            <UserPlus className="h-4 w-4" />
-            {t('recentClients.emptyAction')}
-          </Button>
-          <Button
-            onClick={() => setShowAddSessionModal(true)}
-            className="gap-2"
-          >
-            <Calendar className="h-4 w-4" />
-            {t('upcomingSessions.emptyAction')}
-          </Button>
+        <div className="flex items-center gap-3">
+          {/* Connection Status Indicator */}
+          {connectionStatus === 'connected' && (
+            <div className="flex items-center gap-1.5">
+              <div className="h-2 w-2 rounded-full bg-green-500" />
+              <span className="text-xs text-muted-foreground">Realtime</span>
+            </div>
+          )}
+          {connectionStatus === 'disconnected' && (
+            <div className="flex items-center gap-1.5">
+              <div className="h-2 w-2 rounded-full bg-red-500" />
+              <span className="text-xs text-muted-foreground">Polling</span>
+            </div>
+          )}
+          {connectionStatus === 'reconnecting' && (
+            <div className="flex items-center gap-1.5">
+              <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+              <span className="text-xs text-muted-foreground">Connecting...</span>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowAddClientModal(true)}
+              className="gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              {t('recentClients.emptyAction')}
+            </Button>
+            <Button
+              onClick={() => setShowAddSessionModal(true)}
+              className="gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              {t('upcomingSessions.emptyAction')}
+            </Button>
+          </div>
         </div>
       </div>
 
