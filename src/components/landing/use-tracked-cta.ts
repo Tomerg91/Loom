@@ -67,7 +67,17 @@ function getSessionId(): string {
   let sessionId = sessionStorage.getItem(storageKey);
 
   if (!sessionId) {
-    sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    // Generate 8 random bytes and convert to hex string
+    let randomPart = '';
+    if (window.crypto && window.crypto.getRandomValues) {
+      const array = new Uint8Array(8);
+      window.crypto.getRandomValues(array);
+      randomPart = Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+    } else {
+      // Fallback to Math.random (should not happen in modern browsers)
+      randomPart = Math.random().toString(36).substring(2, 9);
+    }
+    sessionId = `${Date.now()}-${randomPart}`;
     sessionStorage.setItem(storageKey, sessionId);
   }
 
