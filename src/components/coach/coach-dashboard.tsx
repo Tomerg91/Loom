@@ -91,7 +91,7 @@ export function CoachDashboard() {
 
   // Initialize realtime subscriptions
   const { isConnected, connectionStatus } = useCoachDashboardSubscriptions(
-    user?.id || ''
+    user?.id ?? ''
   );
 
   // Refresh data every 1 minute (reduced from 5 minutes for fallback)
@@ -189,21 +189,24 @@ export function CoachDashboard() {
         <div className="flex items-center gap-3">
           {/* Connection Status Indicator */}
           {connectionStatus === 'connected' && (
-            <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-green-500" />
+            <div className="flex items-center gap-1.5" role="status" aria-live="polite">
+              <div className="h-2 w-2 rounded-full bg-green-500" aria-hidden="true" />
               <span className="text-xs text-muted-foreground">Realtime</span>
+              <span className="sr-only">Dashboard is connected to realtime updates</span>
             </div>
           )}
           {connectionStatus === 'disconnected' && (
-            <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-red-500" />
+            <div className="flex items-center gap-1.5" role="status" aria-live="polite">
+              <div className="h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
               <span className="text-xs text-muted-foreground">Polling</span>
+              <span className="sr-only">Dashboard using polling mode, not realtime</span>
             </div>
           )}
           {connectionStatus === 'reconnecting' && (
-            <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+            <div className="flex items-center gap-1.5" role="status" aria-live="assertive">
+              <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" aria-hidden="true" />
               <span className="text-xs text-muted-foreground">Connecting...</span>
+              <span className="sr-only">Dashboard reconnecting to realtime updates</span>
             </div>
           )}
           <div className="flex gap-2">
