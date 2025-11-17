@@ -176,7 +176,7 @@ global.IntersectionObserver = class IntersectionObserver {
     return [];
   }
   unobserve() {}
-} as unknown;
+} as any;
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
@@ -184,7 +184,7 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
   observe() {}
   unobserve() {}
-} as unknown;
+} as any;
 
 // Mock fetch globally to handle API calls in tests
 global.fetch = vi.fn();
@@ -242,7 +242,7 @@ Object.defineProperty(process, 'env', {
   value: {
     ...process.env,
     NEXT_PUBLIC_SUPABASE_URL: 'https://mock-supabase-url.supabase.co',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: 'mock-anon-key',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vY2siLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzY3NTIwMCwiZXhwIjoxOTU5MjUxMjAwfQ.mock-signature',
   },
 });
 
