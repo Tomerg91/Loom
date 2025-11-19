@@ -212,9 +212,10 @@ export class SessionSchedulerError extends Error {
 export class SessionSchedulerService {
   async listCalendar(
     actor: SessionSchedulerActor,
-    options: SessionCalendarOptions = {}
+    options: SessionCalendarOptions = {},
+    supabaseClient?: ReturnType<typeof createClient>
   ): Promise<SessionCalendarEntry[]> {
-    const supabase = createClient();
+    const supabase = supabaseClient ?? createClient();
     const limit = options.limit ?? DEFAULT_LIMIT;
 
     try {
@@ -299,9 +300,10 @@ export class SessionSchedulerService {
   }
 
   async listRequests(
-    actor: SessionSchedulerActor
+    actor: SessionSchedulerActor,
+    supabaseClient?: ReturnType<typeof createClient>
   ): Promise<SessionRequestSummary[]> {
-    const supabase = createClient();
+    const supabase = supabaseClient ?? createClient();
 
     try {
       let query = supabase
@@ -383,9 +385,10 @@ export class SessionSchedulerService {
 
   async createRequest(
     actor: SessionSchedulerActor,
-    input: SessionSchedulingRequest
+    input: SessionSchedulingRequest,
+    supabaseClient?: ReturnType<typeof createClient>
   ): Promise<SessionMutationResult> {
-    const supabase = createClient();
+    const supabase = supabaseClient ?? createClient();
 
     const coachId = actor.role === 'coach' ? actor.id : input.coachId;
     if (!coachId) {
@@ -511,7 +514,8 @@ export class SessionSchedulerService {
   async updateSession(
     actor: SessionSchedulerActor,
     sessionId: string,
-    input: SessionUpdatePayload
+    input: SessionUpdatePayload,
+    supabaseClient?: ReturnType<typeof createClient>
   ): Promise<SessionMutationResult> {
     if (actor.role === 'client') {
       throw new SessionSchedulerError(
@@ -520,7 +524,7 @@ export class SessionSchedulerService {
       );
     }
 
-    const supabase = createClient();
+    const supabase = supabaseClient ?? createClient();
     const updates: Record<string, unknown> = {};
 
     if (input.status) {

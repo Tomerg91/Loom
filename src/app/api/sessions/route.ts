@@ -43,7 +43,7 @@ const createUnauthorizedResponse = () =>
 async function getAuthenticatedActor(
   request: NextRequest
 ): Promise<
-  | { actor: AuthActor; authResponse: NextResponse }
+  | { actor: AuthActor; authResponse: NextResponse; client: ReturnType<typeof createAuthenticatedSupabaseClient>['client'] }
   | { response: Response; authResponse: NextResponse }
 > {
   const { client: supabase, response: authResponse } =
@@ -82,6 +82,7 @@ async function getAuthenticatedActor(
         role: (profile?.role ?? 'client') as AuthRole,
       },
       authResponse,
+      client: supabase,
     };
   } catch (error) {
     log.error('Sessions API authentication error', {
@@ -98,9 +99,9 @@ async function getAuthenticatedActor(
 
 const parseCalendarSearchParams = (request: NextRequest) => {
   const start = request.nextUrl.searchParams.get('start') ??
-                request.nextUrl.searchParams.get('from') ?? undefined;
+    request.nextUrl.searchParams.get('from') ?? undefined;
   const end = request.nextUrl.searchParams.get('end') ??
-              request.nextUrl.searchParams.get('to') ?? undefined;
+    request.nextUrl.searchParams.get('to') ?? undefined;
   const limitParam = request.nextUrl.searchParams.get('limit');
   const limit = limitParam ? Number.parseInt(limitParam, 10) : undefined;
 
@@ -118,7 +119,7 @@ export const GET = async (request: NextRequest) => {
     return authResult.response;
   }
 
-  const { actor, authResponse } = authResult;
+  const { actor, authResponse, client } = authResult;
   const view = request.nextUrl.searchParams.get('view') ?? 'calendar';
   const status = request.nextUrl.searchParams.get('status');
   const coachId = request.nextUrl.searchParams.get('coachId');
@@ -126,14 +127,15 @@ export const GET = async (request: NextRequest) => {
 
   try {
     if (view === 'requests') {
-      const requests = await scheduler.listRequests(actor);
+      const requests = await scheduler.listRequests(actor, client);
       const successResponse = createSuccessResponse({ requests });
       return propagateCookies(authResponse, successResponse);
     }
 
     let calendar = await scheduler.listCalendar(
       actor,
-      parseCalendarSearchParams(request)
+      parseCalendarSearchParams(request),
+      client
     );
 
     // Apply additional filters if provided
@@ -183,7 +185,7 @@ export const POST = async (request: NextRequest) => {
     return authResult.response;
   }
 
-  const { actor, authResponse } = authResult;
+  const { actor, authResponse, client } = authResult;
   let body: unknown;
 
   try {
@@ -233,7 +235,7 @@ export const POST = async (request: NextRequest) => {
   }
 
   try {
-    const result = await scheduler.createRequest(actor, payload);
+    const result = await scheduler.createRequest(actor, payload, client);
     const successResponse = createSuccessResponse(
       result,
       actor.role === 'client'

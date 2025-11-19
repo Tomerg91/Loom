@@ -31,7 +31,7 @@ const scheduler = new SessionSchedulerService();
 async function getAuthenticatedActor(
   request: NextRequest
 ): Promise<
-  | { actor: AuthActor; authResponse: NextResponse }
+  | { actor: AuthActor; authResponse: NextResponse; client: ReturnType<typeof createAuthenticatedSupabaseClient>['client'] }
   | { error: string; authResponse: NextResponse }
 > {
   const { client: supabase, response: authResponse } =
@@ -66,6 +66,7 @@ async function getAuthenticatedActor(
         role: (profile?.role ?? 'client') as AuthRole,
       },
       authResponse,
+      client: supabase,
     };
   } catch (error) {
     console.error('Session update API authentication error:', error);
@@ -93,7 +94,7 @@ export const PATCH = async (
     return propagateCookies(authResult.authResponse, errorResponse);
   }
 
-  const { actor, authResponse } = authResult;
+  const { actor, authResponse, client } = authResult;
   let body: unknown;
 
   try {
@@ -117,7 +118,7 @@ export const PATCH = async (
   const payload = parsed.data as SessionUpdateInput;
 
   try {
-    const result = await scheduler.updateSession(actor, params.id, payload);
+    const result = await scheduler.updateSession(actor, params.id, payload, client);
     return propagateCookies(
       authResponse,
       createSuccessResponse(result, 'Session updated successfully')

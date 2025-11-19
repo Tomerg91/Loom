@@ -1,8 +1,8 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
-import { createClient } from '@/lib/supabase/server';
+import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
 import { queryMonitor } from '@/lib/performance/query-monitoring';
 
 interface DashboardStats {
@@ -17,14 +17,15 @@ interface DashboardStats {
 }
 
 export async function GET(request: NextRequest): Promise<Response> {
+  // Use authenticated client to handle token refresh and cookie propagation
+  const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(request, new NextResponse());
+
   try {
-    // Use cookie-based authentication (same as sessions endpoint)
-    const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
       console.error('[/api/coach/stats] Authentication failed:', authError);
-      return ApiResponseHelper.unauthorized('Authentication required');
+      return propagateCookies(authResponse, ApiResponseHelper.unauthorized('Authentication required'));
     }
 
     // Get user profile to check role
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     if (profileError || !profile) {
       console.error('[/api/coach/stats] Failed to fetch user profile:', profileError);
-      return ApiResponseHelper.unauthorized('User profile not found');
+      return propagateCookies(authResponse, ApiResponseHelper.unauthorized('User profile not found'));
     }
 
     if (profile.role !== 'coach') {
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         userId: user.id,
         role: profile.role
       });
-      return ApiResponseHelper.forbidden(`Coach access required. Current role: ${profile.role}`);
+      return propagateCookies(authResponse, ApiResponseHelper.forbidden(`Coach access required. Current role: ${profile.role}`));
     }
 
     const coachId = user.id;
@@ -82,7 +83,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         averageRating: 4.8,
         totalRevenue: 0,
       };
-      return ApiResponseHelper.success(stats);
+      return propagateCookies(authResponse, ApiResponseHelper.success(stats));
     }
 
     // Transform RPC result to match the expected interface
@@ -99,15 +100,15 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     console.log('[/api/coach/stats] Returning stats:', stats);
 
-    return ApiResponseHelper.success(stats);
+    return propagateCookies(authResponse, ApiResponseHelper.success(stats));
 
   } catch (error) {
     console.error('Coach stats API error:', error);
 
     if (error instanceof ApiError) {
-      return ApiResponseHelper.error(error.code, error.message);
+      return propagateCookies(authResponse, ApiResponseHelper.error(error.code, error.message));
     }
 
-    return ApiResponseHelper.internalError('Failed to fetch coach statistics');
+    return propagateCookies(authResponse, ApiResponseHelper.internalError('Failed to fetch coach statistics'));
   }
 }
