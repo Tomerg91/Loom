@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { ApiError } from '@/lib/api/errors';
 import { ApiResponseHelper } from '@/lib/api/types';
-import { createAuthenticatedSupabaseClient, propagateCookies } from '@/lib/api/auth-client';
+import { createAuthenticatedSupabaseClientWithTokenFallback, propagateCookies } from '@/lib/api/auth-client';
 import { queryMonitor } from '@/lib/performance/query-monitoring';
 
 interface Client {
@@ -27,8 +27,8 @@ interface Client {
 }
 
 export async function GET(request: NextRequest): Promise<Response> {
-  // Use authenticated client to handle token refresh and cookie propagation
-  const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClient(request, new NextResponse());
+  // Use authenticated client with token fallback to handle both cookie-based and token-based auth
+  const { client: supabase, response: authResponse } = createAuthenticatedSupabaseClientWithTokenFallback(request, new NextResponse());
 
   try {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -117,6 +117,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     }
 
     // Transform RPC results to match the expected Client interface
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const clients: Client[] = (clientsData || []).map((row: any) => ({
       id: row.client_id,
       firstName: row.first_name || '',
