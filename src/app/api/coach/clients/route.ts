@@ -85,14 +85,29 @@ export async function GET(request: NextRequest): Promise<Response> {
     const { data: clientsData, error } = await queryMonitor.trackQueryExecution(
       'Coach Clients RPC',
       async () => {
-        return await supabase.rpc('get_coach_clients_paginated', {
+        const rpcParams = {
           p_coach_id: coachId,
           p_limit: limit,
           p_offset: offset,
           p_search: search,
           p_status_filter: statusFilter,
           p_sort_by: sortBy
-        });
+        };
+        console.log('[/api/coach/clients] RPC Params:', JSON.stringify(rpcParams));
+
+        const result = await supabase.rpc('get_coach_clients_paginated', rpcParams);
+
+        if (result.error) {
+          console.error('[/api/coach/clients] RPC Error:', result.error);
+        } else {
+          console.log('[/api/coach/clients] RPC Success. Data length:', result.data?.length);
+          if (result.data && result.data.length > 0) {
+            console.log('[/api/coach/clients] First client sample:', JSON.stringify(result.data[0]));
+          } else {
+            console.log('[/api/coach/clients] RPC returned empty data.');
+          }
+        }
+        return result;
       }
     );
 
@@ -140,6 +155,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       totalCount,
       offset,
       limit,
+      firstClientId: clients.length > 0 ? clients[0].id : null
     });
 
     const response = NextResponse.json({
