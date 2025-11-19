@@ -9,6 +9,7 @@ CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = 'pg_catalog', 'public', 'extensions'
 AS $$
 DECLARE
   claims jsonb;
@@ -57,6 +58,7 @@ CREATE OR REPLACE FUNCTION public.update_user_auth_metadata(user_id uuid, user_r
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = 'pg_catalog', 'public', 'extensions'
 AS $$
 BEGIN
   -- Update the auth.users raw_user_meta_data with the role
@@ -82,6 +84,7 @@ CREATE OR REPLACE FUNCTION public.handle_user_role_change()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = 'pg_catalog', 'public', 'extensions'
 AS $$
 BEGIN
   -- Update auth metadata when role changes
@@ -132,6 +135,7 @@ RETURNS table(
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = 'pg_catalog', 'public', 'extensions'
 AS $$
 BEGIN
   -- Test 1: Custom Access Token Hook Function
@@ -215,6 +219,7 @@ CREATE OR REPLACE FUNCTION public.sync_user_role_to_jwt(target_user_id uuid)
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = 'pg_catalog', 'public', 'extensions'
 AS $$
 DECLARE
   user_role text;

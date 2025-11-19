@@ -225,12 +225,12 @@ RETURNS BOOLEAN AS $$
 BEGIN
     -- Admin can message anyone
     IF EXISTS (
-        SELECT 1 FROM users 
+        SELECT 1 FROM users
         WHERE id = sender_id AND role = 'admin'
     ) THEN
         RETURN TRUE;
     END IF;
-    
+
     -- Check if users have active sessions (coach-client relationship)
     IF EXISTS (
         SELECT 1 FROM sessions s
@@ -240,7 +240,7 @@ BEGIN
     ) THEN
         RETURN TRUE;
     END IF;
-    
+
     -- Users with existing conversation can continue messaging
     IF EXISTS (
         SELECT 1 FROM conversations c
@@ -250,10 +250,11 @@ BEGIN
     ) THEN
         RETURN TRUE;
     END IF;
-    
+
     RETURN FALSE;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = 'pg_catalog', 'public', 'extensions';
 
 -- Grant necessary permissions
 GRANT USAGE ON SCHEMA public TO authenticated;
