@@ -56,25 +56,25 @@ class WebVitalsMonitor {
     try {
       // Cumulative Layout Shift - Available in all modern browsers
       onCLS(this.handleMetric.bind(this), { reportAllChanges: true });
-      
+
       // Largest Contentful Paint - Available in Chromium-based browsers
       onLCP(this.handleMetric.bind(this), { reportAllChanges: true });
-      
+
       // First Contentful Paint - Available in Chromium-based browsers
       onFCP(this.handleMetric.bind(this), { reportAllChanges: true });
-      
+
       // Interaction to Next Paint - Available in Chromium-based browsers
       onINP(this.handleMetric.bind(this), { reportAllChanges: true });
-      
+
       // Time to First Byte - Available in all browsers with Navigation Timing API
       onTTFB(this.handleMetric.bind(this), { reportAllChanges: true });
-      
+
       if (process.env.NODE_ENV === 'development') {
         console.log('Web Vitals monitoring initialized successfully');
       }
     } catch (error) {
       console.warn('Failed to initialize Web Vitals monitoring:', error);
-      
+
       // Report the initialization error but don't break the application
       if (typeof window !== 'undefined' && 'Sentry' in window) {
         (window as unknown).Sentry.captureException(error, {
@@ -86,7 +86,7 @@ class WebVitalsMonitor {
 
   private handleMetric(metric: Metric) {
     const rating = this.getMetricRating(metric.name as keyof typeof THRESHOLDS, metric.value);
-    
+
     const performanceData: PerformanceData = {
       metric: metric.name,
       value: metric.value,
@@ -99,7 +99,7 @@ class WebVitalsMonitor {
 
     this.performanceData.push(performanceData);
     this.reportMetric(performanceData);
-    
+
     // Log additional metric details in development
     if (process.env.NODE_ENV === 'development') {
       console.log('Web Vitals Metric:', {
@@ -126,13 +126,13 @@ class WebVitalsMonitor {
     try {
       // Send to Google Analytics
       this.sendToGoogleAnalytics(data);
-      
+
       // Send to Sentry for monitoring
       this.sendToSentry(data);
-      
+
       // Send to Next.js Analytics (if available)
       this.sendToNextJSAnalytics(data);
-      
+
       // Log performance issues in development
       if (process.env.NODE_ENV === 'development') {
         const color = data.rating === 'good' ? 'green' : data.rating === 'needs-improvement' ? 'orange' : 'red';
@@ -146,7 +146,7 @@ class WebVitalsMonitor {
       this.sendToAPI(data);
     } catch (error) {
       console.warn('Error reporting metric:', error);
-      
+
       // Don't let reporting errors break the monitoring
       if (typeof window !== 'undefined' && 'Sentry' in window) {
         (window as unknown).Sentry.captureException(error, {
@@ -212,14 +212,38 @@ class WebVitalsMonitor {
     }
   }
 
+  private getCSRFToken(): string | null {
+    if (typeof window === 'undefined') return null;
+
+    // Try meta tag first
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag) return metaTag.getAttribute('content');
+
+    // Try cookie
+    const match = document.cookie.match(new RegExp('(^| )csrf-token=([^;]+)'));
+    if (match) return match[2];
+
+    return null;
+  }
+
   private async sendToAPI(_data: PerformanceData) {
     try {
       // Batch requests to avoid overwhelming the server
       if (this.performanceData.length % 5 === 0) {
         const batch = this.performanceData.slice(-5);
+
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+
+        const csrfToken = this.getCSRFToken();
+        if (csrfToken) {
+          headers['x-csrf-token'] = csrfToken;
+        }
+
         await fetch('/api/monitoring/performance', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ metrics: batch }),
         });
       }
@@ -233,28 +257,28 @@ class WebVitalsMonitor {
     if (typeof window === 'undefined') return;
 
     let navigationStart = performance.now();
-    
+
     // Monitor Next.js route changes
     const originalPushState = history.pushState;
     const originalReplaceState = history.replaceState;
 
-    history.pushState = function(...args) {
+    history.pushState = function (...args) {
       const result = originalPushState.apply(this, args);
       const navigationTime = performance.now() - navigationStart;
-      
+
       webVitalsMonitor.reportCustomMetric('route_change', navigationTime);
       navigationStart = performance.now();
-      
+
       return result;
     };
 
-    history.replaceState = function(...args) {
+    history.replaceState = function (...args) {
       const result = originalReplaceState.apply(this, args);
       const navigationTime = performance.now() - navigationStart;
-      
+
       webVitalsMonitor.reportCustomMetric('route_change', navigationTime);
       navigationStart = performance.now();
-      
+
       return result;
     };
 
@@ -274,7 +298,7 @@ class WebVitalsMonitor {
       for (const entry of list.getEntries()) {
         if (entry.entryType === 'resource') {
           const resourceEntry = entry as PerformanceResourceTiming;
-          
+
           // Monitor slow resources
           if (resourceEntry.duration > 1000) {
             this.reportCustomMetric('slow_resource', resourceEntry.duration, {
@@ -300,7 +324,7 @@ class WebVitalsMonitor {
     // Intercept fetch requests to monitor API performance
     const originalFetch = window.fetch;
 
-    window.fetch = async function(...args) {
+    window.fetch = async function (...args) {
       const startTime = performance.now();
 
       // Safely extract URL from fetch arguments to avoid RSC fetch errors
@@ -318,6 +342,11 @@ class WebVitalsMonitor {
         }
       } catch {
         // If we can't extract a URL, skip monitoring (e.g., RSC internal fetches)
+        return originalFetch.apply(this, args);
+      }
+
+      // Skip monitoring for the monitoring endpoint itself to avoid infinite loops
+      if (url && (url.includes('/api/monitoring/performance') || url.includes('/_next/'))) {
         return originalFetch.apply(this, args);
       }
 
@@ -357,6 +386,7 @@ class WebVitalsMonitor {
     };
   }
 
+
   public reportCustomMetric(name: string, value: number, metadata?: Record<string, any>) {
     const data: PerformanceData = {
       metric: name,
@@ -369,7 +399,7 @@ class WebVitalsMonitor {
     };
 
     this.performanceData.push(data);
-    
+
     // Send to analytics with metadata
     if (typeof window !== 'undefined' && 'gtag' in window) {
       (window as unknown).gtag('event', 'custom_performance', {
@@ -407,21 +437,21 @@ class WebVitalsMonitor {
     details: PerformanceData[];
   } {
     const summary: Record<string, { average: number; count: number; rating: string }> = {};
-    
+
     // Group by metric
     for (const data of this.performanceData) {
       if (!summary[data.metric]) {
         summary[data.metric] = { average: 0, count: 0, rating: 'good' };
       }
-      
+
       summary[data.metric].count++;
-      summary[data.metric].average = 
-        (summary[data.metric].average * (summary[data.metric].count - 1) + data.value) / 
+      summary[data.metric].average =
+        (summary[data.metric].average * (summary[data.metric].count - 1) + data.value) /
         summary[data.metric].count;
-      
+
       // Use worst rating
-      if (data.rating === 'poor' || 
-          (data.rating === 'needs-improvement' && summary[data.metric].rating === 'good')) {
+      if (data.rating === 'poor' ||
+        (data.rating === 'needs-improvement' && summary[data.metric].rating === 'good')) {
         summary[data.metric].rating = data.rating;
       }
     }
@@ -446,9 +476,9 @@ export function measurePerformance<T>(
   fn: () => T | Promise<T>
 ): T extends Promise<unknown> ? Promise<T> : T {
   const startTime = performance.now();
-  
+
   const result = fn();
-  
+
   if (result instanceof Promise) {
     return result.finally(() => {
       const duration = performance.now() - startTime;
@@ -463,7 +493,7 @@ export function measurePerformance<T>(
 
 // React hook for component performance tracking
 export function usePerformanceTracking(componentName: string) {
-  if (typeof window === 'undefined') return { startTracking: () => {}, endTracking: () => {} };
+  if (typeof window === 'undefined') return { startTracking: () => { }, endTracking: () => { } };
 
   let startTime: number;
 
