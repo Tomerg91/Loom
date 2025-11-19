@@ -76,6 +76,7 @@ COMMENT ON POLICY "Admins can view performance metrics" ON query_performance_met
 -- Policy 2: Service role can insert metrics (for automated monitoring)
 CREATE POLICY "Service role can insert metrics" ON query_performance_metrics
     FOR INSERT
+    TO service_role
     WITH CHECK (true);
 
 COMMENT ON POLICY "Service role can insert metrics" ON query_performance_metrics IS
@@ -95,6 +96,11 @@ GRANT SELECT ON query_performance_metrics TO authenticated;
 
 -- Grant INSERT to service_role for automated metric collection
 GRANT INSERT ON query_performance_metrics TO service_role;
+
+-- Ensure no other roles can insert rows (defense in depth with RLS policy)
+REVOKE INSERT ON query_performance_metrics FROM authenticated;
+REVOKE INSERT ON query_performance_metrics FROM anon;
+REVOKE INSERT ON query_performance_metrics FROM public;
 
 -- Grant USAGE on the sequence for inserts
 GRANT USAGE, SELECT ON SEQUENCE query_performance_metrics_id_seq TO service_role;
