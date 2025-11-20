@@ -35,7 +35,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { ResourceCollection } from '@/types/resources';
-import { useLocale } from 'next-intl';
 
 export interface CollectionCardProps {
   collection: ResourceCollection & { resourceCount?: number };
