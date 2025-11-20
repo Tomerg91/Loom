@@ -191,7 +191,10 @@ export class ClientAuthService {
 
         console.log('[ClientAuthService.signIn] Calling setSession with timeout...');
 
-        // Set session with a timeout to prevent hanging on Vercel Edge Runtime
+        // Set session with a 10-second timeout to prevent hanging on Vercel Edge Runtime
+        // NOTE: Edge Runtime has slower I/O, 3 seconds was too aggressive and caused setSession
+        // to timeout, leaving auth state out of sync. 10 seconds provides adequate time for
+        // Supabase auth state to synchronize properly while still being a reasonable timeout.
         const setSessionPromise = this.supabase.auth.setSession({
           access_token: session.accessToken,
           refresh_token: session.refreshToken,
@@ -199,8 +202,8 @@ export class ClientAuthService {
 
         const timeoutPromise = new Promise<{ error: any }>((_, reject) =>
           setTimeout(
-            () => reject(new Error('setSession timeout after 3 seconds')),
-            3000
+            () => reject(new Error('setSession timeout after 10 seconds')),
+            10000
           )
         );
 
