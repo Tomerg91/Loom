@@ -14,7 +14,8 @@ import {
   FileText,
   Video,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Loader2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -74,6 +75,9 @@ export function CoachClientsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
   const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
+
+  // Track if search is in progress (searching indicator)
+  const isSearching = searchTerm !== debouncedSearchTerm && searchTerm.length > 0;
 
   // Debounce search term
   useEffect(() => {
@@ -283,6 +287,9 @@ export function CoachClientsPage() {
                   className="pl-10"
                   data-testid="client-search-input"
                 />
+                {isSearching && (
+                  <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
               </div>
             </div>
             

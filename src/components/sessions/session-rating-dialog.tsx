@@ -111,7 +111,7 @@ export function SessionRatingDialog({ session, onClose, onSuccess }: SessionRati
                 role="radio"
                 aria-checked={currentRating === star}
                 aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
-                className={`${starSize} text-yellow-400 hover:text-yellow-500 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded ${
+                className={`${starSize} text-yellow-500 hover:text-yellow-600 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 rounded ${
                   star <= currentRating ? 'fill-current' : 'fill-none stroke-current'
                 }`}
               >
@@ -286,9 +286,9 @@ export function SessionRatingDialog({ session, onClose, onSuccess }: SessionRati
                   <div className="flex items-center gap-2">
                     <div className="flex">
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <Star 
+                        <Star
                           key={star}
-                          className={`h-4 w-4 text-yellow-400 ${
+                          className={`h-4 w-4 text-yellow-500 ${
                             star <= overallRating ? 'fill-current' : 'fill-none stroke-current'
                           }`}
                         />
@@ -307,9 +307,9 @@ export function SessionRatingDialog({ session, onClose, onSuccess }: SessionRati
                       <div className="flex items-center gap-2">
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <Star 
+                            <Star
                               key={star}
-                              className={`h-3 w-3 text-yellow-400 ${
+                              className={`h-3 w-3 text-yellow-500 ${
                                 star <= categories[category.key] ? 'fill-current' : 'fill-none stroke-current'
                               }`}
                             />

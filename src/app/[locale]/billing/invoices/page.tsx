@@ -6,6 +6,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { ArrowLeft } from 'lucide-react';
 
 interface Invoice {
   id: string;
@@ -21,6 +24,8 @@ interface Invoice {
 }
 
 export default function InvoicesPage() {
+  const router = useRouter();
+  const locale = useLocale();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'paid' | 'pending'>('all');
@@ -94,6 +99,15 @@ export default function InvoicesPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => router.push(`/${locale}/settings`)}
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-8 px-0 py-2 hover:bg-transparent"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          <span className="text-sm font-medium">Back to Settings</span>
+        </button>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Invoices & Receipts</h1>
