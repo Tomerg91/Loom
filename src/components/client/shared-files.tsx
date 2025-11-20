@@ -178,19 +178,10 @@ export function ClientSharedFiles({ userId }: ClientSharedFilesProps) {
       // Show success notification
       toast.success('File downloaded successfully');
     } catch (error) {
-<<<<<<< HEAD
       const errorMessage = error instanceof Error ? error.message : 'Failed to download file';
       setError(errorMessage);
       // Show error toast
       toast.error(errorMessage);
-=======
-      setError(error instanceof Error ? error.message : 'Failed to download file');
-      toast({
-        variant: 'destructive',
-        title: 'Download failed',
-        description: 'Failed to download file. Please try again.',
-      });
->>>>>>> origin/main
     } finally {
       setDownloading('');
     }
