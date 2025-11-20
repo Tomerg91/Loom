@@ -339,14 +339,34 @@ export function ClientCoachesPage() {
       {/* Coaches Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredCoaches.length === 0 ? (
-          <Card className="col-span-full">
-            <CardContent className="py-12 text-center space-y-2">
-              <h3 className="text-lg font-medium text-muted-foreground">No coaches match your filters</h3>
-              <p className="text-sm text-muted-foreground">
-                Try adjusting your filters or search terms to see more results.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="rounded-full bg-muted p-4">
+                <Users className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">No Coaches Found</h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  {searchTerm || specialtyFilter !== 'all' || ratingFilter !== 'all' || priceFilter !== 'all'
+                    ? 'Try adjusting your filters to see more results.'
+                    : 'No coaches are available at this time.'}
+                </p>
+              </div>
+              {(searchTerm || specialtyFilter !== 'all' || ratingFilter !== 'all' || priceFilter !== 'all') && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSpecialtyFilter('all');
+                    setRatingFilter('all');
+                    setPriceFilter('all');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </div>
         ) : (
           filteredCoaches?.map((coach) => (
             <Card key={coach.id} className="hover:shadow-lg transition-shadow">

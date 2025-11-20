@@ -91,25 +91,42 @@ export function SessionRatingDialog({ session, onClose, onSuccess }: SessionRati
 
   const renderStarRating = (currentRating: number, onRate: (rating: number) => void, size = 'default') => {
     const starSize = size === 'large' ? 'h-8 w-8' : 'h-5 w-5';
-    
+
     return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            onClick={() => onRate(star)}
-            className={`${starSize} text-yellow-400 hover:text-yellow-500 transition-colors ${
-              star <= currentRating ? 'fill-current' : 'fill-none stroke-current'
-            }`}
-          >
-            <Star className={starSize} />
-          </button>
-        ))}
+      <>
+        <div role="radiogroup" aria-label="Rate this session">
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => onRate(star)}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowRight' && star < 5) {
+                    onRate(star + 1);
+                  } else if (e.key === 'ArrowLeft' && star > 1) {
+                    onRate(star - 1);
+                  }
+                }}
+                role="radio"
+                aria-checked={currentRating === star}
+                aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                className={`${starSize} text-yellow-400 hover:text-yellow-500 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded ${
+                  star <= currentRating ? 'fill-current' : 'fill-none stroke-current'
+                }`}
+              >
+                <Star className={starSize} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {currentRating ? `${currentRating} star${currentRating > 1 ? 's' : ''} selected` : 'No rating selected'}
+        </div>
         <span className="ml-2 text-sm text-muted-foreground">
           {currentRating > 0 ? `${currentRating}/5` : 'Click to rate'}
         </span>
-      </div>
+      </>
     );
   };
 

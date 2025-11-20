@@ -316,11 +316,20 @@ export function CoachClientsPage() {
       {/* Clients Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sortedClients?.map((client) => (
-          <Card 
-            key={client.id} 
-            className="hover:shadow-lg transition-shadow cursor-pointer" 
+          <Card
+            key={client.id}
+            className="hover:shadow-lg transition-shadow cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary rounded-lg"
             data-testid={`client-card-${client.id}`}
             onClick={() => router.push(`/coach/clients/${client.id}`)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                router.push(`/coach/clients/${client.id}`);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label={`View details for ${client.firstName} ${client.lastName}`}
           >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -348,13 +357,14 @@ export function CoachClientsPage() {
                   </Badge>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        className="h-8 w-8 p-0" 
+                      <Button
+                        variant="ghost"
+                        className="h-8 w-8 p-0"
                         data-testid={`client-menu-${client.id}`}
                         onClick={(e) => e.stopPropagation()}
+                        aria-label={`${client.firstName} ${client.lastName} actions menu`}
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">

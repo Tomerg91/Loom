@@ -91,8 +91,12 @@ export function UserManagementTable({ users, onEditUser, onDeleteUser }: UserMan
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
+                      <Button
+                        variant="ghost"
+                        className="h-8 w-8 p-0"
+                        aria-label={`${user.firstName || user.email} user actions`}
+                      >
+                        <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">

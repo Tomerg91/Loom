@@ -337,23 +337,36 @@ export function ClientSharedFiles({ userId }: ClientSharedFilesProps) {
       {/* Files List */}
       <div className="space-y-2">
         {filteredFiles.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-              <ShareIcon className="h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchTerm || permissionFilter !== 'all' 
-                  ? t('shared.noFilesFiltered', { defaultValue: 'No files match your search' })
-                  : t('shared.noFiles', { defaultValue: 'No files shared with you yet' })
-                }
-              </h3>
-              <p className="text-gray-600">
-                {searchTerm || permissionFilter !== 'all'
-                  ? t('shared.tryDifferentSearch', { defaultValue: 'Try adjusting your search or filters' })
-                  : t('shared.askCoach', { defaultValue: 'Ask your coach to share relevant files with you' })
-                }
-              </p>
-            </CardContent>
-          </Card>
+          <div className="text-center py-12">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="rounded-full bg-muted p-4">
+                <FileIcon className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">
+                  {searchTerm || permissionFilter !== 'all'
+                    ? 'No Files Found'
+                    : 'No Files Shared Yet'}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  {searchTerm || permissionFilter !== 'all'
+                    ? 'No files match your current filters.'
+                    : 'Your coach hasn\'t shared any files yet.'}
+                </p>
+              </div>
+              {(searchTerm || permissionFilter !== 'all') && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setPermissionFilter('all');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </div>
         ) : (
           filteredFiles.map((share) => (
             <Card key={share.id} className={isExpired(share.expiresAt) ? 'opacity-60' : ''}>

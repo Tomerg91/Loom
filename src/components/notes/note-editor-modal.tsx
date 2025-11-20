@@ -219,8 +219,13 @@ export function NoteEditorModal({
               <Save className="h-4 w-4" />
               {isEditing ? 'Save' : 'Create'}
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleClose}>
-              <X className="h-4 w-4" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClose}
+              aria-label="Close note editor"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </DialogHeader>
