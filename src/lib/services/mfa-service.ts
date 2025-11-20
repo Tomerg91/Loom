@@ -1232,7 +1232,7 @@ export class MfaService {
       const { data: mfaData, error: fetchError } = await supabase
         .from('user_mfa')
         .select(
-          'is_enabled, secret, verified_at, backup_codes, backup_codes_used'
+          'is_enabled, secret_key, verified_at, backup_codes, backup_codes_used'
         )
         .eq('user_id', userId)
         .single();
@@ -1261,7 +1261,7 @@ export class MfaService {
 
       return {
         isEnabled: mfaData?.is_enabled || false,
-        isSetup: !!mfaData?.secret,
+        isSetup: !!mfaData?.secret_key,
         verifiedAt: mfaData?.verified_at || undefined,
         backupCodesRemaining,
       };
