@@ -1201,17 +1201,24 @@ describe('Email and Communication Integration', () => {
         // Simulate webhook status updates
         useEffect(() => {
           const handleWebhook = (event: unknown) => {
+            const payload =
+              event instanceof CustomEvent
+                ? event.detail
+                : typeof event === 'object' && event !== null
+                  ? event
+                  : null;
+
             if (
-              typeof event === 'object' &&
-              event !== null &&
-              'messageId' in event &&
-              'status' in event
+              payload &&
+              typeof payload === 'object' &&
+              'messageId' in payload &&
+              'status' in payload
             ) {
               setDeliveryStatus(prev => ({
                 ...prev,
-                [(event as { messageId: string; status: string }).messageId]: (
-                  event as { messageId: string; status: string }
-                ).status,
+                [
+                  (payload as { messageId: string; status: string }).messageId
+                ]: (payload as { messageId: string; status: string }).status,
               }));
             }
           };
