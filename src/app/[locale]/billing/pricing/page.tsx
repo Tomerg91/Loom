@@ -7,6 +7,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { ArrowLeft } from 'lucide-react';
 
 interface SubscriptionPlan {
   id: string;
@@ -25,6 +27,7 @@ interface SubscriptionPlan {
 
 export default function PricingPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(true);
@@ -126,6 +129,15 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => router.push(`/${locale}/settings`)}
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-8 px-0 py-2 hover:bg-transparent"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          <span className="text-sm font-medium">Back to Settings</span>
+        </button>
+
         {/* Header */}
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
