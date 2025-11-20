@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { FileManagementPage } from '@/components/files/file-management-page';
@@ -16,6 +17,7 @@ export default function FilesPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const locale = useLocale();
   const supabase = createClient();
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export default function FilesPage() {
         const { data: { user: authUser }, error } = await supabase.auth.getUser();
         
         if (error || !authUser) {
-          router.push('/login');
+          router.push(`/${locale}/auth/signin`);
           return;
         }
 
@@ -37,7 +39,7 @@ export default function FilesPage() {
 
         if (profileError || !profile) {
           console.error('Error getting user profile:', profileError);
-          router.push('/login');
+          router.push(`/${locale}/auth/signin`);
           return;
         }
 
@@ -47,7 +49,7 @@ export default function FilesPage() {
         });
       } catch (error) {
         console.error('Error in getUser:', error);
-        router.push('/login');
+        router.push(`/${locale}/auth/signin`);
       } finally {
         setLoading(false);
       }

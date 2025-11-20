@@ -301,7 +301,7 @@ export function NavMenu() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/profile">
+                  <Link href="/settings">
                     <span className="flex items-center rtl:space-x-reverse space-x-2">
                       <User className="h-4 w-4" aria-hidden="true" />
                       <span>{t('profile')}</span>

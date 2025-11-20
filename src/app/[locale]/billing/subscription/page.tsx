@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 
 interface SubscriptionStatus {
   tier: 'free' | 'basic' | 'professional' | 'enterprise';
@@ -27,6 +28,7 @@ interface SubscriptionStatus {
 
 export default function SubscriptionPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [canceling, setCanceling] = useState(false);
@@ -213,7 +215,7 @@ export default function SubscriptionPage() {
             <h3 className="text-lg font-bold text-gray-900 mb-2">Change Plan</h3>
             <p className="text-gray-600 mb-4">Upgrade or downgrade your subscription</p>
             <button
-              onClick={() => router.push('/billing/pricing')}
+              onClick={() => router.push(`/${locale}/billing/pricing`)}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
             >
               View Plans
@@ -224,7 +226,7 @@ export default function SubscriptionPage() {
             <h3 className="text-lg font-bold text-gray-900 mb-2">Billing History</h3>
             <p className="text-gray-600 mb-4">View your invoices and receipts</p>
             <button
-              onClick={() => router.push('/billing/invoices')}
+              onClick={() => router.push(`/${locale}/billing/invoices`)}
               className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium"
             >
               View Invoices

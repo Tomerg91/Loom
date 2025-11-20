@@ -41,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { AddClientModal } from '@/components/coach/add-client-modal';
 
 
 interface Client {
@@ -72,6 +73,7 @@ export function CoachClientsPage() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
+  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
 
   // Debounce search term
   useEffect(() => {
@@ -203,7 +205,10 @@ export function CoachClientsPage() {
           <h1 className="text-3xl font-bold" data-testid="page-title">{t('title')}</h1>
           <p className="text-muted-foreground">{t('description')}</p>
         </div>
-        <Button data-testid="add-client-button">
+        <Button
+          data-testid="add-client-button"
+          onClick={() => setIsAddClientModalOpen(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           {t('addClient')}
         </Button>
@@ -470,6 +475,16 @@ export function CoachClientsPage() {
           </Card>
         ))}
       </div>
+
+      {/* Add Client Modal */}
+      <AddClientModal
+        open={isAddClientModalOpen}
+        onOpenChange={setIsAddClientModalOpen}
+        onSuccess={() => {
+          setIsAddClientModalOpen(false);
+          // Optionally: refetch clients list
+        }}
+      />
     </div>
   );
 }

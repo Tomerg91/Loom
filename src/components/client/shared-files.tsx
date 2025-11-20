@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 
 interface SharedFile {
@@ -169,11 +170,17 @@ export function ClientSharedFiles({ userId }: ClientSharedFilesProps) {
       
       // Open download URL in new tab
       window.open(data.downloadUrl, '_blank');
-      
+
       // Refresh the list to update access counts
       await loadSharedFiles();
+
+      // Show success notification
+      toast.success('File downloaded successfully');
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to download file');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to download file';
+      setError(errorMessage);
+      // Show error toast
+      toast.error(errorMessage);
     } finally {
       setDownloading('');
     }

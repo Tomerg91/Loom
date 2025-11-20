@@ -21,6 +21,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ export function CollectionCard({
   className,
 }: CollectionCardProps) {
   const router = useRouter();
+  const locale = useLocale();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
@@ -72,7 +74,7 @@ export function CollectionCard({
   };
 
   const handleClick = () => {
-    router.push(`/coach/resources/collections/${collection.id}`);
+    router.push(`/${locale}/coach/resources/collections/${collection.id}`);
   };
 
   return (
