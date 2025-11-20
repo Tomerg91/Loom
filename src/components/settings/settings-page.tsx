@@ -151,7 +151,7 @@ export function SettingsPage() {
 
       {/* Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
           {settingsCategories.map((category) => (
             <TabsTrigger key={category.id} value={category.id} className="flex items-center space-x-2">
               <category.icon className="w-4 h-4" />

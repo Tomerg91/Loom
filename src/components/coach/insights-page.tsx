@@ -198,7 +198,7 @@ export function CoachInsightsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[180px]" data-testid="time-range-filter">
+            <SelectTrigger className="w-full sm:w-[180px]" data-testid="time-range-filter">
               <SelectValue placeholder="Select time range" />
             </SelectTrigger>
             <SelectContent>

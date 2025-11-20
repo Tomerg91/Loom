@@ -62,7 +62,7 @@ export function SettingsAuditHistory() {
               setOffset(0); // Reset pagination
             }}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder={t('category')} />
             </SelectTrigger>
             <SelectContent>

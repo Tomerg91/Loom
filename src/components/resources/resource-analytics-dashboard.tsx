@@ -120,7 +120,7 @@ export function ResourceAnalyticsDashboard() {
         <div className="flex items-center gap-2">
           {/* Time Range Selector */}
           <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-full sm:w-[140px]">
               <Calendar className="h-4 w-4 mr-2" />
               <SelectValue />
             </SelectTrigger>

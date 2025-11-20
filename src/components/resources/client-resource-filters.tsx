@@ -105,7 +105,7 @@ export function ClientResourceFilters({
         value={filters.category || 'all'}
         onValueChange={handleCategoryChange}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-full sm:w-[180px]">
           <SelectValue placeholder="All categories" />
         </SelectTrigger>
         <SelectContent>
