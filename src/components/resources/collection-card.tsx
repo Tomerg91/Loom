@@ -21,6 +21,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -34,7 +35,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { ResourceCollection } from '@/types/resources';
-import { useLocale } from 'next-intl';
 
 export interface CollectionCardProps {
   collection: ResourceCollection & { resourceCount?: number };

@@ -1,6 +1,7 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { FileManagementPage } from '@/components/files/file-management-page';
@@ -16,8 +17,7 @@ export default function FilesPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const params = useParams();
-  const locale = typeof params?.locale === 'string' ? params.locale : 'en';
+  const locale = useLocale();
   const supabase = createClient();
 
   useEffect(() => {

@@ -6,7 +6,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 
 interface SubscriptionStatus {
   tier: 'free' | 'basic' | 'professional' | 'enterprise';
@@ -27,8 +28,7 @@ interface SubscriptionStatus {
 
 export default function SubscriptionPage() {
   const router = useRouter();
-  const params = useParams();
-  const locale = typeof params?.locale === 'string' ? params.locale : 'en';
+  const locale = useLocale();
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [canceling, setCanceling] = useState(false);
