@@ -56,7 +56,7 @@ export default function FilesPage() {
     };
 
     getUser();
-  }, [router, supabase]);
+  }, [locale, router, supabase]);
 
   if (loading) {
     return (

@@ -182,14 +182,16 @@ export function EnhancedNotificationSettings() {
 
   // FlaskConical notification handler
   const handleFlaskConicalNotification = (type: 'email' | 'push' | 'inapp') => {
-    setFlaskConicalStatus(prev => prev.map(test => 
-      test.type === type 
+    setFlaskConicalStatus(prev => prev.map(test =>
+      test.type === type
         ? { ...test, status: 'testing', message: undefined }
         : test
     ));
-    
+
     testNotificationMutation.mutate(type);
   };
+
+  const isTestNotificationPending = testNotificationMutation.isPending;
 
   // Do not disturb toggle
   const toggleDoNotDisturb = () => {
@@ -295,7 +297,10 @@ export function EnhancedNotificationSettings() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleFlaskConicalNotification('email')}
-                    disabled={testStatus.find(t => t.type === 'email')?.status === 'testing'}
+                    disabled={
+                      testStatus.find(t => t.type === 'email')?.status === 'testing' ||
+                      isTestNotificationPending
+                    }
                   >
                     {testStatus.find(t => t.type === 'email')?.status === 'testing' ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -458,7 +463,11 @@ export function EnhancedNotificationSettings() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleFlaskConicalNotification('push')}
-                    disabled={testStatus.find(t => t.type === 'push')?.status === 'testing' || !pushNotifications.isSubscribed}
+                    disabled={
+                      testStatus.find(t => t.type === 'push')?.status === 'testing' ||
+                      !pushNotifications.isSubscribed ||
+                      isTestNotificationPending
+                    }
                   >
                     {testStatus.find(t => t.type === 'push')?.status === 'testing' ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -686,7 +695,10 @@ export function EnhancedNotificationSettings() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleFlaskConicalNotification('inapp')}
-                    disabled={testStatus.find(t => t.type === 'inapp')?.status === 'testing'}
+                    disabled={
+                      testStatus.find(t => t.type === 'inapp')?.status === 'testing' ||
+                      isTestNotificationPending
+                    }
                   >
                     {testStatus.find(t => t.type === 'inapp')?.status === 'testing' ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
