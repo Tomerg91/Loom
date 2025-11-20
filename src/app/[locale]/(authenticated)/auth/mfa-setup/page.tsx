@@ -78,7 +78,7 @@ export default function MfaSetupPage() {
     if (mfaStatus?.isEnabled && mfaStatus?.isSetup) {
       router.push(
         redirectTo === `/${locale}/dashboard`
-          ? `/${locale}/settings/security`
+          ? `/${locale}/settings`
           : redirectTo
       );
     }
@@ -93,7 +93,7 @@ export default function MfaSetupPage() {
     if (isRequired) {
       router.push(`/${locale}/dashboard?mfa_required=true`);
     } else {
-      router.push(`/${locale}/settings/security`);
+      router.push(`/${locale}/settings`);
     }
   };
 

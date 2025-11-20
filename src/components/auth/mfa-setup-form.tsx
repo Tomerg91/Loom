@@ -211,7 +211,7 @@ export function MfaSetupForm({
     } else if (onCancel) {
       onCancel();
     } else {
-      router.push(`/${locale}/settings/security`);
+      router.push(`/${locale}/settings`);
     }
   };
 

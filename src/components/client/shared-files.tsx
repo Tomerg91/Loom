@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
 
 
 interface SharedFile {
@@ -54,6 +55,7 @@ interface ClientSharedFilesProps {
 
 export function ClientSharedFiles({ userId }: ClientSharedFilesProps) {
   const t = useTranslations('files');
+  const { toast } = useToast();
   
   // State management
   const [sharedFiles, setSharedFiles] = useState<SharedFile[]>([]);
@@ -174,6 +176,11 @@ export function ClientSharedFiles({ userId }: ClientSharedFilesProps) {
       await loadSharedFiles();
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to download file');
+      toast({
+        variant: 'destructive',
+        title: 'Download failed',
+        description: 'Failed to download file. Please try again.',
+      });
     } finally {
       setDownloading('');
     }
