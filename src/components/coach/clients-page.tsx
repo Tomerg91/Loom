@@ -359,7 +359,7 @@ export function CoachClientsPage() {
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="h-8 w-8 p-0"
+                        className="h-10 w-10 p-0"
                         data-testid={`client-menu-${client.id}`}
                         onClick={(e) => e.stopPropagation()}
                         aria-label={`${client.firstName} ${client.lastName} actions menu`}

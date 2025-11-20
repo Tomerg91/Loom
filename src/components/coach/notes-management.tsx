@@ -388,11 +388,19 @@ export function NotesManagement({ clientId: initialClientId, sessionId: initialS
           ))}
         </div>
       ) : notes.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">No notes found</p>
-          </CardContent>
-        </Card>
+        <div className="text-center py-12">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="rounded-full bg-muted p-4">
+              <Eye className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">No Notes Yet</h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Click the "+" button to create your first note.
+              </p>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="space-y-4">
           {notes.map((note) => (

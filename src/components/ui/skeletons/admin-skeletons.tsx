@@ -24,8 +24,8 @@ export function AdminUsersTableSkeleton({ count = 10, className }: { count?: num
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {/* Table Header */}
-          <div className="grid grid-cols-6 gap-4 pb-3 border-b font-medium">
+          {/* Desktop Table Header */}
+          <div className="hidden md:grid md:grid-cols-6 gap-4 pb-3 border-b font-medium">
             <SkeletonText className="h-4 w-20" />
             <SkeletonText className="h-4 w-16" />
             <SkeletonText className="h-4 w-24" />
@@ -35,7 +35,7 @@ export function AdminUsersTableSkeleton({ count = 10, className }: { count?: num
           </div>
           {/* Table Rows */}
           {Array.from({ length: count }).map((_, i) => (
-            <div key={i} className="grid grid-cols-6 gap-4 items-center py-3 border-b last:border-b-0">
+            <div key={i} className="hidden md:grid md:grid-cols-6 gap-4 items-center py-3 border-b last:border-b-0 md:flex md:flex-col md:space-y-3">
               <div className="flex items-center gap-2">
                 <SkeletonAvatar className="h-8 w-8" />
                 <SkeletonText className="h-4 w-24" />

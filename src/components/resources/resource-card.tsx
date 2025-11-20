@@ -236,6 +236,7 @@ export function ResourceCard({
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="h-10 w-10"
                   aria-label="Resource actions"
                 >
                   <MoreVertical className="w-4 h-4" aria-hidden="true" />

@@ -259,7 +259,7 @@ export function EnhancedNotificationSettings() {
 
       {/* Main Settings Tabs */}
       <Tabs defaultValue="email" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="email" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Email

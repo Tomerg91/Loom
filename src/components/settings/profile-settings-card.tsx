@@ -261,17 +261,29 @@ export function ProfileSettingsCard() {
 
             <div>
               <Label>Specialties</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.specialties.map((specialty, index) => (
-                  <Badge key={index} variant="secondary">
-                    {specialty}
-                  </Badge>
-                ))}
-                <Button type="button" variant="outline" size="sm">
-                  <Edit className="mr-1 h-3 w-3" />
-                  Edit Specialties
-                </Button>
-              </div>
+              {formData.specialties.length === 0 ? (
+                <div className="mt-4 p-4 border border-dashed rounded-lg text-center">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Add your specialties to help clients find you
+                  </p>
+                  <Button type="button" variant="outline" size="sm">
+                    <Edit className="mr-1 h-3 w-3" />
+                    Add Specialty
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.specialties.map((specialty, index) => (
+                    <Badge key={index} variant="secondary">
+                      {specialty}
+                    </Badge>
+                  ))}
+                  <Button type="button" variant="outline" size="sm">
+                    <Edit className="mr-1 h-3 w-3" />
+                    Edit Specialties
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

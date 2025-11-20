@@ -297,7 +297,7 @@ export function NotificationSettingsCard() {
                   value={settings.email.frequency}
                   onValueChange={(value) => handleSettingChange('email', 'frequency', value)}
                 >
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger className="w-full sm:w-[200px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

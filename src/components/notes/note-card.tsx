@@ -161,7 +161,7 @@ export function NoteCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-10 w-10"
                 onClick={handleToggleFavorite}
                 title={note.isFavorite ? "Remove from favorites" : "Add to favorites"}
               >
@@ -176,7 +176,7 @@ export function NoteCard({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-10 w-10"
                     aria-label="Note options"
                   >
                     <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
