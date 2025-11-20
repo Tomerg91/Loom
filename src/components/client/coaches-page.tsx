@@ -338,135 +338,122 @@ export function ClientCoachesPage() {
 
       {/* Coaches Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredCoaches?.map((coach) => (
-          <Card key={coach.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={coach.avatarUrl} alt={`${coach.firstName} ${coach.lastName}`} />
-                    <AvatarFallback className="text-lg">
-                      {coach.firstName.charAt(0)}{coach.lastName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-xl">{coach.firstName} {coach.lastName}</CardTitle>
-                    <p className="text-sm text-muted-foreground font-medium">{coach.title}</p>
-                    <div className="flex items-center mt-1">
-                      <MapPin className="h-4 w-4 text-muted-foreground mr-1" />
-                      <span className="text-sm text-muted-foreground">{coach.location}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center mb-1">
-                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-                    <span className="font-medium">{coach.rating}</span>
-                    <span className="text-sm text-muted-foreground ml-1">({coach.reviewCount})</span>
-                  </div>
-                  <p className="text-lg font-bold text-primary">{formatPrice(coach.hourlyRate)}/hr</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Bio */}
-              <p className="text-sm text-muted-foreground leading-relaxed">{coach.bio}</p>
-
-              {/* Specialties */}
-              <div>
-                <h4 className="text-sm font-medium mb-2">Specialties</h4>
-                <div className="flex flex-wrap gap-1">
-                  {coach.specialties.map((specialty, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {specialty}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Credentials */}
-              <div>
-                <h4 className="text-sm font-medium mb-2">Credentials</h4>
-                <div className="flex flex-wrap gap-1">
-                  {coach.credentials.map((credential, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      <Award className="h-3 w-3 mr-1" />
-                      {credential}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 text-center py-3 border-t border-b">
-                <div>
-                  <p className="text-lg font-bold text-primary">{coach.experience}</p>
-                  <p className="text-xs text-muted-foreground">Years Experience</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-primary">{coach.successStories}</p>
-                  <p className="text-xs text-muted-foreground">Success Stories</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-primary">{coach.languages.length}</p>
-                  <p className="text-xs text-muted-foreground">Languages</p>
-                </div>
-              </div>
-
-              {/* Languages */}
-              <div>
-                <h4 className="text-sm font-medium mb-2">Languages</h4>
-                <p className="text-sm text-muted-foreground">{coach.languages.join(', ')}</p>
-              </div>
-
-              {/* Approach */}
-              <div>
-                <h4 className="text-sm font-medium mb-2">Coaching Approach</h4>
-                <p className="text-sm text-muted-foreground italic">&quot;{coach.approach}&quot;</p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                <Button className="flex-1">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Book Session
-                </Button>
-                <Button variant="outline" className="flex-1">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Send Message
-                </Button>
-                <Button variant="outline" size="sm">
-                  <BookOpen className="h-4 w-4" />
-                </Button>
-              </div>
+        {filteredCoaches.length === 0 ? (
+          <Card className="col-span-full">
+            <CardContent className="py-12 text-center space-y-2">
+              <h3 className="text-lg font-medium text-muted-foreground">No coaches match your filters</h3>
+              <p className="text-sm text-muted-foreground">
+                Try adjusting your filters or search terms to see more results.
+              </p>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        ) : (
+          filteredCoaches?.map((coach) => (
+            <Card key={coach.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={coach.avatarUrl} alt={`${coach.firstName} ${coach.lastName}`} />
+                      <AvatarFallback className="text-lg">
+                        {coach.firstName.charAt(0)}{coach.lastName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle className="text-xl">{coach.firstName} {coach.lastName}</CardTitle>
+                      <p className="text-sm text-muted-foreground font-medium">{coach.title}</p>
+                      <div className="flex items-center mt-1">
+                        <MapPin className="h-4 w-4 text-muted-foreground mr-1" />
+                        <span className="text-sm text-muted-foreground">{coach.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center mb-1">
+                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
+                      <span className="font-medium">{coach.rating}</span>
+                      <span className="text-sm text-muted-foreground ml-1">({coach.reviewCount})</span>
+                    </div>
+                    <p className="text-lg font-bold text-primary">{formatPrice(coach.hourlyRate)}/hr</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Bio */}
+                <p className="text-sm text-muted-foreground leading-relaxed">{coach.bio}</p>
 
-      {/* No Results */}
-      {filteredCoaches?.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No coaches found</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Try adjusting your filters or search terms to find the perfect coach for you.
-            </p>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setSearchTerm('');
-                setSpecialtyFilter('all');
-                setRatingFilter('all');
-                setPriceFilter('all');
-              }}
-            >
-              Clear Filters
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+                {/* Specialties */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Specialties</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {coach.specialties.map((specialty, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {specialty}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Credentials */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Credentials</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {coach.credentials.map((credential, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        <Award className="h-3 w-3 mr-1" />
+                        {credential}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-4 text-center py-3 border-t border-b">
+                  <div>
+                    <p className="text-lg font-bold text-primary">{coach.experience}</p>
+                    <p className="text-xs text-muted-foreground">Years Experience</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-primary">{coach.successStories}</p>
+                    <p className="text-xs text-muted-foreground">Success Stories</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-primary">{coach.languages.length}</p>
+                    <p className="text-xs text-muted-foreground">Languages</p>
+                  </div>
+                </div>
+
+                {/* Languages */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Languages</h4>
+                  <p className="text-sm text-muted-foreground">{coach.languages.join(', ')}</p>
+                </div>
+
+                {/* Approach */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Coaching Approach</h4>
+                  <p className="text-sm text-muted-foreground italic">&quot;{coach.approach}&quot;</p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button className="flex-1">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Book Session
+                  </Button>
+                  <Button variant="outline" className="flex-1">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Send Message
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <BookOpen className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 }

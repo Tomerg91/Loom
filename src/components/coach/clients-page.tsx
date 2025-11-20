@@ -203,7 +203,10 @@ export function CoachClientsPage() {
           <h1 className="text-3xl font-bold" data-testid="page-title">{t('title')}</h1>
           <p className="text-muted-foreground">{t('description')}</p>
         </div>
-        <Button data-testid="add-client-button">
+        <Button
+          data-testid="add-client-button"
+          onClick={() => router.push('/coach/clients/add')}
+        >
           <Plus className="mr-2 h-4 w-4" />
           {t('addClient')}
         </Button>

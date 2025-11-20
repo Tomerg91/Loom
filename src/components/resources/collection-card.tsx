@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { ResourceCollection } from '@/types/resources';
+import { useLocale } from 'next-intl';
 
 export interface CollectionCardProps {
   collection: ResourceCollection & { resourceCount?: number };
@@ -52,6 +53,7 @@ export function CollectionCard({
   className,
 }: CollectionCardProps) {
   const router = useRouter();
+  const locale = useLocale();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
@@ -72,7 +74,7 @@ export function CollectionCard({
   };
 
   const handleClick = () => {
-    router.push(`/coach/resources/collections/${collection.id}`);
+    router.push(`/${locale}/coach/resources/collections/${collection.id}`);
   };
 
   return (

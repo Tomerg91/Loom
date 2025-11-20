@@ -423,7 +423,7 @@ export function SessionDetailView({ sessionId }: SessionDetailViewProps) {
               </div>
             )}
 
-            {notes.keyInsights && notes.keyInsights.length > 0 && (
+            {notes.keyInsights && notes.keyInsights.length > 0 ? (
               <div>
                 <h4 className="font-semibold mb-2">Key Insights</h4>
                 <ul className="list-disc list-inside space-y-1">
@@ -432,9 +432,11 @@ export function SessionDetailView({ sessionId }: SessionDetailViewProps) {
                   ))}
                 </ul>
               </div>
+            ) : (
+              <p className="text-muted-foreground">No insights recorded yet.</p>
             )}
 
-            {notes.actionItems && notes.actionItems.length > 0 && (
+            {notes.actionItems && notes.actionItems.length > 0 ? (
               <div>
                 <h4 className="font-semibold mb-2 flex items-center space-x-2">
                   <Target className="h-4 w-4" />
@@ -449,6 +451,8 @@ export function SessionDetailView({ sessionId }: SessionDetailViewProps) {
                   ))}
                 </ul>
               </div>
+            ) : (
+              <p className="text-muted-foreground">No action items for this session.</p>
             )}
           </CardContent>
         </Card>
