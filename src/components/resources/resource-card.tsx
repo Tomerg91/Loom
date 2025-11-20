@@ -233,8 +233,12 @@ export function ResourceCard({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="w-4 h-4" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Resource actions"
+                >
+                  <MoreVertical className="w-4 h-4" aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
