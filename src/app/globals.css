@@ -142,8 +142,18 @@ body.premium-app-surface::before {
 }
 
 /* Flex direction reversals for RTL */
-[dir="rtl"] .flex:not(.rtl-keep-direction) {
+[dir="rtl"] .flex:not(.rtl-keep-direction):not(.flex-center-safe) {
   flex-direction: row-reverse;
+}
+
+/* Safe centering for flex containers that should remain centered in both RTL and LTR */
+.flex-center-safe {
+  display: flex;
+  justify-content: center;
+}
+
+[dir="rtl"] .flex-center-safe {
+  direction: ltr;
 }
 
 /* Space utilities with RTL support */

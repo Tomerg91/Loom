@@ -146,7 +146,7 @@ export function ProfileSettingsCard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center">
+          <div className="flex-center-safe items-center">
             <AvatarUpload
               currentFile={user?.avatarUrl || null}
               onFileSelect={handleFileUpload}
